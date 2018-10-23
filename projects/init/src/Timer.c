@@ -25,10 +25,10 @@ int TimerDriverInit(InitContext* context , seL4_CPtr notifCap)
 
     if(error != 0)
     {
-	printf("sel4platsupport_init_default_timer_ops error %i\n",error);
+        printf("sel4platsupport_init_default_timer_ops error %i\n",error);
     }
+    
     assert(error == 0);
-
 
     return error;
 }

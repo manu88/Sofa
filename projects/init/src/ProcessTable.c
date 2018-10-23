@@ -15,17 +15,10 @@ int ProcessTableGetCount()
     return list_length(&_processes);
 }
 
-
-
-
-
 int ProcessTableAppend( Process* process)
 {
 	return list_append(&_processes , process) == 0;
 }
-
-
-
 
 Process* ProcessTableGetByPID( pid_t pid)
 {
@@ -33,12 +26,12 @@ Process* ProcessTableGetByPID( pid_t pid)
 
     for (struct list_node *n = l->head; n != NULL; n = n->next) 
     {
-	Process* p = (Process*) n->data;
+        Process* p = (Process*) n->data;
         
         if(p->_pid == pid)
-	{
-		return p;
-	}
+        {
+            return p;
+        }
     }
 
 	return NULL;

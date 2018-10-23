@@ -8,7 +8,7 @@ int main( int argc , char* argv[])
 
     if (SysClientInit(argc , argv) != 0)
     {
-	return 1;
+        return 1;
     }
 
     printf("Client : Hello\n");
@@ -21,13 +21,12 @@ int main( int argc , char* argv[])
     while(1)
     {
     	usleep(1000*2000);
-	printf("Client did wait\n");
+        printf("Client did wait\n");
     }
 
 
     printf("Client After sleep\n");
 
-//    while(1) {}
     return 0;
 }
 

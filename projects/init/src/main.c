@@ -141,8 +141,8 @@ static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, s
 
         if(!ProcessTableRemove( senderProcess))
         {
-	    printf("Unable to remove process!\n");
-	}
+            printf("Unable to remove process!\n");
+        }
 
         sel4utils_destroy_process( &senderProcess->_process, &context.vka);
         ProcessRelease(senderProcess);
@@ -154,21 +154,20 @@ static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, s
         seL4_Word millisToWait = seL4_GetMR(1);
         printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
 
+        // save the caller
 
-	// save the caller
+        senderProcess->reply = get_free_slot();
 
-	senderProcess->reply = get_free_slot();
+        error = cnode_savecaller( senderProcess->reply );
+        //	error = vka_cspace_alloc(&context.vka, &senderProcess->reply);
+        //	error = vka_cnode_saveCaller(&senderProcess->reply);
+        //error = seL4_CNode_SaveCaller( context.vka.cptr, sender->reply, 32);
 
-	error = cnode_savecaller( senderProcess->reply );
-//	error = vka_cspace_alloc(&context.vka, &senderProcess->reply);
-//	error = vka_cnode_saveCaller(&senderProcess->reply);
-	//error = seL4_CNode_SaveCaller( context.vka.cptr, sender->reply, 32);
+        assert(error == 0);
 
-	assert(error == 0);
-
-    	Timer* timer = TimerAlloc( senderProcess,1/*oneShot*/);
-	assert(timer);
-	assert(TimerWheelAddTimer(&context.timersWheel , timer , millisToWait));
+        Timer* timer = TimerAlloc( senderProcess,1/*oneShot*/);
+        assert(timer);
+        assert(TimerWheelAddTimer(&context.timersWheel , timer , millisToWait));
 
 	
     }
@@ -220,48 +219,45 @@ static void processLoop( seL4_CPtr epPtr )
        int error = 0;
        while(1)
        {
-	    /*
-	    uint64_t tm = (uint64_t)TimerWheelGetTimeout(&context.timersWheel);
-            printf("init : Main timeout  %lu \n", tm);
-            error = ltimer_set_timeout(&context.timer.ltimer, tm, TIMEOUT_ABSOLUTE);
-	    if (error != 0)
-	    {
-		printf("ltimer_set_timeout error %i\n",error);
-	    }
-            assert(error == 0);
-	    */
+            /*
+            uint64_t tm = (uint64_t)TimerWheelGetTimeout(&context.timersWheel);
+                printf("init : Main timeout  %lu \n", tm);
+                error = ltimer_set_timeout(&context.timer.ltimer, tm, TIMEOUT_ABSOLUTE);
+            if (error != 0)
+            {
+            printf("ltimer_set_timeout error %i\n",error);
+            }
+                assert(error == 0);
+            */
             seL4_Word sender_badge = 0;
             seL4_MessageInfo_t message;
-	    seL4_Word label;
+            seL4_Word label;
 
-//	    printf("Wait...\n");
-//	    message = seL4_Wait(epPtr, &sender_badge);
             message = seL4_Recv(epPtr, &sender_badge);
-	    label = seL4_MessageInfo_get_label(message);
-		
-	    if(sender_badge & IRQ_EP_BADGE)
-	    {
-		processTimer(sender_badge);
-	    }
-	    else if(label == seL4_NoFault) 
-	    {
 
+            label = seL4_MessageInfo_get_label(message);
+           
+            if(sender_badge & IRQ_EP_BADGE)
+            {
+                processTimer(sender_badge);
+            }
+            else if(label == seL4_NoFault)
+            {
                 Process* senderProcess =  ProcessTableGetByPID( sender_badge);
-		
-		if(!senderProcess)
-		{
-		    printf("Init : no sender process for badge %li\n", sender_badge);
-		    continue;
-		}
+            
+                if(!senderProcess)
+                {
+                    printf("Init : no sender process for badge %li\n", sender_badge);
+                    continue;
+                }
 
-		processSyscall(senderProcess , message , sender_badge );
-	    } // else if(label == seL4_NoFault)
-	    else 
-	    {
-		printf("ProcessLoop : other msg \n");
-	    }
-        }
-
+                processSyscall(senderProcess , message , sender_badge );
+            } // else if(label == seL4_NoFault)
+            else
+            {
+                printf("ProcessLoop : other msg \n");
+            }
+        } // end while(1)
 }
 
 
@@ -390,7 +386,7 @@ int main(void)
     error = startProcess(  process1,APP_IMAGE_NAME, ep_cap_path );
     if (error == 0)
     {
-	ProcessTableAppend(process1);
+        ProcessTableAppend(process1);
     }
 
 /*

@@ -25,8 +25,9 @@ int SysClientInit(int argc , char* argv[] )
 
     if (!sysCallEndPoint)
     {
-	return 1;
+        return 1;
     }
+    
     muslcsys_install_syscall(__NR_nanosleep , sys_nanosleep);
     muslcsys_install_syscall(__NR_getpid ,    sys_getpid);
     muslcsys_install_syscall(__NR_getppid ,   sys_getppid);
@@ -83,7 +84,7 @@ static long sys_getpid(va_list args)
 
     if(seL4_MessageInfo_get_length(tag) != 2)
     {
-	return -1; // no posix compliant ; getpid should no return any error
+        return -1; // no posix compliant ; getpid should no return any error
     }
 
     msg = seL4_GetMR(1);
