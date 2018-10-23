@@ -11,9 +11,11 @@ struct _Process
     sel4utils_process_t _process;
     pid_t               _pid;
 
+
     struct _Process *_parent;
 
-    Timer* _timer;
+    seL4_CPtr reply;
+    //Timer* _timer;
 };
 
 typedef struct _Process Process;

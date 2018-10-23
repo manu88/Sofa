@@ -90,8 +90,34 @@ static int startProcess( Process* process,const char* imageName, cspacepath_t ep
 }
 
 
+
+static seL4_Word get_free_slot()
+{
+    seL4_CPtr slot;
+    UNUSED int error = vka_cspace_alloc(&context.vka, &slot);
+    assert(!error);
+    return slot;
+}
+
+static int cnode_savecaller( seL4_CPtr cap)
+{
+    cspacepath_t path;
+    vka_cspace_make_path(&context.vka, cap, &path);
+    return vka_cnode_saveCaller(&path);
+}
+
+
+int cnode_delete(seL4_CPtr slot)
+{
+    cspacepath_t path;
+    vka_cspace_make_path(&context.vka, slot, &path);
+    return vka_cnode_delete(&path);
+}
+
 static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge)
 {
+
+    int error = 0;
     assert(senderProcess);
 
     seL4_Word msg;
@@ -127,9 +153,24 @@ static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, s
     {
         seL4_Word millisToWait = seL4_GetMR(1);
         printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
-    	senderProcess->_timer = TimerAlloc( senderProcess,1/*oneShot*/);
-	assert(senderProcess->_timer);
-	assert(TimerWheelAddTimer(&context.timersWheel , senderProcess->_timer , millisToWait));
+
+
+	// save the caller
+
+	senderProcess->reply = get_free_slot();
+
+	error = cnode_savecaller( senderProcess->reply );
+//	error = vka_cspace_alloc(&context.vka, &senderProcess->reply);
+//	error = vka_cnode_saveCaller(&senderProcess->reply);
+	//error = seL4_CNode_SaveCaller( context.vka.cptr, sender->reply, 32);
+
+	assert(error == 0);
+
+    	Timer* timer = TimerAlloc( senderProcess,1/*oneShot*/);
+	assert(timer);
+	assert(TimerWheelAddTimer(&context.timersWheel , timer , millisToWait));
+
+	
     }
     else
     {
@@ -148,14 +189,32 @@ static void processTimer(seL4_Word sender_badge)
 
 	TimerWheelStep(&context.timersWheel, 1/*MS*/);
 
-	Timer*firedTimer = TimerWheelGetFiredTimers( &context.timersWheel);
+	Timer*firedTimer = NULL;
 
-	if( firedTimer)
+	// handle expired timers
+	while ((firedTimer = TimerWheelGetFiredTimers( &context.timersWheel)) )
 	{
-		printf("Got a fired timer to process!\n");
+
+		Process* attachedProcess = TimerGetUserContext( firedTimer);
+		assert(attachedProcess);
+		printf("Got a fired timer to process %i!\n" , attachedProcess->_pid);
+		
+
+		seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
+		seL4_SetMR(0, __NR_nanosleep);
+
+		seL4_Send(attachedProcess->reply , tag);
+
+		cnode_delete(attachedProcess->reply);
+
+		assert(TimerWheelRemoveTimer( &context.timersWheel , firedTimer ) );
+
+		TimerRelease(firedTimer);
+		
 	}
-	
+
 }
+
 static void processLoop( seL4_CPtr epPtr )
 {
        int error = 0;
@@ -342,6 +401,7 @@ int main(void)
         ProcessTableAppend(process2);
     }
 */
+//
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
     processLoop(ep_object.cptr);//ep_cap_path);
