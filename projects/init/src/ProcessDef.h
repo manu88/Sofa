@@ -3,7 +3,7 @@
 
 
 #include <sel4utils/process.h>
-
+#include "TimerWheel/TimersWheel.h"
 
 
 struct _Process
@@ -12,6 +12,8 @@ struct _Process
     pid_t               _pid;
 
     struct _Process *_parent;
+
+    Timer* _timer;
 };
 
 typedef struct _Process Process;

@@ -90,61 +90,118 @@ static int startProcess( Process* process,const char* imageName, cspacepath_t ep
 }
 
 
-static void processLoop( cspacepath_t ep_cap_path )
+static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge)
 {
-       while(1)
-       {
-            seL4_Word sender_badge = 0;
-            seL4_MessageInfo_t tag;
-            seL4_Word msg;
+    assert(senderProcess);
 
-            tag = seL4_Recv(ep_cap_path.capPtr, &sender_badge);
+    seL4_Word msg;
+    msg = seL4_GetMR(0);
 
-            msg = seL4_GetMR(0);
+    if (msg ==  __NR_getpid)
+    {
 
-            Process* senderProcess =  ProcessTableGetByPID( sender_badge);
-
-
-	    if (msg ==  __NR_getpid)
-   	    {
-		assert(senderProcess);
-
-		seL4_SetMR(1, senderProcess->_pid);
-
- 		seL4_Reply( tag );
-	    }
-	    else if (msg == __NR_getppid)
-	    {
-		seL4_SetMR(1, senderProcess->_parent->_pid );
-
-                seL4_Reply( tag );
-
-	    }
-	    else if (msg == __NR_exit)
-	    {
-		printf("Got exit from %i\n", senderProcess->_pid);
-
-		if(!ProcessTableRemove( senderProcess))
-  		{
-			printf("Unable to remove process!\n");
-		}
-
-		sel4utils_destroy_process( &senderProcess->_process, &context.vka);
-    	    	ProcessRelease(senderProcess);
-
-		printf("Init : Got %i processes \n" , ProcessTableGetCount() );
-	    }
-	    else if (msg == __NR_nanosleep)
-	    {
-		seL4_Word millisToWait = seL4_GetMR(1);
-		printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
-	    }
-	    else
-  	    {
-		printf("Received OTHER IPC MESSAGE\n");
-	    }
+        seL4_SetMR(1, senderProcess->_pid);
+        seL4_Reply( message );
+    }
+    else if (msg == __NR_getppid)
+    {
+        seL4_SetMR(1, senderProcess->_parent->_pid );
+        seL4_Reply( message );
 
     }
+    else if (msg == __NR_exit)
+    {
+        printf("Got exit from %i\n", senderProcess->_pid);
+
+        if(!ProcessTableRemove( senderProcess))
+        {
+	    printf("Unable to remove process!\n");
+	}
+
+        sel4utils_destroy_process( &senderProcess->_process, &context.vka);
+        ProcessRelease(senderProcess);
+
+        printf("Init : Got %i processes \n" , ProcessTableGetCount() );
+    }
+    else if (msg == __NR_nanosleep)
+    {
+        seL4_Word millisToWait = seL4_GetMR(1);
+        printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
+    	senderProcess->_timer = TimerAlloc( senderProcess,1/*oneShot*/);
+	assert(senderProcess->_timer);
+	assert(TimerWheelAddTimer(&context.timersWheel , senderProcess->_timer , millisToWait));
+    }
+    else
+    {
+        printf("Received OTHER IPC MESSAGE\n");
+    }
+
+}
+
+
+static void processTimer(seL4_Word sender_badge)
+{
+//	printf("SHOULD PROCESS TIMER !\n");
+
+
+	sel4platsupport_handle_timer_irq(&context.timer, sender_badge);
+
+	TimerWheelStep(&context.timersWheel, 1/*MS*/);
+
+	Timer*firedTimer = TimerWheelGetFiredTimers( &context.timersWheel);
+
+	if( firedTimer)
+	{
+		printf("Got a fired timer to process!\n");
+	}
+	
+}
+static void processLoop( seL4_CPtr epPtr )
+{
+       int error = 0;
+       while(1)
+       {
+	    /*
+	    uint64_t tm = (uint64_t)TimerWheelGetTimeout(&context.timersWheel);
+            printf("init : Main timeout  %lu \n", tm);
+            error = ltimer_set_timeout(&context.timer.ltimer, tm, TIMEOUT_ABSOLUTE);
+	    if (error != 0)
+	    {
+		printf("ltimer_set_timeout error %i\n",error);
+	    }
+            assert(error == 0);
+	    */
+            seL4_Word sender_badge = 0;
+            seL4_MessageInfo_t message;
+	    seL4_Word label;
+
+//	    printf("Wait...\n");
+//	    message = seL4_Wait(epPtr, &sender_badge);
+            message = seL4_Recv(epPtr, &sender_badge);
+	    label = seL4_MessageInfo_get_label(message);
+		
+	    if(sender_badge & IRQ_EP_BADGE)
+	    {
+		processTimer(sender_badge);
+	    }
+	    else if(label == seL4_NoFault) 
+	    {
+
+                Process* senderProcess =  ProcessTableGetByPID( sender_badge);
+		
+		if(!senderProcess)
+		{
+		    printf("Init : no sender process for badge %li\n", sender_badge);
+		    continue;
+		}
+
+		processSyscall(senderProcess , message , sender_badge );
+	    } // else if(label == seL4_NoFault)
+	    else 
+	    {
+		printf("ProcessLoop : other msg \n");
+	    }
+        }
 
 }
 
@@ -214,12 +271,15 @@ int main(void)
 
    printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
 
+   error = ltimer_set_timeout(&context.timer.ltimer, NS_IN_MS, TIMEOUT_PERIODIC);
+   assert(error == 0);
 
 // Test timer
+/*
     Timer timer1;
     const TimerTick timeout = 10000; // ms
     assert( TimerInit(&timer1, NULL, 0) );
-    assert(TimerWheelAddTimer(&context.timersWheel, &timer1, timeout/*MS*/) );
+    assert(TimerWheelAddTimer(&context.timersWheel, &timer1, timeout) );
 
     uint64_t time;
     ltimer_get_time(&context.timer.ltimer, &time);
@@ -259,11 +319,11 @@ int main(void)
     }
 
 
-    /* get the current time */
+    // get the current time 
     ltimer_get_time(&context.timer.ltimer, &time);
     printf("Did wait for %lu \n" , time);
 
-
+*/
 
 /* BEGIN PROCESS */
 
@@ -284,7 +344,7 @@ int main(void)
 */
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
-    processLoop(ep_cap_path);
+    processLoop(ep_object.cptr);//ep_cap_path);
 
 
     return 0;
