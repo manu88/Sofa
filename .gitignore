@@ -1,0 +1,8 @@
+init-build.sh
+kernel/
+build/
+tools/
+projects/musllibc/
+projects/seL4_libs/
+projects/util_libs/
+
