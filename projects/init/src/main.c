@@ -112,7 +112,7 @@ int main(void)
 */
 
     Process *process2 = ProcessAlloc();
-    error = startProcess(&context,  process2,"shell", context.ep_cap_path, &initProcess, APP_PRIORITY );
+    error = ProcessStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, APP_PRIORITY );
     if(error == 0)
     {
         ProcessTableAppend(process2);

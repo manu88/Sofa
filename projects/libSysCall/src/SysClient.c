@@ -69,11 +69,13 @@ static long sys_wait4(va_list args)
 
     tag = seL4_Call(sysCallEndPoint, tag);
 
-
+    assert(seL4_GetMR(0) == __SOFA_NR_wait4);
     msg = seL4_GetMR(1); // ret code}
 
     return msg;
 }
+
+
 //int execve(const char *filename, char *const argv[], char *const envp[]);
 static long sys_execve(va_list args)
 {
@@ -97,7 +99,7 @@ static long sys_execve(va_list args)
     }
     tag = seL4_Call(sysCallEndPoint, tag);
 
-
+    assert(seL4_GetMR(0) == __SOFA_NR_execve);
     msg = seL4_GetMR(1); // ret code
     
     return (int)msg;
@@ -124,12 +126,8 @@ static long sys_kill(va_list args)
 
 
     printf("Got kill response\n");
-/*
-    if(seL4_MessageInfo_get_length(tag) != 2)
-    {
-        return -1; // no posix compliant ; getpid should no return any error
-    }
-*/
+
+    assert(seL4_GetMR(0) == __SOFA_NR_kill);
     msg = seL4_GetMR(1); // ret code
  
 
@@ -153,11 +151,9 @@ static long sys_nanosleep(va_list args)
 
     assert(seL4_MessageInfo_get_length(tag) >=1 );
 
-    seL4_Word sysCallNum = seL4_GetMR(0);
+    assert(seL4_GetMR(0) == __SOFA_NR_nanosleep);
 
-    assert(sysCallNum == __NR_nanosleep);
-
-    return 0;
+    return seL4_GetMR(1);
 }
 
 static void Abort()
@@ -193,6 +189,7 @@ static long sys_getpid(va_list args)
         return -1; // no posix compliant ; getpid should no return any error
     }
 
+    assert(seL4_GetMR(0) == __SOFA_NR_getpid);
     msg = seL4_GetMR(1);
 
     return (pid_t)msg;
@@ -215,6 +212,7 @@ static long sys_getppid(va_list args)
         return -1; // no posix compliant ; getppid should no return any error
     }
 
+    assert(seL4_GetMR(0) == __SOFA_NR_getppid);
     msg = seL4_GetMR(1);
 
     return (pid_t)msg;

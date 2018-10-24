@@ -3,6 +3,10 @@
 
 #include "ProcessTable.h"
 
+
+// returns 0 on sucess
+static int ProcessSetParentShip(Process* parent , Process* child);
+
 Process* ProcessAlloc()
 {
     Process* p = malloc(sizeof(Process));
@@ -14,6 +18,8 @@ Process* ProcessAlloc()
 int ProcessInit(Process* process)
 {
     memset(process , 0 , sizeof(Process) );
+
+    LIST_INIT(&process->children);
     return 1;
 }
 
@@ -25,7 +31,8 @@ int ProcessRelease(Process* process)
 }
 
 
-int startProcess(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
+
+int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
     UNUSED int error = 0;
 
@@ -68,7 +75,38 @@ int startProcess(InitContext* context, Process* process,const char* imageName, c
 
      printf("init : Did start child pid %i\n" , process->_pid);
 
+     ProcessSetState(process , ProcessState_Running);
 
-     process->_parent = parent;
+     error = ProcessSetParentShip(parent , process);
+     assert(error == 0);
+
      return error;
+}
+
+// returns 0 on sucess
+static int ProcessSetParentShip(Process* parent , Process* child)
+{
+     child->_parent = parent;
+
+     ProcessListEntry* entry = (ProcessListEntry*) malloc(sizeof(ProcessListEntry)) ;
+     assert(entry);
+     entry->process = child;
+
+     LIST_INSERT_HEAD(&parent->children, entry, entries);
+
+     return 0;
+}
+
+
+int ProcessGetNumChildren(const Process* process)
+{
+	ProcessListEntry* entry = NULL;
+	int count = 0;
+	LIST_FOREACH(entry, &process->children, entries) 
+	{
+		// sanity check child's parent must be the parent
+		assert(entry->process == process);
+		count++;
+	}
+	return count;
 }

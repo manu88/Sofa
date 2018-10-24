@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <errno.h>
-
+#include <assert.h>
 
 int main( int argc , char* argv[])
 {
@@ -14,14 +14,15 @@ int main( int argc , char* argv[])
     }
 
 
-    int retPid = execve("app",NULL , NULL);
-    
-    printf("execve returned %i errno %i \n",retPid, errno);
-
     int appStatus = 0;
 
-    
     pid_t childPid = wait(&appStatus);
-    printf("Wait returned %i status %i error %i\n",childPid , appStatus, errno);
+    assert(childPid == -1);
+    assert(errno == ECHILD);
+
+    int retPid = execve("app",NULL , NULL);
+    printf("execve returned %i errno %i \n",retPid, errno);
+
+//    printf("Wait returned %i status %i error %i\n",childPid , appStatus, errno);
     return 0;
 }

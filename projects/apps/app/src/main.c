@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include <SysClient.h>
 
-
+#include <errno.h>
 #include <signal.h>
-
+#include <assert.h>
 int main( int argc , char* argv[])
 {
 
@@ -25,7 +25,9 @@ int main( int argc , char* argv[])
 //    kill(1 , SIGCONT);
     while(1)
     {
-    	usleep(1000*4000);
+    	int ret = usleep(1000*4000);
+	assert(ret == 0);
+	assert(errno == 0);
         printf("Client %i did wait\n" , pid);
     }
 

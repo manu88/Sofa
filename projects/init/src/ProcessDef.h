@@ -4,22 +4,50 @@
 
 #include <sel4utils/process.h>
 #include "TimerWheel/TimersWheel.h"
+
+#include "TimerWheel/queue.h"
+
 #include "Bootstrap.h"
 
 
+typedef struct _Process Process;
+
+
+typedef enum 
+{
+	ProcessState_Uninitialized = 0,
+	ProcessState_Running,
+	ProcessState_Suspended,
+
+	ProcessState_Zombie	   = 100,
+
+} ProcessState;
+
+
+// a process list
+typedef struct _ProcessListEntry ProcessListEntry;
+struct _ProcessListEntry
+{
+    Process *process;
+    LIST_ENTRY(_ProcessListEntry) entries;
+};
+
+// a process
 struct _Process
 {
     sel4utils_process_t _process;
+    ProcessState _state;
     pid_t               _pid;
 
 
     struct _Process *_parent;
 
-    seL4_CPtr reply;
+    LIST_HEAD(listhead, _ProcessListEntry) children;
+
+//    seL4_CPtr reply;
     //Timer* _timer;
 };
 
-typedef struct _Process Process;
 
 
 int ProcessInit(Process* process);
@@ -27,4 +55,22 @@ Process* ProcessAlloc(void);
 int ProcessRelease(Process* process);
 
 
-int startProcess(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority );
+int ProcessGetNumChildren(const Process* process);
+
+int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority );
+
+static inline void ProcessSetState(Process* process, ProcessState state)
+{
+	process->_state = state;
+}
+
+
+
+
+typedef struct
+{
+	Timer timer;
+	Process *process;
+	seL4_CPtr reply;
+
+} TimerContext;

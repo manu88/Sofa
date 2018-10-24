@@ -2,7 +2,8 @@
 #include "Utils.h"
 #include "ProcessTable.h"
 #include "MainLoop.h" // UpdateTimeout
- 
+#include <SysCallNum.h>
+
 int handle_getpid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     seL4_SetMR(1, senderProcess->_pid);
@@ -20,7 +21,9 @@ int handle_getppid(InitContext* context, Process *senderProcess, seL4_MessageInf
 
 int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-        printf("Got exit from %i\n", senderProcess->_pid);
+    printf("Got exit from %i\n", senderProcess->_pid);
+
+    ProcessTableSignalStop( senderProcess);
 
     if(!ProcessTableRemove( senderProcess))
     {
@@ -49,33 +52,72 @@ int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 int handle_nanosleep(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
+
+    int error = 0;
     seL4_Word millisToWait = seL4_GetMR(1);
     //printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
 
+    TimerContext* timerCtx =(TimerContext*) malloc(sizeof(TimerContext));
+
+    if(timerCtx)
+    {
+
+	if( TimerInit(&timerCtx->timer, timerCtx, 1/*Oneshot*/))
+	{
+		timerCtx->process = senderProcess;
+		if(TimerWheelAddTimer(&context->timersWheel , &timerCtx->timer , millisToWait))
+		{
+			timerCtx->reply = get_free_slot(context);
+			error = cnode_savecaller( context, timerCtx->reply );
+			if(error == 0)
+			{
+				UpdateTimeout(context,millisToWait * NS_IN_MS);
+				return 0;
+			}
+			else 
+			{
+				// TODO handle release of timerCtx->reply
+				error = -ENOMEM;
+				TimerWheelRemoveTimer(&context->timersWheel , &timerCtx->timer);
+				free(timerCtx);
+			}
+		}
+		else
+		{
+			free(timerCtx);
+			error = -ENOMEM;
+		}
+	}
+	else // TimerInit
+	{
+		free(timerCtx);
+		error = -ENOMEM;
+	}
+    }
+    else  // timerCtx malloc
+    {
+	error = -ENOMEM;
+    }
+
+    // sends a reponse on error
+    if(error != 0)
+    {
+	seL4_SetMR(1,error);
+	seL4_Reply( message );
+    }
+    
     // save the caller
-
-    senderProcess->reply = get_free_slot(context);
-
-    int error = cnode_savecaller( context, senderProcess->reply );
-
+    /*
+    timerCtx->reply = get_free_slot(context);
+    int error = cnode_savecaller( context, timerCtx->reply );
     assert(error == 0);
 
-    Timer* timer = TimerAlloc( senderProcess,1/*oneShot*/);
-    assert(timer);
-    assert(TimerWheelAddTimer(&context->timersWheel , timer , millisToWait));
+    assert(TimerInit(&timerCtx->timer, timerCtx, 1/));
+    timerCtx->process = senderProcess;
+    assert(TimerWheelAddTimer(&context->timersWheel , &timerCtx->timer , millisToWait));
     UpdateTimeout(context,millisToWait * NS_IN_MS);
-
+	*/
     return 0;
-}
-
-int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
-{
-        const pid_t pidToWait = seL4_GetMR(1);
-    const int options     = seL4_GetMR(2);
-
-    seL4_SetMR(1,-ENOSYS );
-    seL4_Reply( message );
-        return 0;
 }
 
 
@@ -99,7 +141,7 @@ int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo
     Process *newProcess = ProcessAlloc();
     assert(newProcess);
         
-        int error = startProcess(context,  newProcess,filename, context->ep_cap_path ,senderProcess, APP_PRIORITY);
+        int error = ProcessStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, APP_PRIORITY);
     
     if (error == 0)
     {
@@ -109,7 +151,8 @@ int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo
 
     /**/
     free(filename);
-
+    
+    seL4_SetMR(0,__SOFA_NR_execve);
     seL4_SetMR(1, newProcess->_pid/*  -ENOSYS*/ ); // return code is the new pid
     seL4_Reply( message );
         return 0;

@@ -48,21 +48,23 @@ static void processTimer(InitContext* context,seL4_Word sender_badge)
 
     while (( firedTimer = TimerWheelGetFiredTimers(  &context->timersWheel ) ) != NULL )
     {
+	TimerContext* timerCtx = TimerGetUserContext( firedTimer);
+	assert(timerCtx);
+	assert(timerCtx->process);
 
-        Process* attachedProcess = TimerGetUserContext( firedTimer);
-        assert(attachedProcess);
+        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+        seL4_SetMR(0, __SOFA_NR_nanosleep);
+	seL4_SetMR(1, 0); // sucess
 
-        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
-        seL4_SetMR(0, __NR_nanosleep);
+        seL4_Send(timerCtx->reply , tag);
 
-        seL4_Send(attachedProcess->reply , tag);
+        cnode_delete(context,timerCtx->reply);
 
-        cnode_delete(context,attachedProcess->reply);
+        assert(TimerWheelRemoveTimer( &context->timersWheel , &timerCtx->timer ) );
 
-        assert(TimerWheelRemoveTimer( &context->timersWheel , firedTimer ) );
-
-        TimerRelease(firedTimer);
-        attachedProcess->reply = 0;
+//        TimerRelease(firedTimer);
+  //      attachedProcess->reply = 0;
+	free(timerCtx);
     }
 }
 

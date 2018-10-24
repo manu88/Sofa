@@ -16,6 +16,7 @@ int ProcessTableRemove(Process* process);
 
 int ProcessTableGetCount(void);
 
+int ProcessTableSignalStop(Process* process);
 
 
 pid_t getNextPid(void);
