@@ -408,7 +408,7 @@ int main(void)
 
 
     Process *process2 = ProcessAlloc();
-    error = startProcess(  process2,APP_IMAGE_NAME, ep_cap_path );
+    error = startProcess(  process2,"shell", ep_cap_path );
     if(error == 0)
     {
         ProcessTableAppend(process2);
