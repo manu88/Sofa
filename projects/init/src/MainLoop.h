@@ -12,12 +12,9 @@
 #define IRQ_BADGE_NETWORK (1 << 0)
 
 
-void processSyscall(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge);
 
 int UpdateTimeout(InitContext* context,uint64_t timeNS);
 
-
+// never returns
 void processLoop(InitContext* context, seL4_CPtr epPtr );
 
-// temp
-void processTimer(InitContext* context,seL4_Word sender_badge);
