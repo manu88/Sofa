@@ -10,7 +10,7 @@
 #include <time.h>
 
 #include <muslcsys/vsyscall.h>
-
+#include <assert.h>
 static long sys_nanosleep(va_list args);
 static long sys_getpid(va_list args);
 static long sys_getppid(va_list args);
@@ -50,6 +50,12 @@ static long sys_nanosleep(va_list args)
     seL4_SetMR(1 , millis);
 
     tag = seL4_Call(sysCallEndPoint, tag);
+
+    assert(seL4_MessageInfo_get_length(tag) >=1 );
+
+    seL4_Word sysCallNum = seL4_GetMR(0);
+
+    assert(sysCallNum == __NR_nanosleep);
 
     return 0;
 }
