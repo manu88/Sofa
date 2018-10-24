@@ -23,6 +23,8 @@
 #include "ProcessTable.h"
 #include "Timer.h"
 
+#include "Utils.h"
+
 #define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
 
@@ -93,30 +95,6 @@ static int startProcess( Process* process,const char* imageName, cspacepath_t ep
 }
 
 
-
-static seL4_Word get_free_slot()
-{
-    seL4_CPtr slot;
-    UNUSED int error = vka_cspace_alloc(&context.vka, &slot);
-    assert(!error);
-    return slot;
-}
-
-static int cnode_savecaller( seL4_CPtr cap)
-{
-    cspacepath_t path;
-    vka_cspace_make_path(&context.vka, cap, &path);
-    return vka_cnode_saveCaller(&path);
-}
-
-
-static int cnode_delete(seL4_CPtr slot)
-{
-    cspacepath_t path;
-    vka_cspace_make_path(&context.vka, slot, &path);
-    return vka_cnode_delete(&path);
-}
-
 static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge)
 {
 
@@ -168,9 +146,9 @@ static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, s
 
         // save the caller
 
-        senderProcess->reply = get_free_slot();
+        senderProcess->reply = get_free_slot(&context);
 
-        error = cnode_savecaller( senderProcess->reply );
+        error = cnode_savecaller( &context, senderProcess->reply );
 
         assert(error == 0);
 
@@ -214,7 +192,7 @@ static void processTimer(seL4_Word sender_badge)
 
 		seL4_Send(attachedProcess->reply , tag);
 
-		cnode_delete(attachedProcess->reply);
+		cnode_delete(&context,attachedProcess->reply);
 
 		assert(TimerWheelRemoveTimer( &context.timersWheel , firedTimer ) );
 
