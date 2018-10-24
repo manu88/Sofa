@@ -17,3 +17,5 @@ int ProcessTableRemove(Process* process);
 int ProcessTableGetCount(void);
 
 
+
+pid_t getNextPid(void);

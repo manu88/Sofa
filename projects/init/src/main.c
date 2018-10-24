@@ -17,15 +17,15 @@
 
 
 #include <SysCallNum.h>
-
 #include "Bootstrap.h"
 #include "ProcessDef.h"
 #include "ProcessTable.h"
 #include "Timer.h"
 
 #include "Utils.h"
+#include "MainLoop.h"
 
-#define APP_PRIORITY seL4_MaxPrio
+//#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
 
 #define IRQ_EP_BADGE       BIT(seL4_BadgeBits - 1)
@@ -33,179 +33,13 @@
 #define IRQ_BADGE_NETWORK (1 << 0)
 
 
-static int UpdateTimeout(uint64_t timeNS);
 
 static InitContext context = { 0 };
 
 
 static Process initProcess = {0};
 
-static pid_t getNextPid()
-{
-	static pid_t accum = 2; // 1 is reserved for init
-	return accum++;
-}
 
-static int startProcess( Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent )
-{
-
-    UNUSED int error = 0;
-
-    sel4utils_process_config_t config = process_config_default_simple( &context.simple, imageName, APP_PRIORITY);
-
-    error = sel4utils_configure_process_custom( &process->_process , &context.vka , &context.vspace, config);
-
-    ZF_LOGF_IFERR(error, "Failed to spawn a new thread.\n"
-                  "\tsel4utils_configure_process expands an ELF file into our VSpace.\n"
-                  "\tBe sure you've properly configured a VSpace manager using sel4utils_bootstrap_vspace_with_bootinfo.\n"
-                  "\tBe sure you've passed the correct component name for the new thread!\n");
-
-
-
-    process->_pid = getNextPid();
-
-    seL4_CPtr process_ep_cap = 0;
-
-    process_ep_cap = sel4utils_mint_cap_to_process(&process->_process, ep_cap_path,
-                                               seL4_AllRights, process->_pid);
-
-    ZF_LOGF_IF(process_ep_cap == 0, "Failed to mint a badged copy of the IPC endpoint into the new thread's CSpace.\n"
-               "\tsel4utils_mint_cap_to_process takes a cspacepath_t: double check what you passed.\n");
-
-
-    process_config_fault_cptr(config, ep_cap_path.capPtr);
-
-    seL4_Word argc = 1;
-    char string_args[argc][WORD_STRING_SIZE];
-    char* argv[argc];
-    sel4utils_create_word_args(string_args, argv, argc ,process_ep_cap);
-
-    printf("init : Start child \n");
-    error = sel4utils_spawn_process_v(&process->_process , &context.vka , &context.vspace , argc, (char**) &argv , 1);
-    ZF_LOGF_IFERR(error, "Failed to spawn and start the new thread.\n"
-                  "\tVerify: the new thread is being executed in the root thread's VSpace.\n"
-                  "\tIn this case, the CSpaces are different, but the VSpaces are the same.\n"
-                  "\tDouble check your vspace_t argument.\n");
-
-     printf("init : Did start child pid %i\n" , process->_pid);
-
-
-     process->_parent = parent;
-     return error;
-}
-
-
-static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge)
-{
-
-    int error = 0;
-    assert(senderProcess);
-
-    seL4_Word msg;
-    msg = seL4_GetMR(0);
-
-    if (msg ==  __NR_getpid)
-    {
-
-        seL4_SetMR(1, senderProcess->_pid);
-        seL4_Reply( message );
-    }
-    else if (msg == __NR_getppid)
-    {
-        seL4_SetMR(1, senderProcess->_parent->_pid );
-        seL4_Reply( message );
-
-    }
-    else if (msg == __NR_exit)
-    {
-        printf("Got exit from %i\n", senderProcess->_pid);
-
-        if(!ProcessTableRemove( senderProcess))
-        {
-            printf("Unable to remove process!\n");
-        }
-
-        sel4utils_destroy_process( &senderProcess->_process, &context.vka);
-        ProcessRelease(senderProcess);
-
-        printf("Init : Got %i processes \n" , ProcessTableGetCount() );
-    }
-    else if (msg == __NR_kill)
-    {
-	seL4_Word pidToKill = seL4_GetMR(1);
-	seL4_Word sigToSend = seL4_GetMR(2);
-	
-	printf("Received a request from %i to kill process %li with signal %li\n",senderProcess->_pid , pidToKill , sigToSend);
-	seL4_SetMR(1, -ENOSYS ); // error for now
-	seL4_Reply( message );
-    }
-    else if (msg == __NR_nanosleep)
-    {
-        seL4_Word millisToWait = seL4_GetMR(1);
-        //printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
-
-        // save the caller
-
-        senderProcess->reply = get_free_slot(&context);
-
-        error = cnode_savecaller( &context, senderProcess->reply );
-
-        assert(error == 0);
-
-        Timer* timer = TimerAlloc( senderProcess,1/*oneShot*/);
-        assert(timer);
-        assert(TimerWheelAddTimer(&context.timersWheel , timer , millisToWait));
-	UpdateTimeout(millisToWait * NS_IN_MS);
-    }
-    else if(msg ==  __NR_execve)
-    {
-
-	const int msgLen = seL4_MessageInfo_get_length(message);
-	assert(msgLen > 0);
-	char* filename = malloc(sizeof(char)*msgLen );/* msglen minus header + 1 byte for NULL byte*/
-	assert(filename);
-	
-	for(int i=0;i<msgLen-1;++i)
-	{
-	    filename[i] =  (char) seL4_GetMR(1+i);
-	}
-
-	filename[msgLen] = '0';
-
-	printf("Init : Execve size %i filename '%s'\n", msgLen , filename);
-
-	/**/
-	Process *newProcess = ProcessAlloc();
-	assert(newProcess);
-    	error = startProcess(  newProcess,filename, context.ep_cap_path ,senderProcess);
-    	if (error == 0)
-    	{
-            error = !ProcessTableAppend(newProcess);
-	    assert(error == 0);
-    	}
-
-
-	/**/
-	free(filename);
-
-	seL4_SetMR(1, newProcess->_pid/*  -ENOSYS*/ ); // return code is the new pid
-        seL4_Reply( message );
-    }
-    else if (msg == __NR_wait4)
-    {
-	const pid_t pidToWait = seL4_GetMR(1);
-	const int options     = seL4_GetMR(2); 
-
-	seL4_SetMR(1,-ENOSYS );
-        seL4_Reply( message );
-    }
-    else
-    {
-        printf("Received OTHER IPC MESSAGE\n");
-	assert(0);
-    }
-
-}
 
 static void processTimer(seL4_Word sender_badge)
 {
@@ -250,10 +84,6 @@ static void processTimer(seL4_Word sender_badge)
 */
 }
 
-static int UpdateTimeout(uint64_t timeNS)
-{
-    return ltimer_set_timeout(&context.timer.ltimer, timeNS, TIMEOUT_RELATIVE); //TIMEOUT_PERIODIC);
-}
 
 static void processLoop( seL4_CPtr epPtr )
 {
@@ -287,7 +117,7 @@ static void processLoop( seL4_CPtr epPtr )
             {
 //                printf("timersWheel update to %lu\n" , remain);
 
-                int error = UpdateTimeout( NS_IN_MS*remain);
+                int error = UpdateTimeout(&context, NS_IN_MS*remain);
                 assert(error == 0);
             }
   /*          else 
@@ -318,7 +148,7 @@ static void processLoop( seL4_CPtr epPtr )
                     continue;
                 }
 
-                processSyscall(senderProcess , message , sender_badge );
+                processSyscall(&context,senderProcess , message , sender_badge );
             } // else if(label == seL4_NoFault)
             else
             {
@@ -428,7 +258,7 @@ int main(void)
 */
 
     Process *process2 = ProcessAlloc();
-    error = startProcess(  process2,"shell", context.ep_cap_path, &initProcess );
+    error = startProcess(&context,  process2,"shell", context.ep_cap_path, &initProcess, APP_PRIORITY );
     if(error == 0)
     {
         ProcessTableAppend(process2);
