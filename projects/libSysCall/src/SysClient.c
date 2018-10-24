@@ -14,6 +14,10 @@
 #include <errno.h>
 #include <string.h> 
 
+
+#include <SysCallNum.h>
+
+
 static long sys_nanosleep(va_list args);
 static long sys_getpid(va_list args);
 static long sys_getppid(va_list args);
@@ -59,7 +63,7 @@ static long sys_wait4(va_list args)
     seL4_Word msg;
     
     tag = seL4_MessageInfo_new(0, 0, 0, 3 );
-    seL4_SetMR(0, __NR_wait4);
+    seL4_SetMR(0, __SOFA_NR_wait4);
     seL4_SetMR(1, pid);
     seL4_SetMR(2, options);
 
@@ -85,7 +89,7 @@ static long sys_execve(va_list args)
     seL4_Word msg;
     
     tag = seL4_MessageInfo_new(0, 0, 0, 1/*syscall num*/ + strlen(filename) );
-    seL4_SetMR(0, __NR_execve);
+    seL4_SetMR(0, __SOFA_NR_execve);
 
     for( int i=0;i<strlen(filename);++i)
     {
@@ -112,7 +116,7 @@ static long sys_kill(va_list args)
 
     tag = seL4_MessageInfo_new(0, 0, 0, 3);
 
-    seL4_SetMR(0, __NR_kill);
+    seL4_SetMR(0,  __SOFA_NR_kill);
     seL4_SetMR(1 , pid);
     seL4_SetMR(2 , sig);
 
@@ -142,7 +146,7 @@ static long sys_nanosleep(va_list args)
 //    printf("Usleep %i ms\n",millis);
 
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
-    seL4_SetMR(0, __NR_nanosleep);
+    seL4_SetMR(0, __SOFA_NR_nanosleep);
     seL4_SetMR(1 , millis);
 
     tag = seL4_Call(sysCallEndPoint, tag);
@@ -159,7 +163,7 @@ static long sys_nanosleep(va_list args)
 static void Abort()
 {
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
-    seL4_SetMR(0, __NR_exit);
+    seL4_SetMR(0, __SOFA_NR_exit);
 
     seL4_Send(sysCallEndPoint , tag);
     while(1){} //  we never return from Abort
@@ -179,7 +183,7 @@ static long sys_getpid(va_list args)
 
     tag = seL4_MessageInfo_new(0, 0, 0, 2);
 
-    seL4_SetMR(0, __NR_getpid);
+    seL4_SetMR(0, __SOFA_NR_getpid);
     seL4_SetMR(1 , 0); // useless?
 
     tag = seL4_Call(sysCallEndPoint, tag);
@@ -201,7 +205,7 @@ static long sys_getppid(va_list args)
 
     tag = seL4_MessageInfo_new(0, 0, 0, 2);
 
-    seL4_SetMR(0, __NR_getppid);
+    seL4_SetMR(0, __SOFA_NR_getppid);
     seL4_SetMR(1 , 0); // useless?
 
     tag = seL4_Call(sysCallEndPoint, tag); 

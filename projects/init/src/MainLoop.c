@@ -4,6 +4,11 @@
 #include "Utils.h"
 
 
+
+typedef int (*SysCallHandler)(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+
+
+
 static int handle_getppid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 static int handle_getpid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 static int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
@@ -11,6 +16,22 @@ static int handle_kill(InitContext* context, Process *senderProcess, seL4_Messag
 static int handle_nanosleep(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 static int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 static int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+
+
+/*
+Jump call table, MUST BE ORDERED with respect to __SOFA_NR_* numbers idefined in libSysCall/SysCallNum.h
+*/
+static SysCallHandler callTable[] = 
+{
+	NULL, // index 0 is always NULL, no syscall can have this id.
+	handle_nanosleep,
+	handle_getpid,
+	handle_getppid,
+	handle_exit,
+	handle_kill,
+	handle_execve,
+	handle_wait4,
+};
 
 
 static void processTimer(InitContext* context,seL4_Word sender_badge);
@@ -53,45 +74,14 @@ int UpdateTimeout(InitContext* context,uint64_t timeNS)
 
 static void processSyscall(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge)
 {
-	int error = 0;
+
     assert(senderProcess);
 
     seL4_Word msg;
     msg = seL4_GetMR(0);
+    int error = callTable[msg](context , senderProcess,message);
 
-    if (msg ==  __NR_getpid)
-    {
-        handle_getpid(context, senderProcess,message);
-    }
-    else if (msg == __NR_getppid)
-    {
-        handle_getppid(context, senderProcess,message);
-    }
-    else if (msg == __NR_exit)
-    {
-        handle_exit(context, senderProcess,message);
-    }
-    else if (msg == __NR_kill)
-    {
-        handle_kill(context, senderProcess,message);
-    }
-    else if (msg == __NR_nanosleep)
-    {
-        handle_nanosleep(context, senderProcess,message);
-    }
-    else if(msg ==  __NR_execve)
-    {
-        handle_execve(context, senderProcess,message);
-    }
-    else if (msg == __NR_wait4)
-    {
-        handle_wait4(context, senderProcess,message);
-    }
-    else
-    {
-        printf("Received OTHER IPC MESSAGE\n");
-        assert(0);
-    }
+    assert(error == 0);
 }
 
 
@@ -185,7 +175,7 @@ static int handle_exit(InitContext* context, Process *senderProcess, seL4_Messag
     ProcessRelease(senderProcess);
 
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
-	return 0;
+    return 0;
 }
 
 static int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
@@ -197,7 +187,7 @@ static int handle_kill(InitContext* context, Process *senderProcess, seL4_Messag
     seL4_SetMR(1, -ENOSYS ); // error for now
     seL4_Reply( message );
 
-	return 0;
+    return 0;
 }
 
 
@@ -218,7 +208,8 @@ static int handle_nanosleep(InitContext* context, Process *senderProcess, seL4_M
     assert(timer);
     assert(TimerWheelAddTimer(&context->timersWheel , timer , millisToWait));
     UpdateTimeout(context,millisToWait * NS_IN_MS);
-	return 0;
+
+    return 0;
 }
 
 static int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
