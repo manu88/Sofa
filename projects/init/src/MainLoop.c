@@ -4,19 +4,6 @@
 #include "Utils.h"
 #include "SysCalls.h"
 
-/*
-typedef int (*SysCallHandler)(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-
-
-
-static int handle_getppid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-static int handle_getpid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-static int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-static int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-static int handle_nanosleep(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-static int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-static int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-*/
 
 /*
 Jump call table, MUST BE ORDERED with respect to __SOFA_NR_* numbers idefined in libSysCall/SysCallNum.h
@@ -31,6 +18,8 @@ static SysCallHandler callTable[] =
 	handle_kill,
 	handle_execve,
 	handle_wait4,
+	handle_setpriority,
+	handle_getpriority,
 };
 
 

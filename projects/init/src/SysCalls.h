@@ -15,3 +15,7 @@ int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+
+
+int handle_getpriority(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_setpriority(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);

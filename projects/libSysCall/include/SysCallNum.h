@@ -12,4 +12,6 @@
 #define __SOFA_NR_execve		6
 #define __SOFA_NR_wait4			7
 
+#define __SOFA_NR_setpriority           8
+#define __SOFA_NR_getpriority           9
 

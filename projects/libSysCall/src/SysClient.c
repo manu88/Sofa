@@ -25,6 +25,9 @@ static long sys_exit(va_list args);
 static long sys_kill(va_list args);
 static long sys_wait4(va_list args);
 static long sys_execve(va_list args);
+static long sys_setpriority(va_list args);
+static long sys_getpriority(va_list args);
+
 
 static seL4_CPtr sysCallEndPoint = 0;
 
@@ -37,13 +40,15 @@ int SysClientInit(int argc , char* argv[] )
         return 1;
     }
     
-    muslcsys_install_syscall(__NR_nanosleep , sys_nanosleep);
-    muslcsys_install_syscall(__NR_getpid ,    sys_getpid);
-    muslcsys_install_syscall(__NR_getppid ,   sys_getppid);
-    muslcsys_install_syscall(__NR_exit,       sys_exit);
-    muslcsys_install_syscall(__NR_kill,       sys_kill);
-    muslcsys_install_syscall(__NR_execve,     sys_execve);
-    muslcsys_install_syscall(__NR_wait4,     sys_wait4);
+    muslcsys_install_syscall(__NR_nanosleep ,  sys_nanosleep);
+    muslcsys_install_syscall(__NR_getpid ,     sys_getpid);
+    muslcsys_install_syscall(__NR_getppid ,    sys_getppid);
+    muslcsys_install_syscall(__NR_exit,        sys_exit);
+    muslcsys_install_syscall(__NR_kill,        sys_kill);
+    muslcsys_install_syscall(__NR_execve,      sys_execve);
+    muslcsys_install_syscall(__NR_wait4,       sys_wait4);
+    muslcsys_install_syscall(__NR_setpriority, sys_setpriority);
+    muslcsys_install_syscall(__NR_getpriority, sys_getpriority);
 
     return 0;
 }
@@ -216,5 +221,40 @@ static long sys_getppid(va_list args)
     msg = seL4_GetMR(1);
 
     return (pid_t)msg;
+
+}
+static long sys_getpriority(va_list args)
+{
+    seL4_MessageInfo_t tag;
+    seL4_Word msg;
+
+    tag = seL4_MessageInfo_new(0, 0, 0, 2);
+
+    seL4_SetMR(0, __SOFA_NR_getpriority);
+    seL4_SetMR(1 , 0); // useless?
+
+    tag = seL4_Call(sysCallEndPoint, tag);
+    assert(seL4_GetMR(0) == __SOFA_NR_getpriority);
+    msg = seL4_GetMR(1);
+
+    return msg;
+
+}
+
+static long sys_setpriority(va_list args)
+{
+    seL4_MessageInfo_t tag;
+    seL4_Word msg;
+
+    tag = seL4_MessageInfo_new(0, 0, 0, 2);
+
+    seL4_SetMR(0, __SOFA_NR_setpriority);
+    seL4_SetMR(1 , 0); // useless?
+
+    tag = seL4_Call(sysCallEndPoint, tag);
+    assert(seL4_GetMR(0) == __SOFA_NR_setpriority);
+    msg = seL4_GetMR(1);
+
+    return msg;
 
 }
