@@ -40,8 +40,6 @@ static Process initProcess = {0};
 
 int main(void)
 {
-
-
     memset(&context , 0 , sizeof(InitContext) );
 
     printf("init started\n");
@@ -92,14 +90,14 @@ int main(void)
     ZF_LOGF_IFERR(error, "Unable to initialize timer.\n");
 
 
-    error = !TimersWheelInit(&context.timersWheel); // TimersWheelInit returns 1 on sucess -> negate 
+    error = !TimersWheelInit(&context.timersWheel); // TimersWheelInit returns 1 on sucess -> negate
     ZF_LOGF_IFERR(error, "Unable to initialize Timers Wheel.\n");
 
 
-   uint64_t timerResolution = 0;;
-   error = ltimer_get_resolution(&context.timer.ltimer , &timerResolution);
+    uint64_t timerResolution = 0;;
+    error = ltimer_get_resolution(&context.timer.ltimer , &timerResolution);
 
-   printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
+    printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
 
 
 /* BEGIN PROCESS */

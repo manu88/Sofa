@@ -15,10 +15,6 @@ int TimerDriverInit(InitContext* context , seL4_CPtr notifCap)
     error = sel4platsupport_new_arch_ops(&context->ops, &context->simple, &context->vka);
     assert(error == 0);
 
- //moved in main
-//    error = vka_alloc_notification(&context->vka, &context->ntfn_object);
-//    assert(error == 0);
-
     error = 0;
     error = sel4platsupport_init_default_timer_ops(&context->vka, &context->vspace, &context->simple, context->ops,
                                                    notifCap, &context->timer);

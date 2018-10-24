@@ -20,8 +20,6 @@ static long sys_getppid(va_list args);
 static long sys_exit(va_list args);
 static long sys_kill(va_list args);
 static long sys_wait4(va_list args);
-
-
 static long sys_execve(va_list args);
 
 static seL4_CPtr sysCallEndPoint = 0;
@@ -29,7 +27,6 @@ static seL4_CPtr sysCallEndPoint = 0;
 int SysClientInit(int argc , char* argv[] )
 {
     sysCallEndPoint = (seL4_CPtr) atol(argv[0]);
-
 
     if (!sysCallEndPoint)
     {
@@ -43,6 +40,7 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_kill,       sys_kill);
     muslcsys_install_syscall(__NR_execve,     sys_execve);
     muslcsys_install_syscall(__NR_wait4,     sys_wait4);
+
     return 0;
 }
 
@@ -79,7 +77,7 @@ static long sys_execve(va_list args)
 
     if (!filename)
     {
-	return -EFAULT;
+        return -EFAULT;
     }
 
 //    printf("Execve : '%s'\n", filename);
@@ -89,14 +87,15 @@ static long sys_execve(va_list args)
     tag = seL4_MessageInfo_new(0, 0, 0, 1/*syscall num*/ + strlen(filename) );
     seL4_SetMR(0, __NR_execve);
 
-    for(int i=0;i<strlen(filename);++i)
+    for( int i=0;i<strlen(filename);++i)
     {
-	seL4_SetMR(1 +i , filename[i]);
+        seL4_SetMR(1 +i , filename[i]);
     }
     tag = seL4_Call(sysCallEndPoint, tag);
 
 
     msg = seL4_GetMR(1); // ret code
+    
     return (int)msg;
 
 //    return ENOSYS;

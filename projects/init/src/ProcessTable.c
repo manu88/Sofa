@@ -6,8 +6,8 @@ static list_t _processes;
 
 pid_t getNextPid()
 {
-        static pid_t accum = 2; // 1 is reserved for init
-        return accum++;
+    static pid_t accum = 2; // 1 is reserved for init
+    return accum++;
 }
 
 

@@ -18,40 +18,37 @@ static void processSyscall(InitContext* context, Process *senderProcess, seL4_Me
 
 static void processTimer(InitContext* context,seL4_Word sender_badge)
 {
-        sel4platsupport_handle_timer_irq(&context->timer, sender_badge);
+    sel4platsupport_handle_timer_irq(&context->timer, sender_badge);
+
+    Timer*firedTimer = NULL;
 
 
-        Timer*firedTimer = NULL;
+    TimerTick remain = TimerWheelGetTimeout(&context->timersWheel);
 
+    while (( firedTimer = TimerWheelGetFiredTimers(  &context->timersWheel ) ) != NULL )
+    {
 
-        TimerTick remain = TimerWheelGetTimeout(&context->timersWheel);
+        Process* attachedProcess = TimerGetUserContext( firedTimer);
+        assert(attachedProcess);
 
-        while (( firedTimer = TimerWheelGetFiredTimers(  &context->timersWheel ) ) != NULL )
-        {
+        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
+        seL4_SetMR(0, __NR_nanosleep);
 
-                Process* attachedProcess = TimerGetUserContext( firedTimer);
-                assert(attachedProcess);
+        seL4_Send(attachedProcess->reply , tag);
 
-                seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
-                seL4_SetMR(0, __NR_nanosleep);
+        cnode_delete(context,attachedProcess->reply);
 
-                seL4_Send(attachedProcess->reply , tag);
+        assert(TimerWheelRemoveTimer( &context->timersWheel , firedTimer ) );
 
-                cnode_delete(context,attachedProcess->reply);
-
-                assert(TimerWheelRemoveTimer( &context->timersWheel , firedTimer ) );
-
-                TimerRelease(firedTimer);
-                attachedProcess->reply = 0;
-        }
+        TimerRelease(firedTimer);
+        attachedProcess->reply = 0;
+    }
 }
 
 int UpdateTimeout(InitContext* context,uint64_t timeNS)
 {
     return ltimer_set_timeout(&context->timer.ltimer, timeNS, TIMEOUT_RELATIVE); //TIMEOUT_PERIODIC);
 }
-
-
 
 
 static void processSyscall(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge)
@@ -64,31 +61,31 @@ static void processSyscall(InitContext* context, Process *senderProcess, seL4_Me
 
     if (msg ==  __NR_getpid)
     {
-	handle_getpid(context, senderProcess,message);
+        handle_getpid(context, senderProcess,message);
     }
     else if (msg == __NR_getppid)
     {
-	handle_getppid(context, senderProcess,message);
+        handle_getppid(context, senderProcess,message);
     }
     else if (msg == __NR_exit)
     {
-	handle_exit(context, senderProcess,message);
+        handle_exit(context, senderProcess,message);
     }
     else if (msg == __NR_kill)
     {
-	handle_kill(context, senderProcess,message);
+        handle_kill(context, senderProcess,message);
     }
     else if (msg == __NR_nanosleep)
     {
-	handle_nanosleep(context, senderProcess,message);
+        handle_nanosleep(context, senderProcess,message);
     }
     else if(msg ==  __NR_execve)
     {
-	handle_execve(context, senderProcess,message);
+        handle_execve(context, senderProcess,message);
     }
     else if (msg == __NR_wait4)
     {
-	handle_wait4(context, senderProcess,message);
+        handle_wait4(context, senderProcess,message);
     }
     else
     {
@@ -102,63 +99,59 @@ static void processSyscall(InitContext* context, Process *senderProcess, seL4_Me
 void processLoop(InitContext* context, seL4_CPtr epPtr )
 {
     int error = 0;
-       while(1)
-       {
-            uint64_t startTimeNS;
-            ltimer_get_time(&context->timer.ltimer, &startTimeNS);
+    while(1)
+    {
+        uint64_t startTimeNS;
+        ltimer_get_time(&context->timer.ltimer, &startTimeNS);
 
-            seL4_Word sender_badge = 0;
-            seL4_MessageInfo_t message;
-            seL4_Word label;
-//////////
-            message = seL4_Recv(epPtr, &sender_badge);
-//////////
+        seL4_Word sender_badge = 0;
+        seL4_MessageInfo_t message;
+        seL4_Word label;
 
-            uint64_t endTimeNS;
-            ltimer_get_time(&context->timer.ltimer, &endTimeNS);
+        message = seL4_Recv(epPtr, &sender_badge);
 
-            const uint64_t timeSpentNS = endTimeNS - startTimeNS;
 
-            TimerWheelStep(&context->timersWheel, timeSpentNS/1000000);
+        uint64_t endTimeNS;
+        ltimer_get_time(&context->timer.ltimer, &endTimeNS);
 
-            TimerTick remain = TimerWheelGetTimeout(&context->timersWheel);
-            if(remain <UINT64_MAX && remain != 0)
+        const uint64_t timeSpentNS = endTimeNS - startTimeNS;
+
+        TimerWheelStep(&context->timersWheel, timeSpentNS/1000000);
+
+        TimerTick remain = TimerWheelGetTimeout(&context->timersWheel);
+        if(remain <UINT64_MAX && remain != 0)
+        {
+            int error = UpdateTimeout(context, NS_IN_MS*remain);
+            assert(error == 0);
+        }
+
+        label = seL4_MessageInfo_get_label(message);
+
+        if(sender_badge & IRQ_EP_BADGE)
+        {
+            processTimer(context ,sender_badge);
+        }
+        else if (label == seL4_VMFault)
+        {
+            printf("VM Fault \n");
+        }
+        else if (label == seL4_NoFault)
+        {
+            Process* senderProcess =  ProcessTableGetByPID( sender_badge);
+
+            if(!senderProcess)
             {
-
-                int error = UpdateTimeout(context, NS_IN_MS*remain);
-                assert(error == 0);
+                printf("Init : no sender process for badge %li\n", sender_badge);
+                continue;
             }
 
-            label = seL4_MessageInfo_get_label(message);
-
-            if(sender_badge & IRQ_EP_BADGE)
-            {
-                processTimer(context ,sender_badge);
-            }
-            else if (label == seL4_VMFault)
-            {
-                printf("VM Fault \n");
-            }
-
-	else if (label == seL4_NoFault)
-            {
-                Process* senderProcess =  ProcessTableGetByPID( sender_badge);
-
-                if(!senderProcess)
-                {
-                    printf("Init : no sender process for badge %li\n", sender_badge);
-                    continue;
-                }
-
-                processSyscall(context,senderProcess , message , sender_badge );
-            } 
-            else
-            {
-                printf("ProcessLoop : other msg \n");
-            }
-
-
-        } // end while(1)
+            processSyscall(context,senderProcess , message , sender_badge );
+        }
+        else
+        {
+            printf("ProcessLoop : other msg \n");
+        }
+    } // end while(1)
 }
 
 /* ---- ---- ---- ---- */
@@ -183,26 +176,26 @@ static int handle_exit(InitContext* context, Process *senderProcess, seL4_Messag
 {
 	printf("Got exit from %i\n", senderProcess->_pid);
 
-        if(!ProcessTableRemove( senderProcess))
-        {
-            printf("Unable to remove process!\n");
-        }
+    if(!ProcessTableRemove( senderProcess))
+    {
+        printf("Unable to remove process!\n");
+    }
 
-        sel4utils_destroy_process( &senderProcess->_process, &context->vka);
-        ProcessRelease(senderProcess);
+    sel4utils_destroy_process( &senderProcess->_process, &context->vka);
+    ProcessRelease(senderProcess);
 
-        printf("Init : Got %i processes \n" , ProcessTableGetCount() );
+    printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 	return 0;
 }
 
 static int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	seL4_Word pidToKill = seL4_GetMR(1);
-        seL4_Word sigToSend = seL4_GetMR(2);
-        
-        printf("Received a request from %i to kill process %li with signal %li\n",senderProcess->_pid , pidToKill , sigToSend);
-        seL4_SetMR(1, -ENOSYS ); // error for now
-        seL4_Reply( message );
+    seL4_Word sigToSend = seL4_GetMR(2);
+    
+    printf("Received a request from %i to kill process %li with signal %li\n",senderProcess->_pid , pidToKill , sigToSend);
+    seL4_SetMR(1, -ENOSYS ); // error for now
+    seL4_Reply( message );
 
 	return 0;
 }
@@ -210,66 +203,66 @@ static int handle_kill(InitContext* context, Process *senderProcess, seL4_Messag
 
 static int handle_nanosleep(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-        seL4_Word millisToWait = seL4_GetMR(1);
-        //printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
+    seL4_Word millisToWait = seL4_GetMR(1);
+    //printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
 
-        // save the caller
+    // save the caller
 
-        senderProcess->reply = get_free_slot(context);
+    senderProcess->reply = get_free_slot(context);
 
-        int error = cnode_savecaller( context, senderProcess->reply );
+    int error = cnode_savecaller( context, senderProcess->reply );
 
-        assert(error == 0);
+    assert(error == 0);
 
-        Timer* timer = TimerAlloc( senderProcess,1/*oneShot*/);
-        assert(timer);
-        assert(TimerWheelAddTimer(&context->timersWheel , timer , millisToWait));
-        UpdateTimeout(context,millisToWait * NS_IN_MS);
+    Timer* timer = TimerAlloc( senderProcess,1/*oneShot*/);
+    assert(timer);
+    assert(TimerWheelAddTimer(&context->timersWheel , timer , millisToWait));
+    UpdateTimeout(context,millisToWait * NS_IN_MS);
 	return 0;
 }
 
 static int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-        const int msgLen = seL4_MessageInfo_get_length(message);
-        assert(msgLen > 0);
-        char* filename = malloc(sizeof(char)*msgLen );/* msglen minus header + 1 byte for NULL byte*/
-        assert(filename);
-        
-        for(int i=0;i<msgLen-1;++i)
-        {
-            filename[i] =  (char) seL4_GetMR(1+i);
-        }
+    const int msgLen = seL4_MessageInfo_get_length(message);
+    assert(msgLen > 0);
+    char* filename = malloc(sizeof(char)*msgLen );/* msglen minus header + 1 byte for NULL byte*/
+    assert(filename);
+    
+    for(int i=0;i<msgLen-1;++i)
+    {
+        filename[i] =  (char) seL4_GetMR(1+i);
+    }
 
-        filename[msgLen] = '0';
+    filename[msgLen] = '0';
 
-        printf("Init : Execve size %i filename '%s'\n", msgLen , filename);
+    printf("Init : Execve size %i filename '%s'\n", msgLen , filename);
 
-        /**/
-        Process *newProcess = ProcessAlloc();
-        assert(newProcess);
+    /**/
+    Process *newProcess = ProcessAlloc();
+    assert(newProcess);
         
 	int error = startProcess(context,  newProcess,filename, context->ep_cap_path ,senderProcess, APP_PRIORITY);
-        if (error == 0)
-        {
-            error = !ProcessTableAppend(newProcess);
-            assert(error == 0);
-        }
+    
+    if (error == 0)
+    {
+        error = !ProcessTableAppend(newProcess);
+        assert(error == 0);
+    }
 
+    /**/
+    free(filename);
 
-        /**/
-        free(filename);
-
-        seL4_SetMR(1, newProcess->_pid/*  -ENOSYS*/ ); // return code is the new pid
-        seL4_Reply( message );
+    seL4_SetMR(1, newProcess->_pid/*  -ENOSYS*/ ); // return code is the new pid
+    seL4_Reply( message );
 	return 0;
 }
 
 static int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	const pid_t pidToWait = seL4_GetMR(1);
-        const int options     = seL4_GetMR(2); 
+    const int options     = seL4_GetMR(2);
 
-        seL4_SetMR(1,-ENOSYS );
-        seL4_Reply( message );
+    seL4_SetMR(1,-ENOSYS );
+    seL4_Reply( message );
 	return 0;
 }
