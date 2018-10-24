@@ -28,9 +28,6 @@
 //#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
 
-#define IRQ_EP_BADGE       BIT(seL4_BadgeBits - 1)
-#define IRQ_BADGE_TIMER   (1 << 1)
-#define IRQ_BADGE_NETWORK (1 << 0)
 
 
 
@@ -38,145 +35,6 @@ static InitContext context = { 0 };
 
 
 static Process initProcess = {0};
-
-
-
-static void processTimer(seL4_Word sender_badge)
-{
-	sel4platsupport_handle_timer_irq(&context.timer, sender_badge);
-
-
-	Timer*firedTimer = NULL;
-
-
- 	TimerTick remain = TimerWheelGetTimeout(&context.timersWheel);
-//	printf("processTimer remains %lu \n",remain); 
-	// handle expired timers
-	int count = 0;
-
-	while (( firedTimer = TimerWheelGetFiredTimers(  &context.timersWheel ) ) != NULL )
-//	while ((firedTimer  = TimerWheelGetFiredTimers( &context.timersWheel)) )
-	{
-
-		Process* attachedProcess = TimerGetUserContext( firedTimer);
-		assert(attachedProcess);
-
-//		printf("Got a fired timer to process %i!\n" , attachedProcess->_pid);
-
-		seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
-		seL4_SetMR(0, __NR_nanosleep);
-
-		seL4_Send(attachedProcess->reply , tag);
-
-		cnode_delete(&context,attachedProcess->reply);
-
-		assert(TimerWheelRemoveTimer( &context.timersWheel , firedTimer ) );
-
-		TimerRelease(firedTimer);
-		attachedProcess->reply = 0;
-		count++;
-	}
-/*
-	if(count)
-	{
-	    printf("Processed %i timers \n" , count);
-	}
-*/
-}
-
-
-static void processLoop( seL4_CPtr epPtr )
-{
-       int error = 0;
-       while(1)
-       {
-//	    TimerTick remain = TimerWheelGetTimeout(&context.timersWheel);
-//	    error = ltimer_set_timeout(&context.timer.ltimer, NS_IN_MS*remain, TIMEOUT_PERIODIC);
-//   	    printf("Error %i\n",error);
-//	    assert(error == 0);
-
-	    uint64_t startTimeNS;
-            ltimer_get_time(&context.timer.ltimer, &startTimeNS);
-	    
-            seL4_Word sender_badge = 0;
-            seL4_MessageInfo_t message;
-            seL4_Word label;
-//////////
-            message = seL4_Recv(epPtr, &sender_badge);
-//////////
-
-	    uint64_t endTimeNS;
-            ltimer_get_time(&context.timer.ltimer, &endTimeNS);
-
-            const uint64_t timeSpentNS = endTimeNS - startTimeNS;
-
-            TimerWheelStep(&context.timersWheel, timeSpentNS/1000000);
-
-            TimerTick remain = TimerWheelGetTimeout(&context.timersWheel);
-            if(remain <UINT64_MAX && remain != 0)
-            {
-//                printf("timersWheel update to %lu\n" , remain);
-
-                int error = UpdateTimeout(&context, NS_IN_MS*remain);
-                assert(error == 0);
-            }
-  /*          else 
-            {
-                printf("UINT64_MAX in timersWheel\n");
-            }
-*/
-
-
-/////////
-            label = seL4_MessageInfo_get_label(message);
-
-            if(sender_badge & IRQ_EP_BADGE)
-            {
-                processTimer(sender_badge);
-            }
-	    else if (label == seL4_VMFault)
-	    {
-		printf("VM Fault \n");
-  	    }
-            else if (label == seL4_NoFault)
-            {
-                Process* senderProcess =  ProcessTableGetByPID( sender_badge);
-
-                if(!senderProcess)
-                {
-                    printf("Init : no sender process for badge %li\n", sender_badge);
-                    continue;
-                }
-
-                processSyscall(&context,senderProcess , message , sender_badge );
-            } // else if(label == seL4_NoFault)
-            else
-            {
-                printf("ProcessLoop : other msg \n");
-            }
-
-/*
-	    uint64_t endTimeNS;
-            ltimer_get_time(&context.timer.ltimer, &endTimeNS);
-
-	    const uint64_t timeSpentNS = endTimeNS - startTimeNS;
-
-	    TimerWheelStep(&context.timersWheel, timeSpentNS/1000000);
-    	    TimerTick remain = TimerWheelGetTimeout(&context.timersWheel);
-	    if(remain <UINT64_MAX && remain != 0)
-	    {
-	        printf("timersWheel update to %lu\n" , remain);
-                int error = ltimer_set_timeout(&context.timer.ltimer, NS_IN_MS*remain, TIMEOUT_RELATIVE); //TIMEOUT_PERIODIC);
-                assert(error == 0);
-	    }
-	    else 
-	    {
-		printf("UINT64_MAX in timersWheel\n");
-	    }
-*/
-
-        } // end while(1)
-}
 
 
 
@@ -243,8 +101,6 @@ int main(void)
 
    printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
 
-//   error = ltimer_set_timeout(&context.timer.ltimer, NS_IN_MS*TIME_TO_WAIT_MS, TIMEOUT_RELATIVE); //TIMEOUT_PERIODIC);
-//   assert(error == 0);
 
 /* BEGIN PROCESS */
 
@@ -267,7 +123,7 @@ int main(void)
 //
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
-    processLoop(ep_object.cptr);//ep_cap_path);
+    processLoop( &context,ep_object.cptr);//ep_cap_path);
 
 
     return 0;

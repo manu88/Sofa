@@ -5,6 +5,36 @@
 
 
 
+/*static*/ void processTimer(InitContext* context,seL4_Word sender_badge)
+{
+        sel4platsupport_handle_timer_irq(&context->timer, sender_badge);
+
+
+        Timer*firedTimer = NULL;
+
+
+        TimerTick remain = TimerWheelGetTimeout(&context->timersWheel);
+
+        while (( firedTimer = TimerWheelGetFiredTimers(  &context->timersWheel ) ) != NULL )
+        {
+
+                Process* attachedProcess = TimerGetUserContext( firedTimer);
+                assert(attachedProcess);
+
+                seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
+                seL4_SetMR(0, __NR_nanosleep);
+
+                seL4_Send(attachedProcess->reply , tag);
+
+                cnode_delete(context,attachedProcess->reply);
+
+                assert(TimerWheelRemoveTimer( &context->timersWheel , firedTimer ) );
+
+                TimerRelease(firedTimer);
+                attachedProcess->reply = 0;
+        }
+}
+
 int UpdateTimeout(InitContext* context,uint64_t timeNS)
 {
     return ltimer_set_timeout(&context->timer.ltimer, timeNS, TIMEOUT_RELATIVE); //TIMEOUT_PERIODIC);
@@ -119,4 +149,67 @@ else if (msg == __NR_wait4)
         printf("Received OTHER IPC MESSAGE\n");
         assert(0);
     }
+}
+
+
+void processLoop(InitContext* context, seL4_CPtr epPtr )
+{
+int error = 0;
+       while(1)
+       {
+            uint64_t startTimeNS;
+            ltimer_get_time(&context->timer.ltimer, &startTimeNS);
+
+            seL4_Word sender_badge = 0;
+            seL4_MessageInfo_t message;
+            seL4_Word label;
+//////////
+            message = seL4_Recv(epPtr, &sender_badge);
+//////////
+
+            uint64_t endTimeNS;
+            ltimer_get_time(&context->timer.ltimer, &endTimeNS);
+
+            const uint64_t timeSpentNS = endTimeNS - startTimeNS;
+
+            TimerWheelStep(&context->timersWheel, timeSpentNS/1000000);
+
+            TimerTick remain = TimerWheelGetTimeout(&context->timersWheel);
+            if(remain <UINT64_MAX && remain != 0)
+            {
+
+                int error = UpdateTimeout(context, NS_IN_MS*remain);
+                assert(error == 0);
+            }
+
+            label = seL4_MessageInfo_get_label(message);
+
+            if(sender_badge & IRQ_EP_BADGE)
+            {
+                processTimer(context ,sender_badge);
+            }
+            else if (label == seL4_VMFault)
+            {
+                printf("VM Fault \n");
+            }
+
+	else if (label == seL4_NoFault)
+            {
+                Process* senderProcess =  ProcessTableGetByPID( sender_badge);
+
+                if(!senderProcess)
+                {
+                    printf("Init : no sender process for badge %li\n", sender_badge);
+                    continue;
+                }
+
+                processSyscall(context,senderProcess , message , sender_badge );
+            } 
+            else
+            {
+                printf("ProcessLoop : other msg \n");
+            }
+
+
+        } // end while(1)
 }
