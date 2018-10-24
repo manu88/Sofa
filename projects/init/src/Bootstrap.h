@@ -13,6 +13,9 @@
 typedef struct
 {
     seL4_BootInfo *info;
+
+    cspacepath_t ep_cap_path;
+
     simple_t       simple;
     vka_t          vka;
     allocman_t *   allocman;

@@ -22,10 +22,10 @@ int main( int argc , char* argv[])
 
 
 
-    kill(1 , SIGCONT);
+//    kill(1 , SIGCONT);
     while(1)
     {
-    	usleep(1000*2000);
+    	usleep(1000*4000);
         printf("Client %i did wait\n" , pid);
     }
 

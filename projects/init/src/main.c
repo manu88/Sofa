@@ -46,7 +46,7 @@ static pid_t getNextPid()
 	return accum++;
 }
 
-static int startProcess( Process* process,const char* imageName, cspacepath_t ep_cap_path )
+static int startProcess( Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent )
 {
 
     UNUSED int error = 0;
@@ -90,7 +90,7 @@ static int startProcess( Process* process,const char* imageName, cspacepath_t ep
      printf("init : Did start child pid %i\n" , process->_pid);
 
 
-     process->_parent = &initProcess;
+     process->_parent = parent;
      return error;
 }
 
@@ -136,13 +136,13 @@ static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, s
 	seL4_Word sigToSend = seL4_GetMR(2);
 	
 	printf("Received a request from %i to kill process %li with signal %li\n",senderProcess->_pid , pidToKill , sigToSend);
-	seL4_SetMR(1, -1 ); // error for now
+	seL4_SetMR(1, -ENOSYS ); // error for now
 	seL4_Reply( message );
     }
     else if (msg == __NR_nanosleep)
     {
         seL4_Word millisToWait = seL4_GetMR(1);
-        printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
+        //printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
 
         // save the caller
 
@@ -156,6 +156,48 @@ static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, s
         assert(timer);
         assert(TimerWheelAddTimer(&context.timersWheel , timer , millisToWait));
 	UpdateTimeout(millisToWait * NS_IN_MS);
+    }
+    else if(msg ==  __NR_execve)
+    {
+
+	const int msgLen = seL4_MessageInfo_get_length(message);
+	assert(msgLen > 0);
+	char* filename = malloc(sizeof(char)*msgLen );/* msglen minus header + 1 byte for NULL byte*/
+	assert(filename);
+	
+	for(int i=0;i<msgLen-1;++i)
+	{
+	    filename[i] =  (char) seL4_GetMR(1+i);
+	}
+
+	filename[msgLen] = '0';
+
+	printf("Init : Execve size %i filename '%s'\n", msgLen , filename);
+
+	/**/
+	Process *newProcess = ProcessAlloc();
+	assert(newProcess);
+    	error = startProcess(  newProcess,filename, context.ep_cap_path ,senderProcess);
+    	if (error == 0)
+    	{
+            error = !ProcessTableAppend(newProcess);
+	    assert(error == 0);
+    	}
+
+
+	/**/
+	free(filename);
+
+	seL4_SetMR(1, newProcess->_pid/*  -ENOSYS*/ ); // return code is the new pid
+        seL4_Reply( message );
+    }
+    else if (msg == __NR_wait4)
+    {
+	const pid_t pidToWait = seL4_GetMR(1);
+	const int options     = seL4_GetMR(2); 
+
+	seL4_SetMR(1,-ENOSYS );
+        seL4_Reply( message );
     }
     else
     {
@@ -200,12 +242,12 @@ static void processTimer(seL4_Word sender_badge)
 		attachedProcess->reply = 0;
 		count++;
 	}
-
+/*
 	if(count)
 	{
 	    printf("Processed %i timers \n" , count);
 	}
-
+*/
 }
 
 static int UpdateTimeout(uint64_t timeNS)
@@ -311,7 +353,6 @@ static void processLoop( seL4_CPtr epPtr )
 int main(void)
 {
 
-    cspacepath_t ep_cap_path;
 
     memset(&context , 0 , sizeof(InitContext) );
 
@@ -344,7 +385,7 @@ int main(void)
     error = vka_alloc_endpoint(&context.vka, &ep_object);
     ZF_LOGF_IFERR(error, "Failed to allocate new endpoint object.\n");
 
-    vka_cspace_make_path(&context.vka, ep_object.cptr, &ep_cap_path);
+    vka_cspace_make_path(&context.vka, ep_object.cptr, &context.ep_cap_path);
 
 /* Timer Init */
 
@@ -377,16 +418,17 @@ int main(void)
 
 /* BEGIN PROCESS */
 
+/*
     Process *process1 = ProcessAlloc();
     error = startProcess(  process1,APP_IMAGE_NAME, ep_cap_path );
     if (error == 0)
     {
         ProcessTableAppend(process1);
     }
-
+*/
 
     Process *process2 = ProcessAlloc();
-    error = startProcess(  process2,"shell", ep_cap_path );
+    error = startProcess(  process2,"shell", context.ep_cap_path, &initProcess );
     if(error == 0)
     {
         ProcessTableAppend(process2);

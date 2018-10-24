@@ -12,4 +12,4 @@ Usefull links :
 * `getppid`
 * `nanosleep`
 * `kill`
-
+* `kind of `execve` that starts a new process, but does not work as expected since it does not replace current process.
