@@ -3,6 +3,9 @@
 #include <unistd.h>
 #include <SysClient.h>
 
+
+#include <signal.h>
+
 int main( int argc , char* argv[])
 {
 
@@ -18,10 +21,12 @@ int main( int argc , char* argv[])
     printf("Client PID is %i parent %i \n", pid, parentPid);
 
 
+
+    kill(1 , SIGCONT);
     while(1)
     {
     	usleep(1000*2000);
-        printf("Client did wait\n");
+        printf("Client %i did wait\n" , pid);
     }
 
 

@@ -152,6 +152,15 @@ static void processSyscall(Process *senderProcess, seL4_MessageInfo_t message, s
 
         printf("Init : Got %i processes \n" , ProcessTableGetCount() );
     }
+    else if (msg == __NR_kill)
+    {
+	seL4_Word pidToKill = seL4_GetMR(1);
+	seL4_Word sigToSend = seL4_GetMR(2);
+	
+	printf("Received a request from %i to kill process %li with signal %li\n",senderProcess->_pid , pidToKill , sigToSend);
+	seL4_SetMR(1, -1 ); // error for now
+	seL4_Reply( message );
+    }
     else if (msg == __NR_nanosleep)
     {
         seL4_Word millisToWait = seL4_GetMR(1);
@@ -187,7 +196,7 @@ static void processTimer(seL4_Word sender_badge)
 
 
  	TimerTick remain = TimerWheelGetTimeout(&context.timersWheel);
-	printf("processTimer remains %lu \n",remain); 
+//	printf("processTimer remains %lu \n",remain); 
 	// handle expired timers
 	int count = 0;
 
@@ -198,7 +207,7 @@ static void processTimer(seL4_Word sender_badge)
 		Process* attachedProcess = TimerGetUserContext( firedTimer);
 		assert(attachedProcess);
 
-		printf("Got a fired timer to process %i!\n" , attachedProcess->_pid);
+//		printf("Got a fired timer to process %i!\n" , attachedProcess->_pid);
 
 		seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
 		seL4_SetMR(0, __NR_nanosleep);
@@ -256,16 +265,16 @@ static void processLoop( seL4_CPtr epPtr )
             TimerTick remain = TimerWheelGetTimeout(&context.timersWheel);
             if(remain <UINT64_MAX && remain != 0)
             {
-                printf("timersWheel update to %lu\n" , remain);
+//                printf("timersWheel update to %lu\n" , remain);
 
                 int error = UpdateTimeout( NS_IN_MS*remain);
                 assert(error == 0);
             }
-            else 
+  /*          else 
             {
                 printf("UINT64_MAX in timersWheel\n");
             }
-
+*/
 
 
 /////////
@@ -397,14 +406,14 @@ int main(void)
         ProcessTableAppend(process1);
     }
 
-/*
+
     Process *process2 = ProcessAlloc();
     error = startProcess(  process2,APP_IMAGE_NAME, ep_cap_path );
     if(error == 0)
     {
         ProcessTableAppend(process2);
     }
-*/
+
 //
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 

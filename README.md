@@ -11,3 +11,5 @@ Usefull links :
 * `getpid`
 * `getppid`
 * `nanosleep`
+* `kill`
+
