@@ -11,6 +11,12 @@ Jump call table, MUST BE ORDERED with respect to __SOFA_NR_* numbers idefined in
 static SysCallHandler callTable[] = 
 {
 	NULL, // index 0 is always NULL, no syscall can have this id.
+
+	handle_read,
+	handle_write,
+	handle_open,
+	handle_close,
+
 	handle_nanosleep,
 	handle_getpid,
 	handle_getppid,

@@ -14,14 +14,20 @@ int main( int argc , char* argv[])
         return 1;
     }
 
+
+
     printf("Client : Hello\n");
+
+
 
     pid_t pid = getpid();
     pid_t parentPid = getppid();
     printf("Client PID is %i parent %i \n", pid, parentPid);
 
+    int retNice = nice(-20);
+    printf("Client nice returned %i errno %i\n",retNice, errno);
 
-
+    errno = 0;
 //    kill(1 , SIGCONT);
     while(1)
     {

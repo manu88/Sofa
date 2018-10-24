@@ -66,6 +66,12 @@ static inline void ProcessSetState(Process* process, ProcessState state)
 
 
 
+int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio);
+int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio);
+
+
+//
+
 
 typedef struct
 {

@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <string.h> 
 
-
+#include <sys/resource.h>
 #include <SysCallNum.h>
 
 
@@ -223,15 +223,24 @@ static long sys_getppid(va_list args)
     return (pid_t)msg;
 
 }
+
+//int getpriority(int which, id_t who);
 static long sys_getpriority(va_list args)
 {
+    // The range of the nice value is +19 (low priority) to -20 (high priority)
+    int which  = va_arg(args, int);
+    id_t who   = va_arg(args, id_t);
+
+    printf("Client ; getpriority %i %i\n",which , who);
+
     seL4_MessageInfo_t tag;
     seL4_Word msg;
 
-    tag = seL4_MessageInfo_new(0, 0, 0, 2);
+    tag = seL4_MessageInfo_new(0, 0, 0, 3);
 
     seL4_SetMR(0, __SOFA_NR_getpriority);
-    seL4_SetMR(1 , 0); // useless?
+    seL4_SetMR(1 , which);
+    seL4_SetMR(2 , who);
 
     tag = seL4_Call(sysCallEndPoint, tag);
     assert(seL4_GetMR(0) == __SOFA_NR_getpriority);
@@ -241,15 +250,24 @@ static long sys_getpriority(va_list args)
 
 }
 
+//int setpriority(int which, id_t who, int prio);
 static long sys_setpriority(va_list args)
 {
+    // The range of the nice value is +19 (low priority) to -20 (high priority)
+    int which  = va_arg(args, int);
+    id_t who   = va_arg(args, id_t);
+    int prio   = va_arg(args, int);
+    int mappedPrio = (-prio + 19)*6;
+    printf("Client ; setpriority %i %i %i mapped %i\n",which , who , prio , mappedPrio);
     seL4_MessageInfo_t tag;
     seL4_Word msg;
 
-    tag = seL4_MessageInfo_new(0, 0, 0, 2);
+    tag = seL4_MessageInfo_new(0, 0, 0, 4);
 
     seL4_SetMR(0, __SOFA_NR_setpriority);
-    seL4_SetMR(1 , 0); // useless?
+    seL4_SetMR(1 , which);
+    seL4_SetMR(2 , who);
+    seL4_SetMR(3 , mappedPrio);
 
     tag = seL4_Call(sysCallEndPoint, tag);
     assert(seL4_GetMR(0) == __SOFA_NR_setpriority);

@@ -110,3 +110,16 @@ int ProcessGetNumChildren(const Process* process)
 	}
 	return count;
 }
+
+
+int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio)
+{
+	return seL4_TCB_SetPriority( sel4utils_get_tcb(&process->_process.thread),
+				     seL4_CapInitThreadTCB,//sel4utils_get_tcb(&process->_process.thread),
+				     prio);
+}
+
+int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio)
+{
+	return -1;
+}
