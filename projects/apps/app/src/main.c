@@ -6,6 +6,9 @@
 #include <errno.h>
 #include <signal.h>
 #include <assert.h>
+
+#include <fcntl.h>
+
 int main( int argc , char* argv[])
 {
 
@@ -26,6 +29,13 @@ int main( int argc , char* argv[])
 
     int retNice = nice(-20);
     printf("Client nice returned %i errno %i\n",retNice, errno);
+    errno = 0;
+
+    int fd = open(NULL,0);
+    assert(fd == -1);
+    assert(errno == EFAULT);
+    fd = open("/dev/tty" , O_RDWR);
+    printf("open return %i errno %i\n",fd , errno);
 
     errno = 0;
 //    kill(1 , SIGCONT);

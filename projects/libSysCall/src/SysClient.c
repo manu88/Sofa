@@ -18,6 +18,10 @@
 #include <SysCallNum.h>
 
 
+static long sys_write(va_list args);
+static long sys_open(va_list args);
+
+
 static long sys_nanosleep(va_list args);
 static long sys_getpid(va_list args);
 static long sys_getppid(va_list args);
@@ -27,6 +31,7 @@ static long sys_wait4(va_list args);
 static long sys_execve(va_list args);
 static long sys_setpriority(va_list args);
 static long sys_getpriority(va_list args);
+
 
 
 static seL4_CPtr sysCallEndPoint = 0;
@@ -40,6 +45,9 @@ int SysClientInit(int argc , char* argv[] )
         return 1;
     }
     
+    muslcsys_install_syscall(__NR_write, sys_write);
+    muslcsys_install_syscall(__NR_open, sys_open);
+
     muslcsys_install_syscall(__NR_nanosleep ,  sys_nanosleep);
     muslcsys_install_syscall(__NR_getpid ,     sys_getpid);
     muslcsys_install_syscall(__NR_getppid ,    sys_getppid);
@@ -258,7 +266,9 @@ static long sys_setpriority(va_list args)
     id_t who   = va_arg(args, id_t);
     int prio   = va_arg(args, int);
     int mappedPrio = (-prio + 19)*6;
+
     printf("Client ; setpriority %i %i %i mapped %i\n",which , who , prio , mappedPrio);
+
     seL4_MessageInfo_t tag;
     seL4_Word msg;
 
@@ -275,4 +285,44 @@ static long sys_setpriority(va_list args)
 
     return msg;
 
+}
+
+//int open(const char *pathname, int flags);
+static long sys_open(va_list args)
+{
+	const char* pathname = va_arg(args,const char*);
+	const int flags = va_arg(args, int);
+
+
+	if(pathname == NULL)
+	{
+		return -EFAULT;
+	}
+	seL4_MessageInfo_t tag;
+        seL4_Word msg;
+
+        tag = seL4_MessageInfo_new(0, 0, 0, 2 + strlen(pathname));
+	seL4_SetMR(0, __SOFA_NR_open);
+        seL4_SetMR(1, flags);
+
+	for(int i=0;i<strlen(pathname);++i)
+	{
+		seL4_SetMR(i+2,pathname[i]);
+	}
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+	assert(seL4_GetMR(0) == __SOFA_NR_open);
+    	msg = seL4_GetMR(1);
+
+    	return msg;
+
+}
+static long sys_write(va_list args)
+{
+	assert(0);
+	int fd  = va_arg(args, int);
+	const void *buf =  va_arg(args, void*);
+	size_t count = va_arg(args, size_t);
+
+	return 0;
 }
