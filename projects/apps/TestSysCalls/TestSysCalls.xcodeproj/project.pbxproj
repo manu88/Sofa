@@ -41,7 +41,7 @@
 		59E99DB321830E2D00805C68 = {
 			isa = PBXGroup;
 			children = (
-				59E99DBE21830E2D00805C68 /* TestSysCalls */,
+				59E99DBE21830E2D00805C68 /* src */,
 				59E99DBD21830E2D00805C68 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,12 +54,12 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		59E99DBE21830E2D00805C68 /* TestSysCalls */ = {
+		59E99DBE21830E2D00805C68 /* src */ = {
 			isa = PBXGroup;
 			children = (
 				59E99DBF21830E2D00805C68 /* main.c */,
 			);
-			path = TestSysCalls;
+			path = src;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
