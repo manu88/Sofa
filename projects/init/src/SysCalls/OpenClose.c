@@ -17,6 +17,7 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 {
 
 	const int msgLen = seL4_MessageInfo_get_length(message);
+	printf("handle_open msg len %i\n" , msgLen);
 	assert(msgLen > 2);
 
 	char* pathname = malloc(sizeof(char)*msgLen -1);

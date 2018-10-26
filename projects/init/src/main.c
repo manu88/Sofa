@@ -103,14 +103,18 @@ int main(void)
 
 /* BEGIN PROCESS */
 
-/*
-    Process *process1 = ProcessAlloc();
-    error = startProcess(  process1,APP_IMAGE_NAME, ep_cap_path );
+
+    Process *testProcess = ProcessAlloc();
+    error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, APP_PRIORITY );
     if (error == 0)
     {
-        ProcessTableAppend(process1);
+        ProcessTableAppend(testProcess);
     }
-*/
+    else 
+    {
+	printf("Error spawning  TestSysCalls\n");
+    }
+
 
     Process *process2 = ProcessAlloc();
     error = ProcessStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, APP_PRIORITY );

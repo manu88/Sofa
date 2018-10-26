@@ -8,9 +8,14 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+
+
+#ifndef __APPLE__
+#include <SysClient.h>
+#endif
 
 static int doOpenTests(void);
 static int doGetPidTests(void);
@@ -39,8 +44,15 @@ static int doOpenTests()
     
     return 1;
 }
-int main(int argc, const char * argv[])
+int main(int argc, char * argv[])
 {
+
+#ifndef __APPLE__
+    if (SysClientInit(argc , argv) != 0)
+    {
+        return 1;
+    }
+#endif
     assert(doGetPidTests());
     assert(doOpenTests());
     

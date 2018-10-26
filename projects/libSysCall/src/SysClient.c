@@ -298,6 +298,10 @@ static long sys_open(va_list args)
 	{
 		return -EFAULT;
 	}
+	if(strlen(pathname) == 0)
+	{
+		return -ENOENT;
+	}
 	seL4_MessageInfo_t tag;
         seL4_Word msg;
 

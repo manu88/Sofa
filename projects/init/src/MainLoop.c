@@ -120,7 +120,7 @@ void processLoop(InitContext* context, seL4_CPtr epPtr )
         }
         else if (label == seL4_VMFault)
         {
-            printf("VM Fault \n");
+            printf("Init : VM Fault \n");
         }
         else if (label == seL4_NoFault)
         {
