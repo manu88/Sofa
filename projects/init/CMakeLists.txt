@@ -16,6 +16,8 @@ add_executable(init ${deps} archive.o)
 
 target_link_libraries(init sel4muslcsys sel4allocman sel4platsupport sel4 muslc cpio sel4utils libSysCall ) 
 
+# warn about everything
+add_compile_options(-Wall -Werror -W -Wextra)
 
 # Set this image as the rootserver
 DeclareRootserver(init)

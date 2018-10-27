@@ -7,3 +7,6 @@ target_include_directories(libSysCall PUBLIC include)
 
 
 target_link_libraries(libSysCall Configuration  sel4 sel4muslcsys)
+
+# warn about everything
+add_compile_options(-Wall -Werror -W -Wextra)

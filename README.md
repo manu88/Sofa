@@ -14,3 +14,4 @@ Usefull links :
 * `kill`
 *  kind of `execve` that starts a new process, but does not work as expected since it does not replace current process. This is a combinaison of fork+execve
 * `wait4`
+* `open` `close` in Progress!

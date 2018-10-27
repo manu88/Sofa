@@ -21,7 +21,7 @@
 #include "ProcessDef.h"
 #include "ProcessTable.h"
 #include "Timer.h"
-
+#include "DriverKit.h"
 #include "Utils.h"
 #include "MainLoop.h"
 #include "Credentials.h"
@@ -56,6 +56,9 @@ int main(void)
 
     ZF_LOGF_IFERR(error, "Failed to bootstrap system.\n");
 
+
+    error = !DriverKitInit(&context);
+    ZF_LOGF_IFERR(error, "Failed to init DriverKit.\n");
 /* Processes table & init */
 
     ProcessInit(&initProcess);

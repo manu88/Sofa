@@ -5,7 +5,12 @@ if (${PLATFORM} IN_LIST KernelX86Sel4Arch_all_strings)
         set(KernelX86Sel4Arch ${PLATFORM} CACHE STRING "" FORCE)
 endif()
 
+
 include(tools/cmake-tool/default-CMakeLists.txt)
+
+#config_option(SUPPORT_SERIAL_TEXT_EGA LIB_PLAT_SUPPORT_SERIAL_TEXT_EGA "Makes library awesome" DEFAULT ON)
+#LIB_PLAT_SUPPORT_SERIAL_TEXT_EGA
+
 
 if(SIMULATION)
         ApplyCommonSimulationSettings("x86")
