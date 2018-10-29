@@ -368,11 +368,31 @@ static long sys_close(va_list args)
 	return 0;
 }
 
-
+// off_t lseek(int fd, off_t offset, int whence);
 static long sys_lseek(va_list args)
 {
-	return 0;
+	int fd  = va_arg(args, int);
+	off_t offset = va_arg(args, off_t);
+
+	int whence  = va_arg(args, int);
+
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 4);
+
+	seL4_SetMR(0, __SOFA_NR_lseek);
+	seL4_SetMR(1, fd);
+	seL4_SetMR(2, offset);
+	seL4_SetMR(3 , whence);
+
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_lseek);
+        seL4_Word msg = seL4_GetMR(1);
+
+        return msg;
+
 }
+
+
 static long sys_write(va_list args)
 {
 	assert(0);

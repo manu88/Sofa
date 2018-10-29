@@ -17,6 +17,9 @@ struct _fileOperations
 {
     ssize_t (*Read) (struct _inode *, char*  , size_t);
     ssize_t (*Write) (struct _inode *,  const char* ,size_t);
+
+    ssize_t  (*Lseek) (struct _inode *, size_t, int);
+
 };
 
 typedef struct _fileOperations FileOperations;

@@ -17,11 +17,14 @@ static FileServerHandler _handler = { "/cpio/" ,   CpioOpen};
 
 static ssize_t CPIORead (struct _inode *node, char*buf  , size_t bufSize);
 static ssize_t CPIOWrite(struct _inode *node,  const char*buf ,size_t bufSize);
+static ssize_t CPIOLseek (struct _inode *node, size_t offset, int whence);
+
 
 static const FileOperations cpioOps = 
 {
 	CPIORead,
-	CPIOWrite
+	CPIOWrite,
+	CPIOLseek,
 };
 
 
@@ -129,5 +132,29 @@ static ssize_t CPIORead (struct _inode *node, char* buf , size_t size)
 
 static ssize_t CPIOWrite(struct _inode *node,  const char* buf ,size_t size)
 {
+	return 0;
+}
+
+static ssize_t CPIOLseek (struct _inode *node, size_t offset, int whence)
+{
+
+	switch(whence)
+	{
+		case SEEK_SET:
+		node->pos = offset;
+		break;
+
+		case SEEK_CUR:
+		node->pos +=offset;
+		break;
+
+		case SEEK_END:
+		node->pos = node->size + node->pos;
+		break;
+
+		default:
+		return -EPERM;
+	}
+
 	return 0;
 }

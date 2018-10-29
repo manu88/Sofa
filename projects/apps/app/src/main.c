@@ -70,6 +70,12 @@ int main( int argc , char* argv[])
 
     printf("App : read '%s'  %lu\n", buf , retRead);
 
+
+    lseek( fd , 0,SEEK_SET);
+
+	retRead  = read(fd , buf , 4);
+
+    printf("App : AFTER SEEK read '%s'  %lu\n", buf , retRead);
 //    kill(1 , SIGCONT);
     while(1)
     {

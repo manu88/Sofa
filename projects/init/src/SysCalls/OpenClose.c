@@ -4,6 +4,34 @@
 #include "../FileServer.h"
 
 
+
+int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+{
+	const int fd = seL4_GetMR(1);
+	const off_t offset = seL4_GetMR(2);
+	const int whence = seL4_GetMR(3);
+
+	printf("Init : Got a lseek request\n");
+
+
+	//Lseek
+	ssize_t ret= -ENOSYS;
+
+	if(senderProcess->testNode)
+        {
+		ret = senderProcess->testNode->operations->Lseek(senderProcess->testNode, offset , whence);
+	}
+
+	message = seL4_MessageInfo_new(0, 0, 0, 2);
+	seL4_SetMR(0, __SOFA_NR_lseek );
+	seL4_SetMR(1, ret);
+
+	seL4_Reply( message );
+
+	return 0;
+}
+
+
 int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	const int msgLen = seL4_MessageInfo_get_length(message);
@@ -91,10 +119,6 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
         return 0;
 }
 
-int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
-{
-	return 0;
-}
 
 int handle_close(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
