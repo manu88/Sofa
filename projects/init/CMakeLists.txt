@@ -5,8 +5,16 @@ cmake_minimum_required(VERSION 3.7.2)
 project(init C) # create a new C project called 'init' 
 
 
+# Copy CPIOFiles 
+file(COPY CPIOFiles DESTINATION ".")
+
+# add file to cpio : FIXME : do it for each file in CPIOFiles
+set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:init>/CPIOFiles/hello.txt")
+
+
 # list of apps to include in the cpio archive
 get_property(cpio_apps GLOBAL PROPERTY apps_property)
+
 MakeCPIO(archive.o "${cpio_apps}")
 
 file(GLOB deps src/*.c src/*/*.c)

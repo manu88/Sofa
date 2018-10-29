@@ -70,6 +70,12 @@ int main(void)
 
     ProcessTableAppend(&initProcess);
 
+
+    error = !CPIOServerInit();
+    ZF_LOGF_IFERR(error, "Failed to  init CPIO Server\n");
+
+/* File Server*/
+
     error = !FileServerInit();
     ZF_LOGF_IFERR(error, "Failed to  init FileServer\n");
 
