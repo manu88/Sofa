@@ -21,3 +21,4 @@
 
 #define __SOFA_NR_setpriority           12
 #define __SOFA_NR_getpriority           13
+#define __SOFA_NR_lseek			14

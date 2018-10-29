@@ -32,6 +32,8 @@ static long sys_execve(va_list args);
 static long sys_setpriority(va_list args);
 static long sys_getpriority(va_list args);
 
+static long sys_lseek(va_list args);
+
 
 
 static seL4_CPtr sysCallEndPoint = 0;
@@ -59,6 +61,8 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_wait4,       sys_wait4);
     muslcsys_install_syscall(__NR_setpriority, sys_setpriority);
     muslcsys_install_syscall(__NR_getpriority, sys_getpriority);
+
+    muslcsys_install_syscall(__NR_lseek	     , sys_lseek);
 
     return 0;
 }
@@ -296,6 +300,11 @@ static long sys_read(va_list args)
 	void*     buf   = va_arg(args , void*);
 	size_t    count = va_arg(args , size_t);
 
+
+	if (fd <0)
+	{
+		return -EBADF;
+	}
 	printf("Read request fd %i count %lu\n", fd , count);
 
 	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
@@ -306,7 +315,17 @@ static long sys_read(va_list args)
 	tag = seL4_Call(sysCallEndPoint, tag);
         assert(seL4_GetMR(0) == __SOFA_NR_read);
 
-	return 0;
+	printf("Read returned %i args \n", seL4_MessageInfo_get_length(tag));
+
+	size_t ret = seL4_MessageInfo_get_length(tag) - 2;
+
+	char* b = (char*) buf;
+	for(int i= 0; i<ret;++i)
+	{
+		b[i] = seL4_GetMR(2+i);
+	}
+
+	return ret;
 }
 
 
@@ -349,6 +368,11 @@ static long sys_close(va_list args)
 	return 0;
 }
 
+
+static long sys_lseek(va_list args)
+{
+	return 0;
+}
 static long sys_write(va_list args)
 {
 	assert(0);

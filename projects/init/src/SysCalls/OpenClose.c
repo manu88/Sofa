@@ -1,5 +1,6 @@
 #include "../SysCalls.h"
 #include <SysCallNum.h>
+#include <assert.h>
 #include "../FileServer.h"
 
 
@@ -11,9 +12,32 @@ int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	const int fd = seL4_GetMR(1);
 	const size_t count = seL4_GetMR(2);
 
-	printf("Init Read %i args (fd %i count %i)\n" , msgLen , fd , count);
 
+	if(senderProcess->testNode)
+	{
+		printf("Init Read %i args (fd %i count %i)\n" , msgLen , fd , count);
+		char buf[4];
+		ssize_t ret = senderProcess->testNode->operations->Read(senderProcess->testNode ,buf , count);
 
+		printf("Did read '%s' %lu bytes\n",  buf , ret);
+
+		message = seL4_MessageInfo_new(0, 0, 0, 2 + ret);
+		
+		seL4_SetMR(0, __SOFA_NR_read );
+        	seL4_SetMR(1, ret);
+
+		if (ret > 0)
+		{
+			for(int i=0; i< ret ; ++i)
+			{
+				seL4_SetMR(2 + i, buf[i]);
+			}
+		}
+		seL4_Reply( message );
+		return 0;
+	}
+
+	assert(0);
 	return 0;
 }
 
@@ -67,6 +91,10 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
         return 0;
 }
 
+int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+{
+	return 0;
+}
 
 int handle_close(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {

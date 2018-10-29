@@ -49,6 +49,27 @@ int main( int argc , char* argv[])
     char buf[4] = {0};
 
     ssize_t retRead  = read(fd , buf , 4);
+
+    printf("App : read '%s'  %lu\n", buf , retRead);
+
+    retRead  = read(fd , buf , 4);
+
+    printf("App : read '%s'  %lu\n", buf , retRead);
+
+
+    retRead  = read(fd , buf , 4);
+
+    printf("App : read '%s'  %lu\n", buf , retRead);
+
+    retRead  = read(fd , buf , 4);
+
+    printf("App : read '%s'  %lu\n", buf , retRead);
+
+
+    retRead  = read(fd , buf , 4);
+
+    printf("App : read '%s'  %lu\n", buf , retRead);
+
 //    kill(1 , SIGCONT);
     while(1)
     {

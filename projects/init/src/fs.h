@@ -25,6 +25,8 @@ struct _inode
 {
    const FileOperations *operations;
 
+   size_t pos;
+   size_t size;
    void* userData; 
 };
 

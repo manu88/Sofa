@@ -26,6 +26,7 @@ static SysCallHandler callTable[] =
 	handle_wait4,
 	handle_setpriority,
 	handle_getpriority,
+	handle_lseek,
 };
 
 

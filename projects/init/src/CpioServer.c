@@ -104,6 +104,8 @@ static Inode*  CpioOpen(void* context, const char*pathname ,int flags, int *erro
 
 	printf("CPIO File found : size %lu\n", fileSize);
 	*error = 0;
+	node->size = fileSize;
+	node->pos = 0;
 	node->userData = dataContent;
 	node->operations = &cpioOps;
 	return node;
@@ -112,7 +114,17 @@ static Inode*  CpioOpen(void* context, const char*pathname ,int flags, int *erro
 
 static ssize_t CPIORead (struct _inode *node, char* buf , size_t size)
 {
-	return 0;
+	printf("CPIO READ request %lu bytes pos %lu size max %lu\n", size , node->pos , node->size);
+	
+	if (size > node->size - node->pos)
+	{
+		size = node->size - node->pos;
+	}
+
+	memcpy(buf , node->userData + node->pos , size);
+	node->pos += size;
+
+	return size;
 }
 
 static ssize_t CPIOWrite(struct _inode *node,  const char* buf ,size_t size)
