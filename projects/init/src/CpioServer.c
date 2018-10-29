@@ -24,5 +24,15 @@ FileServerHandler* getCPIOServerHandler(void)
 static int CpioOpen(void* context, const char*pathname ,int flags)
 {
 	printf("CpioOpen '%s' , flags %i\n" , pathname , flags);
+
+	unsigned long fileSize = 0;
+	void* dataContent = cpio_get_file(_cpio_archive , pathname , &fileSize);
+
+	if(dataContent == NULL)
+	{
+		return -ENOENT;
+	}
+
+	printf("CPIO File found : size %lu\n", fileSize);
 	return -ENOSYS;
 }

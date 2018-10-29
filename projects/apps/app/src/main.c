@@ -34,7 +34,7 @@ int main( int argc , char* argv[])
     int fd = open(NULL,0);
     assert(fd == -1);
     assert(errno == EFAULT);
-    fd = open("/cpio/tty" , O_RDWR);
+    fd = open("/cpio/app" , O_RDWR);
 
     printf("open return %i errno %i\n",fd , errno);
 
