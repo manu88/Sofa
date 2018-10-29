@@ -7,9 +7,33 @@
 //
 
 #include <stdio.h>
+#include "FileServer.h"
+#include <assert.h>
+#include <errno.h>
 
-int main(int argc, const char * argv[]) {
-    // insert code here...
-    printf("Hello, World!\n");
+
+static int CpioOpen(void* context, const char*pathname ,int flags)
+{
+    printf("CpioOpen '%s' flags %i\n" ,pathname , flags);
+    return 0;
+}
+
+int main(int argc, const char * argv[])
+{
+    
+    
+    FileServerHandler cpioHandler;
+    cpioHandler.perfix = "/cpio/";
+    cpioHandler.onOpen = CpioOpen;
+    
+    FileServerInit();
+    
+    assert(FileServerRegisterHandler(&cpioHandler) );
+    
+    
+    FileServerOpen(NULL, "/cpio/test", 0);
+    
+    assert(FileServerOpen(NULL, "/cpi/test", 0) == -ENOSYS);
+    
     return 0;
 }
