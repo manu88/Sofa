@@ -18,6 +18,7 @@
 #endif
 
 static int doOpenTests(void);
+static int doReadTests(void);
 static int doGetPidTests(void);
 
 static int doGetPidTests()
@@ -44,6 +45,18 @@ static int doOpenTests()
     
     return 1;
 }
+
+static int doReadTests()
+{
+    errno = 0;
+    read(-1, NULL, 4);
+    assert( errno == EBADF);
+    
+
+    return 1;
+}
+
+
 int main(int argc, char * argv[])
 {
 
@@ -55,6 +68,7 @@ int main(int argc, char * argv[])
 #endif
     assert(doGetPidTests());
     assert(doOpenTests());
+    assert(doReadTests());
     
     return 0;
 }

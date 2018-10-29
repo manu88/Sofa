@@ -15,7 +15,7 @@
 static Inode* CpioOpen(void* context, const char*pathname ,int flags)
 {
     printf("CpioOpen '%s' flags %i\n" ,pathname , flags);
-    return 0;
+    return NULL;
 }
 
 int main(int argc, const char * argv[])
