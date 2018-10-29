@@ -26,7 +26,7 @@
 #include "MainLoop.h"
 #include "Credentials.h"
 #include "FileServer.h"
-
+#include "CpioServer.h"
 //#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
 
@@ -70,9 +70,11 @@ int main(void)
 
     ProcessTableAppend(&initProcess);
 
-    error = FileServerInit();
+    error = !FileServerInit();
+    ZF_LOGF_IFERR(error, "Failed to  init FileServer\n");
 
-
+    error = !FileServerRegisterHandler( getCPIOServerHandler() );
+    ZF_LOGF_IFERR(error, "Failed to register CPIO File System \n");
 
  /* create an endpoint. */
     vka_object_t ep_object = {0};

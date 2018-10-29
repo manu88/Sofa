@@ -13,9 +13,11 @@
 
 
 
-
+#ifdef __APPLE__
 typedef void InitContext;
-
+#else 
+#include "Bootstrap.h"
+#endif
 
 /* File System handler definition */
 typedef int (* FileServerHandler_Open) (void* context, const char*pathname ,int flags) ;

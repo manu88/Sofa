@@ -2,10 +2,13 @@
 
 
 #include "Bootstrap.h"
+#include "FileServer.h"
+
+
+FileServerHandler* getCPIOServerHandler(void);
 
 
 
+//int FileServerInit(void);
 
-int FileServerInit(void);
-
-int FileServerOpen(InitContext* context , const char*pathname , int flags);
+//int FileServerOpen(InitContext* context , const char*pathname , int flags);
