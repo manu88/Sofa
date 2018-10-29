@@ -25,6 +25,7 @@
 #include "Utils.h"
 #include "MainLoop.h"
 #include "Credentials.h"
+#include "FileServer.h"
 
 //#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
@@ -68,6 +69,9 @@ int main(void)
     ProcessTableInit();
 
     ProcessTableAppend(&initProcess);
+
+    error = FileServerInit();
+
 
 
  /* create an endpoint. */
