@@ -1,5 +1,6 @@
 #include "../SysCalls.h"
 #include <SysCallNum.h>
+#include "../FileServer.h"
 
 
 int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
@@ -37,12 +38,13 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 	int ret= -ENOSYS;
 
+	ret = FileServerOpen(context , pathname,flags);
+
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
 
 	seL4_SetMR(0, __SOFA_NR_open );
 	seL4_SetMR(1, ret);
 
-	printf("Got handle_open '%s' %i\n" , pathname,flags);
 
 
 	seL4_Reply( message );
