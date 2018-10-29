@@ -6,12 +6,10 @@
 //  Copyright © 2018 Manuel Deneu. All rights reserved.
 //
 
-#ifndef FileServer_h
-#define FileServer_h
+#pragma once
 
 #include <stdio.h>
-
-
+#include "fs.h"
 
 #ifdef __APPLE__
 typedef void InitContext;
@@ -20,7 +18,7 @@ typedef void InitContext;
 #endif
 
 /* File System handler definition */
-typedef int (* FileServerHandler_Open) (void* context, const char*pathname ,int flags) ;
+typedef Inode* (* FileServerHandler_Open) (void* context, const char*pathname ,int flags) ;
 
 typedef struct
 {
@@ -31,15 +29,12 @@ typedef struct
 } FileServerHandler;
 
 
-
-
-
 int FileServerInit(void);
 
 int FileServerRegisterHandler( FileServerHandler* handler);
 
 
 
-int FileServerOpen(InitContext* context , const char*pathname , int flags);
+Inode* FileServerOpen(InitContext* context , const char*pathname , int flags);
 
-#endif /* FileServer_h */
+

@@ -37,7 +37,7 @@ int FileServerRegisterHandler( FileServerHandler* handler)
 }
 
 
-int FileServerOpen(InitContext* context , const char*pathname , int flags)
+Inode* FileServerOpen(InitContext* context , const char*pathname , int flags)
 {
     if(_handler.perfix && prefix(_handler.perfix, pathname))
     {
@@ -45,5 +45,5 @@ int FileServerOpen(InitContext* context , const char*pathname , int flags)
         return _handler.onOpen(context , realPath , flags);
     }
     
-    return -ENOSYS;
+    return NULL;
 }

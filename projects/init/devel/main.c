@@ -12,7 +12,7 @@
 #include <errno.h>
 
 
-static int CpioOpen(void* context, const char*pathname ,int flags)
+static Inode* CpioOpen(void* context, const char*pathname ,int flags)
 {
     printf("CpioOpen '%s' flags %i\n" ,pathname , flags);
     return 0;
@@ -33,7 +33,7 @@ int main(int argc, const char * argv[])
     
     FileServerOpen(NULL, "/cpio/test", 0);
     
-    assert(FileServerOpen(NULL, "/cpi/test", 0) == -ENOSYS);
+    assert(FileServerOpen(NULL, "/cpi/test", 0) == NULL);
     
     return 0;
 }
