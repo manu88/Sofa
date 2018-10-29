@@ -9,6 +9,6 @@ FileServerHandler* getCPIOServerHandler(void);
 
 
 
-//int FileServerInit(void);
+int CPIOServerInit(void);
 
 //int FileServerOpen(InitContext* context , const char*pathname , int flags);
