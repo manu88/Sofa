@@ -5,6 +5,15 @@
 
 int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
+	const int msgLen = seL4_MessageInfo_get_length(message);
+
+	
+	const int fd = seL4_GetMR(1);
+	const size_t count = seL4_GetMR(2);
+
+	printf("Init Read %i args (fd %i count %i)\n" , msgLen , fd , count);
+
+
 	return 0;
 }
 
@@ -38,19 +47,23 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 	int ret= -ENOSYS;
 
-	ret = FileServerOpen(context , pathname,flags);
+	Inode* node =  FileServerOpen(context , pathname,flags , &ret);
+
+	if(node && ret == 0)
+	{
+		printf("No error\n");
+		senderProcess->testNode = node;
+	}
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
 
 	seL4_SetMR(0, __SOFA_NR_open );
 	seL4_SetMR(1, ret);
 
-
-
 	seL4_Reply( message );
 
 
-	free(pathname);
+//	free(pathname);
         return 0;
 }
 

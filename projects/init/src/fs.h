@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include <stdint.h> //ssize_t
+//#include <stdint.h> //ssize_t
+#include <sys/types.h>
 
 struct _inode;
 
@@ -22,7 +23,9 @@ typedef struct _fileOperations FileOperations;
 
 struct _inode
 {
-    const struct FileOperations *operations;
+   const FileOperations *operations;
+
+   void* userData; 
 };
 
 typedef struct _inode Inode;

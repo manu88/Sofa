@@ -13,6 +13,7 @@
 typedef struct _Process Process;
 
 
+
 typedef enum 
 {
 	ProcessState_Uninitialized = 0,
@@ -32,6 +33,11 @@ struct _ProcessListEntry
     LIST_ENTRY(_ProcessListEntry) entries;
 };
 
+
+
+struct _inode;
+
+
 // a process
 struct _Process
 {
@@ -44,6 +50,9 @@ struct _Process
 
     LIST_HEAD(listhead, _ProcessListEntry) children;
 
+
+
+    struct _inode *testNode;
 //    seL4_CPtr reply;
     //Timer* _timer;
 };

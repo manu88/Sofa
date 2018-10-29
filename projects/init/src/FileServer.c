@@ -37,12 +37,12 @@ int FileServerRegisterHandler( FileServerHandler* handler)
 }
 
 
-Inode* FileServerOpen(InitContext* context , const char*pathname , int flags)
+Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int*error)
 {
-    if(_handler.perfix && prefix(_handler.perfix, pathname))
+    if(_handler.perfix && prefix(_handler.perfix, pathname ))
     {
         const char* realPath = pathname + strlen(_handler.perfix);
-        return _handler.onOpen(context , realPath , flags);
+        return _handler.onOpen(context , realPath , flags , error);
     }
     
     return NULL;

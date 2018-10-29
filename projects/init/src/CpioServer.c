@@ -4,9 +4,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
-
-
-static int CpioOpen(void* context, const char*pathname ,int flags);
+#include <fcntl.h>
+static Inode*  CpioOpen(void* context, const char*pathname ,int flags , int *error);
 
 extern char _cpio_archive[];
 
@@ -14,6 +13,17 @@ static const char cpioBaseName[] = "/cpio/";
 
 
 static FileServerHandler _handler = { "/cpio/" ,   CpioOpen};
+
+
+static ssize_t CPIORead (struct _inode *node, char*buf  , size_t bufSize);
+static ssize_t CPIOWrite(struct _inode *node,  const char*buf ,size_t bufSize);
+
+static const FileOperations cpioOps = 
+{
+	CPIORead,
+	CPIOWrite
+};
+
 
 FileServerHandler* getCPIOServerHandler(void)
 {
@@ -30,7 +40,7 @@ int CPIOServerInit()
 	{
 		return 0;
 	}
-
+/*
 	char **buf = malloc( info.file_count);
 
 	for(int i=0;i<info.file_count;i++)
@@ -47,11 +57,11 @@ int CPIOServerInit()
 		printf("File '%s'\n" , buf[i]);
 	}
 
-
+*/
 
 /* TEST*/
 
-
+/*
 unsigned long fileSize = 0;
         void* dataContent = cpio_get_file(_cpio_archive , "hello.txt" , &fileSize);
 
@@ -60,21 +70,52 @@ unsigned long fileSize = 0;
 		printf("Found Hello %lu bytes\n" , fileSize);
 		printf("%.*s", fileSize, dataContent);
 	}
+*/
 	return 1;
 }
 
-static int CpioOpen(void* context, const char*pathname ,int flags)
+static Inode*  CpioOpen(void* context, const char*pathname ,int flags, int *error)
 {
 	printf("CpioOpen '%s' , flags %i\n" , pathname , flags);
 
+	// O_RDONLY, O_WRONLY ou O_RDWR
+	if (flags != O_RDONLY)
+	{
+		*error = -EPERM;
+		return NULL;
+	}
 	unsigned long fileSize = 0;
 	void* dataContent = cpio_get_file(_cpio_archive , pathname , &fileSize);
 
 	if(dataContent == NULL)
 	{
-		return -ENOENT;
+		*error = -ENOENT;
+		return NULL;
+	}
+
+	*error = 0;
+	Inode* node = malloc(sizeof(Inode) );
+
+	if (!node)
+	{
+		*error = -ENOMEM;
+		return NULL;
 	}
 
 	printf("CPIO File found : size %lu\n", fileSize);
-	return -ENOSYS;
+	*error = 0;
+	node->userData = dataContent;
+	node->operations = &cpioOps;
+	return node;
+}
+
+
+static ssize_t CPIORead (struct _inode *node, char* buf , size_t size)
+{
+	return 0;
+}
+
+static ssize_t CPIOWrite(struct _inode *node,  const char* buf ,size_t size)
+{
+	return 0;
 }

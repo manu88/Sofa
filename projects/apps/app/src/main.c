@@ -34,11 +34,21 @@ int main( int argc , char* argv[])
     int fd = open(NULL,0);
     assert(fd == -1);
     assert(errno == EFAULT);
-    fd = open("/cpio/app" , O_RDWR);
 
-    printf("open return %i errno %i\n",fd , errno);
+    fd = open("/cpio/app" , O_RDWR);
+    assert(errno == EPERM); // must fail 'cause cpio is only accessed with O_RDONLY
 
     errno = 0;
+
+    fd = open("/cpio/hello.txt" , O_RDONLY);
+
+    printf("Good open fd %i errno %i\n" ,fd, errno);
+
+    errno = 0;
+
+    char buf[4] = {0};
+
+    ssize_t retRead  = read(fd , buf , 4);
 //    kill(1 , SIGCONT);
     while(1)
     {

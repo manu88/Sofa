@@ -17,10 +17,10 @@
 #include <sys/resource.h>
 #include <SysCallNum.h>
 
-
+static long sys_read(va_list args);
 static long sys_write(va_list args);
 static long sys_open(va_list args);
-
+static long sys_close(va_list args);
 
 static long sys_nanosleep(va_list args);
 static long sys_getpid(va_list args);
@@ -44,9 +44,11 @@ int SysClientInit(int argc , char* argv[] )
     {
         return 1;
     }
-    
+    muslcsys_install_syscall(__NR_read,  sys_read);
     muslcsys_install_syscall(__NR_write, sys_write);
-    muslcsys_install_syscall(__NR_open, sys_open);
+    muslcsys_install_syscall(__NR_open,  sys_open);
+    muslcsys_install_syscall(__NR_close, sys_close);
+
 
     muslcsys_install_syscall(__NR_nanosleep ,  sys_nanosleep);
     muslcsys_install_syscall(__NR_getpid ,     sys_getpid);
@@ -287,6 +289,27 @@ static long sys_setpriority(va_list args)
 
 }
 
+// ssize_t read(int fd, void *buf, size_t count);
+static long sys_read(va_list args)
+{
+	const int fd    = va_arg(args , int);
+	void*     buf   = va_arg(args , void*);
+	size_t    count = va_arg(args , size_t);
+
+	printf("Read request fd %i count %lu\n", fd , count);
+
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
+	seL4_SetMR(0, __SOFA_NR_read);
+	seL4_SetMR(1, fd);
+	seL4_SetMR(2, count);
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_read);
+
+	return 0;
+}
+
+
 //int open(const char *pathname, int flags);
 static long sys_open(va_list args)
 {
@@ -319,8 +342,13 @@ static long sys_open(va_list args)
     	msg = seL4_GetMR(1);
 
     	return msg;
-
 }
+
+static long sys_close(va_list args)
+{
+	return 0;
+}
+
 static long sys_write(va_list args)
 {
 	assert(0);

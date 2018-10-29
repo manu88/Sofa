@@ -18,7 +18,9 @@ typedef void InitContext;
 #endif
 
 /* File System handler definition */
-typedef Inode* (* FileServerHandler_Open) (void* context, const char*pathname ,int flags) ;
+typedef Inode* (* FileServerHandler_Open) (void* context, const char*pathname ,int flags, int *error) ;
+
+
 
 typedef struct
 {
@@ -35,6 +37,6 @@ int FileServerRegisterHandler( FileServerHandler* handler);
 
 
 
-Inode* FileServerOpen(InitContext* context , const char*pathname , int flags);
+Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int *error);
 
 
