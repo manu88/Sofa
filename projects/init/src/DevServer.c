@@ -52,10 +52,11 @@ static Inode*  _DevOpen(void* context, const char*pathname ,int flags , int *err
     
     if (ops)
     {
-        
+        *error = 0;
         return ops->OpenDevice(ops , flags);
         
     }
+    *error = -ENOENT;
     return NULL;
 }
 

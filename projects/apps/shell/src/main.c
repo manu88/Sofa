@@ -26,7 +26,6 @@ int main( int argc , char* argv[])
     printf("execve returned %i errno %i \n",retPid, errno);
 
 
-    int fd = open("/dev/console" , O_RDONLY);
 //    printf("Wait returned %i status %i error %i\n",childPid , appStatus, errno);
     return 0;
 }

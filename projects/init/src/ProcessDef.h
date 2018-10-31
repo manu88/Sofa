@@ -80,6 +80,8 @@ int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio);
 int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio);
 
 struct _inode* ProcessGetNode( /*const*/ Process* process , int index);
+
+// return node id
 int ProcessAppendNode( Process* process , struct _inode* node);
 
 //

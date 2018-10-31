@@ -105,7 +105,7 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	if(node && ret == 0)
 	{
 		printf("No error\n");
-		ProcessAppendNode(senderProcess , node);
+		ret = ProcessAppendNode(senderProcess , node);
 	}
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);

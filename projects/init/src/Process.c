@@ -135,6 +135,6 @@ struct _inode* ProcessGetNode( Process* process , int index)
 int ProcessAppendNode( Process* process , struct _inode* node)
 {
 	cvector_add(&process->fdNodes ,node);
-	return 1;
+	return cvector_count(&process->fdNodes) -1;
  
 }

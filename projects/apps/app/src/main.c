@@ -76,6 +76,14 @@ int main( int argc , char* argv[])
 	retRead  = read(fd , buf , 4);
 
     printf("App : AFTER SEEK read '%s'  %lu\n", buf , retRead);
+
+
+
+    int fd2 = open("/dev/console" , O_RDONLY);
+
+    printf("console open %i err %i\n" , fd2 , errno);
+    errno  = 0;
+   
 //    kill(1 , SIGCONT);
     while(1)
     {
