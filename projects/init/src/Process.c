@@ -20,6 +20,8 @@ int ProcessInit(Process* process)
     memset(process , 0 , sizeof(Process) );
 
     LIST_INIT(&process->children);
+
+    cvector_init(&process->fdNodes);
     return 1;
 }
 
@@ -122,4 +124,17 @@ int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio)
 int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio)
 {
 	return -1;
+}
+
+// FIXME should go const 
+struct _inode* ProcessGetNode( Process* process , int index)
+{
+	return cvector_get(&process->fdNodes, index);
+}
+
+int ProcessAppendNode( Process* process , struct _inode* node)
+{
+	cvector_add(&process->fdNodes ,node);
+	return 1;
+ 
 }

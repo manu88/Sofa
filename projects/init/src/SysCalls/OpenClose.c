@@ -16,10 +16,11 @@ int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 
 	//Lseek
 	ssize_t ret= -ENOSYS;
-
-	if(senderProcess->testNode)
+	
+	Inode* node = ProcessGetNode(senderProcess , fd);
+	if(node)
         {
-		ret = senderProcess->testNode->operations->Lseek(senderProcess->testNode, offset , whence);
+		ret = node->operations->Lseek(node, offset , whence);
 	}
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
@@ -40,12 +41,12 @@ int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	const int fd = seL4_GetMR(1);
 	const size_t count = seL4_GetMR(2);
 
-
-	if(senderProcess->testNode)
+	Inode* node = ProcessGetNode(senderProcess , fd);
+	if(node)
 	{
 		printf("Init Read %i args (fd %i count %i)\n" , msgLen , fd , count);
 		char buf[4];
-		ssize_t ret = senderProcess->testNode->operations->Read(senderProcess->testNode ,buf , count);
+		ssize_t ret = node->operations->Read(node ,buf , count);
 
 		printf("Did read '%s' %lu bytes\n",  buf , ret);
 
@@ -104,7 +105,7 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	if(node && ret == 0)
 	{
 		printf("No error\n");
-		senderProcess->testNode = node;
+		ProcessAppendNode(senderProcess , node);
 	}
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);

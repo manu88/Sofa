@@ -8,6 +8,7 @@
 #include "TimerWheel/queue.h"
 
 #include "Bootstrap.h"
+#include <data_struct/cvector.h>
 
 
 typedef struct _Process Process;
@@ -51,8 +52,8 @@ struct _Process
     LIST_HEAD(listhead, _ProcessListEntry) children;
 
 
-
-    struct _inode *testNode;
+    cvector_t fdNodes;
+    //struct _inode *testNode;
 //    seL4_CPtr reply;
     //Timer* _timer;
 };
@@ -78,6 +79,8 @@ static inline void ProcessSetState(Process* process, ProcessState state)
 int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio);
 int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio);
 
+struct _inode* ProcessGetNode( /*const*/ Process* process , int index);
+int ProcessAppendNode( Process* process , struct _inode* node);
 
 //
 

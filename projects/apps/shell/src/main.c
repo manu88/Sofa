@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <fcntl.h>
+
 int main( int argc , char* argv[])
 {
     if (SysClientInit(argc , argv) != 0)
@@ -23,6 +25,8 @@ int main( int argc , char* argv[])
     int retPid = execve("app",NULL , NULL);
     printf("execve returned %i errno %i \n",retPid, errno);
 
+
+    int fd = open("/dev/console" , O_RDONLY);
 //    printf("Wait returned %i status %i error %i\n",childPid , appStatus, errno);
     return 0;
 }

@@ -69,7 +69,7 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_lseek	     , sys_lseek);
 
 
-    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
+//    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
     return 0;
 }
 
