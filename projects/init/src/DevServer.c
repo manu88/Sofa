@@ -52,8 +52,9 @@ static Inode*  _DevOpen(void* context, const char*pathname ,int flags , int *err
     
     if (ops)
     {
-        printf("Found device ! \n");
-        return NULL;
+        
+        return ops->OpenDevice(ops , flags);
+        
     }
     return NULL;
 }

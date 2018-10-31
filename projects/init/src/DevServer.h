@@ -11,12 +11,15 @@
 #include "FileServer.h"
 #include "fs.h"
 
-typedef struct
+struct _DeviceOperations
 {
     FileOperations fileOps;
-    ssize_t (*OpenDevice) (struct _inode *, char*  , size_t);
+    Inode* (*OpenDevice) (struct _DeviceOperations *, int );
     
-} DeviceOperations;
+    void* userContext;
+};
+
+typedef  struct _DeviceOperations DeviceOperations;
 
 FileServerHandler* getDevServerHandler(void);
 

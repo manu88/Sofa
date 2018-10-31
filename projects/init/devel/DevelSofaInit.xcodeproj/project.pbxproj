@@ -51,6 +51,7 @@
 		59AECEE1218989D300E12D02 /* DevServer.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = DevServer.c; path = ../src/DevServer.c; sourceTree = "<group>"; };
 		59AECEE321898E6200E12D02 /* StringOperations.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = StringOperations.h; path = ../src/StringOperations.h; sourceTree = "<group>"; };
 		59AECEE421898E6200E12D02 /* StringOperations.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = StringOperations.c; path = ../src/StringOperations.c; sourceTree = "<group>"; };
+		59AECEE62189913F00E12D02 /* ProcessDef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ProcessDef.h; path = ../src/ProcessDef.h; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -94,6 +95,7 @@
 		59E99DC6218703FF00805C68 = {
 			isa = PBXGroup;
 			children = (
+				59AECEE62189913F00E12D02 /* ProcessDef.h */,
 				59E99DE22187078E00805C68 /* FileServer.c */,
 				59E99DE02187078E00805C68 /* FileServer.h */,
 				59E99DE521870FCB00805C68 /* fs.h */,

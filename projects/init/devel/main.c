@@ -16,14 +16,32 @@
 #include "DevServer.h"
 
 
-static int called = 0;
+static int cpioCalled = 0;
 
 static Inode* CpioOpen(void* context, const char*pathname ,int flags, int *error)
 {
     printf("CpioOpen '%s' flags %i\n" ,pathname , flags);
     
-    called = 1;
+    cpioCalled = 1;
+    
     return NULL;
+}
+
+static int consoleOpenCalled = 0;
+static Inode* ConsoleOpen (struct _DeviceOperations * device, int flags )
+{
+    consoleOpenCalled = 1;
+    Inode* node = malloc(sizeof(Inode) );
+    node->operations = &device->fileOps;
+    return node;
+}
+
+
+static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size)
+{
+    printf("ConsolesWrite '%s' %zi \n" , buffer , size);
+    
+    return size;
 }
 
 int main(int argc, const char * argv[])
@@ -46,6 +64,9 @@ int main(int argc, const char * argv[])
     assert(FileServerRegisterHandler(getDevServerHandler() ) == 0 ); // second time must fail
     
     DeviceOperations ops;
+    ops.OpenDevice = ConsoleOpen;
+    ops.fileOps.Write = ConsoleWrite;
+    
     assert(DevServerRegisterFile("/lol", &ops) == 0);
     assert(DevServerRegisterFile("/lol", NULL) == 0);
     assert(DevServerRegisterFile("console", &ops) );
@@ -53,13 +74,18 @@ int main(int argc, const char * argv[])
     int err = 0;
     assert(FileServerOpen(NULL, "/cpio/test", 0 , &err) == NULL );
     
-    assert(called == 1);
+    assert(cpioCalled == 1);
     
-    called = 0;
+    cpioCalled = 0;
     assert(FileServerOpen(NULL, "/cpi/test", 0 ,&err) == NULL);
-    assert(called == 0);
+    assert(cpioCalled == 0);
     
-    assert(FileServerOpen(NULL, "/dev/console", 0 ,&err) == NULL);
+    Inode* consoleNode = FileServerOpen(NULL, "/dev/console", 0 ,&err);
+    assert( consoleNode != NULL);
+    assert(consoleOpenCalled == 1);
     
+    
+    consoleNode->operations->Write(consoleNode ,"hello" ,4);
+    free(consoleNode);
     return 0;
 }
