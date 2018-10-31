@@ -13,11 +13,13 @@
 
 #include <data_struct/chash.h>
 
-
+static int called = 0;
 
 static Inode* CpioOpen(void* context, const char*pathname ,int flags, int *error)
 {
     printf("CpioOpen '%s' flags %i\n" ,pathname , flags);
+    
+    called = 1;
     return NULL;
 }
 
@@ -29,14 +31,18 @@ int main(int argc, const char * argv[])
     cpioHandler.perfix = "/cpio/";
     cpioHandler.onOpen = CpioOpen;
     
-    FileServerInit();
+    assert(FileServerInit() );
     
     assert(FileServerRegisterHandler(&cpioHandler) );
     
     int err = 0;
-    FileServerOpen(NULL, "/cpio/test", 0 , &err);
+    assert(FileServerOpen(NULL, "/cpio/test", 0 , &err) == NULL );
     
+    assert(called == 1);
+    
+    called = 0;
     assert(FileServerOpen(NULL, "/cpi/test", 0 ,&err) == NULL);
+    assert(called == 0);
     
     return 0;
 }

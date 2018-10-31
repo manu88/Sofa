@@ -9,40 +9,113 @@
 #include "FileServer.h"
 #include <errno.h>
 #include <string.h>
+#include <assert.h>
+#include <data_struct/chash.h>
 
-static FileServerHandler _handler = {0};
 
 
+#define MAX_SIZE_HASH 10
+typedef struct
+{
+    chash_t _handlers;
+    
+    
+    
+} _FileServerContext;
 
-static int prefix(const char *pre, const char *str)
+
+static _FileServerContext _fsContext;
+
+
+static int MatchPrefix(const char *pre, const char *str)
 {
     return strncmp(pre, str, strlen(pre)) == 0;
 }
 
+// only works if str starts with '/' !!
+static int GetSecondSlash(const char* str)
+{
+    assert(str[0] == '/');
+ 
+    char * ret = strchr(str+1,'/');
+    if(ret == NULL)
+    {
+        return -1;
+    }
+    
+   return (int) (ret-str+1);
+}
+
+static uint32_t hash(const char *str)
+{
+    uint32_t hash = 5381;
+    int c;
+    
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    
+    return hash;
+}
+
 int FileServerInit()
 {
-    return 1;
+    memset(&_fsContext, 0, sizeof(_FileServerContext));
+    
+    chash_init(&_fsContext._handlers, MAX_SIZE_HASH);
+    
+    return _fsContext._handlers.table != NULL;
 }
 
 
 int FileServerRegisterHandler( FileServerHandler* handler)
 {
-    if(_handler.perfix != NULL)
+    uint32_t key = hash(handler->perfix);
+
+    return  chash_set( &_fsContext._handlers, key, handler ) == 0;
+    /*
+    if(_fsContext._handler.perfix != NULL)
     {
         return 0;
     }
     
-    _handler = *handler;
+    _fsContext._handler = *handler;
     return 1;
+     */
 }
 
 
 Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int*error)
 {
-    if(_handler.perfix && prefix(_handler.perfix, pathname ))
+    
+    if (pathname[0] != '/')
     {
-        const char* realPath = pathname + strlen(_handler.perfix);
-        return _handler.onOpen(context , realPath , flags , error);
+        printf("FileServerOpen : '%s' only absolute path works for now \n" , pathname);
+        *error = -ENODEV;
+        return NULL;
+    }
+    
+    int pos = GetSecondSlash(pathname);
+    
+    if (pos == -1)
+    {
+        *error = -EINVAL;
+        return NULL;
+    }
+    
+    
+    char* baseDir = strndup(pathname, pos);
+    
+    uint32_t key = hash(baseDir);
+
+    free(baseDir);
+    baseDir = NULL;
+    
+    FileServerHandler* handler = chash_get(&_fsContext._handlers, key);
+    
+    if (handler && MatchPrefix( handler->perfix, pathname ) )
+    {
+        const char* realPath = pathname + strlen(handler->perfix);
+        return handler->onOpen(context , realPath , flags , error);
     }
     
     return NULL;
