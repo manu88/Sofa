@@ -9,10 +9,20 @@
 #pragma once
 
 #include "FileServer.h"
+#include "fs.h"
+
+typedef struct
+{
+    FileOperations fileOps;
+    ssize_t (*OpenDevice) (struct _inode *, char*  , size_t);
+    
+} DeviceOperations;
 
 FileServerHandler* getDevServerHandler(void);
 
 int DevServerInit(void);
+
+int DevServerRegisterFile(const char* file , DeviceOperations* ops);
 
 
 

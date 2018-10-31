@@ -14,6 +14,7 @@
 		599D6E2421897ECD00FD93BD /* cqueue.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E0E21897DA100FD93BD /* cqueue.c */; };
 		599D6E2521897ECD00FD93BD /* cvector.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1721897DA200FD93BD /* cvector.c */; };
 		59AECEE2218989D300E12D02 /* DevServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AECEE1218989D300E12D02 /* DevServer.c */; };
+		59AECEE521898E6200E12D02 /* StringOperations.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AECEE421898E6200E12D02 /* StringOperations.c */; };
 		59E99DE32187078E00805C68 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE12187078E00805C68 /* main.c */; };
 		59E99DE42187078E00805C68 /* FileServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE22187078E00805C68 /* FileServer.c */; };
 		59E99DE721870FCB00805C68 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE621870FCB00805C68 /* fs.c */; };
@@ -48,6 +49,8 @@
 		599D6E1821897DA200FD93BD /* chash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = chash.h; path = ../../libdatastruct/include/data_struct/chash.h; sourceTree = "<group>"; };
 		59AECEE0218989D300E12D02 /* DevServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DevServer.h; path = ../src/DevServer.h; sourceTree = "<group>"; };
 		59AECEE1218989D300E12D02 /* DevServer.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = DevServer.c; path = ../src/DevServer.c; sourceTree = "<group>"; };
+		59AECEE321898E6200E12D02 /* StringOperations.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = StringOperations.h; path = ../src/StringOperations.h; sourceTree = "<group>"; };
+		59AECEE421898E6200E12D02 /* StringOperations.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = StringOperations.c; path = ../src/StringOperations.c; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -96,6 +99,8 @@
 				59E99DE521870FCB00805C68 /* fs.h */,
 				59E99DE621870FCB00805C68 /* fs.c */,
 				59E99DE12187078E00805C68 /* main.c */,
+				59AECEE321898E6200E12D02 /* StringOperations.h */,
+				59AECEE421898E6200E12D02 /* StringOperations.c */,
 				59AECEE0218989D300E12D02 /* DevServer.h */,
 				59AECEE1218989D300E12D02 /* DevServer.c */,
 				599D6E1F21897DA700FD93BD /* libdatastruct */,
@@ -168,6 +173,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				599D6E2521897ECD00FD93BD /* cvector.c in Sources */,
+				59AECEE521898E6200E12D02 /* StringOperations.c in Sources */,
 				599D6E2221897ECD00FD93BD /* coat.c in Sources */,
 				59AECEE2218989D300E12D02 /* DevServer.c in Sources */,
 				599D6E2421897ECD00FD93BD /* cqueue.c in Sources */,

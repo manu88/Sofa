@@ -35,12 +35,20 @@ int main(int argc, const char * argv[])
     cpioHandler.onOpen = CpioOpen;
     
     
-    DevServerInit();
+    assert(DevServerInit() );
     
     assert(FileServerInit() );
     
     assert(FileServerRegisterHandler(&cpioHandler) );
+    assert(FileServerRegisterHandler(&cpioHandler)  == 0); // second time must fail
+    
     assert(FileServerRegisterHandler(getDevServerHandler() ) );
+    assert(FileServerRegisterHandler(getDevServerHandler() ) == 0 ); // second time must fail
+    
+    DeviceOperations ops;
+    assert(DevServerRegisterFile("/lol", &ops) == 0);
+    assert(DevServerRegisterFile("/lol", NULL) == 0);
+    assert(DevServerRegisterFile("console", &ops) );
     
     int err = 0;
     assert(FileServerOpen(NULL, "/cpio/test", 0 , &err) == NULL );

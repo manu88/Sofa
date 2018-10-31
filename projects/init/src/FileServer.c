@@ -11,7 +11,7 @@
 #include <string.h>
 #include <assert.h>
 #include <data_struct/chash.h>
-
+#include "StringOperations.h"
 
 
 #define MAX_SIZE_HASH 10
@@ -46,16 +46,7 @@ static int GetSecondSlash(const char* str)
    return (int) (ret-str+1);
 }
 
-static uint32_t hash(const char *str)
-{
-    uint32_t hash = 5381;
-    int c;
-    
-    while ((c = *str++))
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-    
-    return hash;
-}
+
 
 int FileServerInit()
 {
@@ -69,7 +60,12 @@ int FileServerInit()
 
 int FileServerRegisterHandler( FileServerHandler* handler)
 {
-    uint32_t key = hash(handler->perfix);
+    uint32_t key = StringHash(handler->perfix);
+    
+    if( chash_get(&_fsContext._handlers, key))
+    {
+        return 0;
+    }
 
     return  chash_set( &_fsContext._handlers, key, handler ) == 0;
     /*
@@ -105,7 +101,7 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
     
     char* baseDir = strndup(pathname, pos);
     
-    uint32_t key = hash(baseDir);
+    uint32_t key = StringHash(baseDir);
 
     free(baseDir);
     baseDir = NULL;
