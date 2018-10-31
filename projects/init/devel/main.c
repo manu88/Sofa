@@ -13,6 +13,9 @@
 
 #include <data_struct/chash.h>
 
+#include "DevServer.h"
+
+
 static int called = 0;
 
 static Inode* CpioOpen(void* context, const char*pathname ,int flags, int *error)
@@ -31,9 +34,13 @@ int main(int argc, const char * argv[])
     cpioHandler.perfix = "/cpio/";
     cpioHandler.onOpen = CpioOpen;
     
+    
+    DevServerInit();
+    
     assert(FileServerInit() );
     
     assert(FileServerRegisterHandler(&cpioHandler) );
+    assert(FileServerRegisterHandler(getDevServerHandler() ) );
     
     int err = 0;
     assert(FileServerOpen(NULL, "/cpio/test", 0 , &err) == NULL );
@@ -43,6 +50,8 @@ int main(int argc, const char * argv[])
     called = 0;
     assert(FileServerOpen(NULL, "/cpi/test", 0 ,&err) == NULL);
     assert(called == 0);
+    
+    assert(FileServerOpen(NULL, "/dev/console", 0 ,&err) == NULL);
     
     return 0;
 }
