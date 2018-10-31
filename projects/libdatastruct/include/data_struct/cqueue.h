@@ -10,8 +10,7 @@
  * @TAG(D61_BSD)
  */
 
-#ifndef _CQUEUE_H_
-#define _CQUEUE_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -38,4 +37,4 @@ inline size_t cqueue_size(cqueue_t *q) {
 
 void cqueue_free(cqueue_t *q);
 
-#endif /* _CQUEUE_H_ */
+

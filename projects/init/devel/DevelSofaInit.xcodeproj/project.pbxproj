@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		599D6E2021897ECD00FD93BD /* cbpool.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1521897DA200FD93BD /* cbpool.c */; };
+		599D6E2121897ECD00FD93BD /* chash.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1121897DA200FD93BD /* chash.c */; };
+		599D6E2221897ECD00FD93BD /* coat.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E0C21897DA100FD93BD /* coat.c */; };
+		599D6E2321897ECD00FD93BD /* cpool.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E0B21897DA100FD93BD /* cpool.c */; };
+		599D6E2421897ECD00FD93BD /* cqueue.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E0E21897DA100FD93BD /* cqueue.c */; };
+		599D6E2521897ECD00FD93BD /* cvector.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1721897DA200FD93BD /* cvector.c */; };
 		59E99DE32187078E00805C68 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE12187078E00805C68 /* main.c */; };
 		59E99DE42187078E00805C68 /* FileServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE22187078E00805C68 /* FileServer.c */; };
 		59E99DE721870FCB00805C68 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE621870FCB00805C68 /* fs.c */; };
@@ -25,6 +31,20 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		599D6E0B21897DA100FD93BD /* cpool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cpool.c; path = ../../libdatastruct/src/cpool.c; sourceTree = "<group>"; };
+		599D6E0C21897DA100FD93BD /* coat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = coat.c; path = ../../libdatastruct/src/coat.c; sourceTree = "<group>"; };
+		599D6E0D21897DA100FD93BD /* coat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = coat.h; path = ../../libdatastruct/include/data_struct/coat.h; sourceTree = "<group>"; };
+		599D6E0E21897DA100FD93BD /* cqueue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cqueue.c; path = ../../libdatastruct/src/cqueue.c; sourceTree = "<group>"; };
+		599D6E0F21897DA100FD93BD /* cvector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cvector.h; path = ../../libdatastruct/include/data_struct/cvector.h; sourceTree = "<group>"; };
+		599D6E1021897DA100FD93BD /* csstring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = csstring.h; path = ../../libdatastruct/include/data_struct/csstring.h; sourceTree = "<group>"; };
+		599D6E1121897DA200FD93BD /* chash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chash.c; path = ../../libdatastruct/src/chash.c; sourceTree = "<group>"; };
+		599D6E1221897DA200FD93BD /* cqueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cqueue.h; path = ../../libdatastruct/include/data_struct/cqueue.h; sourceTree = "<group>"; };
+		599D6E1321897DA200FD93BD /* cmacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cmacros.h; path = ../../libdatastruct/include/data_struct/cmacros.h; sourceTree = "<group>"; };
+		599D6E1421897DA200FD93BD /* cbpool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cbpool.h; path = ../../libdatastruct/include/data_struct/cbpool.h; sourceTree = "<group>"; };
+		599D6E1521897DA200FD93BD /* cbpool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cbpool.c; path = ../../libdatastruct/src/cbpool.c; sourceTree = "<group>"; };
+		599D6E1621897DA200FD93BD /* cpool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cpool.h; path = ../../libdatastruct/include/data_struct/cpool.h; sourceTree = "<group>"; };
+		599D6E1721897DA200FD93BD /* cvector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cvector.c; path = ../../libdatastruct/src/cvector.c; sourceTree = "<group>"; };
+		599D6E1821897DA200FD93BD /* chash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = chash.h; path = ../../libdatastruct/include/data_struct/chash.h; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -44,6 +64,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		599D6E1F21897DA700FD93BD /* libdatastruct */ = {
+			isa = PBXGroup;
+			children = (
+				599D6E1521897DA200FD93BD /* cbpool.c */,
+				599D6E1421897DA200FD93BD /* cbpool.h */,
+				599D6E1121897DA200FD93BD /* chash.c */,
+				599D6E1821897DA200FD93BD /* chash.h */,
+				599D6E1321897DA200FD93BD /* cmacros.h */,
+				599D6E0C21897DA100FD93BD /* coat.c */,
+				599D6E0D21897DA100FD93BD /* coat.h */,
+				599D6E0B21897DA100FD93BD /* cpool.c */,
+				599D6E1621897DA200FD93BD /* cpool.h */,
+				599D6E0E21897DA100FD93BD /* cqueue.c */,
+				599D6E1221897DA200FD93BD /* cqueue.h */,
+				599D6E1021897DA100FD93BD /* csstring.h */,
+				599D6E1721897DA200FD93BD /* cvector.c */,
+				599D6E0F21897DA100FD93BD /* cvector.h */,
+			);
+			name = libdatastruct;
+			sourceTree = "<group>";
+		};
 		59E99DC6218703FF00805C68 = {
 			isa = PBXGroup;
 			children = (
@@ -52,6 +93,7 @@
 				59E99DE521870FCB00805C68 /* fs.h */,
 				59E99DE621870FCB00805C68 /* fs.c */,
 				59E99DE12187078E00805C68 /* main.c */,
+				599D6E1F21897DA700FD93BD /* libdatastruct */,
 				59E99DD0218703FF00805C68 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -120,7 +162,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				599D6E2521897ECD00FD93BD /* cvector.c in Sources */,
+				599D6E2221897ECD00FD93BD /* coat.c in Sources */,
+				599D6E2421897ECD00FD93BD /* cqueue.c in Sources */,
+				599D6E2321897ECD00FD93BD /* cpool.c in Sources */,
+				599D6E2021897ECD00FD93BD /* cbpool.c in Sources */,
 				59E99DE721870FCB00805C68 /* fs.c in Sources */,
+				599D6E2121897ECD00FD93BD /* chash.c in Sources */,
 				59E99DE42187078E00805C68 /* FileServer.c in Sources */,
 				59E99DE32187078E00805C68 /* main.c in Sources */,
 			);
@@ -245,7 +293,13 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S3D34765YM;
+				HEADER_SEARCH_PATHS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_PATH)../../libdatastruct/include",
+					"$(PROJECT_PATH)../../libdatastruct/include/libdatastruct",
+				);
+				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Debug;
 		};
@@ -254,7 +308,13 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S3D34765YM;
+				HEADER_SEARCH_PATHS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_PATH)../../libdatastruct/include",
+					"$(PROJECT_PATH)../../libdatastruct/include/libdatastruct",
+				);
+				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Release;
 		};

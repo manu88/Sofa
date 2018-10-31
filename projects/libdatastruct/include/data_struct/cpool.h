@@ -10,8 +10,7 @@
  * @TAG(D61_BSD)
  */
 
-#ifndef _CALLOCPOOL_H_
-#define _CALLOCPOOL_H_
+#pragma once
 
 #include <stdbool.h>
 #include <data_struct/cvector.h>
@@ -33,4 +32,3 @@ void cpool_free(cpool_t *p, uint32_t obj);
 
 bool cpool_check(cpool_t *p, uint32_t obj);
 
-#endif /* _CALLOCPOOL_H_ */

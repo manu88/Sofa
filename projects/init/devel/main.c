@@ -11,8 +11,11 @@
 #include <assert.h>
 #include <errno.h>
 
+#include <data_struct/chash.h>
 
-static Inode* CpioOpen(void* context, const char*pathname ,int flags)
+
+
+static Inode* CpioOpen(void* context, const char*pathname ,int flags, int *error)
 {
     printf("CpioOpen '%s' flags %i\n" ,pathname , flags);
     return NULL;
@@ -30,10 +33,10 @@ int main(int argc, const char * argv[])
     
     assert(FileServerRegisterHandler(&cpioHandler) );
     
+    int err = 0;
+    FileServerOpen(NULL, "/cpio/test", 0 , &err);
     
-    FileServerOpen(NULL, "/cpio/test", 0);
-    
-    assert(FileServerOpen(NULL, "/cpi/test", 0) == NULL);
+    assert(FileServerOpen(NULL, "/cpi/test", 0 ,&err) == NULL);
     
     return 0;
 }

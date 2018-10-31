@@ -10,8 +10,7 @@
  * @TAG(D61_BSD)
  */
 
-#ifndef _CHASH_H_
-#define _CHASH_H_
+#pragma once
 
 #include <data_struct/cvector.h>
 
@@ -47,4 +46,4 @@ void chash_remove(chash_t *t, uint32_t key);
 
 int chash_find_free(chash_t *t, uint32_t rangeStart, uint32_t rangeEnd);
 
-#endif /* _CHASH_H_ */
+

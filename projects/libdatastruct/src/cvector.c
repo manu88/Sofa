@@ -99,3 +99,9 @@ cvector_reset(cvector_t *v)
     assert(v);
     v->count = 0;
 }
+
+
+size_t cvector_count(cvector_t *v)
+{
+    return v->count;
+}

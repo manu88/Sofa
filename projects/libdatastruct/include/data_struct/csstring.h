@@ -10,8 +10,7 @@
  * @TAG(D61_BSD)
  */
 
-#ifndef _CSTATICSTRING_H_
-#define _CSTATICSTRING_H_
+#pragma once
 
 #ifndef C_STATIC_STRING_MAXLEN
     #define C_STATIC_STRING_MAXLEN 64
@@ -21,5 +20,4 @@ typedef struct csstring_s {
     char str[C_STATIC_STRING_MAXLEN];
 } csstring_t;
 
-#endif /* _CSTATICSTRING_H_ */
 

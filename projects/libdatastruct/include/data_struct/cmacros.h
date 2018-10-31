@@ -10,8 +10,7 @@
  * @TAG(D61_BSD)
  */
 
-#ifndef _CMACROUTILS_H_
-#define _CMACROUTILS_H_
+#pragma once
 
 #ifdef _MIN
     #define _MIN(a,b) (((a)<(b))?(a):(b))
@@ -30,4 +29,4 @@
     #define _PAGE_ALIGN(x) ((x) & ~(PAGE_SIZE - 1))
 #endif
 
-#endif 
+

@@ -10,8 +10,7 @@
  * @TAG(D61_BSD)
  */
 
-#ifndef _CVECTOR_H_
-#define _CVECTOR_H_
+#pragma once
 
 #define CVECTOR_INIT_SIZE 4
 #define CVECTOR_RESIZE_CHECK_FREQ 16
@@ -37,9 +36,7 @@ void cvector_init(cvector_t *v);
 
 int cvector_add(cvector_t *v, cvector_item_t e);
 
-inline size_t cvector_count(cvector_t *v) {
-    return v->count;
-}
+size_t cvector_count(cvector_t *v);
 
 void cvector_set(cvector_t *v, uint32_t index, cvector_item_t e);
 
@@ -51,4 +48,4 @@ void cvector_free(cvector_t *v);
 
 void cvector_reset(cvector_t *v);
 
-#endif /* _CVECTOR_H_ */
+

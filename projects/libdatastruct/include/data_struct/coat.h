@@ -10,8 +10,7 @@
  * @TAG(D61_BSD)
  */
 
-#ifndef _C_OBJECT_ALLOCATION_TABLE_H_
-#define _C_OBJECT_ALLOCATION_TABLE_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -46,4 +45,4 @@ cvector_item_t coat_get(coat_t *t, int id);
 
 int coat_free(coat_t *t, int id);
 
-#endif /* _C_OBJECT_ALLOCATION_TABLE_H_ */
+

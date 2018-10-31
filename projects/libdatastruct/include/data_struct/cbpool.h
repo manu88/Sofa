@@ -10,8 +10,7 @@
  * @TAG(D61_BSD)
  */
 
-#ifndef _CBITMAPALLOCPOOL_H_
-#define _CBITMAPALLOCPOOL_H_
+#pragma once
 
 #include <stdbool.h>
 #include <data_struct/cvector.h>
@@ -38,4 +37,4 @@ bool cbpool_check_single(cbpool_t *p, uint32_t obj);
 
 void cbpool_set_single(cbpool_t *p, uint32_t obj, bool val);
 
-#endif /* _CBITMAPALLOCPOOL_H_ */
+
