@@ -16,6 +16,7 @@
 
 #include <sys/resource.h>
 #include <SysCallNum.h>
+#include <arch_stdio.h>
 
 static long sys_read(va_list args);
 static long sys_write(va_list args);
@@ -34,9 +35,12 @@ static long sys_getpriority(va_list args);
 
 static long sys_lseek(va_list args);
 
-
+static size_t _Sofa_stdio_write(void *data, size_t count);
 
 static seL4_CPtr sysCallEndPoint = 0;
+
+
+
 
 int SysClientInit(int argc , char* argv[] )
 {
@@ -64,6 +68,8 @@ int SysClientInit(int argc , char* argv[] )
 
     muslcsys_install_syscall(__NR_lseek	     , sys_lseek);
 
+
+    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
     return 0;
 }
 
@@ -400,5 +406,11 @@ static long sys_write(va_list args)
 	const void *buf =  va_arg(args, void*);
 	size_t count = va_arg(args, size_t);
 
+	return 0;
+}
+
+
+static size_t _Sofa_stdio_write(void *data, size_t count)
+{
 	return 0;
 }
