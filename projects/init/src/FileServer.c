@@ -99,7 +99,7 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
     }
     
     
-    char* baseDir = strndup(pathname, pos);
+    char* baseDir =  strndup(pathname, (unsigned long) pos);
     
     uint32_t key = StringHash(baseDir);
 

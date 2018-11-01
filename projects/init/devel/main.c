@@ -41,7 +41,7 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
 {
     printf("ConsolesWrite '%s' %zi \n" , buffer , size);
     
-    return size;
+    return (ssize_t)size;
 }
 
 int main(int argc, const char * argv[])

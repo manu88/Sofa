@@ -12,9 +12,9 @@
 uint32_t StringHash(const char *str)
 {
     uint32_t hash = 5381;
-    int c;
+    uint32_t c;
     
-    while ((c = *str++))
+    while ((c = (uint32_t)*str++))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
     
     return hash;

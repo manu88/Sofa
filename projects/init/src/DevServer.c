@@ -7,7 +7,7 @@
 //
 
 #include <string.h>
-
+#include <errno.h>
 #include "DevServer.h"
 #include <stdio.h>
 #include <data_struct/chash.h>

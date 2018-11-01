@@ -54,7 +54,7 @@ cvector_add(cvector_t *v, cvector_item_t e)
     }
 
     v->data[v->count] = e;
-    return v->count++;
+    return (int) v->count++;
 }
 
 void
