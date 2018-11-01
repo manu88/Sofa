@@ -27,6 +27,7 @@ ApplyCommonReleaseVerificationSettings(FALSE FALSE)
 # Elfloader settings that correspond to how Data61 sets its boards up.
 #ApplyData61ElfLoaderSettings()
 
+SetSimulationScriptProperty(GRAPHIC TRUE)
 GenerateSimulateScript()
 
 

@@ -28,6 +28,7 @@
 #include "FileServer.h"
 #include "CpioServer.h"
 #include "DevServer.h"
+#include "EGADriver.h"
 
 //#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
@@ -93,6 +94,10 @@ int main(void)
 
     error = !FileServerRegisterHandler( getDevServerHandler() );
     ZF_LOGF_IFERR(error, "Failed to register Dev File System \n");
+
+// EGA
+
+    InitEGADriver( &context);
 
  /* create an endpoint. */
     vka_object_t ep_object = {0};
