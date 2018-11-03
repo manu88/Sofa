@@ -7,6 +7,26 @@
 #define MODE_HEIGHT 25
 
 
+/* Hardware text mode color constants. */
+enum vga_color {
+        VGA_COLOR_BLACK = 0,
+        VGA_COLOR_BLUE = 1,
+        VGA_COLOR_GREEN = 2,
+        VGA_COLOR_CYAN = 3,
+        VGA_COLOR_RED = 4,
+        VGA_COLOR_MAGENTA = 5,
+        VGA_COLOR_BROWN = 6,
+        VGA_COLOR_LIGHT_GREY = 7,
+        VGA_COLOR_DARK_GREY = 8,
+        VGA_COLOR_LIGHT_BLUE = 9,
+        VGA_COLOR_LIGHT_GREEN = 10,
+        VGA_COLOR_LIGHT_CYAN = 11,
+        VGA_COLOR_LIGHT_RED = 12,
+        VGA_COLOR_LIGHT_MAGENTA = 13,
+        VGA_COLOR_LIGHT_BROWN = 14,
+        VGA_COLOR_WHITE = 15,
+};
+
 
 typedef struct
 {
@@ -21,7 +41,8 @@ typedef struct
 static _EGAContext _egaContext;
 
 
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color) {
+static inline uint16_t vga_entry(unsigned char uc, uint8_t color) 
+{
         return (uint16_t) uc | (uint16_t) color << 8;
 }
 
@@ -31,16 +52,26 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
         _egaContext.videoPtr[index] = vga_entry(c, color);
 }
 
-
+void terminalClear()
+{
+    const int width = MODE_WIDTH;
+   
+    for(int row=0;row<MODE_HEIGHT;row++)
+    {
+        for (int col = 0; col < 80; col++) 
+        {
+            _egaContext.videoPtr[width * row + col] = 0;
+        }
+    }
+}
 
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size)
 {
-    printf("ConsolesWrite '%s' %zi \n" , buffer , size);
     
 	 // 17
     for(int i =0;i<size;i++)
     {
-	terminal_putentryat(buffer[i] ,2 ,  i , 0);
+	terminal_putentryat(buffer[i] ,VGA_COLOR_RED ,  i , 0);
     }
     return (ssize_t)size;
 }
@@ -89,7 +120,8 @@ int InitEGADriver(InitContext *context)
     	assert(error == 0);
 
 	_egaContext.videoPtr = mapVideoRam(context);
-
+	
+	/*
 	if(_egaContext.videoPtr)
 	{
 	    for(int i=0;i<MODE_HEIGHT;i++)
@@ -98,6 +130,8 @@ int InitEGADriver(InitContext *context)
     	    }
 
 	}
+	*/
+	terminalClear();
 	return _egaContext.videoPtr != NULL;
 }
 

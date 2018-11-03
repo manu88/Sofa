@@ -14,7 +14,7 @@
 
 
 #include <vka/object_capops.h> // vka_mint_object
-
+#include <sel4platsupport/arch/io.h>
 
 #include <SysCallNum.h>
 #include "Bootstrap.h"
@@ -63,6 +63,29 @@ int main(void)
 
     error = !DriverKitInit(&context);
     ZF_LOGF_IFERR(error, "Failed to init DriverKit.\n");
+
+
+/* Keyboard */
+    sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
+    
+    if( ps_cdev_init(PC99_KEYBOARD_PS2, &context.opsIO, &context.devKeyboard) == NULL )
+    {
+        printf("Error init keyboard\n");
+    }
+
+    //Loop through every possible IRQ, and get the ones that the
+    //input device needs to listen to. (keyboard is at IRQ 1)
+/*
+    seL4_CPtr irqEP = seL4_CapNull;
+    for (uint32_t i = 0; i < 256; i++) 
+    {
+        if (ps_cdev_produces_irq(&context.devKeyboard, i)) 
+	{
+            irqEP = dev_handle_irq(&context.devKeyboard, i, &env);
+        }
+    }
+*/
+
 /* Processes table & init */
 
     ProcessInit(&initProcess);
@@ -141,9 +164,8 @@ int main(void)
 
 /* BEGIN PROCESS */
 
-
     Process *testProcess = ProcessAlloc();
-    error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, APP_PRIORITY );
+    error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
     if (error == 0)
     {
         ProcessTableAppend(testProcess);
@@ -153,9 +175,8 @@ int main(void)
 	printf("Error spawning  TestSysCalls\n");
     }
 
-
     Process *process2 = ProcessAlloc();
-    error = ProcessStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, APP_PRIORITY );
+    error = ProcessStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, seL4_MaxPrio );
     if(error == 0)
     {
         ProcessTableAppend(process2);

@@ -8,7 +8,7 @@
 #include <sel4platsupport/io.h>
 #include "TimerWheel/TimersWheel.h"
 
-
+#include <platsupport/chardev.h>
 
 typedef struct
 {
@@ -25,6 +25,11 @@ typedef struct
     vka_object_t   ntfn_object;
     ps_io_ops_t ops;
     TimersWheel timersWheel;
+
+
+
+    struct ps_io_ops    opsIO;
+    ps_chardevice_t devKeyboard;
 
 } InitContext;
 
