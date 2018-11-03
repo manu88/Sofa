@@ -9,6 +9,9 @@
 #ifndef Sofa_h
 #define Sofa_h
 
+#define SOFA_VERSION_MAJ   0
+#define SOFA_VERSION_MIN   1
+#define SOFA_VERSION_PATCH 0
 
 #ifndef ALWAYS_INLINE
 #define ALWAYS_INLINE __attribute__((always_inline))
@@ -24,6 +27,10 @@
 
 #ifndef WARN_UNUSED_RESULT
 #define WARN_UNUSED_RESULT            __attribute__((warn_unused_result))
+#endif
+
+#ifndef UNUSED_PARAMETER
+#define UNUSED_PARAMETER(x) (void)(x)
 #endif
 
 #define SOFA_UNIT_TESTABLE
