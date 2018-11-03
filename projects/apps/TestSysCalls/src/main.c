@@ -11,7 +11,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-
+#include <sys/wait.h>
 
 #ifndef __APPLE__
 #include <SysClient.h>
@@ -57,6 +57,17 @@ static int doReadTests()
 }
 
 
+static int doWaitTests()
+{
+    errno = 0;
+    int status = 0;
+    assert(wait(&status) == -1);
+    assert(errno == ECHILD);
+    assert(status == 0);
+
+    return 1;
+}
+
 int main(int argc, char * argv[])
 {
 
@@ -69,6 +80,6 @@ int main(int argc, char * argv[])
     assert(doGetPidTests());
     assert(doOpenTests());
     assert(doReadTests());
-    
+    assert(doWaitTests() );
     return 0;
 }

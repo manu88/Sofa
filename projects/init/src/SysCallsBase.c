@@ -25,7 +25,7 @@ int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
     printf("Got exit from %i status %i\n", senderProcess->_pid , exitStatus);
 
     ProcessSignalStop( senderProcess);
-
+    ProcessDoCleanup( senderProcess);
     if(!ProcessTableRemove( senderProcess))
     {
         printf("Unable to remove process!\n");

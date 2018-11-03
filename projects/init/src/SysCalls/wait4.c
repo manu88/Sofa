@@ -36,6 +36,7 @@ int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 
     waiter->process = senderProcess;
     waiter->reply = get_free_slot(context); 
+    waiter->context = context;
     int error = cnode_savecaller( context, waiter->reply );
 
     ProcessRegisterWaiter(processToWait, waiter);

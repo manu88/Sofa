@@ -42,6 +42,8 @@ struct _WaiterListEntry
     Process *process;
     int reason;
     seL4_CPtr reply;
+    InitContext* context;
+
     LIST_ENTRY(_WaiterListEntry) entries;
 };
 
@@ -98,6 +100,8 @@ struct _inode* ProcessGetNode( /*const*/ Process* process , int index);
 // return node id
 int ProcessAppendNode( Process* process , struct _inode* node);
 
+
+int ProcessDoCleanup(Process * process);
 int ProcessSignalStop(Process* process);
 //
 int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter);

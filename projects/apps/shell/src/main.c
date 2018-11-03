@@ -35,9 +35,19 @@ int main( int argc , char* argv[])
     int retPid = execve("app",NULL , NULL);
     printf("execve returned %i errno %i \n",retPid, errno);
 	
-    printf("Shell : wait\n");
+    printf("Shell 1 : wait\n");
     childPid = wait(&appStatus);
     assert(childPid >= 1);
+
+    printf("Start child again  /n");
+
+   retPid = execve("app",NULL , NULL);
+    printf("execve returned %i errno %i \n",retPid, errno);
+        
+    printf("Shell 2 : wait\n");
+    childPid = wait(&appStatus);
+    assert(childPid >= 1);
+
 
 //    printf("Wait returned %i status %i error %i\n",childPid , appStatus, errno);
     return 0;
