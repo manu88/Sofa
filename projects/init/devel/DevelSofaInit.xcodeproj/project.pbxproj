@@ -20,6 +20,10 @@
 		59AED249218E1B9000E12D02 /* Process.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED248218E1B9000E12D02 /* Process.c */; };
 		59AED24F218E259700E12D02 /* Init_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED24D218E259700E12D02 /* Init_UnitTests.c */; };
 		59AED252218E25AC00E12D02 /* FileServer_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */; };
+		59AED25A218E2CCB00E12D02 /* timeout.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED254218E2CCB00E12D02 /* timeout.c */; };
+		59AED25B218E2CCB00E12D02 /* TimersWheel.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED255218E2CCB00E12D02 /* TimersWheel.c */; };
+		59AED25C218E2CCB00E12D02 /* timeout-bitops.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED257218E2CCB00E12D02 /* timeout-bitops.c */; };
+		59AED25F218E2CE300E12D02 /* TimersWheel_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED25E218E2CE300E12D02 /* TimersWheel_UnitTests.c */; };
 		59E99DE32187078E00805C68 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE12187078E00805C68 /* main.c */; };
 		59E99DE42187078E00805C68 /* FileServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE22187078E00805C68 /* FileServer.c */; };
 		59E99DE721870FCB00805C68 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE621870FCB00805C68 /* fs.c */; };
@@ -75,6 +79,14 @@
 		59AED24E218E259700E12D02 /* Init_UnitTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Init_UnitTests.h; sourceTree = "<group>"; };
 		59AED250218E25AC00E12D02 /* FileServer_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileServer_UnitTests.h; sourceTree = "<group>"; };
 		59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FileServer_UnitTests.c; sourceTree = "<group>"; };
+		59AED254218E2CCB00E12D02 /* timeout.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = timeout.c; sourceTree = "<group>"; };
+		59AED255218E2CCB00E12D02 /* TimersWheel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TimersWheel.c; sourceTree = "<group>"; };
+		59AED256218E2CCB00E12D02 /* TimersWheel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimersWheel.h; sourceTree = "<group>"; };
+		59AED257218E2CCB00E12D02 /* timeout-bitops.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "timeout-bitops.c"; sourceTree = "<group>"; };
+		59AED258218E2CCB00E12D02 /* timeout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = timeout.h; sourceTree = "<group>"; };
+		59AED259218E2CCB00E12D02 /* queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = queue.h; sourceTree = "<group>"; };
+		59AED25D218E2CE300E12D02 /* TimersWheel_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TimersWheel_UnitTests.h; sourceTree = "<group>"; };
+		59AED25E218E2CE300E12D02 /* TimersWheel_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TimersWheel_UnitTests.c; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -174,6 +186,8 @@
 		59AED24C218E259700E12D02 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				59AED25D218E2CE300E12D02 /* TimersWheel_UnitTests.h */,
+				59AED25E218E2CE300E12D02 /* TimersWheel_UnitTests.c */,
 				59AED250218E25AC00E12D02 /* FileServer_UnitTests.h */,
 				59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */,
 				59AED24D218E259700E12D02 /* Init_UnitTests.c */,
@@ -182,9 +196,24 @@
 			path = UnitTests;
 			sourceTree = "<group>";
 		};
+		59AED253218E2CCB00E12D02 /* TimerWheel */ = {
+			isa = PBXGroup;
+			children = (
+				59AED254218E2CCB00E12D02 /* timeout.c */,
+				59AED255218E2CCB00E12D02 /* TimersWheel.c */,
+				59AED256218E2CCB00E12D02 /* TimersWheel.h */,
+				59AED257218E2CCB00E12D02 /* timeout-bitops.c */,
+				59AED258218E2CCB00E12D02 /* timeout.h */,
+				59AED259218E2CCB00E12D02 /* queue.h */,
+			);
+			name = TimerWheel;
+			path = ../src/TimerWheel;
+			sourceTree = "<group>";
+		};
 		59E99DC6218703FF00805C68 = {
 			isa = PBXGroup;
 			children = (
+				59AED253218E2CCB00E12D02 /* TimerWheel */,
 				59AED24A218E1BD400E12D02 /* SysCallNum.h */,
 				59AECEEB218DC84300E12D02 /* Sel4_Stubs */,
 				59E99DE12187078E00805C68 /* main.c */,
@@ -272,10 +301,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				59AED252218E25AC00E12D02 /* FileServer_UnitTests.c in Sources */,
+				59AED25B218E2CCB00E12D02 /* TimersWheel.c in Sources */,
 				59AED249218E1B9000E12D02 /* Process.c in Sources */,
 				59AED244218E1A0D00E12D02 /* list.c in Sources */,
 				599D6E2521897ECD00FD93BD /* cvector.c in Sources */,
 				59AECEE521898E6200E12D02 /* StringOperations.c in Sources */,
+				59AED25C218E2CCB00E12D02 /* timeout-bitops.c in Sources */,
 				599D6E2221897ECD00FD93BD /* coat.c in Sources */,
 				59AED24F218E259700E12D02 /* Init_UnitTests.c in Sources */,
 				59AECEE2218989D300E12D02 /* DevServer.c in Sources */,
@@ -286,7 +317,9 @@
 				599D6E2121897ECD00FD93BD /* chash.c in Sources */,
 				59E99DE42187078E00805C68 /* FileServer.c in Sources */,
 				59AECEE9218DBD1E00E12D02 /* ProcessTable.c in Sources */,
+				59AED25A218E2CCB00E12D02 /* timeout.c in Sources */,
 				59E99DE32187078E00805C68 /* main.c in Sources */,
+				59AED25F218E2CE300E12D02 /* TimersWheel_UnitTests.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

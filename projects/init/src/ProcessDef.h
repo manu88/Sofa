@@ -85,7 +85,7 @@ Process* ProcessGetChildByPID( const Process* process , pid_t pid) NO_NULL_POINT
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority ) NO_NULL_POINTERS;
 
-static inline void ProcessSetState(Process* process, ProcessState state) NO_NULL_POINTERS
+NO_NULL_POINTERS static inline void ProcessSetState(Process* process, ProcessState state)
 {
 	process->_state = state;
 }
