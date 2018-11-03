@@ -1,5 +1,12 @@
 #include "ProcessTable.h"
+
+
+#ifndef __APPLE__
 #include <utils/list.h>
+#else
+#include "list.h"
+#endif
+
 
 static list_t _processes;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 //#include <musllibc/syscall.h>
-#include <muslcsys/vsyscall.h>
+//#include <muslcsys/vsyscall.h>
 
 
 // Numbers must be contigeous as their serve as array indexes!

@@ -15,6 +15,7 @@
 
 #include "DevServer.h"
 
+#include "Init_UnitTests.h"
 
 static int cpioCalled = 0;
 
@@ -47,6 +48,7 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
 int main(int argc, const char * argv[])
 {
     
+    doInit_UnitTests();
     
     FileServerHandler cpioHandler;
     cpioHandler.perfix = "/cpio/";

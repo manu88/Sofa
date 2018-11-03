@@ -1,5 +1,7 @@
+#include <string.h>
 #include "ProcessDef.h"
 #include <SysCallNum.h>
+#include <assert.h>
 #include "Utils.h"
 #include "ProcessTable.h"
 
@@ -37,6 +39,7 @@ int ProcessRelease(Process* process)
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
+#ifndef __APPLE__
     UNUSED int error = 0;
 
     sel4utils_process_config_t config = process_config_default_simple( &context->simple, imageName, priority);
@@ -84,6 +87,9 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
      assert(error == 0);
 
      return error;
+#else
+    return 0;
+#endif
 }
 
 // returns 0 on sucess
@@ -129,9 +135,13 @@ Process* ProcessGetChildByPID( const Process* process , pid_t pid)
 
 int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio)
 {
+#ifndef __APPLE__
 	return seL4_TCB_SetPriority( sel4utils_get_tcb(&process->_process.thread),
 				     seL4_CapInitThreadTCB,//sel4utils_get_tcb(&process->_process.thread),
 				     prio);
+#else
+    return 0;
+#endif
 }
 
 int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio)
@@ -160,6 +170,7 @@ int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter)
 
 int ProcessSignalStop(Process* process)
 {
+#ifndef __APPLE__
     UNUSED int error = 0;
 
     WaiterListEntry* entry = NULL;
@@ -183,6 +194,9 @@ int ProcessSignalStop(Process* process)
     }
 
     return error;
+#else
+    return 0;
+#endif
 }
 
 

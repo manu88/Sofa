@@ -1,22 +1,19 @@
 #pragma once
 
 
-
+#include "Sofa.h"
 #include "ProcessDef.h"
 
 
 
-int ProcessTableInit(void);
+int ProcessTableInit(void) SOFA_UNIT_TESTABLE;
 
-int ProcessTableAppend( Process* process);
+int ProcessTableAppend( Process* process) SOFA_UNIT_TESTABLE;
 
-Process* ProcessTableGetByPID( pid_t pid);
+Process* ProcessTableGetByPID( pid_t pid) SOFA_UNIT_TESTABLE;
 
-int ProcessTableRemove(Process* process);
+int ProcessTableRemove(Process* process) SOFA_UNIT_TESTABLE;
 
-int ProcessTableGetCount(void);
-
-int ProcessTableSignalStop(Process* process);
-
+int ProcessTableGetCount(void) SOFA_UNIT_TESTABLE;
 
 pid_t getNextPid(void);

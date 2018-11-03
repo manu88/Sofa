@@ -1,7 +1,7 @@
 #pragma once
 
 
-
+#include "Sofa.h"
 #include <sel4utils/process.h>
 #include "TimerWheel/TimersWheel.h"
 
@@ -12,8 +12,6 @@
 
 
 typedef struct _Process Process;
-
-
 
 typedef enum 
 {
@@ -73,14 +71,14 @@ struct _Process
 
 
 
-int ProcessInit(Process* process);
-Process* ProcessAlloc(void);
-int ProcessRelease(Process* process);
+int ProcessInit(Process* process) SOFA_UNIT_TESTABLE;
+Process* ProcessAlloc(void) SOFA_UNIT_TESTABLE;
+int ProcessRelease(Process* process) SOFA_UNIT_TESTABLE;
 
 
-int ProcessGetNumChildren(const Process* process);
+int ProcessGetNumChildren(const Process* process) SOFA_UNIT_TESTABLE;
 
-// ass -1 for any child
+// ask -1 for any child
 Process* ProcessGetChildByPID( const Process* process , pid_t pid);
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority );
