@@ -16,4 +16,4 @@ int ProcessTableRemove(Process* process) SOFA_UNIT_TESTABLE;
 
 int ProcessTableGetCount(void) SOFA_UNIT_TESTABLE;
 
-pid_t getNextPid(void);
+pid_t ProcessTableGetNextPid(void);

@@ -69,7 +69,7 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
 
 
 
-    process->_pid = getNextPid();
+    process->_pid = ProcessTableGetNextPid();
 
     seL4_CPtr process_ep_cap = 0;
 
