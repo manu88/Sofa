@@ -22,7 +22,7 @@ int main( int argc , char* argv[])
     printf("Client : Hello\n");
 
 
-
+/*
     pid_t pid = getpid();
     pid_t parentPid = getppid();
     printf("Client PID is %i parent %i \n", pid, parentPid);
@@ -89,14 +89,15 @@ int main( int argc , char* argv[])
 	const char b[] = "Hello world!";
 	write(fd2 , b ,strlen(b));
     }
-   
+  */ 
 //    kill(1 , SIGCONT);
-    while(1)
+    
+    //while(1)
     {
     	int ret = usleep(1000*4000);
 	assert(ret == 0);
 	assert(errno == 0);
-        printf("Client %i did wait\n" , pid);
+//        printf("Client %i did wait\n" , pid);
     }
 
 

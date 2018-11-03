@@ -21,9 +21,10 @@ int handle_getppid(InitContext* context, Process *senderProcess, seL4_MessageInf
 
 int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-    printf("Got exit from %i\n", senderProcess->_pid);
+    int exitStatus = seL4_GetMR(1);
+    printf("Got exit from %i status %i\n", senderProcess->_pid , exitStatus);
 
-    ProcessTableSignalStop( senderProcess);
+    ProcessSignalStop( senderProcess);
 
     if(!ProcessTableRemove( senderProcess))
     {
@@ -120,7 +121,6 @@ int handle_nanosleep(InitContext* context, Process *senderProcess, seL4_MessageI
     return 0;
 }
 
-
 int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     const int msgLen = seL4_MessageInfo_get_length(message);
@@ -141,7 +141,7 @@ int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo
     Process *newProcess = ProcessAlloc();
     assert(newProcess);
         
-        int error = ProcessStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, APP_PRIORITY);
+        int error = ProcessStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
     
     if (error == 0)
     {

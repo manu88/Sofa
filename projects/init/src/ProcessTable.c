@@ -57,12 +57,3 @@ int ProcessTableRemove(Process* process)
 
 
 
-int ProcessTableSignalStop(Process* process)
-{
-    UNUSED int error = 0;
-
-    
-
-    return error;
-}
-

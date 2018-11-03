@@ -1,5 +1,5 @@
 #include "ProcessDef.h"
-
+#include <SysCallNum.h>
 
 #include "ProcessTable.h"
 
@@ -20,6 +20,7 @@ int ProcessInit(Process* process)
     memset(process , 0 , sizeof(Process) );
 
     LIST_INIT(&process->children);
+    LIST_INIT(&process->waiters);
 
     cvector_init(&process->fdNodes);
     return 1;
@@ -107,12 +108,24 @@ int ProcessGetNumChildren(const Process* process)
 	LIST_FOREACH(entry, &process->children, entries) 
 	{
 		// sanity check child's parent must be the parent
-		assert(entry->process == process);
+		assert(entry->process->_parent == process);
 		count++;
 	}
 	return count;
 }
 
+Process* ProcessGetChildByPID( const Process* process , pid_t pid)
+{
+	ProcessListEntry* entry = NULL;
+	LIST_FOREACH(entry, &process->children, entries) 
+        {
+		if (entry->process->_pid == pid || pid == -1)
+		{	
+			return entry->process;
+		}
+	}
+	return NULL;
+}
 
 int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio)
 {
@@ -137,4 +150,30 @@ int ProcessAppendNode( Process* process , struct _inode* node)
 	cvector_add(&process->fdNodes ,node);
 	return cvector_count(&process->fdNodes) -1;
  
+}
+
+int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter)
+{
+	LIST_INSERT_HEAD(&process->waiters, waiter, entries);
+	return 1;
+}
+
+int ProcessSignalStop(Process* process)
+{
+    UNUSED int error = 0;
+
+    WaiterListEntry* entry = NULL;
+    LIST_FOREACH(entry, &process->waiters, entries) 
+    {
+	printf("Signal Stop : Got a process to notify!\n");
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+	seL4_SetMR(0, __SOFA_NR_wait4);
+	seL4_SetMR(1, process->_pid);
+	
+	 seL4_Send(entry->reply , tag); 
+// FIXME handle cnode_delete
+//	cnode_delete(context,entry->reply);
+    }
+
+    return error;
 }

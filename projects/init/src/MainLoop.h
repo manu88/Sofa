@@ -3,10 +3,6 @@
 #include "Bootstrap.h"
 #include "ProcessDef.h"
 
-
-
-#define APP_PRIORITY seL4_MaxPrio
-
 #define IRQ_EP_BADGE       BIT(seL4_BadgeBits - 1)
 #define IRQ_BADGE_TIMER   (1 << 1)
 #define IRQ_BADGE_NETWORK (1 << 0)

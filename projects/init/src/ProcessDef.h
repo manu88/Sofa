@@ -35,6 +35,16 @@ struct _ProcessListEntry
 };
 
 
+// a waiter list
+typedef struct _WaiterListEntry WaiterListEntry;
+struct _WaiterListEntry
+{
+    Process *process;
+    int reason;
+    seL4_CPtr reply;
+    LIST_ENTRY(_WaiterListEntry) entries;
+};
+
 
 struct _inode;
 
@@ -50,7 +60,8 @@ struct _Process
     struct _Process *_parent;
 
     LIST_HEAD(listhead, _ProcessListEntry) children;
-
+    
+    LIST_HEAD(listheadWaiters, _WaiterListEntry) waiters;
 
     cvector_t fdNodes;
     //struct _inode *testNode;
@@ -66,6 +77,9 @@ int ProcessRelease(Process* process);
 
 
 int ProcessGetNumChildren(const Process* process);
+
+// ass -1 for any child
+Process* ProcessGetChildByPID( const Process* process , pid_t pid);
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority );
 
@@ -84,8 +98,9 @@ struct _inode* ProcessGetNode( /*const*/ Process* process , int index);
 // return node id
 int ProcessAppendNode( Process* process , struct _inode* node);
 
+int ProcessSignalStop(Process* process);
 //
-
+int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter);
 
 typedef struct
 {

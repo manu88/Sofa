@@ -181,18 +181,19 @@ static long sys_nanosleep(va_list args)
     return seL4_GetMR(1);
 }
 
-static void Abort()
+static void Abort( int status)
 {
-    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1);
+    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
     seL4_SetMR(0, __SOFA_NR_exit);
-
+    seL4_SetMR(1 , status);
     seL4_Send(sysCallEndPoint , tag);
     while(1){} //  we never return from Abort
 }
 
 static long sys_exit(va_list args)
 {
-    Abort();
+    int status =  va_arg(args,int);
+    Abort( status);
     return 0;
 }
 
