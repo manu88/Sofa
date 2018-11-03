@@ -30,6 +30,15 @@ static int Test_Process()
     
     assert(ProcessInit(&p2));
     assert(Test_ProcessInstance(&p2));
+    
+    p1->_pid = 1;
+    p2._pid = 2;
+    
+    assert(ProcessSetParentShip(p1, &p2) == 0); // 0 means no error on this one
+    assert(p2._parent == p1);
+    assert(ProcessGetChildByPID(p1, 2) == &p2);
+    
+    
     return 1;
 }
 

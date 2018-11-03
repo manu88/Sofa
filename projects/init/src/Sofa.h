@@ -9,8 +9,9 @@
 #ifndef Sofa_h
 #define Sofa_h
 
- 
+
 #define SOFA_UNIT_TESTABLE
+
 
 
 #endif /* Sofa_h */

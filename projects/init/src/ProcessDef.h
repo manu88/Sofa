@@ -88,6 +88,9 @@ static inline void ProcessSetState(Process* process, ProcessState state)
 	process->_state = state;
 }
 
+// returns 0 on sucess
+// not intended to be public, but here for test purposes.
+int ProcessSetParentShip(Process* parent , Process* child);
 
 
 int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio);
@@ -103,6 +106,8 @@ int ProcessDoCleanup(Process * process);
 int ProcessSignalStop(Process* process);
 //
 int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter);
+
+
 
 typedef struct
 {

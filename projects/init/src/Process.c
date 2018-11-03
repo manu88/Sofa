@@ -6,8 +6,7 @@
 #include "ProcessTable.h"
 
 
-// returns 0 on sucess
-static int ProcessSetParentShip(Process* parent , Process* child);
+
 
 Process* ProcessAlloc()
 {
@@ -93,7 +92,7 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
 }
 
 // returns 0 on sucess
-static int ProcessSetParentShip(Process* parent , Process* child)
+int ProcessSetParentShip(Process* parent , Process* child)
 {
      child->_parent = parent;
 
