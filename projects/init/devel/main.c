@@ -6,6 +6,8 @@
 //  Copyright © 2018 Manuel Deneu. All rights reserved.
 //
 
+#include <unistd.h>
+
 #include <stdio.h>
 #include "FileServer.h"
 #include <assert.h>
@@ -89,5 +91,7 @@ int main(int argc, const char * argv[])
     
     consoleNode->operations->Write(consoleNode ,"hello" ,4);
     free(consoleNode);
+    
+    sleep(4);
     return 0;
 }

@@ -72,6 +72,7 @@ struct _Process
 
 
 int ProcessInit(Process* process) SOFA_UNIT_TESTABLE;
+int ProcessDeInit(Process * process )SOFA_UNIT_TESTABLE;
 Process* ProcessAlloc(void) SOFA_UNIT_TESTABLE;
 int ProcessRelease(Process* process) SOFA_UNIT_TESTABLE;
 
@@ -79,7 +80,7 @@ int ProcessRelease(Process* process) SOFA_UNIT_TESTABLE;
 int ProcessGetNumChildren(const Process* process) SOFA_UNIT_TESTABLE;
 
 // ask -1 for any child
-Process* ProcessGetChildByPID( const Process* process , pid_t pid);
+Process* ProcessGetChildByPID( const Process* process , pid_t pid) SOFA_UNIT_TESTABLE;
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority );
 
@@ -90,7 +91,7 @@ static inline void ProcessSetState(Process* process, ProcessState state)
 
 // returns 0 on sucess
 // not intended to be public, but here for test purposes.
-int ProcessSetParentShip(Process* parent , Process* child);
+int ProcessSetParentShip(Process* parent , Process* child) SOFA_UNIT_TESTABLE;
 
 
 int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio);
@@ -106,7 +107,6 @@ int ProcessDoCleanup(Process * process);
 int ProcessSignalStop(Process* process);
 //
 int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter);
-
 
 
 typedef struct

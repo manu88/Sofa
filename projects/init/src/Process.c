@@ -16,6 +16,13 @@ Process* ProcessAlloc()
     return p;
 }
 
+int ProcessRelease(Process* process)
+{
+    ProcessDeInit(process);
+    free(process);
+    return 1;
+}
+
 int ProcessInit(Process* process)
 {
     memset(process , 0 , sizeof(Process) );
@@ -27,12 +34,22 @@ int ProcessInit(Process* process)
     return 1;
 }
 
-
-int ProcessRelease(Process* process)
+int ProcessDeInit(Process * process )
 {
-    free(process);
+    
+    ProcessListEntry* entry = NULL;
+    ProcessListEntry* entry_s = NULL;
+    
+    
+    LIST_FOREACH_SAFE(entry, &process->children, entries, entry_s)
+    {
+        LIST_REMOVE(entry, entries);
+        free(entry);
+    }
     return 1;
 }
+
+
 
 
 
@@ -157,7 +174,7 @@ struct _inode* ProcessGetNode( Process* process , int index)
 int ProcessAppendNode( Process* process , struct _inode* node)
 {
 	cvector_add(&process->fdNodes ,node);
-	return cvector_count(&process->fdNodes) -1;
+	return (int) cvector_count(&process->fdNodes) -1;
  
 }
 

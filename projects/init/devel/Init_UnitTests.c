@@ -38,7 +38,8 @@ static int Test_Process()
     assert(p2._parent == p1);
     assert(ProcessGetChildByPID(p1, 2) == &p2);
     
-    
+    ProcessRelease(p1);
+    ProcessDeInit(&p2);
     return 1;
 }
 
@@ -66,6 +67,8 @@ static int Test_ProcessTable()
     assert(ProcessTableGetByPID(1) == NULL);
     
     ProcessRelease(p1);
+    
+    
     
     return 1;
 }
