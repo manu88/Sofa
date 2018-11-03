@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include "fs.h"
-
+#include "Sofa.h"
 
 
 
@@ -28,18 +28,17 @@ typedef Inode* (* FileServerHandler_Open) (void* context, const char*pathname ,i
 typedef struct
 {
     const char* perfix;
-    
     FileServerHandler_Open onOpen;
     
 } FileServerHandler;
 
 
-int FileServerInit(void);
+int FileServerInit(void) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-int FileServerRegisterHandler( FileServerHandler* handler);
+int FileServerRegisterHandler( FileServerHandler* handler) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
 
-Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int *error);
+Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int *error) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 

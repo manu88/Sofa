@@ -35,6 +35,7 @@ struct _ProcessListEntry
 
 // a waiter list
 typedef struct _WaiterListEntry WaiterListEntry;
+
 struct _WaiterListEntry
 {
     Process *process;
@@ -71,42 +72,42 @@ struct _Process
 
 
 
-int ProcessInit(Process* process) SOFA_UNIT_TESTABLE;
-int ProcessDeInit(Process * process )SOFA_UNIT_TESTABLE;
+int ProcessInit(Process* process) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+int ProcessDeInit(Process * process ) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 Process* ProcessAlloc(void) SOFA_UNIT_TESTABLE;
-int ProcessRelease(Process* process) SOFA_UNIT_TESTABLE;
+int ProcessRelease(Process* process) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
-int ProcessGetNumChildren(const Process* process) SOFA_UNIT_TESTABLE;
+int ProcessGetNumChildren(const Process* process) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 // ask -1 for any child
-Process* ProcessGetChildByPID( const Process* process , pid_t pid) SOFA_UNIT_TESTABLE;
+Process* ProcessGetChildByPID( const Process* process , pid_t pid) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority );
+int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority ) NO_NULL_POINTERS;
 
-static inline void ProcessSetState(Process* process, ProcessState state)
+static inline void ProcessSetState(Process* process, ProcessState state) NO_NULL_POINTERS
 {
 	process->_state = state;
 }
 
 // returns 0 on sucess
 // not intended to be public, but here for test purposes.
-int ProcessSetParentShip(Process* parent , Process* child) SOFA_UNIT_TESTABLE;
+int ProcessSetParentShip(Process* parent , Process* child) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
-int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio);
-int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio);
+int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio) NO_NULL_POINTERS;
+int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio) NO_NULL_POINTERS;
 
-struct _inode* ProcessGetNode( /*const*/ Process* process , int index);
+struct _inode* ProcessGetNode( /*const*/ Process* process , int index) NO_NULL_POINTERS;
 
 // return node id
-int ProcessAppendNode( Process* process , struct _inode* node);
+int ProcessAppendNode( Process* process , struct _inode* node) NO_NULL_POINTERS;
 
 
-int ProcessDoCleanup(Process * process);
-int ProcessSignalStop(Process* process);
+int ProcessDoCleanup(Process * process) NO_NULL_POINTERS;
+int ProcessSignalStop(Process* process) NO_NULL_POINTERS;
 //
-int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter);
+int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter) NO_NULL_POINTERS;
 
 
 typedef struct

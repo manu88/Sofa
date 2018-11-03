@@ -10,6 +10,7 @@
 
 #include "FileServer.h"
 #include "fs.h"
+#include "Sofa.h"
 
 struct _DeviceOperations
 {
@@ -25,7 +26,7 @@ FileServerHandler* getDevServerHandler(void);
 
 int DevServerInit(void);
 
-int DevServerRegisterFile(const char* file , DeviceOperations* ops);
+int DevServerRegisterFile(const char* file , DeviceOperations* ops) NO_NULL_POINTERS;
 
 
 

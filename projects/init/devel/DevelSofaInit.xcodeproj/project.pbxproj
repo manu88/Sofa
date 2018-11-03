@@ -17,8 +17,9 @@
 		59AECEE521898E6200E12D02 /* StringOperations.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AECEE421898E6200E12D02 /* StringOperations.c */; };
 		59AECEE9218DBD1E00E12D02 /* ProcessTable.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AECEE8218DBD1D00E12D02 /* ProcessTable.c */; };
 		59AED244218E1A0D00E12D02 /* list.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED243218E1A0D00E12D02 /* list.c */; };
-		59AED247218E1A6B00E12D02 /* Init_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED246218E1A6B00E12D02 /* Init_UnitTests.c */; };
 		59AED249218E1B9000E12D02 /* Process.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED248218E1B9000E12D02 /* Process.c */; };
+		59AED24F218E259700E12D02 /* Init_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED24D218E259700E12D02 /* Init_UnitTests.c */; };
+		59AED252218E25AC00E12D02 /* FileServer_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */; };
 		59E99DE32187078E00805C68 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE12187078E00805C68 /* main.c */; };
 		59E99DE42187078E00805C68 /* FileServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE22187078E00805C68 /* FileServer.c */; };
 		59E99DE721870FCB00805C68 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE621870FCB00805C68 /* fs.c */; };
@@ -58,7 +59,6 @@
 		59AECEE62189913F00E12D02 /* ProcessDef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ProcessDef.h; path = ../src/ProcessDef.h; sourceTree = "<group>"; };
 		59AECEE7218DBD1D00E12D02 /* ProcessTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProcessTable.h; path = ../src/ProcessTable.h; sourceTree = "<group>"; };
 		59AECEE8218DBD1D00E12D02 /* ProcessTable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ProcessTable.c; path = ../src/ProcessTable.c; sourceTree = "<group>"; };
-		59AECEEA218DBDAA00E12D02 /* process.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = process.h; path = Sel4_Stubs/sel4utils/process.h; sourceTree = "<group>"; };
 		59AECEED218DC84300E12D02 /* simple.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = simple.h; sourceTree = "<group>"; };
 		59AECEEF218DC84300E12D02 /* process.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = process.h; sourceTree = "<group>"; };
 		59AECEF1218DC84300E12D02 /* bootinfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bootinfo.h; sourceTree = "<group>"; };
@@ -68,11 +68,13 @@
 		59AECEF7218DC84300E12D02 /* vka.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vka.h; sourceTree = "<group>"; };
 		59AED242218E1A0D00E12D02 /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = list.h; path = util_libs/libutils/include/utils/list.h; sourceTree = "<group>"; };
 		59AED243218E1A0D00E12D02 /* list.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = list.c; path = util_libs/libutils/src/list.c; sourceTree = "<group>"; };
-		59AED245218E1A6B00E12D02 /* Init_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Init_UnitTests.h; sourceTree = "<group>"; };
-		59AED246218E1A6B00E12D02 /* Init_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Init_UnitTests.c; sourceTree = "<group>"; };
 		59AED248218E1B9000E12D02 /* Process.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Process.c; path = ../src/Process.c; sourceTree = "<group>"; };
 		59AED24A218E1BD400E12D02 /* SysCallNum.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SysCallNum.h; path = ../../libSysCall/include/SysCallNum.h; sourceTree = "<group>"; };
 		59AED24B218E1D6F00E12D02 /* Sofa.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Sofa.h; path = ../src/Sofa.h; sourceTree = "<group>"; };
+		59AED24D218E259700E12D02 /* Init_UnitTests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Init_UnitTests.c; sourceTree = "<group>"; };
+		59AED24E218E259700E12D02 /* Init_UnitTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Init_UnitTests.h; sourceTree = "<group>"; };
+		59AED250218E25AC00E12D02 /* FileServer_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileServer_UnitTests.h; sourceTree = "<group>"; };
+		59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FileServer_UnitTests.c; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -169,20 +171,29 @@
 			path = allocman;
 			sourceTree = "<group>";
 		};
+		59AED24C218E259700E12D02 /* UnitTests */ = {
+			isa = PBXGroup;
+			children = (
+				59AED250218E25AC00E12D02 /* FileServer_UnitTests.h */,
+				59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */,
+				59AED24D218E259700E12D02 /* Init_UnitTests.c */,
+				59AED24E218E259700E12D02 /* Init_UnitTests.h */,
+			);
+			path = UnitTests;
+			sourceTree = "<group>";
+		};
 		59E99DC6218703FF00805C68 = {
 			isa = PBXGroup;
 			children = (
 				59AED24A218E1BD400E12D02 /* SysCallNum.h */,
 				59AECEEB218DC84300E12D02 /* Sel4_Stubs */,
 				59E99DE12187078E00805C68 /* main.c */,
-				59AED245218E1A6B00E12D02 /* Init_UnitTests.h */,
-				59AED246218E1A6B00E12D02 /* Init_UnitTests.c */,
+				59AED24C218E259700E12D02 /* UnitTests */,
 				59AED24B218E1D6F00E12D02 /* Sofa.h */,
 				59AECEE8218DBD1D00E12D02 /* ProcessTable.c */,
 				59AECEE7218DBD1D00E12D02 /* ProcessTable.h */,
 				59AECEE62189913F00E12D02 /* ProcessDef.h */,
 				59AED248218E1B9000E12D02 /* Process.c */,
-				59AECEEA218DBDAA00E12D02 /* process.h */,
 				59E99DE22187078E00805C68 /* FileServer.c */,
 				59E99DE02187078E00805C68 /* FileServer.h */,
 				59E99DE521870FCB00805C68 /* fs.h */,
@@ -260,17 +271,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				59AED252218E25AC00E12D02 /* FileServer_UnitTests.c in Sources */,
 				59AED249218E1B9000E12D02 /* Process.c in Sources */,
 				59AED244218E1A0D00E12D02 /* list.c in Sources */,
 				599D6E2521897ECD00FD93BD /* cvector.c in Sources */,
 				59AECEE521898E6200E12D02 /* StringOperations.c in Sources */,
 				599D6E2221897ECD00FD93BD /* coat.c in Sources */,
+				59AED24F218E259700E12D02 /* Init_UnitTests.c in Sources */,
 				59AECEE2218989D300E12D02 /* DevServer.c in Sources */,
 				599D6E2421897ECD00FD93BD /* cqueue.c in Sources */,
 				599D6E2321897ECD00FD93BD /* cpool.c in Sources */,
 				599D6E2021897ECD00FD93BD /* cbpool.c in Sources */,
 				59E99DE721870FCB00805C68 /* fs.c in Sources */,
-				59AED247218E1A6B00E12D02 /* Init_UnitTests.c in Sources */,
 				599D6E2121897ECD00FD93BD /* chash.c in Sources */,
 				59E99DE42187078E00805C68 /* FileServer.c in Sources */,
 				59AECEE9218DBD1E00E12D02 /* ProcessTable.c in Sources */,

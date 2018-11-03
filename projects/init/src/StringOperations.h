@@ -9,5 +9,6 @@
 #pragma once
 
 #include <stdint.h>
+#include "Sofa.h"
 
-uint32_t StringHash(const char *str);
+uint32_t StringHash(const char *str) NO_NULL_POINTERS;

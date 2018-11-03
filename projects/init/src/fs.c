@@ -7,3 +7,27 @@
 //
 
 #include "fs.h"
+#include <string.h>
+#include <stdlib.h>
+
+Inode* InodeAlloc()
+{
+    Inode* n = malloc(sizeof(Inode));
+    if (n && InodeInit(n))
+    {
+        return n;
+    }
+    
+    return NULL;
+}
+
+int InodeInit(Inode* node)
+{
+    memset(node , 0, sizeof(Inode));
+    return 1;
+}
+
+void InodeRelease(Inode* node)
+{
+    free(node);
+}

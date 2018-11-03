@@ -7,6 +7,7 @@
 //
 
 #include <assert.h>
+#include "FileServer_UnitTests.h"
 #include "Init_UnitTests.h"
 #include "ProcessTable.h"
 
@@ -75,6 +76,7 @@ static int Test_ProcessTable()
 
 int doInit_UnitTests()
 {
+    assert(FileServer_UnitTests());
     assert(Test_Process());
     assert(Test_ProcessTable());
     return 1;

@@ -10,7 +10,7 @@
 
 //#include <stdint.h> //ssize_t
 #include <sys/types.h>
-
+#include "Sofa.h"
 struct _inode;
 
 struct _fileOperations
@@ -26,11 +26,18 @@ typedef struct _fileOperations FileOperations;
 
 struct _inode
 {
-   const FileOperations *operations;
+    struct _inode* _parent;
+    const FileOperations *operations;
 
-   size_t pos;
-   size_t size;
-   void* userData; 
+    size_t pos;
+    size_t size;
+    void* userData;
 };
 
 typedef struct _inode Inode;
+
+
+Inode* InodeAlloc(void) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+int InodeInit(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+void InodeRelease(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;

@@ -218,8 +218,6 @@ int ProcessSignalStop(Process* process)
 
 int ProcessDoCleanup(Process * process)
 {
-
-//	LIST_REMOVE(process , entries);
 	assert(process);
 
 	return 1;

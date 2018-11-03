@@ -20,7 +20,6 @@
 #include "Init_UnitTests.h"
 
 static int cpioCalled = 0;
-
 static Inode* CpioOpen(void* context, const char*pathname ,int flags, int *error)
 {
     printf("CpioOpen '%s' flags %i\n" ,pathname , flags);
@@ -49,13 +48,11 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
 
 int main(int argc, const char * argv[])
 {
-    
     doInit_UnitTests();
     
     FileServerHandler cpioHandler;
     cpioHandler.perfix = "/cpio/";
     cpioHandler.onOpen = CpioOpen;
-    
     
     assert(DevServerInit() );
     
@@ -76,18 +73,18 @@ int main(int argc, const char * argv[])
     assert(DevServerRegisterFile("console", &ops) );
     
     int err = 0;
-    assert(FileServerOpen(NULL, "/cpio/test", 0 , &err) == NULL );
+    int fakeContextSoThatClangIsHappy = 1;
+    assert(FileServerOpen(&fakeContextSoThatClangIsHappy, "/cpio/test", 0 , &err) == NULL );
     
     assert(cpioCalled == 1);
     
     cpioCalled = 0;
-    assert(FileServerOpen(NULL, "/cpi/test", 0 ,&err) == NULL);
+    assert(FileServerOpen(&fakeContextSoThatClangIsHappy, "/cpi/test", 0 ,&err) == NULL);
     assert(cpioCalled == 0);
     
-    Inode* consoleNode = FileServerOpen(NULL, "/dev/console", 0 ,&err);
+    Inode* consoleNode = FileServerOpen(&fakeContextSoThatClangIsHappy, "/dev/console", 0 ,&err);
     assert( consoleNode != NULL);
     assert(consoleOpenCalled == 1);
-    
     
     consoleNode->operations->Write(consoleNode ,"hello" ,4);
     free(consoleNode);
