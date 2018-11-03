@@ -16,3 +16,4 @@ Usefull links :
 * `wait4`
 * `open` and  `close` in Progress!
 * `read` and `seek` (almost) working on CPIO files
+* `write`
