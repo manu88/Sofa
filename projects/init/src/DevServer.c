@@ -56,6 +56,8 @@ static Inode*  _DevOpen(void* context, const char*pathname ,int flags , int *err
         return ops->OpenDevice(ops , flags);
         
     }
+    printf("_DevOpen : unable to open '%s'\n", pathname);
+
     *error = -ENOENT;
     return NULL;
 }

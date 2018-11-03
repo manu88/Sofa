@@ -97,7 +97,13 @@ int main(void)
 
 // EGA
 
-    InitEGADriver( &context);
+    error = !InitEGADriver( &context);
+    ZF_LOGF_IFERR(error, "Failed to  init EGA driver\n");
+
+
+    error = !DevServerRegisterFile("console", EGADriverGetDeviceOps() );
+    ZF_LOGF_IFERR(error, "Failed to  register 'console' EGA handler\n");
+
 
  /* create an endpoint. */
     vka_object_t ep_object = {0};

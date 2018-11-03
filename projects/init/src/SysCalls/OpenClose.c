@@ -44,11 +44,8 @@ int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	Inode* node = ProcessGetNode(senderProcess , fd);
 	if(node)
 	{
-		printf("Init Read %i args (fd %i count %i)\n" , msgLen , fd , count);
 		char buf[4];
 		ssize_t ret = node->operations->Read(node ,buf , count);
-
-		printf("Did read '%s' %lu bytes\n",  buf , ret);
 
 		message = seL4_MessageInfo_new(0, 0, 0, 2 + ret);
 		
@@ -72,6 +69,39 @@ int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 int handle_write(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
+
+	// 0 : sysNum
+        // 1 : fd
+        // 2 : size
+
+	const int fd =  seL4_GetMR(1);
+	const size_t count = seL4_GetMR(2);
+
+	int  ret= -ENOSYS;
+
+	Inode* node = ProcessGetNode(senderProcess , fd);
+        if(node)
+        {
+		char* buf = malloc( count);
+		assert(buf); // TODO handle error
+
+		for(int i =0;i<count;++i)
+		{
+			buf[i] = seL4_GetMR(3+i);
+		}
+
+
+		ret = node->operations->Write(node, buf , count);
+
+	}
+
+	message = seL4_MessageInfo_new(0, 0, 0, 2);
+	
+	seL4_SetMR(0, __SOFA_NR_write );
+        seL4_SetMR(1, ret);
+
+	seL4_Reply( message );
+
         return 0;
 }
 
@@ -80,7 +110,6 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 {
 
 	const int msgLen = seL4_MessageInfo_get_length(message);
-	printf("handle_open msg len %i\n" , msgLen);
 	assert(msgLen > 2);
 
 	char* pathname = malloc(sizeof(char)*msgLen -1);
@@ -91,7 +120,7 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 	int flags = seL4_GetMR(1);
 
-	for(int i=0;i<msgLen-1;++i)
+	for(int i=0;i<msgLen-2;++i)
         {
             pathname[i] =  (char) seL4_GetMR(2+i);
         }

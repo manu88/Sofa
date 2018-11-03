@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <assert.h>
-
+#include <string.h>
 #include <fcntl.h>
 
 int main( int argc , char* argv[])
@@ -83,6 +83,12 @@ int main( int argc , char* argv[])
 
     printf("console open %i err %i\n" , fd2 , errno);
     errno  = 0;
+
+    if(fd2 >= 0 )
+    {
+	const char b[] = "Hello world!";
+	write(fd2 , b ,strlen(b));
+    }
    
 //    kill(1 , SIGCONT);
     while(1)
