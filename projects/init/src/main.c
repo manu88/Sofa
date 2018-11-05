@@ -91,6 +91,7 @@ void set_devEp(chardev_t* dev) {
 void handle_cdev_event( void* _dev) 
 {
     chardev_t* dev = (chardev_t*) _dev;
+
     for (;;) 
     {
         //int c = __arch_getchar();
@@ -102,8 +103,12 @@ void handle_cdev_event( void* _dev)
         printf("You typed [%c]\n", c);
     }
 
+
+
     UNUSED int err = seL4_IRQHandler_Ack(dev->handler.capPtr);
     assert(err == 0);
+
+
 }
 
 int main(void)
@@ -189,19 +194,10 @@ int main(void)
 
     vka_cspace_make_path( &context.vka, context.ntfn_object.cptr, &notification_path);
     
-/* Timer Init */
-
-//    cspacepath_t timerBadgedNotif;
-//    error = vka_cspace_alloc_path(&context.vka, &timerBadgedNotif);
-//    assert(error == 0);
-
- //   error = vka_cnode_mint(&timerBadgedNotif,&notification_path/*badged_notification*/, seL4_AllRights, IRQ_BADGE_TIMER | IRQ_EP_BADGE );
-//    assert(error == 0); 
-//    printf("After mint\n");
     error  = TimerDriverInit(&context ,notification_path.capPtr);
 
     ZF_LOGF_IFERR(error, "Unable to initialize timer.\n");
-
+    assert(error  == 0);
 
     error = !TimersWheelInit(&context.timersWheel); // TimersWheelInit returns 1 on sucess -> negate
     ZF_LOGF_IFERR(error, "Unable to initialize Timers Wheel.\n");
@@ -215,14 +211,14 @@ int main(void)
 
 // Test keyboard
 
-
     sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
 
     chardev_t keyboard;
+
     error = vka_cspace_alloc_path(&context.vka, &keyboard.ep);
     assert(error == 0);
 
-    error = vka_cnode_mint(&keyboard.ep,&notification_path/*badged_notification*/, seL4_AllRights, IRQ_BADGE_KEYBOARD | IRQ_EP_BADGE );
+    error = vka_cnode_mint(&keyboard.ep,&notification_path, seL4_AllRights, IRQ_BADGE_KEYBOARD | IRQ_EP_BADGE );
     assert(error == 0); 
 
     ps_chardevice_t *ret;

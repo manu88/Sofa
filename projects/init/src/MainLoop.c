@@ -117,12 +117,15 @@ void processLoop(InitContext* context, seL4_CPtr epPtr , void* chardev )
 
         if(sender_badge & IRQ_EP_BADGE)
         {
-            if (sender_badge & IRQ_BADGE_KEYBOARD)
+	    printf("IRQ BADGE %lx \n", sender_badge);
+
+	    if (sender_badge & IRQ_BADGE_KEYBOARD)
             {
 		handle_cdev_event(chardev);
             }
-	    else 
+//	    else
 	    {
+//		printf("PROCESS TIMER\n");
                 processTimer(context ,sender_badge);
             }
 	}
@@ -137,6 +140,7 @@ void processLoop(InitContext* context, seL4_CPtr epPtr , void* chardev )
             if(!senderProcess)
             {
                 printf("Init : no sender process for badge %li\n", sender_badge);
+		assert(0);
                 continue;
             }
 
