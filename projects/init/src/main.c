@@ -197,9 +197,9 @@ int main(void)
 
 /* System Timer */
 
-    MasterTimerDriver* systemTimer  = TimerDriverInit(&context ,notification_path.capPtr);
+    error  = !TimerDriverInit(&context ,notification_path.capPtr);
 
-    assert( systemTimer != NULL);
+    assert( error == 0);
 
     error = !TimersWheelInit(&context.timersWheel); // TimersWheelInit returns 1 on sucess -> negate
     ZF_LOGF_IFERR(error, "Unable to initialize Timers Wheel.\n");
@@ -210,8 +210,10 @@ int main(void)
 
     printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
 
+/*
     error = !DriverKitRegisterDevice( (IOBaseDevice*)systemTimer);
     ZF_LOGF_IFERR(error, "Unable to register system timer\n");
+*/
 // Test keyboard
 
     sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
