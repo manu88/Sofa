@@ -29,7 +29,7 @@ typedef struct
 
 
     struct ps_io_ops    opsIO;
-    ps_chardevice_t devKeyboard;
+//    ps_chardevice_t devKeyboard;
 
 } InitContext;
 
