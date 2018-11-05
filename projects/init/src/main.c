@@ -140,7 +140,10 @@ int main(void)
 
     ProcessTableAppend(&initProcess);
 
+/* DriverKit*/
 
+   error = !DriverKitInit(&context);
+   ZF_LOGF_IFERR(error, "Failed to  init DriverKit\n");
 
 /* File Server*/
 
@@ -191,11 +194,12 @@ int main(void)
     cspacepath_t notification_path;
 
     vka_cspace_make_path( &context.vka, context.ntfn_object.cptr, &notification_path);
-    
-    error  = TimerDriverInit(&context ,notification_path.capPtr);
 
-    ZF_LOGF_IFERR(error, "Unable to initialize timer.\n");
-    assert(error  == 0);
+/* System Timer */
+
+    MasterTimerDriver* systemTimer  = TimerDriverInit(&context ,notification_path.capPtr);
+
+    assert( systemTimer != NULL);
 
     error = !TimersWheelInit(&context.timersWheel); // TimersWheelInit returns 1 on sucess -> negate
     ZF_LOGF_IFERR(error, "Unable to initialize Timers Wheel.\n");
@@ -206,7 +210,8 @@ int main(void)
 
     printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
 
-
+    error = !DriverKitRegisterDevice( (IOBaseDevice*)systemTimer);
+    ZF_LOGF_IFERR(error, "Unable to register system timer\n");
 // Test keyboard
 
     sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);

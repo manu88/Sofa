@@ -3,7 +3,10 @@
 #include <stdio.h>
 #include <errno.h>
 
-int TimerDriverInit(InitContext* context , seL4_CPtr notifCap)
+
+static MasterTimerDriver _timerDriver;
+
+MasterTimerDriver* TimerDriverInit(InitContext* context , seL4_CPtr notifCap)
 {
     assert(context);
 
@@ -26,5 +29,9 @@ int TimerDriverInit(InitContext* context , seL4_CPtr notifCap)
     
     assert(error == 0);
 
-    return error;
+    if (!IOBaseDeviceInit(&_timerDriver.super) )
+    {
+	return NULL;
+    }
+    return &_timerDriver;
 }

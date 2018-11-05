@@ -15,6 +15,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+
+#include <sel4/types.h>
 #include "Sofa.h"
 
 typedef enum
@@ -26,6 +28,7 @@ typedef enum
 
 struct _IOBaseDevice
 {
+    seL4_Word _badge;
     IOBaseDeviceType type;
     
     int (*InitDevice) (struct _IOBaseDevice *device);

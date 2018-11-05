@@ -97,6 +97,7 @@
 		59AED2692190A10500E12D02 /* IODevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = IODevice.h; path = ../src/IODevice.h; sourceTree = "<group>"; };
 		59AED26A2190A10500E12D02 /* IODevice.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = IODevice.c; path = ../src/IODevice.c; sourceTree = "<group>"; };
 		59AED26C2190A22200E12D02 /* bootinfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bootinfo.h; sourceTree = "<group>"; };
+		59AED26E2190AD0F00E12D02 /* types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -142,6 +143,7 @@
 			children = (
 				59AED243218E1A0D00E12D02 /* list.c */,
 				59AED242218E1A0D00E12D02 /* list.h */,
+				59AED26D2190AD0F00E12D02 /* sel4 */,
 				59AECEEC218DC84300E12D02 /* simple */,
 				59AECEEE218DC84300E12D02 /* sel4utils */,
 				59AECEF0218DC84300E12D02 /* sel4platsupport */,
@@ -220,6 +222,14 @@
 			);
 			name = TimerWheel;
 			path = ../src/TimerWheel;
+			sourceTree = "<group>";
+		};
+		59AED26D2190AD0F00E12D02 /* sel4 */ = {
+			isa = PBXGroup;
+			children = (
+				59AED26E2190AD0F00E12D02 /* types.h */,
+			);
+			path = sel4;
 			sourceTree = "<group>";
 		};
 		59E99DC6218703FF00805C68 = {
