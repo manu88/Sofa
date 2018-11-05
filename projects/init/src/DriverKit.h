@@ -10,7 +10,7 @@ typedef struct _chardev_t
     /* IRQHandler cap (with cspace path) */
     cspacepath_t handler;
     /* endpoint cap (with cspace path) device is waiting for IRQ */
-//    cspacepath_t ep;
+    cspacepath_t ep;
 
 //    vka_object_t  ntfn_object;
 } chardev_t;

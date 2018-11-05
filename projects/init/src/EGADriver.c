@@ -68,7 +68,6 @@ void terminalClear()
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size)
 {
     
-	 // 17
     for(int i =0;i<size;i++)
     {
 	terminal_putentryat(buffer[i] ,VGA_COLOR_RED ,  i , 0);

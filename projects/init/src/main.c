@@ -43,7 +43,8 @@ static Process initProcess = {0};
 
 
 // creates IRQHandler cap "handler" for IRQ "irq"
-static void get_irqhandler_cap(int irq, cspacepath_t* handler)
+static void
+get_irqhandler_cap(int irq, cspacepath_t* handler)
 {
     seL4_CPtr cap;
     // get a cspace slot
@@ -59,9 +60,9 @@ static void get_irqhandler_cap(int irq, cspacepath_t* handler)
     err = simple_get_IRQ_handler(&context.simple, irq, *handler);
     assert(err == 0);
 }
-
-static void set_devEp(chardev_t* dev) 
-{
+// finalize device setup
+// hook up endpoint (dev->ep) with IRQ of char device (dev->dev)
+void set_devEp(chardev_t* dev) {
     // Loop through all IRQs and get the one device needs to listen to
     // We currently assume there it only needs one IRQ.
     int irq;
@@ -76,11 +77,8 @@ static void set_devEp(chardev_t* dev)
     get_irqhandler_cap(irq, &dev->handler);
 
     /* Assign AEP to the IRQ handler. */
-    /*
-    UNUSED int err = seL4_IRQHandler_SetEndpoint(
+    UNUSED int err = seL4_IRQHandler_SetNotification(
             dev->handler.capPtr, dev->ep.capPtr);
-    */
-    UNUSED int err = seL4_IRQHandler_SetNotification(dev->handler.capPtr,context.ntfn_object.cptr);
     assert(err == 0);
 
     //read once: not sure why, but it does not work without it, it seems
@@ -90,10 +88,11 @@ static void set_devEp(chardev_t* dev)
 }
 
 
-static void handle_cdev_event(char *msg, chardev_t* dev) 
+void handle_cdev_event( void* _dev) 
 {
-    printf("handle_cdev_event(): %s\n", msg);
-    for (;;) {
+    chardev_t* dev = (chardev_t*) _dev;
+    for (;;) 
+    {
         //int c = __arch_getchar();
         int c = ps_cdev_getchar(&dev->dev);
         if (c == EOF) {
@@ -177,18 +176,28 @@ int main(void)
 
     vka_cspace_make_path(&context.vka, ep_object.cptr, &context.ep_cap_path);
 
-/* Timer Init */
-
     error = vka_alloc_notification(&context.vka, &context.ntfn_object);
     assert(error == 0);
 
-
-    cspacepath_t notification_path;
     error = seL4_TCB_BindNotification(seL4_CapInitThreadTCB, context.ntfn_object.cptr);
     ZF_LOGF_IFERR(error, "Unable to BindNotification.\n");
 
-    vka_cspace_make_path( &context.vka, context.ntfn_object.cptr, &notification_path);
 
+
+
+    cspacepath_t notification_path;
+
+    vka_cspace_make_path( &context.vka, context.ntfn_object.cptr, &notification_path);
+    
+/* Timer Init */
+
+//    cspacepath_t timerBadgedNotif;
+//    error = vka_cspace_alloc_path(&context.vka, &timerBadgedNotif);
+//    assert(error == 0);
+
+ //   error = vka_cnode_mint(&timerBadgedNotif,&notification_path/*badged_notification*/, seL4_AllRights, IRQ_BADGE_TIMER | IRQ_EP_BADGE );
+//    assert(error == 0); 
+//    printf("After mint\n");
     error  = TimerDriverInit(&context ,notification_path.capPtr);
 
     ZF_LOGF_IFERR(error, "Unable to initialize timer.\n");
@@ -210,36 +219,17 @@ int main(void)
     sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
 
     chardev_t keyboard;
+    error = vka_cspace_alloc_path(&context.vka, &keyboard.ep);
+    assert(error == 0);
+
+    error = vka_cnode_mint(&keyboard.ep,&notification_path/*badged_notification*/, seL4_AllRights, IRQ_BADGE_KEYBOARD | IRQ_EP_BADGE );
+    assert(error == 0); 
 
     ps_chardevice_t *ret;
     ret = ps_cdev_init(PC99_KEYBOARD_PS2, &context.opsIO, &keyboard.dev);
     assert(ret != NULL);
 
-//    error = vka_alloc_notification(&context.vka, &keyboard.ntfn_object);
-//    assert(error == 0);
-
-//    error = seL4_TCB_BindNotification(seL4_CapInitThreadTCB, keyboard.ntfn_object.cptr);
-
-//    seL4_Word badge1 = 1;
-//    error = vka_mint_object(&context.vka, &ep_object, &keyboard.ep, seL4_AllRights, badge1);
-//    assert(error == 0);
-
-
     set_devEp(&keyboard);
-
-    printf("Init Keyboard : so far so good\n");
-
-
-    for (;;) 
-    {
-        seL4_Word sender_badge;
-        printf("waiting:\n");
-        UNUSED seL4_MessageInfo_t msg = seL4_Recv(ep_object.cptr, &sender_badge);
-        printf("seL4_Wait returned with badge: %d\n", sender_badge);
-
-
-	handle_cdev_event("key", &keyboard);
-    }
 
 /* BEGIN PROCESS */
 
@@ -264,7 +254,7 @@ int main(void)
 //
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
-    processLoop( &context,ep_object.cptr);//ep_cap_path);
+    processLoop( &context,ep_object.cptr , &keyboard);
 
 
     return 0;

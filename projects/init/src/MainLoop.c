@@ -84,7 +84,7 @@ static void processSyscall(InitContext* context, Process *senderProcess, seL4_Me
 
 
 
-void processLoop(InitContext* context, seL4_CPtr epPtr )
+void processLoop(InitContext* context, seL4_CPtr epPtr , void* chardev )
 {
     int error = 0;
     while(1)
@@ -117,8 +117,15 @@ void processLoop(InitContext* context, seL4_CPtr epPtr )
 
         if(sender_badge & IRQ_EP_BADGE)
         {
-            processTimer(context ,sender_badge);
-        }
+            if (sender_badge & IRQ_BADGE_KEYBOARD)
+            {
+		handle_cdev_event(chardev);
+            }
+	    else 
+	    {
+                processTimer(context ,sender_badge);
+            }
+	}
         else if (label == seL4_VMFault)
         {
             printf("Init : VM Fault \n");
