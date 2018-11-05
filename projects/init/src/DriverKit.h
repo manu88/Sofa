@@ -38,5 +38,7 @@ typedef struct _chardev_t
 int DriverKitInit(InitContext* context);
 
 int DriverKitRegisterDevice( IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS ;
+int DriverKitRemoveDevice( IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS ;
 
 
+IOBaseDevice* DriverKitGetDeviceForBadge( seL4_Word badge) SOFA_UNIT_TESTABLE NO_NULL_POINTERS;

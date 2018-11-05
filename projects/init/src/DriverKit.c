@@ -46,7 +46,6 @@ int DriverKitInit(InitContext* context)
         return 0;
     }
     
-    
     _DKContext.currentBadge  = 0;
 	return 1;
 }
@@ -68,6 +67,18 @@ int DriverKitRegisterDevice( IOBaseDevice* device)
         return 0;
     }
     
-    return chash_set(&_DKContext._devices, getNextBadge(), device) == 0;
+    // FIXME check overflows for key
+    return chash_set(&_DKContext._devices,(uint32_t) getNextBadge(), device) == 0;
     
+}
+
+int DriverKitRemoveDevice( IOBaseDevice* device)
+{
+
+    return 0;
+}
+
+IOBaseDevice* DriverKitGetDeviceForBadge( seL4_Word badge)
+{
+    return chash_get(&_DKContext._devices, (uint32_t) badge);
 }

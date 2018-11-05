@@ -64,6 +64,11 @@ int DriverKit_UnitTests()
     assert(DriverKitRegisterDevice( (IOBaseDevice*) &driver));
     assert(driver.value == 10);
     
+    assert(DriverKitGetDeviceForBadge(0) == (IOBaseDevice*) &driver);
+    assert(DriverKitGetDeviceForBadge(10000) == NULL);
+    
+    // unimplemented
+    //assert(DriverKitRemoveDevice( (IOBaseDevice*) &driver ));
     
     return 1;
 }
