@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 
 typedef void seL4_BootInfo;
 

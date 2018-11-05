@@ -1,3 +1,21 @@
+/*
+ * This file is part of the Sofa project
+ * Copyright (c) 2018 Manuel Deneu.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 //
 //  FileServer.h
 //  DevelSofaInit
@@ -12,13 +30,8 @@
 #include "fs.h"
 #include "Sofa.h"
 
-
-
-#ifdef __APPLE__
-typedef void InitContext;
-#else 
 #include "Bootstrap.h"
-#endif
+
 
 /* File System handler definition */
 typedef Inode* (* FileServerHandler_Open) (void* context, const char*pathname ,int flags, int *error) ;

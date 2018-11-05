@@ -24,6 +24,7 @@
 		59AED25B218E2CCB00E12D02 /* TimersWheel.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED255218E2CCB00E12D02 /* TimersWheel.c */; };
 		59AED25C218E2CCB00E12D02 /* timeout-bitops.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED257218E2CCB00E12D02 /* timeout-bitops.c */; };
 		59AED25F218E2CE300E12D02 /* TimersWheel_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED25E218E2CE300E12D02 /* TimersWheel_UnitTests.c */; };
+		59AED263219090E400E12D02 /* DriverKit.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED261219090E400E12D02 /* DriverKit.c */; };
 		59E99DE32187078E00805C68 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE12187078E00805C68 /* main.c */; };
 		59E99DE42187078E00805C68 /* FileServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE22187078E00805C68 /* FileServer.c */; };
 		59E99DE721870FCB00805C68 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE621870FCB00805C68 /* fs.c */; };
@@ -87,6 +88,9 @@
 		59AED259218E2CCB00E12D02 /* queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = queue.h; sourceTree = "<group>"; };
 		59AED25D218E2CE300E12D02 /* TimersWheel_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TimersWheel_UnitTests.h; sourceTree = "<group>"; };
 		59AED25E218E2CE300E12D02 /* TimersWheel_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TimersWheel_UnitTests.c; sourceTree = "<group>"; };
+		59AED261219090E400E12D02 /* DriverKit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = DriverKit.c; path = ../src/DriverKit.c; sourceTree = "<group>"; };
+		59AED262219090E400E12D02 /* DriverKit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DriverKit.h; path = ../src/DriverKit.h; sourceTree = "<group>"; };
+		59AED26521909C9E00E12D02 /* Bootstrap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Bootstrap.h; path = ../src/Bootstrap.h; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -219,6 +223,9 @@
 				59E99DE12187078E00805C68 /* main.c */,
 				59AED24C218E259700E12D02 /* UnitTests */,
 				59AED24B218E1D6F00E12D02 /* Sofa.h */,
+				59AED261219090E400E12D02 /* DriverKit.c */,
+				59AED262219090E400E12D02 /* DriverKit.h */,
+				59AED26521909C9E00E12D02 /* Bootstrap.h */,
 				59AECEE8218DBD1D00E12D02 /* ProcessTable.c */,
 				59AECEE7218DBD1D00E12D02 /* ProcessTable.h */,
 				59AECEE62189913F00E12D02 /* ProcessDef.h */,
@@ -303,6 +310,7 @@
 				59AED252218E25AC00E12D02 /* FileServer_UnitTests.c in Sources */,
 				59AED25B218E2CCB00E12D02 /* TimersWheel.c in Sources */,
 				59AED249218E1B9000E12D02 /* Process.c in Sources */,
+				59AED263219090E400E12D02 /* DriverKit.c in Sources */,
 				59AED244218E1A0D00E12D02 /* list.c in Sources */,
 				599D6E2521897ECD00FD93BD /* cvector.c in Sources */,
 				59AECEE521898E6200E12D02 /* StringOperations.c in Sources */,
@@ -459,7 +467,7 @@
 					Sel4_Stubs/,
 					"$(PROJECT_PATH)../devel/Sel4_Stubs/util_lib/libutils⁩/include⁩/",
 				);
-				USER_HEADER_SEARCH_PATHS = "";
+				USER_HEADER_SEARCH_PATHS = "$(PROJECT_PATH)../src/";
 			};
 			name = Debug;
 		};
@@ -477,7 +485,7 @@
 					Sel4_Stubs/,
 					"$(PROJECT_PATH)../devel/Sel4_Stubs/util_lib/libutils⁩/include⁩/",
 				);
-				USER_HEADER_SEARCH_PATHS = "";
+				USER_HEADER_SEARCH_PATHS = "$(PROJECT_PATH)../src/";
 			};
 			name = Release;
 		};
