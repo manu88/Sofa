@@ -84,6 +84,8 @@ int ProcessGetNumChildren(const Process* process) NO_NULL_POINTERS SOFA_UNIT_TES
 Process* ProcessGetChildByPID( const Process* process , pid_t pid) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority ) NO_NULL_POINTERS;
+int ProcessStop(InitContext* context,Process* process) NO_NULL_POINTERS;
+
 
 NO_NULL_POINTERS static inline void ProcessSetState(Process* process, ProcessState state)
 {

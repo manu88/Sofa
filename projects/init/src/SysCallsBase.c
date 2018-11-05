@@ -30,8 +30,7 @@ int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
     {
         printf("Unable to remove process!\n");
     }
-
-    sel4utils_destroy_process( &senderProcess->_process, &context->vka);
+    ProcessStop(context , senderProcess);
     ProcessRelease(senderProcess);
 
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );

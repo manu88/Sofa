@@ -108,6 +108,12 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
 #endif
 }
 
+int ProcessStop(InitContext* context,Process* process)
+{
+    sel4utils_destroy_process( &process->_process, &context->vka);
+    return 1;
+}
+
 // returns 0 on sucess
 int ProcessSetParentShip(Process* parent , Process* child)
 {
