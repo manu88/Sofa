@@ -15,11 +15,13 @@
 
 
 #define MAX_SIZE_HASH 10
+
+
 typedef struct
 {
     chash_t _handlers;
     
-    
+    Inode _rootNode;
     
 } _FileServerContext;
 
@@ -52,6 +54,8 @@ int FileServerInit()
 {
     memset(&_fsContext, 0, sizeof(_FileServerContext));
     
+    _fsContext._rootNode._parent = NULL;
+    
     chash_init(&_fsContext._handlers, MAX_SIZE_HASH);
     
     return _fsContext._handlers.table != NULL;
@@ -68,15 +72,7 @@ int FileServerRegisterHandler( FileServerHandler* handler)
     }
 
     return  chash_set( &_fsContext._handlers, key, handler ) == 0;
-    /*
-    if(_fsContext._handler.perfix != NULL)
-    {
-        return 0;
-    }
-    
-    _fsContext._handler = *handler;
-    return 1;
-     */
+
 }
 
 
