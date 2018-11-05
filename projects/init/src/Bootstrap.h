@@ -1,4 +1,4 @@
-/*
+ /*
  * This file is part of the Sofa project
  * Copyright (c) 2018 Manuel Deneu.
  *

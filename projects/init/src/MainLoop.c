@@ -3,7 +3,7 @@
 #include <SysCallNum.h>
 #include "Utils.h"
 #include "SysCalls.h"
-
+#include "DriverKit.h"
 
 /*
 Jump call table, MUST BE ORDERED with respect to __SOFA_NR_* numbers idefined in libSysCall/SysCallNum.h
@@ -117,7 +117,13 @@ void processLoop(InitContext* context, seL4_CPtr epPtr , void* chardev )
 
         if(sender_badge & IRQ_EP_BADGE)
         {
+	    
+	    IOBaseDevice *dev = DriverKitGetDeviceForBadge( (seL4_Word)sender_badge & IRQ_EP_BADGE);
 
+	    if (dev)
+	    {
+		printf("Found device for badge %lx\n" , sender_badge);
+	    } 
 	    if (sender_badge & IRQ_BADGE_KEYBOARD)
             {
 		handle_cdev_event(chardev);

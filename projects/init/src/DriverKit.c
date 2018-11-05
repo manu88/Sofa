@@ -68,6 +68,11 @@ int DriverKitRegisterDevice( IOBaseDevice* device)
         return 0;
     }
     
-    return chash_set(&_DKContext._devices, getNextBadge(), device) == 0;
-    
+    seL4_Word badge = getNextBadge();
+    if( chash_set(&_DKContext._devices, getNextBadge(), device) == 0)
+    {
+        device->_badge = badge;
+	return 1;
+    }
+    return 0;
 }
