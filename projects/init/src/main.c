@@ -30,6 +30,8 @@
 #include "DevServer.h"
 #include "EGADriver.h"
 
+#include "Drivers/Keyboard.h"
+
 //#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
 
@@ -39,6 +41,8 @@ static InitContext context = { 0 };
 
 static Process initProcess = {0};
 
+
+static KeyboardDevice _keyboard;
 
 // creates IRQHandler cap "handler" for IRQ "irq"
 static void
@@ -60,7 +64,7 @@ get_irqhandler_cap(int irq, cspacepath_t* handler)
 }
 // finalize device setup
 // hook up endpoint (dev->ep) with IRQ of char device (dev->dev)
-void set_devEp(chardev_t* dev) {
+void set_devEp(KeyboardDevice* dev) {
     // Loop through all IRQs and get the one device needs to listen to
     // We currently assume there it only needs one IRQ.
     int irq;
@@ -88,7 +92,7 @@ void set_devEp(chardev_t* dev) {
 
 void handle_cdev_event( void* _dev) 
 {
-    chardev_t* dev = (chardev_t*) _dev;
+    KeyboardDevice* dev = (KeyboardDevice*) _dev;
 
     for (;;) 
     {
@@ -218,19 +222,22 @@ int main(void)
 
     sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
 
-    chardev_t keyboard;
+    error = !KeyboardDeviceInit(&_keyboard);
+    ZF_LOGF_IFERR(error, "Unable to initialize Keyboard .\n");
 
-    error = vka_cspace_alloc_path(&context.vka, &keyboard.ep);
+//    chardev_t keyboard;
+
+    error = vka_cspace_alloc_path(&context.vka, &_keyboard.ep);
     assert(error == 0);
 
-    error = vka_cnode_mint(&keyboard.ep,&notification_path, seL4_AllRights, IRQ_BADGE_KEYBOARD | IRQ_EP_BADGE );
+    error = vka_cnode_mint(&_keyboard.ep,&notification_path, seL4_AllRights, IRQ_BADGE_KEYBOARD | IRQ_EP_BADGE );
     assert(error == 0); 
 
     ps_chardevice_t *ret;
-    ret = ps_cdev_init(PC99_KEYBOARD_PS2, &context.opsIO, &keyboard.dev);
+    ret = ps_cdev_init(PC99_KEYBOARD_PS2, &context.opsIO, &_keyboard.dev);
     assert(ret != NULL);
 
-    set_devEp(&keyboard);
+    set_devEp(&_keyboard);
 
 /* BEGIN PROCESS */
 
@@ -255,7 +262,7 @@ int main(void)
 //
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
-    processLoop( &context,ep_object.cptr , &keyboard);
+    processLoop( &context,ep_object.cptr , &_keyboard);
 
 
     return 0;
