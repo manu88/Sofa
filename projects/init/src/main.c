@@ -34,8 +34,6 @@
 #define APP_IMAGE_NAME "app"
 
 
-
-
 static InitContext context = { 0 };
 
 

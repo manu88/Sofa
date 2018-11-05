@@ -117,17 +117,13 @@ void processLoop(InitContext* context, seL4_CPtr epPtr , void* chardev )
 
         if(sender_badge & IRQ_EP_BADGE)
         {
-	    printf("IRQ BADGE %lx \n", sender_badge);
 
 	    if (sender_badge & IRQ_BADGE_KEYBOARD)
             {
 		handle_cdev_event(chardev);
             }
-//	    else
-	    {
-//		printf("PROCESS TIMER\n");
-                processTimer(context ,sender_badge);
-            }
+
+	    processTimer(context ,sender_badge);
 	}
         else if (label == seL4_VMFault)
         {
