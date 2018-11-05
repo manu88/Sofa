@@ -25,6 +25,8 @@
 		59AED25C218E2CCB00E12D02 /* timeout-bitops.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED257218E2CCB00E12D02 /* timeout-bitops.c */; };
 		59AED25F218E2CE300E12D02 /* TimersWheel_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED25E218E2CE300E12D02 /* TimersWheel_UnitTests.c */; };
 		59AED263219090E400E12D02 /* DriverKit.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED261219090E400E12D02 /* DriverKit.c */; };
+		59AED26821909DFD00E12D02 /* DriverKit_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED26721909DFD00E12D02 /* DriverKit_UnitTests.c */; };
+		59AED26B2190A10500E12D02 /* IODevice.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED26A2190A10500E12D02 /* IODevice.c */; };
 		59E99DE32187078E00805C68 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE12187078E00805C68 /* main.c */; };
 		59E99DE42187078E00805C68 /* FileServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE22187078E00805C68 /* FileServer.c */; };
 		59E99DE721870FCB00805C68 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE621870FCB00805C68 /* fs.c */; };
@@ -66,7 +68,6 @@
 		59AECEE8218DBD1D00E12D02 /* ProcessTable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ProcessTable.c; path = ../src/ProcessTable.c; sourceTree = "<group>"; };
 		59AECEED218DC84300E12D02 /* simple.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = simple.h; sourceTree = "<group>"; };
 		59AECEEF218DC84300E12D02 /* process.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = process.h; sourceTree = "<group>"; };
-		59AECEF1218DC84300E12D02 /* bootinfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bootinfo.h; sourceTree = "<group>"; };
 		59AECEF2218DC84300E12D02 /* timer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = timer.h; sourceTree = "<group>"; };
 		59AECEF3218DC84300E12D02 /* io.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
 		59AECEF5218DC84300E12D02 /* chardev.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = chardev.h; sourceTree = "<group>"; };
@@ -91,6 +92,11 @@
 		59AED261219090E400E12D02 /* DriverKit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = DriverKit.c; path = ../src/DriverKit.c; sourceTree = "<group>"; };
 		59AED262219090E400E12D02 /* DriverKit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DriverKit.h; path = ../src/DriverKit.h; sourceTree = "<group>"; };
 		59AED26521909C9E00E12D02 /* Bootstrap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Bootstrap.h; path = ../src/Bootstrap.h; sourceTree = "<group>"; };
+		59AED26621909DFD00E12D02 /* DriverKit_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DriverKit_UnitTests.h; sourceTree = "<group>"; };
+		59AED26721909DFD00E12D02 /* DriverKit_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DriverKit_UnitTests.c; sourceTree = "<group>"; };
+		59AED2692190A10500E12D02 /* IODevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = IODevice.h; path = ../src/IODevice.h; sourceTree = "<group>"; };
+		59AED26A2190A10500E12D02 /* IODevice.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = IODevice.c; path = ../src/IODevice.c; sourceTree = "<group>"; };
+		59AED26C2190A22200E12D02 /* bootinfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bootinfo.h; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -164,8 +170,8 @@
 		59AECEF0218DC84300E12D02 /* sel4platsupport */ = {
 			isa = PBXGroup;
 			children = (
-				59AECEF1218DC84300E12D02 /* bootinfo.h */,
 				59AECEF2218DC84300E12D02 /* timer.h */,
+				59AED26C2190A22200E12D02 /* bootinfo.h */,
 				59AECEF3218DC84300E12D02 /* io.h */,
 			);
 			path = sel4platsupport;
@@ -190,6 +196,8 @@
 		59AED24C218E259700E12D02 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				59AED26621909DFD00E12D02 /* DriverKit_UnitTests.h */,
+				59AED26721909DFD00E12D02 /* DriverKit_UnitTests.c */,
 				59AED25D218E2CE300E12D02 /* TimersWheel_UnitTests.h */,
 				59AED25E218E2CE300E12D02 /* TimersWheel_UnitTests.c */,
 				59AED250218E25AC00E12D02 /* FileServer_UnitTests.h */,
@@ -225,6 +233,8 @@
 				59AED24B218E1D6F00E12D02 /* Sofa.h */,
 				59AED261219090E400E12D02 /* DriverKit.c */,
 				59AED262219090E400E12D02 /* DriverKit.h */,
+				59AED2692190A10500E12D02 /* IODevice.h */,
+				59AED26A2190A10500E12D02 /* IODevice.c */,
 				59AED26521909C9E00E12D02 /* Bootstrap.h */,
 				59AECEE8218DBD1D00E12D02 /* ProcessTable.c */,
 				59AECEE7218DBD1D00E12D02 /* ProcessTable.h */,
@@ -309,6 +319,7 @@
 			files = (
 				59AED252218E25AC00E12D02 /* FileServer_UnitTests.c in Sources */,
 				59AED25B218E2CCB00E12D02 /* TimersWheel.c in Sources */,
+				59AED26821909DFD00E12D02 /* DriverKit_UnitTests.c in Sources */,
 				59AED249218E1B9000E12D02 /* Process.c in Sources */,
 				59AED263219090E400E12D02 /* DriverKit.c in Sources */,
 				59AED244218E1A0D00E12D02 /* list.c in Sources */,
@@ -325,6 +336,7 @@
 				599D6E2121897ECD00FD93BD /* chash.c in Sources */,
 				59E99DE42187078E00805C68 /* FileServer.c in Sources */,
 				59AECEE9218DBD1E00E12D02 /* ProcessTable.c in Sources */,
+				59AED26B2190A10500E12D02 /* IODevice.c in Sources */,
 				59AED25A218E2CCB00E12D02 /* timeout.c in Sources */,
 				59E99DE32187078E00805C68 /* main.c in Sources */,
 				59AED25F218E2CE300E12D02 /* TimersWheel_UnitTests.c in Sources */,

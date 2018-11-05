@@ -15,12 +15,59 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include "DriverKit.h"
+#include <data_struct/chash.h>
+
+#define MAX_SIZE_HASH_DRIVERS 20
+
+typedef struct
+{
+    InitContext* context;
+    chash_t _devices;
+    
+    seL4_Word currentBadge;
+    
+} DriverKitContext;
+
+static DriverKitContext _DKContext;
 
 int DriverKitInit(InitContext* context)
 {	
 //	seL4_CPtr cap = simple_get_IOPort_cap(&context->simple, 1,1);
 // cspace_irq_control_get_cap( simple_get_cnode(&context->simple)) , seL4_CapIRQControl, 1);
-
+    memset(&_DKContext , 0 , sizeof(DriverKitContext));
+    _DKContext.context = context;
+    
+    chash_init(&_DKContext._devices, MAX_SIZE_HASH_DRIVERS);
+    
+    if(_DKContext._devices.table == NULL)
+    {
+        return 0;
+    }
+    
+    
+    _DKContext.currentBadge  = 0;
 	return 1;
+}
+
+
+static seL4_Word getNextBadge()
+{
+    return _DKContext.currentBadge++;
+}
+
+int DriverKitRegisterDevice( IOBaseDevice* device)
+{
+    if (device->DeInitDevice == NULL || device->InitDevice == NULL)
+    {
+        return 0;
+    }
+    if (device->InitDevice(device) == 0)
+    {
+        return 0;
+    }
+    
+    return chash_set(&_DKContext._devices, getNextBadge(), device) == 0;
+    
 }

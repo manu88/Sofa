@@ -27,7 +27,7 @@
 #include "Init_UnitTests.h"
 #include "ProcessTable.h"
 #include "TimersWheel_UnitTests.h"
-
+#include "DriverKit_UnitTests.h"
 static int Test_ProcessInstance(Process* p)
 {
     assert(ProcessGetNumChildren(p) == 0);
@@ -96,5 +96,6 @@ int doInit_UnitTests()
     assert(FileServer_UnitTests());
     assert(Test_Process());
     assert(Test_ProcessTable());
+    assert(DriverKit_UnitTests() );
     return 1;
 }

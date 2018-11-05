@@ -15,3 +15,4 @@ typedef struct
 
 
 typedef void*  seL4_CPtr;
+typedef long seL4_Word ;

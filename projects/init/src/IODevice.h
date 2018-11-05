@@ -15,28 +15,27 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include "IODevice.h"
-#include"Bootstrap.h"
 #include "Sofa.h"
 
-typedef struct _chardev_t 
+typedef enum
 {
-    /* platsupport char device */
-    ps_chardevice_t dev;
-    /* IRQHandler cap (with cspace path) */
-    cspacepath_t handler;
-    /* endpoint cap (with cspace path) device is waiting for IRQ */
-    cspacepath_t ep;
-
-//    vka_object_t  ntfn_object;
-} chardev_t;
+    IOBaseDeviceType_Unknown = 0
+} IOBaseDeviceType;
 
 
 
+struct _IOBaseDevice
+{
+    IOBaseDeviceType type;
+    
+    int (*InitDevice) (struct _IOBaseDevice *device);
+    int (*DeInitDevice) (struct _IOBaseDevice *device);
+    
+    int (*HandleIRQ) (struct _IOBaseDevice *device, int irqNum);
+};
 
-int DriverKitInit(InitContext* context);
+typedef struct _IOBaseDevice IOBaseDevice;
 
-int DriverKitRegisterDevice( IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS ;
 
+int IOBaseDeviceInit(IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS;
 
