@@ -26,7 +26,6 @@ typedef struct
     InitContext* context;
     chash_t _devices;
     
-    seL4_Word currentBadge;
     
 } DriverKitContext;
 
@@ -46,18 +45,17 @@ int DriverKitInit(InitContext* context)
         return 0;
     }
     
-    _DKContext.currentBadge  = 0;
 	return 1;
 }
 
 
-static seL4_Word getNextBadge()
-{
-    return _DKContext.currentBadge++;
-}
 
 int DriverKitRegisterDevice(seL4_Word badge, IOBaseDevice* device)
 {
+    if (badge == 0)
+    {
+        return 0;
+    }
     if (device->DeInitDevice == NULL || device->InitDevice == NULL)
     {
         return 0;
@@ -68,7 +66,7 @@ int DriverKitRegisterDevice(seL4_Word badge, IOBaseDevice* device)
     }
     
 
-    if( chash_set(&_DKContext._devices, getNextBadge(), device) == 0)
+    if( chash_set(&_DKContext._devices, badge, device) == 0)
     {
         device->_badge = badge;
 	return 1;

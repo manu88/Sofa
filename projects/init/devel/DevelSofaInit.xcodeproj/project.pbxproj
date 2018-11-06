@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		59067A5B219176DA00E92DD9 /* Terminal.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A59219176DA00E92DD9 /* Terminal.c */; };
 		599D6E2021897ECD00FD93BD /* cbpool.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1521897DA200FD93BD /* cbpool.c */; };
 		599D6E2121897ECD00FD93BD /* chash.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1121897DA200FD93BD /* chash.c */; };
 		599D6E2221897ECD00FD93BD /* coat.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E0C21897DA100FD93BD /* coat.c */; };
@@ -46,8 +45,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		59067A59219176DA00E92DD9 /* Terminal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Terminal.c; path = ../../src/Devices/Terminal.c; sourceTree = "<group>"; };
-		59067A5A219176DA00E92DD9 /* Terminal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Terminal.h; path = ../../src/Devices/Terminal.h; sourceTree = "<group>"; };
 		599D6E0B21897DA100FD93BD /* cpool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cpool.c; path = ../../libdatastruct/src/cpool.c; sourceTree = "<group>"; };
 		599D6E0C21897DA100FD93BD /* coat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = coat.c; path = ../../libdatastruct/src/coat.c; sourceTree = "<group>"; };
 		599D6E0D21897DA100FD93BD /* coat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = coat.h; path = ../../libdatastruct/include/data_struct/coat.h; sourceTree = "<group>"; };
@@ -123,8 +120,6 @@
 		59067A55219176B200E92DD9 /* Devices */ = {
 			isa = PBXGroup;
 			children = (
-				59067A59219176DA00E92DD9 /* Terminal.c */,
-				59067A5A219176DA00E92DD9 /* Terminal.h */,
 			);
 			path = Devices;
 			sourceTree = "<group>";
@@ -363,7 +358,6 @@
 				59AED25A218E2CCB00E12D02 /* timeout.c in Sources */,
 				59E99DE32187078E00805C68 /* main.c in Sources */,
 				59AED25F218E2CE300E12D02 /* TimersWheel_UnitTests.c in Sources */,
-				59067A5B219176DA00E92DD9 /* Terminal.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
