@@ -116,7 +116,6 @@ static void* mapVideoRam(InitContext *context)
 
 static void writeVideoRam(uint16_t* vram, int row) 
 {
-    printf("VRAM mapped at: 0x%x\n", (unsigned int) vram);
 
     const int width = MODE_WIDTH;
     for (int col = 0; col < 80; col++) 

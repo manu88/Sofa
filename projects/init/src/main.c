@@ -45,8 +45,8 @@
 #include "FileServer.h"
 #include "CpioServer.h"
 #include "DevServer.h"
-#include "EGADriver.h"
 
+#include "Drivers/EGADriver.h"
 #include "Drivers/Keyboard.h"
 
 //#define APP_PRIORITY seL4_MaxPrio

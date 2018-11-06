@@ -18,8 +18,8 @@
 #pragma once
 
 
-#include "Bootstrap.h"
-#include "DevServer.h"
+#include "../Bootstrap.h"
+#include "../DevServer.h"
 
 DeviceOperations* EGADriverGetDeviceOps(void);
 
