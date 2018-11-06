@@ -195,6 +195,7 @@ int main(void)
     ZF_LOGF_IFERR(error, "Unable to initialize  terminal driver \n");
     assert( error == 0);
 
+    assert( DriverKitGetDeviceForBadge(IRQ_BADGE_KEYBOARD) == (IOBaseDevice*) &_terminal);
     printf("Keyboard badge %lx\n", _terminal.keyboard.super._badge);
 
     error = !DevServerRegisterFile("console", &_terminal.devOps );// EGADriverGetDeviceOps() );

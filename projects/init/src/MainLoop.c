@@ -135,7 +135,7 @@ void processLoop(InitContext* context, seL4_CPtr epPtr  )
         if(sender_badge & IRQ_EP_BADGE)
         {
 	    
-	    IOBaseDevice *dev = DriverKitGetDeviceForBadge( (seL4_Word)sender_badge & IRQ_EP_BADGE);
+	    IOBaseDevice *dev = DriverKitGetDeviceForBadge( sender_badge );
 
 	    if (dev)
 	    {
