@@ -109,7 +109,7 @@ int handle_write(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 
 
 		ret = node->operations->Write(node, buf , count);
-
+		free(buf);
 	}
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);

@@ -312,7 +312,7 @@ static long sys_read(va_list args)
 	{
 		return -EBADF;
 	}
-	printf("Read request fd %i count %lu\n", fd , count);
+//	printf("Read request fd %i count %lu\n", fd , count);
 
 	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
 	seL4_SetMR(0, __SOFA_NR_read);
@@ -322,7 +322,7 @@ static long sys_read(va_list args)
 	tag = seL4_Call(sysCallEndPoint, tag);
         assert(seL4_GetMR(0) == __SOFA_NR_read);
 
-	printf("Read returned %i args \n", seL4_MessageInfo_get_length(tag));
+//	printf("Read returned %i args \n", seL4_MessageInfo_get_length(tag));
 
 	size_t ret = seL4_MessageInfo_get_length(tag) - 2;
 

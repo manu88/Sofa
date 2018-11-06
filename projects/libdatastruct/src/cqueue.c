@@ -55,3 +55,8 @@ void cqueue_free(cqueue_t *q) {
     q->count = 0;
     q->maxSize = 0;
 }
+
+size_t cqueue_size(cqueue_t *q) {
+    return q->count;
+}
+

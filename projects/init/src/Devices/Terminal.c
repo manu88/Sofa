@@ -21,6 +21,8 @@
 #include "../Drivers/EGADriver.h"
 
 
+#define MAX_CHAR_QUEUE 32
+
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size);
 static Inode* ConsoleOpen (struct _DeviceOperations * device, int flags );
 static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size);
@@ -32,6 +34,7 @@ int TerminalInit( InitContext* context,const cspacepath_t* notificationSrc,  Ter
 {
     memset(terminal, 0, sizeof(Terminal));
     
+    terminal->devOps.userContext	= terminal;
     terminal->devOps.OpenDevice 	= ConsoleOpen;
     terminal->devOps.fileOps.Write      = ConsoleWrite;
     terminal->devOps.fileOps.Read  	= ConsoleRead;
@@ -55,7 +58,8 @@ int TerminalInit( InitContext* context,const cspacepath_t* notificationSrc,  Ter
 	return 0;
     }
     
-//    ZF_LOGF_IFERR(error, "Failed to  init EGA driver\n");
+
+    cqueue_init( &terminal->inputChar , MAX_CHAR_QUEUE);
 
     return  1;
 }
@@ -71,13 +75,15 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
     {
         //int c = __arch_getchar();
         int c = ps_cdev_getchar(&dev->dev);
-        if (c == EOF) {
+        if (c == EOF) 
+ 	{
             //read till we get EOF
             break;
         }
 //        printf("You typed [%c]\n", c);
 
-	terminal_putentryat(c ,VGA_COLOR_GREEN ,  0 , 1);
+	cqueue_push(&term->inputChar , (cqueue_item_t) c);
+//	terminal_putentryat(c ,VGA_COLOR_GREEN ,  0 , 1);
     }
 
     UNUSED int err = seL4_IRQHandler_Ack(dev->handler.capPtr);
@@ -89,6 +95,7 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
 
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size)
 {
+   
     for(int i =0;i<size;i++)
     {
 	terminal_putentryat(buffer[i] ,VGA_COLOR_RED ,  i , 0);
@@ -99,17 +106,31 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
 
 static Inode* ConsoleOpen (struct _DeviceOperations * device, int flags )
 {
+    Terminal* term = device->userContext;
+    assert(term);
+
     printf("Console Open request\n");
 
     Inode* node = malloc(sizeof(Inode) );
     node->operations = &device->fileOps;
+    node->userData   = term;
     return node;
 }
 
 
 static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size)
 {
-    printf("Console read req\n");
+    Terminal* term = node->userData;
+    assert(term);
+
+//    printf("Console read req buffer size %li\n" , cqueue_size(&term->inputChar ));
+
+    if(cqueue_size(&term->inputChar ))
+    {
+	char c = (char) cqueue_pop(&term->inputChar);
+	buffer[0] = c;
+	return 1;
+    }
 
     return 0;
 }

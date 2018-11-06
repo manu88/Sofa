@@ -22,6 +22,7 @@
 #include "../Bootstrap.h"
 #include "../Drivers/Keyboard.h"
 #include "../DevServer.h"
+#include <data_struct/cqueue.h>
 
 
 typedef struct
@@ -30,6 +31,9 @@ typedef struct
 
 
     DeviceOperations devOps;
+
+
+    cqueue_t inputChar;
 
 } Terminal;
 

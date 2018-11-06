@@ -27,13 +27,20 @@ int main( int argc , char* argv[])
 
     char buf[4] = {0};
 
-    read(consoleFD , buf , 4);
 
+    while(1)
+    {
+         ssize_t readRet = read(consoleFD , buf , 4);
+//         printf("readRet %li \n", readRet);
+	 write(consoleFD ,&buf[0] , 1);
+
+    }
     int appStatus = 0;
     pid_t childPid = wait(&appStatus);
     assert(childPid == -1);
     assert(errno == ECHILD);
 
+/*
     errno = 0;
     int retPid = execve("app",NULL , NULL);
     printf("execve returned %i errno %i \n",retPid, errno);
@@ -56,7 +63,7 @@ int main( int argc , char* argv[])
     printf("Shell 2 : wait\n");
     childPid = wait(&appStatus);
     assert(childPid >= 1);
-
+*/
 
 //    printf("Wait returned %i status %i error %i\n",childPid , appStatus, errno);
     return 0;

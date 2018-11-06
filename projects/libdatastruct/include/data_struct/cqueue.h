@@ -31,9 +31,7 @@ bool cqueue_push(cqueue_t *q, cqueue_item_t e);
 
 cqueue_item_t cqueue_pop(cqueue_t *q);
 
-inline size_t cqueue_size(cqueue_t *q) {
-    return q->count;
-}
+size_t cqueue_size(cqueue_t *q);
 
 void cqueue_free(cqueue_t *q);
 

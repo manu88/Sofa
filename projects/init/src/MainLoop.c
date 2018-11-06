@@ -135,23 +135,26 @@ void processLoop(InitContext* context, seL4_CPtr epPtr  )
         if(sender_badge & IRQ_EP_BADGE)
         {
 	    
-	    IOBaseDevice *dev = DriverKitGetDeviceForBadge( sender_badge );
-
-	    if (dev)
+	    if (sender_badge & IRQ_BADGE_TIMER)
 	    {
-		dev->HandleIRQ(dev , -1);
-	    }
+		 processTimer(context ,sender_badge);
+   	    }
 	    else 
-   	    {
+	    {
+	        IOBaseDevice *dev = DriverKitGetDeviceForBadge( sender_badge );
+
+   	        if (dev)
+	        {
+		    dev->HandleIRQ(dev , -1);
+//		    continue;
+	        }
+	        else 
+   	        {
 			printf("NOT FOUND device for badge %lx\n" , sender_badge);
 
+	        }
 	    }
-/*
-	    if (sender_badge & IRQ_BADGE_KEYBOARD)
-            {
-		handle_cdev_event(chardev);
-            }
-*/
+
 	    processTimer(context ,sender_badge);
 	}
         else if (label == seL4_VMFault)
