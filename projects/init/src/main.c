@@ -49,6 +49,9 @@
 #include "Drivers/EGADriver.h"
 #include "Drivers/Keyboard.h"
 
+
+#include "Devices/Terminal.h"
+
 //#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
 
