@@ -19,9 +19,21 @@
 #pragma once
 #include "../Sofa.h"
 
+#include "../Bootstrap.h"
+#include "../Drivers/Keyboard.h"
+#include "../DevServer.h"
+
+
 typedef struct
 {
-    
+    KeyboardDevice keyboard;
+
+
+    DeviceOperations devOps;
+
 } Terminal;
 
-int TerminalInit(Terminal* terminal) NO_NULL_POINTERS ;
+int TerminalInit( InitContext* context, const cspacepath_t* notificationSrc,   Terminal* terminal) NO_NULL_POINTERS ;
+
+
+DeviceOperations* TerminalGetDeviceOps(void);

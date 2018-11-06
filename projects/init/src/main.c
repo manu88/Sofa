@@ -31,7 +31,7 @@
 
 
 #include <vka/object_capops.h> // vka_mint_object
-#include <sel4platsupport/arch/io.h>
+//#include <sel4platsupport/arch/io.h>
 
 #include <SysCallNum.h>
 #include "Bootstrap.h"
@@ -61,13 +61,16 @@ static InitContext context = { 0 };
 
 static Process initProcess = {0};
 
+static Terminal _terminal;
 
-static KeyboardDevice _keyboard;
-
-
+/*
 void handle_cdev_event( void* _dev) 
 {
-    KeyboardDevice* dev = (KeyboardDevice*) _dev;
+    Terminal* term = (Terminal*) _dev;
+    assert(term);
+    assert(term == &_terminal);
+
+    KeyboardDevice* dev = &term->keyboard;
 
     for (;;) 
     {
@@ -87,7 +90,7 @@ void handle_cdev_event( void* _dev)
 
 
 }
-
+*/
 int main(void)
 {
     memset(&context , 0 , sizeof(InitContext) );
@@ -144,14 +147,6 @@ int main(void)
     error = !FileServerRegisterHandler( getDevServerHandler() );
     ZF_LOGF_IFERR(error, "Failed to register Dev File System \n");
 
-// EGA
-
-    error = !InitEGADriver( &context);
-    ZF_LOGF_IFERR(error, "Failed to  init EGA driver\n");
-
-
-    error = !DevServerRegisterFile("console", EGADriverGetDeviceOps() );
-    ZF_LOGF_IFERR(error, "Failed to  register 'console' EGA handler\n");
 
 
  /* create an endpoint. */
@@ -188,12 +183,36 @@ int main(void)
 
     printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
 
+//    sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
+
+// Default terminal (EGA + keyboard)
+
+    error = !TerminalInit( &context, &notification_path, &_terminal);
+    ZF_LOGF_IFERR(error, "Unable to initialize  terminal\n");
+    assert( error == 0);
+
+    error = !DriverKitRegisterDevice(IRQ_BADGE_KEYBOARD, (IOBaseDevice*) &_terminal);
+    ZF_LOGF_IFERR(error, "Unable to initialize  terminal driver \n");
+    assert( error == 0);
+
+    printf("Keyboard badge %lx\n", _terminal.keyboard.super._badge);
+
+    error = !DevServerRegisterFile("console", &_terminal.devOps );// EGADriverGetDeviceOps() );
+    ZF_LOGF_IFERR(error, "Failed to  register 'console' EGA handler\n");
+
+
 // Test keyboard
 
-    sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
+//    error = !KeyboardDeviceInit(&context, &notification_path , &_terminal.keyboard);
+//    ZF_LOGF_IFERR(error, "Unable to initialize Keyboard .\n");
 
-    error = !KeyboardDeviceInit(&context, &notification_path , &_keyboard);
-    ZF_LOGF_IFERR(error, "Unable to initialize Keyboard .\n");
+// EGA
+
+//    error = !InitEGADriver( &context);
+//    ZF_LOGF_IFERR(error, "Failed to  init EGA driver\n");
+
+
+
 
 /* BEGIN PROCESS */
 
@@ -218,7 +237,7 @@ int main(void)
 //
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
-    processLoop( &context,ep_object.cptr , &_keyboard);
+    processLoop( &context,ep_object.cptr );
 
 
     return 0;

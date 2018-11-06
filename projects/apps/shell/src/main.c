@@ -18,14 +18,16 @@ int main( int argc , char* argv[])
 
     
     errno = 0;
-    int consoleFD = open("/dev/console" , O_RDONLY);
+    int consoleFD = open("/dev/console" , O_RDWR);
     assert(consoleFD >=0);
     assert(errno == 0);
 
     const char b[] = "Sofa Shell - 2018";
     write(consoleFD , b ,strlen(b));
 
+    char buf[4] = {0};
 
+    read(consoleFD , buf , 4);
 
     int appStatus = 0;
     pid_t childPid = wait(&appStatus);

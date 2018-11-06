@@ -101,7 +101,7 @@ static void processSyscall(InitContext* context, Process *senderProcess, seL4_Me
 
 
 
-void processLoop(InitContext* context, seL4_CPtr epPtr , void* chardev )
+void processLoop(InitContext* context, seL4_CPtr epPtr  )
 {
     int error = 0;
     while(1)
@@ -139,13 +139,19 @@ void processLoop(InitContext* context, seL4_CPtr epPtr , void* chardev )
 
 	    if (dev)
 	    {
-		printf("Found device for badge %lx\n" , sender_badge);
-	    } 
+		dev->HandleIRQ(dev , -1);
+	    }
+	    else 
+   	    {
+			printf("NOT FOUND device for badge %lx\n" , sender_badge);
+
+	    }
+/*
 	    if (sender_badge & IRQ_BADGE_KEYBOARD)
             {
 		handle_cdev_event(chardev);
             }
-
+*/
 	    processTimer(context ,sender_badge);
 	}
         else if (label == seL4_VMFault)

@@ -56,7 +56,7 @@ static seL4_Word getNextBadge()
     return _DKContext.currentBadge++;
 }
 
-int DriverKitRegisterDevice( IOBaseDevice* device)
+int DriverKitRegisterDevice(seL4_Word badge, IOBaseDevice* device)
 {
     if (device->DeInitDevice == NULL || device->InitDevice == NULL)
     {
@@ -68,7 +68,6 @@ int DriverKitRegisterDevice( IOBaseDevice* device)
     }
     
 
-    seL4_Word badge = getNextBadge();
     if( chash_set(&_DKContext._devices, getNextBadge(), device) == 0)
     {
         device->_badge = badge;

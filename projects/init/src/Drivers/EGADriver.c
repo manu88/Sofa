@@ -24,31 +24,9 @@
 #define MODE_HEIGHT 25
 
 
-/* Hardware text mode color constants. */
-enum vga_color {
-        VGA_COLOR_BLACK = 0,
-        VGA_COLOR_BLUE = 1,
-        VGA_COLOR_GREEN = 2,
-        VGA_COLOR_CYAN = 3,
-        VGA_COLOR_RED = 4,
-        VGA_COLOR_MAGENTA = 5,
-        VGA_COLOR_BROWN = 6,
-        VGA_COLOR_LIGHT_GREY = 7,
-        VGA_COLOR_DARK_GREY = 8,
-        VGA_COLOR_LIGHT_BLUE = 9,
-        VGA_COLOR_LIGHT_GREEN = 10,
-        VGA_COLOR_LIGHT_CYAN = 11,
-        VGA_COLOR_LIGHT_RED = 12,
-        VGA_COLOR_LIGHT_MAGENTA = 13,
-        VGA_COLOR_LIGHT_BROWN = 14,
-        VGA_COLOR_WHITE = 15,
-};
-
 
 typedef struct
 {
-	DeviceOperations _devOps;
-
 	ps_io_ops_t io_ops;
 
 	uint16_t* videoPtr; 
@@ -82,25 +60,6 @@ void terminalClear()
     }
 }
 
-static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size)
-{
-    
-    for(int i =0;i<size;i++)
-    {
-	terminal_putentryat(buffer[i] ,VGA_COLOR_RED ,  i , 0);
-    }
-    return (ssize_t)size;
-}
-
-static Inode* ConsoleOpen (struct _DeviceOperations * device, int flags )
-{
-    printf("Console Open request\n");
-
-    Inode* node = malloc(sizeof(Inode) );
-    node->operations = &device->fileOps;
-    return node;
-}
-
 static void* mapVideoRam(InitContext *context) 
 {
      void* vram = ps_io_map(&_egaContext.io_ops.io_mapper, EGA_TEXT_FB_BASE,
@@ -128,9 +87,6 @@ int InitEGADriver(InitContext *context)
 {
 	memset(&_egaContext , 0 , sizeof(_EGAContext) );
 
-	_egaContext._devOps.OpenDevice = ConsoleOpen;
-	_egaContext._devOps.fileOps.Write      = ConsoleWrite;
-
 	int error = sel4platsupport_new_io_ops( context->vspace, context->vka, &_egaContext.io_ops);
     	assert(error == 0);
 
@@ -151,7 +107,3 @@ int InitEGADriver(InitContext *context)
 }
 
 
-DeviceOperations* EGADriverGetDeviceOps()
-{
-	return &_egaContext._devOps;
-}

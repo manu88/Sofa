@@ -20,6 +20,8 @@
 #include <simple-default/simple-default.h>
 #include <sel4utils/vspace.h>
 
+#include <sel4platsupport/arch/io.h>
+
 /* static memory for the allocator to bootstrap with */
 #define ALLOCATOR_STATIC_POOL_SIZE (BIT(seL4_PageBits) * 10)
 UNUSED static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
@@ -64,6 +66,8 @@ int bootstrapSystem(InitContext *context)
     bootstrap_configure_virtual_pool(context->allocman, vaddr,
                                      ALLOCATOR_VIRTUAL_POOL_SIZE, simple_get_pd(&context->simple));
 
+
+    sel4platsupport_get_io_port_ops(&context->opsIO.io_port_ops, &context->simple , &context->vka);
 
 
     return error;

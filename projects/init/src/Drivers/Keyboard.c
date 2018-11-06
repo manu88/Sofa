@@ -22,12 +22,26 @@
 
 static void set_devEp(KeyboardDevice* dev);
 
+static int KeyboardInit(IOBaseDevice *device)
+{
+	return 1;
+}
+
+static int KeyboardDeInit (IOBaseDevice *device)
+{
+    return 1;
+}
+
+
 int KeyboardDeviceInit(InitContext* context, const cspacepath_t* notificationSrc, KeyboardDevice* keyboard)
 {
 	if(IOBaseDeviceInit( &keyboard->super) == 0 )
 	{
 		return 0;
 	}
+
+        keyboard->super.InitDevice = KeyboardInit;
+	keyboard->super.DeInitDevice = KeyboardDeInit;
 	int error = 0;
 
 	keyboard->context = context;

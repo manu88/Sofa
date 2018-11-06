@@ -25,7 +25,8 @@
 
 int DriverKitInit(InitContext* context);
 
-int DriverKitRegisterDevice( IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS ;
+int DriverKitRegisterDevice( seL4_Word badge,  IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS ;
+
 int DriverKitRemoveDevice( IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS ;
 
 
