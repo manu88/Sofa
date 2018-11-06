@@ -44,51 +44,6 @@ static Process initProcess = {0};
 
 static KeyboardDevice _keyboard;
 
-// creates IRQHandler cap "handler" for IRQ "irq"
-static void
-get_irqhandler_cap(int irq, cspacepath_t* handler)
-{
-    seL4_CPtr cap;
-    // get a cspace slot
-    UNUSED int err = vka_cspace_alloc(&context.vka, &cap);
-    assert(err == 0);
-
-    // convert allocated cptr to a cspacepath, for use in
-    // operations such as Untyped_Retype
-    vka_cspace_make_path(&context.vka, cap, handler);
-
-    // exec seL4_IRQControl_Get(seL4_CapIRQControl, irq, ...)
-    // to get an IRQHandler cap for IRQ "irq"
-    err = simple_get_IRQ_handler(&context.simple, irq, *handler);
-    assert(err == 0);
-}
-// finalize device setup
-// hook up endpoint (dev->ep) with IRQ of char device (dev->dev)
-void set_devEp(KeyboardDevice* dev) {
-    // Loop through all IRQs and get the one device needs to listen to
-    // We currently assume there it only needs one IRQ.
-    int irq;
-    for (irq = 0; irq < 256; irq++) {
-        if (ps_cdev_produces_irq(&dev->dev, irq)) {
-            break;
-        }
-    }
-    printf ("irq=%d\n", irq);
-
-    //create IRQHandler cap
-    get_irqhandler_cap(irq, &dev->handler);
-
-    /* Assign AEP to the IRQ handler. */
-    UNUSED int err = seL4_IRQHandler_SetNotification(
-            dev->handler.capPtr, dev->ep.capPtr);
-    assert(err == 0);
-
-    //read once: not sure why, but it does not work without it, it seems
-    ps_cdev_getchar(&dev->dev);
-    err = seL4_IRQHandler_Ack(dev->handler.capPtr);
-    assert(err == 0);
-}
-
 
 void handle_cdev_event( void* _dev) 
 {
@@ -208,36 +163,17 @@ int main(void)
     error = !TimersWheelInit(&context.timersWheel); // TimersWheelInit returns 1 on sucess -> negate
     ZF_LOGF_IFERR(error, "Unable to initialize Timers Wheel.\n");
 
-
     uint64_t timerResolution = 0;;
     error = ltimer_get_resolution(&context.timer.ltimer , &timerResolution);
 
     printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
 
-/*
-    error = !DriverKitRegisterDevice( (IOBaseDevice*)systemTimer);
-    ZF_LOGF_IFERR(error, "Unable to register system timer\n");
-*/
 // Test keyboard
 
     sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
 
-    error = !KeyboardDeviceInit(&_keyboard);
+    error = !KeyboardDeviceInit(&context, &notification_path , &_keyboard);
     ZF_LOGF_IFERR(error, "Unable to initialize Keyboard .\n");
-
-//    chardev_t keyboard;
-
-    error = vka_cspace_alloc_path(&context.vka, &_keyboard.ep);
-    assert(error == 0);
-
-    error = vka_cnode_mint(&_keyboard.ep,&notification_path, seL4_AllRights, IRQ_BADGE_KEYBOARD | IRQ_EP_BADGE );
-    assert(error == 0); 
-
-    ps_chardevice_t *ret;
-    ret = ps_cdev_init(PC99_KEYBOARD_PS2, &context.opsIO, &_keyboard.dev);
-    assert(ret != NULL);
-
-    set_devEp(&_keyboard);
 
 /* BEGIN PROCESS */
 
