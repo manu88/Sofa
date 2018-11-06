@@ -17,4 +17,11 @@
 
 
 #pragma once
+#include "../Sofa.h"
 
+typedef struct
+{
+    
+} Terminal;
+
+int TerminalInit(Terminal* terminal) NO_NULL_POINTERS ;

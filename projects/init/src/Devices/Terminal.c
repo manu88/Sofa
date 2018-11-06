@@ -16,4 +16,13 @@
  */
 
 
+#include <string.h>
 #include "Terminal.h"
+
+
+int TerminalInit(Terminal* terminal)
+{
+    memset(terminal, 0, sizeof(Terminal));
+    
+    return  1;
+}
