@@ -9,6 +9,29 @@
 #include <fcntl.h>
 #include <string.h>
 
+
+int consoleFD  = -1;
+
+static int execCommand( const char* cmd)
+{
+//	write(consoleFD, "\n" , 1);
+
+	if (strcmp(cmd , "ls") == 0)
+	{
+		printf("ls ...\n");
+	}
+	else if (strcmp(cmd , "help") == 0)
+	{
+		const char b[] = "Some help you could use .... \n available command : ls \n";
+    		write(consoleFD , b ,strlen(b));
+	}
+	else 
+	{
+		printf("unknown Command to exec : '%s' \n" , cmd);
+	}
+	return 0;
+}
+
 int main( int argc , char* argv[])
 {
     if (SysClientInit(argc , argv) != 0)
@@ -18,7 +41,7 @@ int main( int argc , char* argv[])
 
     
     errno = 0;
-    int consoleFD = open("/dev/console" , O_RDWR);
+    consoleFD = open("/dev/console" , O_RDWR);
     assert(consoleFD >=0);
     assert(errno == 0);
 
@@ -28,13 +51,44 @@ int main( int argc , char* argv[])
     char buf[4] = {0};
 
 
+    char cmdBuf[128] = {0};
+    size_t index = 0;
+
+    write(consoleFD ,":>" , 2);
+
     while(1)
     {
-         ssize_t readRet = read(consoleFD , buf , 4);
-//         printf("readRet %li \n", readRet);
-	 write(consoleFD ,&buf[0] , 1);
 
-    }
+
+        ssize_t readRet = read(consoleFD , buf , 4);
+
+	if (readRet > 0)
+	{
+    	    printf("readRet returned %i\n" , readRet);
+
+	    for (int i=0;i<readRet ; i++)
+	    {
+	        if (buf[i] == '\n' || buf[i] == '\r')
+	        {
+		    cmdBuf[index++] = 0;
+		    execCommand(cmdBuf);
+//		printf("Typed command : '%s'\n",cmbBuf);
+		
+		    index = 0;
+		    memset(&cmdBuf , 0 , 128);
+		    write(consoleFD ,":>" , 2);
+
+	        }
+	        else 
+	        {
+	    	    cmdBuf[index++] = buf[i];
+ 	        }
+
+	        write(consoleFD ,&buf[i] , 1);
+	    }
+	}
+    } // end while
+
     int appStatus = 0;
     pid_t childPid = wait(&appStatus);
     assert(childPid == -1);

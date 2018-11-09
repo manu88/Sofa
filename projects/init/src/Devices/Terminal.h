@@ -35,6 +35,9 @@ typedef struct
 
     cqueue_t inputChar;
 
+    size_t terminal_row;
+    size_t terminal_column;
+
 } Terminal;
 
 int TerminalInit( InitContext* context, const cspacepath_t* notificationSrc,   Terminal* terminal) NO_NULL_POINTERS ;

@@ -17,3 +17,5 @@ Usefull links :
 * `open` and  `close` in Progress!
 * `read` and `seek` (almost) working on CPIO files
 * `write`
+* `clock_gettime`
+

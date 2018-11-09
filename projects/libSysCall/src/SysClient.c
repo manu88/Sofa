@@ -472,7 +472,7 @@ static long sys_clockgettime(va_list args)
 	
 	seL4_Word retNS = seL4_GetMR(1);
 
-	printf("clockgettime (id %i) return %lu\n" ,clk_id, seL4_GetMR(1) );
+//	printf("clockgettime (id %i) return %lu\n" ,clk_id, seL4_GetMR(1) );
 
 	if (retNS > 0)
 	{

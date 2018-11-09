@@ -20,8 +20,6 @@
 
 
 #define EGA_TEXT_FB_BASE 0xB8000
-#define MODE_WIDTH 80
-#define MODE_HEIGHT 25
 
 
 

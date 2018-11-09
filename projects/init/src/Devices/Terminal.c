@@ -93,12 +93,40 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
 }
 
 
+void terminal_putchar(Terminal* term , char c) 
+{
+	if (c == '\n' || c=='\r')
+	{
+	     term->terminal_column = 0;
+	     term->terminal_row +=1;
+	}
+	else 
+	{
+             terminal_putentryat(c, VGA_COLOR_RED, term->terminal_column, term->terminal_row);
+	}
+
+	
+
+        if (++term->terminal_column == MODE_WIDTH) 
+	{
+                term->terminal_column = 0;
+                if (++term->terminal_row == MODE_HEIGHT)
+                        term->terminal_row = 0;
+        }
+}
+
+
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size)
 {
-   
+
+    Terminal* term = node->userData;
+    assert(term);
+
+
     for(int i =0;i<size;i++)
     {
-	terminal_putentryat(buffer[i] ,VGA_COLOR_RED ,  i , 0);
+	terminal_putchar(term,buffer[i]);
+//	terminal_putentryat(buffer[i] ,VGA_COLOR_RED ,  i , 0);
     }
     return (ssize_t)size;
 }
@@ -123,14 +151,24 @@ static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size)
     Terminal* term = node->userData;
     assert(term);
 
-//    printf("Console read req buffer size %li\n" , cqueue_size(&term->inputChar ));
+//    printf("Console read req size %li |  buffer size %li\n" ,size, cqueue_size(&term->inputChar ));
 
+
+    size_t realReadSize = size < cqueue_size(&term->inputChar ) ? size : cqueue_size(&term->inputChar );
+
+    for( int i=0;i <realReadSize; i++)
+    {
+	char c = (char) cqueue_pop(&term->inputChar);
+        buffer[i] = c;
+    }
+    /*
     if(cqueue_size(&term->inputChar ))
     {
 	char c = (char) cqueue_pop(&term->inputChar);
 	buffer[0] = c;
+
 	return 1;
     }
-
-    return 0;
+*/
+    return realReadSize;
 }
