@@ -29,7 +29,7 @@ static int doTimeTests()
 {
     errno = 0;
     
-    struct timespec ts;
+    struct timespec ts = { 0 };
     int ret = clock_gettime(-1, &ts);
     assert(ret == -1);
     assert(errno == EINVAL);
@@ -41,9 +41,11 @@ static int doTimeTests()
     
 
     errno = 0;
-    ret = clock_gettime(CLOCK_MONOTONIC, &ts);
+    struct timespec ts2 = { 0 };
+    ret = clock_gettime(CLOCK_MONOTONIC, &ts2);
     assert(ret == 0);
     assert(errno == 0);
+    assert( ts2.tv_nsec / 1000000000 + ts2.tv_sec >= ts.tv_nsec / 1000000000 + ts.tv_sec);
 	
     return 1;
 }
