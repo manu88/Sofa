@@ -80,9 +80,9 @@ int FileServerInit()
 }
 
 
-int FileServerRegisterHandler( FileServerHandler* handler)
+int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath)
 {
-    uint32_t key = StringHash(handler->perfix);
+    uint32_t key = StringHash(handler->prefix);
     
     if( chash_get(&_fsContext._handlers, key))
     {
@@ -122,9 +122,9 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
     
     FileServerHandler* handler = chash_get(&_fsContext._handlers, key);
     
-    if (handler && MatchPrefix( handler->perfix, pathname ) )
+    if (handler && MatchPrefix( handler->prefix, pathname ) )
     {
-        const char* realPath = pathname + strlen(handler->perfix);
+        const char* realPath = pathname + strlen(handler->prefix);
         return handler->onOpen(context , realPath , flags , error);
     }
     

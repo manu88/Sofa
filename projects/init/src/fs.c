@@ -34,6 +34,8 @@ Inode* InodeAlloc()
     Inode* n = malloc(sizeof(Inode));
     if (n && InodeInit(n))
     {
+        
+        LIST_INIT(&n->children);
         return n;
     }
     

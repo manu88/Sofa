@@ -29,7 +29,17 @@
 //#include <stdint.h> //ssize_t
 #include <sys/types.h>
 #include "Sofa.h"
+#include "TimerWheel/queue.h"
+
 struct _inode;
+
+
+typedef struct _inodeList InodeList;
+struct _inodeList
+{
+    struct _inode *node;
+    LIST_ENTRY(_inodeList) entries;
+};
 
 struct _fileOperations
 {
@@ -50,6 +60,8 @@ typedef struct _fileOperations FileOperations;
 struct _inode
 {
     struct _inode* _parent;
+    LIST_HEAD(listhead, _inodeList) children;
+    
     const FileOperations *operations;
 
     size_t pos;

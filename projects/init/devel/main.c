@@ -67,18 +67,18 @@ int main(int argc, const char * argv[])
     doInit_UnitTests();
     
     FileServerHandler cpioHandler;
-    cpioHandler.perfix = "/cpio/";
+    cpioHandler.prefix = "/cpio/";
     cpioHandler.onOpen = CpioOpen;
     
     assert(DevServerInit() );
     
     assert(FileServerInit() );
     
-    assert(FileServerRegisterHandler(&cpioHandler) );
-    assert(FileServerRegisterHandler(&cpioHandler)  == 0); // second time must fail
+    assert(FileServerRegisterHandler(&cpioHandler , "/cpio/") );
+    assert(FileServerRegisterHandler(&cpioHandler , "/cpio/")  == 0); // second time must fail
     
-    assert(FileServerRegisterHandler(getDevServerHandler() ) );
-    assert(FileServerRegisterHandler(getDevServerHandler() ) == 0 ); // second time must fail
+    assert(FileServerRegisterHandler(getDevServerHandler(), "/dev/" ) );
+    assert(FileServerRegisterHandler(getDevServerHandler(), "/dev/" ) == 0 ); // second time must fail
     
     DeviceOperations ops;
     ops.OpenDevice = ConsoleOpen;

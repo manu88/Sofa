@@ -63,11 +63,11 @@ int FileServer_UnitTests()
     
     
     FileServerHandler cpioHandler;
-    cpioHandler.perfix = "/cpio/";
+    cpioHandler.prefix = "/cpio/";
     cpioHandler.onOpen = CpioOpen;
     
-    assert(FileServerRegisterHandler(&cpioHandler) );
-    assert(FileServerRegisterHandler(&cpioHandler)  == 0); // second time must fail
+    assert(FileServerRegisterHandler(&cpioHandler ,"/cpio/") );
+    assert(FileServerRegisterHandler(&cpioHandler ,"/cpio/")  == 0); // second time must fail
     
     
     int err = 0;

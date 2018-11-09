@@ -40,15 +40,17 @@ typedef Inode* (* FileServerHandler_Open) (void* context, const char*pathname ,i
 
 typedef struct
 {
-    const char* perfix;
+    const char* prefix;
     FileServerHandler_Open onOpen;
+    
+    Inode* inode;
     
 } FileServerHandler;
 
 
 int FileServerInit(void) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-int FileServerRegisterHandler( FileServerHandler* handler) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
 
