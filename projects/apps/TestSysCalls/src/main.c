@@ -12,14 +12,36 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <time.h>
 
 #ifndef __APPLE__
 #include <SysClient.h>
 #endif
 
+
+static int doTimeTests(void);
 static int doOpenTests(void);
 static int doReadTests(void);
 static int doGetPidTests(void);
+
+
+static int doTimeTests()
+{
+    errno = 0;
+    
+    struct timespec ts;
+    int ret = clock_gettime(-1, &ts);
+    //int ret = clock_gettime(CLOCK_REALTIME, &ts);
+    assert(ret == -1);
+    assert(errno == EINVAL);
+    
+    errno = 0;
+    ret = clock_gettime(CLOCK_REALTIME, &ts);
+    assert(ret == 0);
+    assert(errno == 0);
+    
+    return 1;
+}
 
 static int doGetPidTests()
 {
@@ -78,6 +100,7 @@ int main(int argc, char * argv[])
     }
 #endif
     assert(doGetPidTests());
+    assert(doTimeTests());
     assert(doOpenTests());
     assert(doReadTests());
     assert(doWaitTests() );
