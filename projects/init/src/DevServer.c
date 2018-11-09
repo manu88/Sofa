@@ -55,6 +55,11 @@ FileServerHandler* getDevServerHandler(void)
 
 int DevServerInit()
 {
+    if( FileServerHandlerInit( &_context._handler ,"dev") == 0)
+    {
+	return 0;
+
+    }
     chash_init(&_context._files, MAX_SIZE_HASH);
     return _context._files.table != NULL;
 }

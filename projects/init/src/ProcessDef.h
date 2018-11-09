@@ -81,6 +81,8 @@ struct _Process
     
     LIST_HEAD(listheadWaiters, _WaiterListEntry) waiters;
 
+
+    struct _inode* currentDir;
     cvector_t fdNodes;
     //struct _inode *testNode;
 //    seL4_CPtr reply;

@@ -136,18 +136,19 @@ int main(void)
     error = !CPIOServerInit();
     ZF_LOGF_IFERR(error, "Failed to  init CPIO Server\n");
 
-    error = !FileServerRegisterHandler( getCPIOServerHandler() );
+    error = !FileServerRegisterHandler( getCPIOServerHandler() , "cpio" );
     ZF_LOGF_IFERR(error, "Failed to register CPIO File System \n");
 
+    assert(InodeGetChildrenCount(FileServerGetRootNode()) > 0);
 // dev
 
     error = !DevServerInit();
     ZF_LOGF_IFERR(error, "Failed to  init Dev Server\n");
 
-    error = !FileServerRegisterHandler( getDevServerHandler() );
+    error = !FileServerRegisterHandler( getDevServerHandler() , "dev" );
     ZF_LOGF_IFERR(error, "Failed to register Dev File System \n");
 
-
+    assert(InodeGetChildrenCount(FileServerGetRootNode()) > 0);
 
  /* create an endpoint. */
     vka_object_t ep_object = {0};
@@ -218,6 +219,7 @@ int main(void)
 /* BEGIN PROCESS */
 
     Process *testProcess = ProcessAlloc();
+    testProcess->currentDir =  FileServerGetRootNode();
     error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
     if (error == 0)
     {
@@ -229,6 +231,7 @@ int main(void)
     }
 
     Process *process2 = ProcessAlloc();
+    process2->currentDir =  FileServerGetRootNode();
     error = ProcessStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, seL4_MaxPrio );
     if(error == 0)
     {

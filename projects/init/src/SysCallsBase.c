@@ -157,7 +157,9 @@ int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo
     Process *newProcess = ProcessAlloc();
     assert(newProcess);
         
-        int error = ProcessStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
+    newProcess->currentDir = senderProcess->currentDir;
+
+    int error = ProcessStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
     
     if (error == 0)
     {

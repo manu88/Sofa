@@ -64,7 +64,7 @@ int main( int argc , char* argv[])
 
 	if (readRet > 0)
 	{
-    	    printf("readRet returned %i\n" , readRet);
+//    	    printf("readRet returned %i\n" , readRet);
 
 	    for (int i=0;i<readRet ; i++)
 	    {

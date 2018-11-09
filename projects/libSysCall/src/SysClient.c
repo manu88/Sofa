@@ -39,6 +39,8 @@ static long sys_lseek(va_list args);
 static long sys_gettimeofday(va_list args);
 static long sys_clockgettime(va_list args);
 
+static long sys_getcwd(va_list args);
+
 
 static size_t _Sofa_stdio_write(void *data, size_t count);
 
@@ -76,6 +78,7 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_gettimeofday   , sys_gettimeofday);
     muslcsys_install_syscall(__NR_clock_gettime  , sys_clockgettime);
 
+    muslcsys_install_syscall(__SOFA_NR_getcwd , sys_getcwd);
 
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
     return 0;
@@ -484,3 +487,14 @@ static long sys_clockgettime(va_list args)
 
         return retNS;
 }
+
+// char *getcwd(char *buf, size_t size);
+static long sys_getcwd(va_list args)
+{
+	char* buf   = va_arg (args, char*);
+	size_t size = va_arg (args, size_t);
+
+
+	return 0;
+}
+

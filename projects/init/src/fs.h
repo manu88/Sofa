@@ -60,7 +60,7 @@ typedef struct _fileOperations FileOperations;
 struct _inode
 {
     struct _inode* _parent;
-    LIST_HEAD(listhead, _inodeList) children;
+    LIST_HEAD(listhead2, _inodeList) children;
     
     const FileOperations *operations;
 

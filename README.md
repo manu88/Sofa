@@ -18,4 +18,5 @@ Usefull links :
 * `read` and `seek` (almost) working on CPIO files
 * `write`
 * `clock_gettime`
+* `getcwd`
 

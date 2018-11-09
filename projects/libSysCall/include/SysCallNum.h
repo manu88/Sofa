@@ -42,3 +42,4 @@
 
 #define __SOFA_NR_gettimeofday          15
 #define __SOFA_NR_clock_gettime         16
+#define __SOFA_NR_getcwd		17

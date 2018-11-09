@@ -48,3 +48,8 @@ int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 // time 
 int handle_getTimeOfTheDay(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_clock_getTime(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+
+
+// dirs
+
+int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);

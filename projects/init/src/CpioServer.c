@@ -60,6 +60,11 @@ int CPIOServerInit()
 	{
 		return 0;
 	}
+
+	if( FileServerHandlerInit(&_handler, "dev") == 0)
+	{
+		return 0;
+	}
 /*
 	char **buf = malloc( info.file_count);
 

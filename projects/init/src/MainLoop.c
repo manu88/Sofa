@@ -46,7 +46,9 @@ static SysCallHandler callTable[] =
 	handle_lseek,
 
 	handle_getTimeOfTheDay,
-	handle_clock_getTime
+	handle_clock_getTime,
+
+ 	handle_getcwd,
 
 };
 
