@@ -439,13 +439,48 @@ static size_t _Sofa_stdio_write(void *data, size_t count)
 	return 0;
 }
 
-
+// int gettimeofday(struct timeval *tv, struct timezone *tz);
 static long sys_gettimeofday(va_list args)
 {
+	struct timeval *tv  = va_arg (args, struct timeval* );
+	struct timezone *tz = va_arg (args, struct timezone* );
+
+	printf("gettimeofday req\n");
 	return 0;
 }
 
+
+// int clock_gettime(clockid_t clk_id, struct timespec *tp);
 static long sys_clockgettime(va_list args)
 {
-	return 0;
+	const clockid_t clk_id = va_arg (args, clockid_t);
+
+
+	if (clk_id <0)
+	{
+		return -EINVAL;
+	}
+
+	struct timespec *tp    = va_arg (args, struct timespec* );
+
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+	seL4_SetMR(0, __SOFA_NR_clock_gettime );
+	seL4_SetMR(1, clk_id);
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_clock_gettime );
+	
+	seL4_Word retNS = seL4_GetMR(1);
+
+	printf("clockgettime (id %i) return %lu\n" ,clk_id, seL4_GetMR(1) );
+
+	if (retNS > 0)
+	{
+		tp->tv_sec  = retNS / 1000000000;
+		tp->tv_nsec = retNS - (tp->tv_sec  * 1000000000);
+
+		return 0;
+	}
+
+        return retNS;
 }

@@ -47,3 +47,12 @@ int TimerDriverInit(InitContext* context , seL4_CPtr notifCap)
 
     return error == 0;
 }
+
+
+uint64_t TimerGetTime( InitContext* context )
+{
+	uint64_t endTimeNS;
+        ltimer_get_time(&context->timer.ltimer, &endTimeNS);
+
+	return endTimeNS;
+}

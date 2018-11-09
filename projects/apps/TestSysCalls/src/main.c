@@ -31,15 +31,20 @@ static int doTimeTests()
     
     struct timespec ts;
     int ret = clock_gettime(-1, &ts);
-    //int ret = clock_gettime(CLOCK_REALTIME, &ts);
     assert(ret == -1);
     assert(errno == EINVAL);
     
     errno = 0;
-    ret = clock_gettime(CLOCK_REALTIME, &ts);
+    ret = clock_gettime(CLOCK_MONOTONIC, &ts);
     assert(ret == 0);
     assert(errno == 0);
     
+
+    errno = 0;
+    ret = clock_gettime(CLOCK_MONOTONIC, &ts);
+    assert(ret == 0);
+    assert(errno == 0);
+	
     return 1;
 }
 
