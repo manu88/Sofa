@@ -130,7 +130,7 @@ chash_set(chash_t *t, uint32_t key, chash_item_t obj)
     return 0;
 }
 
-void
+int
 chash_remove(chash_t *t, uint32_t key)
 {
     uint32_t h = chash_hash(key, t->tableSize);
@@ -140,7 +140,11 @@ chash_remove(chash_t *t, uint32_t key)
     if (entry) {
         kfree(entry);
         cvector_delete(&t->table[h], index);
+        
+        return 1;
     }
+    
+    return 0;
 }
 
 int

@@ -30,16 +30,16 @@
 #include <sys/types.h>
 #include "Sofa.h"
 #include "TimerWheel/queue.h"
+#include <data_struct/chash.h>
+#include "uthash.h"
 
+typedef enum
+{
+    INodeType_File   = 1,
+    INodeType_Folder = 2,
+} INodeType;
 struct _inode;
 
-
-typedef struct _inodeList InodeList;
-struct _inodeList
-{
-    struct _inode *node;
-    LIST_ENTRY(_inodeList) entries;
-};
 
 struct _fileOperations
 {
@@ -57,26 +57,57 @@ ssize_t FileOperation_NoLseek (struct _inode *node, size_t off, int whence);
 
 typedef struct _fileOperations FileOperations;
 
+
+struct _iNodeOperations
+{
+    int (*Open) (struct _inode *, int flags);
+    int (*Close) (struct _inode *);
+    // called on parent when a child is removed
+    void (*ChildRemoved)(struct _inode*);
+};
+
+int INodeOperations_NoOpen (struct _inode *node, int flags);
+
+typedef struct _iNodeOperations INodeOperations;
+
 struct _inode
 {
-    struct _inode* _parent;
-    LIST_HEAD(listhead2, _inodeList) children;
     
-    const FileOperations *operations;
+    
+    size_t refCount;
+    INodeType type;
+    const char* name;
+    
+    //chash_t _children;
+    
+    const FileOperations  *operations;
+    const INodeOperations *inodeOperations;
 
     size_t pos;
     size_t size;
     void* userData;
+    
+    struct _inode* _parent;
+    struct _inode* children;
+    UT_hash_handle hh;
+    
+    
 };
 
 typedef struct _inode Inode;
 
 
-Inode* InodeAlloc(void) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
-int InodeInit(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+Inode* InodeAlloc(INodeType type,const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+int InodeInit(Inode* node , INodeType type , const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-void InodeRelease(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
-
+void InodeRetain(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+// returns 1 if node can be freed (ie refCount is 0 after decrement)
+int InodeRelease(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 size_t InodeGetChildrenCount(const Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
 int InodeAddChild( Inode* root , Inode* child) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+int InodeRemoveChild(Inode* node ,Inode* child ) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+Inode* InodeGetChildByName( const Inode* node , const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;

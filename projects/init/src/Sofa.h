@@ -53,4 +53,9 @@
 
 
 
+
+#ifndef MAX_PATH_LOOKUP
+#define MAX_PATH_LOOKUP 128
+#endif
+
 #endif /* Sofa_h */

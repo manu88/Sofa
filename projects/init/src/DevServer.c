@@ -28,45 +28,41 @@
 #include <errno.h>
 #include "DevServer.h"
 #include <stdio.h>
-#include <data_struct/chash.h>
-#include "StringOperations.h"
 
-#define MAX_SIZE_HASH 10
+#include "StringOperations.h"
 
 static Inode*  _DevOpen(void* context, const char*pathname ,int flags , int *error);
 
 
 typedef struct
 {
-    FileServerHandler _handler;// = { "/dev/" ,   _DevOpen};
-    chash_t _files;
+    //FileServerHandler _handler;// = { "/dev/" ,   _DevOpen};
+    Inode _devNode;
+    
     
 } _DevServerContext;
 
-static _DevServerContext _context =
+static _DevServerContext _context;/* =
 {
     { "/dev/" ,   _DevOpen}
 };
-
-FileServerHandler* getDevServerHandler(void)
+*/
+Inode* DevServerGetInode()
 {
-    return &_context._handler;
+    return &_context._devNode;
 }
+
 
 int DevServerInit()
 {
-    if( FileServerHandlerInit( &_context._handler ,"dev") == 0)
-    {
-	return 0;
-
-    }
-    chash_init(&_context._files, MAX_SIZE_HASH);
-    return _context._files.table != NULL;
+    return InodeInit(&_context._devNode, INodeType_Folder, "dev");
+    
 }
 
 
 static Inode*  _DevOpen(void* context, const char*pathname ,int flags , int *error)
 {
+    /*
     printf("dev open request for '%s' \n" , pathname);
     
     uint32_t key = StringHash(pathname);
@@ -82,23 +78,12 @@ static Inode*  _DevOpen(void* context, const char*pathname ,int flags , int *err
     printf("_DevOpen : unable to open '%s'\n", pathname);
 
     *error = -ENOENT;
+     */
     return NULL;
 }
 
 
-int DevServerRegisterFile(const char* file , DeviceOperations* ops)
+int DevServerRegisterFile(Inode* node)
 {
-    if (file[0] == '/' || ops == NULL)
-    {
-        return 0;
-    }
-    
-    uint32_t key = StringHash(file);
-    
-    if( chash_get(&_context._files, key))
-    {
-        return 0;
-    }
-    
-    return  chash_set( &_context._files, key, ops ) == 0;
+    return InodeAddChild( &_context._devNode, node);
 }

@@ -29,4 +29,7 @@
 #include <stdint.h>
 #include "Sofa.h"
 
-uint32_t StringHash(const char *str) NO_NULL_POINTERS;
+uint32_t StringHash(const char *str) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+
+void StringPrepend(char* s, const char* t) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;

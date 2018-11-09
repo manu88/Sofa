@@ -25,33 +25,59 @@
 //
 
 #include "fs.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdio.h>
 
-Inode* InodeAlloc()
+
+#include "StringOperations.h"
+
+
+#define MAX_CHILD_NODE 10
+Inode* InodeAlloc(INodeType type, const char* name)
 {
     Inode* n = malloc(sizeof(Inode));
-    if (n && InodeInit(n))
+    if (n && InodeInit(n , type,name))
     {
-        
-        LIST_INIT(&n->children);
+        //LIST_INIT(&n->children);
         return n;
     }
     
     return NULL;
 }
 
-int InodeInit(Inode* node)
+int InodeInit(Inode* node ,INodeType type , const char* name)
 {
     memset(node , 0, sizeof(Inode));
+    
+    node->refCount = 1;
+    node->type = type;
+    node->name = name;
+    
+    node->children = NULL;
+    //chash_init(&node->_children, MAX_CHILD_NODE);
     return 1;
 }
 
-void InodeRelease(Inode* node)
+
+void InodeRetain(Inode* node)
 {
-    free(node);
+    node->refCount++;
+}
+
+int InodeRelease(Inode* node)
+{
+    if( --node->refCount == 0)
+    {
+        //chash_release(&node->_children);
+        return 1;
+    }
+    
+    return 0;
+    //free(node);
 }
 
 
@@ -79,9 +105,61 @@ ssize_t FileOperation_NoLseek (struct _inode *node, size_t off, int whence)
 }
 
 
+int INodeOperations_NoOpen (struct _inode *node, int flags)
+{
+    UNUSED_PARAMETER(node);
+    UNUSED_PARAMETER(flags);
+    
+    return -EPERM;
+}
+
 
 int InodeAddChild( Inode* root , Inode* child)
 {
+    if (root->type != INodeType_Folder)
+    {
+        return 0;
+    }
+    
+    /*
+    uint32_t key = StringHash(child->name);
+    
+    if( chash_get(&root->_children, key))
+    {
+        return 0;
+    }
+    
+    if(chash_set( &root->_children, key, child ) == 0)
+    {
+        child->_parent = root;
+        return 1;
+    }
+     */
+    
+    Inode* n = NULL;
+    HASH_FIND_STR(root->children, child->name, n);
+    
+    if( n != NULL)
+    {
+        return 0;
+    }
+    
+    
+    HASH_ADD_STR(root->children, name, child);
+    
+    child->_parent = root;
+    
+    
+    return InodeGetChildByName(root, child->name) != NULL;
+    /*
+    InodeList* sibling = NULL;
+    LIST_FOREACH(sibling, &root->children, entries  )
+    {
+        if (strcmp(sibling->node->name, child->name) == 0)
+        {
+            return 0;
+        }
+    }
     
     InodeList* entry = (InodeList*) malloc(sizeof(InodeList)) ;
     
@@ -92,12 +170,30 @@ int InodeAddChild( Inode* root , Inode* child)
     entry->node = child;
     
     LIST_INSERT_HEAD(&root->children, entry, entries);
+    
+    child->_parent = root;
     return 1;
+     */
+}
+
+int InodeRemoveChild(Inode* node ,Inode* child )
+{
+    Inode* n =NULL;
+    HASH_FIND_STR(node->children, child->name, n);
+   
+    if( n)
+    {
+        HASH_DEL(node->children, child);
+        return 1;
+    }
+    return 0;
 }
 
 size_t InodeGetChildrenCount(const Inode* node)
 {
-    
+    return HASH_COUNT(node->children);
+    /*
+    node->_children.
     InodeList* entry = NULL;
     InodeList* entry_temp = NULL;
     
@@ -108,4 +204,74 @@ size_t InodeGetChildrenCount(const Inode* node)
     }
     
     return c;
+     */
+    
+    return 0;
+}
+
+
+ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize)
+{
+    assert(node);
+    
+    Inode* prev = (Inode*) node;
+    
+    ssize_t strIndex = 0;
+    
+    memset(b, 0, maxSize);
+    
+    int accum = 0;
+    while (prev != NULL)
+    {
+        if (strIndex >= maxSize)
+        {
+            return -1;
+        }
+        //printf("prepend path '%s' to '%s'\n",prev->name , b);
+        
+        if (prev->type == INodeType_Folder)
+        {
+            StringPrepend(b, "/");
+            strIndex += 1;
+        }
+        
+        StringPrepend(b, prev->name);
+        
+        strIndex += strlen(prev->name);
+        
+        if(++accum > MAX_PATH_LOOKUP)
+        {
+            return -ELOOP;
+        }
+        
+        prev = prev->_parent;
+        
+        assert(node->_parent != node);
+    }
+    
+    return strIndex;
+}
+
+
+Inode* InodeGetChildByName( const Inode* node , const char* name)
+{
+    Inode* el = NULL;
+    Inode* tmp = NULL;
+    HASH_ITER(hh, node->children, el, tmp)
+    {
+        if (strcmp(el->name, name) == 0)
+        {
+            return el;
+        }
+    }
+    /*
+    LIST_FOREACH_SAFE(entry, &node->children, entries ,entry_temp )
+    {
+        if (strcmp(entry->node->name, name) == 0)
+        {
+            return entry->node;
+        }
+    }
+    */
+    return NULL;
 }

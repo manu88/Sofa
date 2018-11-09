@@ -64,34 +64,12 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
 
 int main(int argc, const char * argv[])
 {
-    doInit_UnitTests();
-    
-    FileServerHandler cpioHandler;
-    assert(FileServerHandlerInit(&cpioHandler  , "cpio" ) );
-    cpioHandler.prefix = "/cpio/";
-    cpioHandler.onOpen = CpioOpen;
-    
-    assert(DevServerInit() );
-    
     assert(FileServerInit() );
     
-    assert(FileServerRegisterHandler(&cpioHandler , "/cpio/") );
-    assert(InodeGetChildrenCount(FileServerGetRootNode()) == 1);
-    assert(cpioHandler.inode._parent == FileServerGetRootNode());
+    doInit_UnitTests();
     
     
-    assert(FileServerRegisterHandler(getDevServerHandler(), "/dev/" ) );
-    assert(InodeGetChildrenCount(FileServerGetRootNode()) == 2);
-    assert(getDevServerHandler()->inode._parent == FileServerGetRootNode());
-    
-    DeviceOperations ops;
-    ops.OpenDevice = ConsoleOpen;
-    ops.fileOps.Write = ConsoleWrite;
-    
-    assert(DevServerRegisterFile("/lol", &ops) == 0);
-    
-    assert(DevServerRegisterFile("console", &ops) );
-    
+    sleep(5);
 
     return 0;
 }

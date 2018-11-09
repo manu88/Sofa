@@ -24,6 +24,7 @@
 //  Copyright © 2018 Manuel Deneu. All rights reserved.
 //
 
+#include <string.h>
 #include "StringOperations.h"
 
 
@@ -36,4 +37,18 @@ uint32_t StringHash(const char *str)
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
     
     return hash;
+}
+
+
+void StringPrepend(char* s, const char* t)
+{
+    size_t len = strlen(t);
+    size_t i;
+    
+    memmove(s + len, s, strlen(s) + 1);
+    
+    for (i = 0; i < len; ++i)
+    {
+        s[i] = t[i];
+    }
 }

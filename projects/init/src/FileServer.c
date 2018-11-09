@@ -30,15 +30,13 @@
 #include <assert.h>
 #include <data_struct/chash.h>
 #include "StringOperations.h"
-
+#include <libgen.h>
 
 #define MAX_SIZE_HASH 10
 
 
 typedef struct
 {
-    chash_t _handlers;
-    
     Inode _rootNode;
     
 } _FileServerContext;
@@ -46,7 +44,7 @@ typedef struct
 
 static _FileServerContext _fsContext;
 
-
+/*
 static int MatchPrefix(const char *pre, const char *str)
 {
     return strncmp(pre, str, strlen(pre)) == 0;
@@ -66,22 +64,23 @@ static int GetSecondSlash(const char* str)
    return (int) (ret-str+1);
 }
 
-
+*/
 
 int FileServerInit()
 {
     memset(&_fsContext, 0, sizeof(_FileServerContext));
     
     
-    if( InodeInit(&_fsContext._rootNode) == 0)
+    if( InodeInit(&_fsContext._rootNode , INodeType_Folder ,"") == 0)
     {
+        
         return 0;
     }
+    
+    //_fsContext._rootNode.name = "";//strdup( "" );
     _fsContext._rootNode._parent = NULL;
-    
-    chash_init(&_fsContext._handlers, MAX_SIZE_HASH);
-    
-    return _fsContext._handlers.table != NULL;
+
+    return 1;
 }
 
 Inode* FileServerGetRootNode()
@@ -91,31 +90,46 @@ Inode* FileServerGetRootNode()
 
 int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath)
 {
-    uint32_t key = StringHash(handler->prefix);
     
-    if( chash_get(&_fsContext._handlers, key))
-    {
-        return 0;
-    }
+    return 0;
+}
 
-    if(chash_set( &_fsContext._handlers, key, handler ) == 0)
-    {
-        handler->inode._parent = &_fsContext._rootNode;
-        return InodeAddChild(&_fsContext._rootNode , &handler->inode);
-    }
+int FileServerRemoveHandler( FileServerHandler* handler , const char* atPath)
+{
+
     return 0;
 }
 
 
 Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int*error)
 {
+    Inode* n = FileServerGetINodeForPath(pathname);
     
+    *error = -ENOENT;
+    if (n )
+    {
+        *error = n->inodeOperations->Open(n , flags);
+        
+        if (*error == 0)
+        {
+            InodeRetain(n);
+            return n;
+        }
+        
+    }
+    
+    
+    return NULL;
+        /*
     if (pathname[0] != '/')
     {
         printf("FileServerOpen : '%s' only absolute path works for now \n" , pathname);
         *error = -ENODEV;
         return NULL;
     }
+    
+    
+    return NULL;
     
     int pos = GetSecondSlash(pathname);
     
@@ -128,6 +142,12 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
     
     char* baseDir =  strndup(pathname, (unsigned long) pos);
     
+    if (!baseDir)
+    {
+        *error = -ENOMEM;
+        return NULL;
+    }
+    
     uint32_t key = StringHash(baseDir);
 
     free(baseDir);
@@ -138,10 +158,20 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
     if (handler && MatchPrefix( handler->prefix, pathname ) )
     {
         const char* realPath = pathname + strlen(handler->prefix);
-        return handler->onOpen(context , realPath , flags , error);
+        
+        Inode* retNode = handler->onOpen(context , realPath , flags , error);
+        
+        if(retNode)
+        {
+            
+            retNode->name = strdup(realPath);
+            InodeAddChild(&handler->inode, retNode);
+        }
+        return retNode;
     }
     
     return NULL;
+     */
 }
 
 
@@ -157,9 +187,56 @@ int FileServerHandlerInit(FileServerHandler* hander , const char* name)
     assert(hander);
     
     
-    if(InodeInit(&hander->inode))
+    if(InodeInit(&hander->inode ,INodeType_Folder , name) )
     {
         return 1;
+    }
+    return 0;
+}
+
+
+Inode* FileServerGetINodeForPath( const char* path_)
+{
+    if (strlen(path_) == 0)
+        return NULL;
+    
+    
+    char* path = strdup(path_);
+    /*
+    char* dir = dirname(path);
+    printf("Dir '%s'\n" , path);
+     */
+    Inode* ret = &_fsContext._rootNode;
+    
+    static const char delim[] = "/";
+    
+    char* token = strtok(path, delim);
+    
+    while (token != NULL)
+    {
+        //printf("Token '%s'\n", token);
+        
+        ret = InodeGetChildByName(ret ,token);
+        if(!ret)
+        {
+            free(path);
+            return NULL;
+        }
+        token = strtok(NULL, delim);
+    }
+    
+    free(path);
+    return ret;
+}
+
+
+int FileServerAddNodeAtPath( Inode* node,const char* path)
+{
+    Inode* n = FileServerGetINodeForPath(path);
+    
+    if (n)
+    {
+        return InodeAddChild(n, node);
     }
     return 0;
 }

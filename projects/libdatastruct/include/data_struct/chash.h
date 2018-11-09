@@ -42,7 +42,7 @@ chash_item_t chash_get(chash_t *t, uint32_t key);
 
 int chash_set(chash_t *t, uint32_t key, chash_item_t obj);
 
-void chash_remove(chash_t *t, uint32_t key);
+int chash_remove(chash_t *t, uint32_t key);
 
 int chash_find_free(chash_t *t, uint32_t rangeStart, uint32_t rangeEnd);
 

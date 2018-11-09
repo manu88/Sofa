@@ -33,18 +33,20 @@
 struct _DeviceOperations
 {
     FileOperations fileOps;
-    Inode* (*OpenDevice) (struct _DeviceOperations *, int );
+    
     
     void* userContext;
 };
 
 typedef  struct _DeviceOperations DeviceOperations;
 
-FileServerHandler* getDevServerHandler(void);
+
+
+Inode* DevServerGetInode(void) SOFA_UNIT_TESTABLE;
 
 int DevServerInit(void);
 
-int DevServerRegisterFile(const char* file , DeviceOperations* ops) NO_NULL_POINTERS;
+int DevServerRegisterFile( Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
 

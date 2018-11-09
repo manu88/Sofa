@@ -45,7 +45,7 @@ TimersWheel* TimersWheelAlloc(void)
     {
         return self;
     }
-    
+    free(self);
     return NULL;
     
 }
