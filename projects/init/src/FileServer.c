@@ -72,6 +72,11 @@ int FileServerInit()
 {
     memset(&_fsContext, 0, sizeof(_FileServerContext));
     
+    
+    if( InodeInit(&_fsContext._rootNode) == 0)
+    {
+        return 0;
+    }
     _fsContext._rootNode._parent = NULL;
     
     chash_init(&_fsContext._handlers, MAX_SIZE_HASH);
@@ -79,6 +84,10 @@ int FileServerInit()
     return _fsContext._handlers.table != NULL;
 }
 
+Inode* FileServerGetRootNode()
+{
+    return &_fsContext._rootNode;
+}
 
 int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath)
 {
@@ -89,8 +98,12 @@ int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath)
         return 0;
     }
 
-    return  chash_set( &_fsContext._handlers, key, handler ) == 0;
-
+    if(chash_set( &_fsContext._handlers, key, handler ) == 0)
+    {
+        handler->inode._parent = &_fsContext._rootNode;
+        return InodeAddChild(&_fsContext._rootNode , &handler->inode);
+    }
+    return 0;
 }
 
 
@@ -129,4 +142,24 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
     }
     
     return NULL;
+}
+
+
+
+
+
+
+
+
+
+int FileServerHandlerInit(FileServerHandler* hander , const char* name)
+{
+    assert(hander);
+    
+    
+    if(InodeInit(&hander->inode))
+    {
+        return 1;
+    }
+    return 0;
 }

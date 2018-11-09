@@ -43,17 +43,18 @@ typedef struct
     const char* prefix;
     FileServerHandler_Open onOpen;
     
-    Inode* inode;
+    Inode inode;
     
 } FileServerHandler;
 
+
+int FileServerHandlerInit(FileServerHandler* hander , const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 int FileServerInit(void) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-
-
 Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int *error) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
+Inode* FileServerGetRootNode(void ) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;

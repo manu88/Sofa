@@ -61,6 +61,8 @@ int FileServer_UnitTests()
     assert(Inode_tests());
     assert(FileServerInit());
     
+    assert(FileServerGetRootNode());
+    assert(InodeGetChildrenCount(FileServerGetRootNode()) == 0);
     
     FileServerHandler cpioHandler;
     cpioHandler.prefix = "/cpio/";
@@ -69,6 +71,8 @@ int FileServer_UnitTests()
     assert(FileServerRegisterHandler(&cpioHandler ,"/cpio/") );
     assert(FileServerRegisterHandler(&cpioHandler ,"/cpio/")  == 0); // second time must fail
     
+    // we have now cpio node
+    assert(InodeGetChildrenCount(FileServerGetRootNode()) == 1);
     
     int err = 0;
     

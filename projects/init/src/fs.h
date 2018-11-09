@@ -76,3 +76,7 @@ Inode* InodeAlloc(void) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 int InodeInit(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 void InodeRelease(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+
+size_t InodeGetChildrenCount(const Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+int InodeAddChild( Inode* root , Inode* child) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;

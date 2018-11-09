@@ -67,6 +67,7 @@ int main(int argc, const char * argv[])
     doInit_UnitTests();
     
     FileServerHandler cpioHandler;
+    assert(FileServerHandlerInit(&cpioHandler  , "cpio" ) );
     cpioHandler.prefix = "/cpio/";
     cpioHandler.onOpen = CpioOpen;
     
@@ -75,36 +76,22 @@ int main(int argc, const char * argv[])
     assert(FileServerInit() );
     
     assert(FileServerRegisterHandler(&cpioHandler , "/cpio/") );
-    assert(FileServerRegisterHandler(&cpioHandler , "/cpio/")  == 0); // second time must fail
+    assert(InodeGetChildrenCount(FileServerGetRootNode()) == 1);
+    assert(cpioHandler.inode._parent == FileServerGetRootNode());
+    
     
     assert(FileServerRegisterHandler(getDevServerHandler(), "/dev/" ) );
-    assert(FileServerRegisterHandler(getDevServerHandler(), "/dev/" ) == 0 ); // second time must fail
+    assert(InodeGetChildrenCount(FileServerGetRootNode()) == 2);
+    assert(getDevServerHandler()->inode._parent == FileServerGetRootNode());
     
     DeviceOperations ops;
     ops.OpenDevice = ConsoleOpen;
     ops.fileOps.Write = ConsoleWrite;
     
     assert(DevServerRegisterFile("/lol", &ops) == 0);
-    assert(DevServerRegisterFile("/lol", NULL) == 0);
+    
     assert(DevServerRegisterFile("console", &ops) );
     
-    int err = 0;
-    int fakeContextSoThatClangIsHappy = 1;
-    assert(FileServerOpen(&fakeContextSoThatClangIsHappy, "/cpio/test", 0 , &err) == NULL );
-    
-    assert(cpioCalled == 1);
-    
-    cpioCalled = 0;
-    assert(FileServerOpen(&fakeContextSoThatClangIsHappy, "/cpi/test", 0 ,&err) == NULL);
-    assert(cpioCalled == 0);
-    
-    Inode* consoleNode = FileServerOpen(&fakeContextSoThatClangIsHappy, "/dev/console", 0 ,&err);
-    assert( consoleNode != NULL);
-    assert(consoleOpenCalled == 1);
-    
-    consoleNode->operations->Write(consoleNode ,"hello" ,4);
-    free(consoleNode);
-    
-    //sleep(4);
+
     return 0;
 }

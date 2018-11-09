@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 
 Inode* InodeAlloc()
 {
@@ -75,4 +76,36 @@ ssize_t FileOperation_NoLseek (struct _inode *node, size_t off, int whence)
     UNUSED_PARAMETER(off);
     UNUSED_PARAMETER(whence);
     return -EPERM;
+}
+
+
+
+int InodeAddChild( Inode* root , Inode* child)
+{
+    
+    InodeList* entry = (InodeList*) malloc(sizeof(InodeList)) ;
+    
+    if(!entry)
+    {
+        return 0;
+    }
+    entry->node = child;
+    
+    LIST_INSERT_HEAD(&root->children, entry, entries);
+    return 1;
+}
+
+size_t InodeGetChildrenCount(const Inode* node)
+{
+    
+    InodeList* entry = NULL;
+    InodeList* entry_temp = NULL;
+    
+    size_t c = 0;
+    LIST_FOREACH_SAFE(entry, &node->children, entries ,entry_temp )
+    {
+        c++;
+    }
+    
+    return c;
 }
