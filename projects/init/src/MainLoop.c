@@ -44,6 +44,10 @@ static SysCallHandler callTable[] =
 	handle_setpriority,
 	handle_getpriority,
 	handle_lseek,
+
+	handle_getTimeOfTheDay,
+	handle_clock_getTime
+
 };
 
 

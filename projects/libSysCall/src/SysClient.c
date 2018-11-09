@@ -35,6 +35,11 @@ static long sys_getpriority(va_list args);
 
 static long sys_lseek(va_list args);
 
+
+static long sys_gettimeofday(va_list args);
+static long sys_clockgettime(va_list args);
+
+
 static size_t _Sofa_stdio_write(void *data, size_t count);
 
 static seL4_CPtr sysCallEndPoint = 0;
@@ -67,6 +72,9 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_getpriority, sys_getpriority);
 
     muslcsys_install_syscall(__NR_lseek	     , sys_lseek);
+
+    muslcsys_install_syscall(__NR_gettimeofday   , sys_gettimeofday);
+    muslcsys_install_syscall(__NR_clock_gettime  , sys_clockgettime);
 
 
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
@@ -427,6 +435,17 @@ static long sys_write(va_list args)
 
 
 static size_t _Sofa_stdio_write(void *data, size_t count)
+{
+	return 0;
+}
+
+
+static long sys_gettimeofday(va_list args)
+{
+	return 0;
+}
+
+static long sys_clockgettime(va_list args)
 {
 	return 0;
 }

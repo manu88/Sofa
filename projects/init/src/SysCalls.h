@@ -43,3 +43,8 @@ int handle_setpriority(InitContext* context, Process *senderProcess, seL4_Messag
 
 
 int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+
+
+// time 
+int handle_getTimeOfTheDay(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_clock_getTime(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
