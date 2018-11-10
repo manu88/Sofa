@@ -145,8 +145,11 @@ int main(void)
     error = !DevServerInit();
     ZF_LOGF_IFERR(error, "Failed to  init Dev Server\n");
 
-    error = !FileServerRegisterHandler( getDevServerHandler() , "dev" );
+//    error = !FileServerRegisterHandler( getDevServerHandler() , "dev" );
+    error = !FileServerAddNodeAtPath(DevServerGetInode(), "/");
     ZF_LOGF_IFERR(error, "Failed to register Dev File System \n");
+
+
 
     assert(InodeGetChildrenCount(FileServerGetRootNode()) > 0);
 
@@ -199,7 +202,7 @@ int main(void)
     assert( DriverKitGetDeviceForBadge(IRQ_BADGE_KEYBOARD) == (IOBaseDevice*) &_terminal);
     printf("Keyboard badge %lx\n", _terminal.keyboard.super._badge);
 
-    error = !DevServerRegisterFile("console", &_terminal.devOps );// EGADriverGetDeviceOps() );
+    error = !DevServerRegisterFile( (Inode*)&_terminal.node );// !DevServerRegisterFile("console", &_terminal.devOps );// EGADriverGetDeviceOps() );
     ZF_LOGF_IFERR(error, "Failed to  register 'console' EGA handler\n");
 
 

@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <assert.h>
-
+#include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
 
@@ -24,6 +24,11 @@ static int execCommand( const char* cmd)
 	{
 		const char b[] = "Some help you could use .... \n available command : ls \n";
     		write(consoleFD , b ,strlen(b));
+	}
+	else if (strcmp( cmd , "clear") == 0)
+	{
+		uint8_t msg[] = { 0xA , 0x0 , 0xB };
+		write(consoleFD , msg , 3);
 	}
 	else 
 	{
