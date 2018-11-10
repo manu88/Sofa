@@ -22,8 +22,7 @@
 #include "FileServer.h"
 
 
-FileServerHandler* getCPIOServerHandler(void);
-
 int CPIOServerInit(void);
 
+Inode* CPIOServerGetINode(void);
 //int FileServerOpen(InitContext* context , const char*pathname , int flags);

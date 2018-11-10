@@ -27,7 +27,7 @@
 #include "FileServer_UnitTests.h"
 #include <errno.h>
 #include "FileServer.h"
-
+#include "CpioServer.h"
 
 static int FileServer_OperationTests(void);
 
@@ -199,6 +199,19 @@ static int FileServer_OperationTests()
     assert(InodeRelease(procNodeRetained) == 0);
     
     assert(InodeGetChildrenCount(procNodeRetained) == 0);
+    
+    
+    /* CPIO Part */
+    
+    assert( CPIOServerInit() );
+    
+    assert(FileServerAddNodeAtPath( CPIOServerGetINode() , "/"));
+    assert( FileServerGetINodeForPath("/cpio") );
+    assert( FileServerGetINodeForPath("/cpio/") );
+    
+    int err = 0;
+    Inode* testNode = FileServerOpen(&ctx, "/cpio/test", 1, &err);
+    
     
     return 1;
 }

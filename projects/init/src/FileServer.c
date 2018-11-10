@@ -83,32 +83,14 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
 
     return NULL;
 }
-/*
-int FileServerHandlerInit(FileServerHandler* hander , const char* name)
-{
-    assert(hander);
-    
-    
-    if(InodeInit(&hander->inode ,INodeType_Folder , name) )
-    {
-        return 1;
-    }
-    return 0;
-}
-*/
-
 
 Inode* FileServerGetINodeForPath( const char* path_)
 {
     if (strlen(path_) == 0)
         return NULL;
     
-    
     char* path = strdup(path_);
-    /*
-    char* dir = dirname(path);
-    printf("Dir '%s'\n" , path);
-     */
+
     Inode* ret = &_fsContext._rootNode;
     
     static const char delim[] = "/";
@@ -117,7 +99,6 @@ Inode* FileServerGetINodeForPath( const char* path_)
     
     while (token != NULL)
     {
-        //printf("Token '%s'\n", token);
         
         ret = InodeGetChildByName(ret ,token);
         if(!ret)
