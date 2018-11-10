@@ -69,7 +69,7 @@ int main(int argc, const char * argv[])
     doInit_UnitTests();
     
     
-    sleep(5);
+//    sleep(5);
 
     return 0;
 }

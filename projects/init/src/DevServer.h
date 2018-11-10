@@ -46,7 +46,11 @@ Inode* DevServerGetInode(void) SOFA_UNIT_TESTABLE;
 
 int DevServerInit(void);
 
+// will retain the node
 int DevServerRegisterFile( Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+// will release the node
+int DevServerRemoveFile( Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
 

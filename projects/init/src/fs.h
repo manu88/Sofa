@@ -63,7 +63,7 @@ struct _iNodeOperations
     int (*Open) (struct _inode *, int flags);
     int (*Close) (struct _inode *);
     // called on parent when a child is removed
-    void (*ChildRemoved)(struct _inode*);
+    void (*ChildRemoved)(struct _inode* lastParent , struct _inode* node);
 };
 
 int INodeOperations_NoOpen (struct _inode *node, int flags);
@@ -108,6 +108,9 @@ size_t InodeGetChildrenCount(const Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTA
 
 int InodeAddChild( Inode* root , Inode* child) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 int InodeRemoveChild(Inode* node ,Inode* child ) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+int InodeRemoveFromParent(Inode* node ) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
 Inode* InodeGetChildByName( const Inode* node , const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;

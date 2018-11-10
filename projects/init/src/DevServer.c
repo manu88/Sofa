@@ -28,62 +28,58 @@
 #include <errno.h>
 #include "DevServer.h"
 #include <stdio.h>
-
+#include <assert.h>
 #include "StringOperations.h"
-
-static Inode*  _DevOpen(void* context, const char*pathname ,int flags , int *error);
-
 
 typedef struct
 {
-    //FileServerHandler _handler;// = { "/dev/" ,   _DevOpen};
     Inode _devNode;
     
+    INodeOperations _devOperations;
     
 } _DevServerContext;
 
-static _DevServerContext _context;/* =
+static _DevServerContext _context;
+
+
+void DevChildRemoved( Inode*  lastParent , Inode* node)
 {
-    { "/dev/" ,   _DevOpen}
-};
-*/
+    assert( node->_parent == NULL);
+    assert(lastParent == &_context._devNode );
+    
+    InodeRelease(node);
+}
+
+int DevServerInit()
+{
+    if( InodeInit(&_context._devNode, INodeType_Folder, "dev"))
+    {
+        _context._devOperations.ChildRemoved = DevChildRemoved;
+        _context._devNode.inodeOperations = &_context._devOperations;
+        return 1;
+    }
+    
+    return 0;
+}
+
 Inode* DevServerGetInode()
 {
     return &_context._devNode;
 }
 
-
-int DevServerInit()
-{
-    return InodeInit(&_context._devNode, INodeType_Folder, "dev");
-    
-}
-
-
-static Inode*  _DevOpen(void* context, const char*pathname ,int flags , int *error)
-{
-    /*
-    printf("dev open request for '%s' \n" , pathname);
-    
-    uint32_t key = StringHash(pathname);
-    
-    DeviceOperations* ops =  chash_get(&_context._files, key);
-    
-    if (ops)
-    {
-        *error = 0;
-        return ops->OpenDevice(ops , flags);
-        
-    }
-    printf("_DevOpen : unable to open '%s'\n", pathname);
-
-    *error = -ENOENT;
-     */
-    return NULL;
-}
-
-
 int DevServerRegisterFile(Inode* node)
 {
-    return InodeAddChild( &_context._devNode, node);
+    if( InodeAddChild( &_context._devNode, node) )
+    {
+        InodeRetain( node);
+        return 1;
+    }
+    
+    return 0;
+}
+
+int DevServerRemoveFile( Inode* node)
+{
+    // node released in DevChildRemoved callback
+    return InodeRemoveChild(&_context._devNode, node);
 }

@@ -58,6 +58,8 @@ int InodeInit(Inode* node ,INodeType type , const char* name)
     node->name = name;
     
     node->children = NULL;
+    
+    
     //chash_init(&node->_children, MAX_CHILD_NODE);
     return 1;
 }
@@ -183,10 +185,33 @@ int InodeRemoveChild(Inode* node ,Inode* child )
    
     if( n)
     {
-        HASH_DEL(node->children, child);
-        return 1;
+        
+        return InodeRemoveFromParent(child);
+        //HASH_DEL(node->children, child);
+        
+
+        //return 1;
     }
     return 0;
+}
+                                                
+int InodeRemoveFromParent(Inode* node )
+{
+    if (node->_parent == NULL)
+    {
+        return 0;
+    }
+    
+    Inode* lastParent = node->_parent;
+    
+    HASH_DEL(lastParent->children, node);
+    
+    node->_parent = NULL;
+    if (lastParent->inodeOperations && lastParent->inodeOperations->ChildRemoved)
+    {
+        lastParent->inodeOperations->ChildRemoved( lastParent , node);
+    }
+    return 1;
 }
 
 size_t InodeGetChildrenCount(const Inode* node)
