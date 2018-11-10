@@ -27,10 +27,10 @@
 
 typedef struct
 {
+    Inode node;
     KeyboardDevice keyboard;
 
-
-    DeviceOperations devOps;
+//    DeviceOperations devOps;
 
 
     cqueue_t inputChar;

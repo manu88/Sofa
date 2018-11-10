@@ -24,7 +24,7 @@
 #define MAX_CHAR_QUEUE 32
 
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size);
-static Inode* ConsoleOpen (struct _DeviceOperations * device, int flags );
+static int     ConsoleOpen (struct _inode * node, int flags );
 static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size);
 
 
@@ -34,10 +34,15 @@ int TerminalInit( InitContext* context,const cspacepath_t* notificationSrc,  Ter
 {
     memset(terminal, 0, sizeof(Terminal));
     
-    terminal->devOps.userContext	= terminal;
-    terminal->devOps.OpenDevice 	= ConsoleOpen;
-    terminal->devOps.fileOps.Write      = ConsoleWrite;
-    terminal->devOps.fileOps.Read  	= ConsoleRead;
+    if(InodeInit( &terminal->node,INodeType_File, "terminal") == 0)
+    {
+	return 0;
+    }
+
+//    terminal->devOps.userContext	= terminal;
+//    terminal->devOps.OpenDevice 	= ConsoleOpen;
+//    terminal->devOps.fileOps.Write      = ConsoleWrite;
+//    terminal->devOps.fileOps.Read  	= ConsoleRead;
 
 
     // init keyboard
@@ -92,6 +97,16 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
     return 1;
 }
 
+void terminal_clear(Terminal* term)
+{
+	for(int i=0;i<MODE_WIDTH;i++)
+	{
+		for(int j = 0;j<MODE_HEIGHT;j++)
+		{
+			terminal_putentryat(' ', VGA_COLOR_RED, term->terminal_column, term->terminal_row);
+		}
+	}
+}
 
 void terminal_putchar(Terminal* term , char c) 
 {
@@ -122,6 +137,19 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
     Terminal* term = node->userData;
     assert(term);
 
+//0xA , 0x0 , 0xB 
+
+    if (size == 3 && (uint8_t)buffer[0] == 0xA)
+    {
+	const uint8_t *cmd = (const uint8_t *) buffer;
+	if (cmd[1] == 0x0 && cmd[2] == 0xB)
+	{
+		terminal_clear(term);
+		term->terminal_column = 0;
+		term->terminal_row    = 0;
+		return 0;
+	} 
+    }
 
     for(int i =0;i<size;i++)
     {
@@ -132,23 +160,25 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
 }
 
 
-static Inode* ConsoleOpen (struct _DeviceOperations * device, int flags )
+static int ConsoleOpen (struct _inode *node, int flags )
 {
-    Terminal* term = device->userContext;
+    Terminal* term = (Terminal*)node;//->userContext;
     assert(term);
 
     printf("Console Open request\n");
-
+/*
     Inode* node = malloc(sizeof(Inode) );
     node->operations = &device->fileOps;
     node->userData   = term;
     return node;
+*/
+    return 0;
 }
 
 
 static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size)
 {
-    Terminal* term = node->userData;
+    Terminal* term = (Terminal*)node;//->userContext;
     assert(term);
 
 //    printf("Console read req size %li |  buffer size %li\n" ,size, cqueue_size(&term->inputChar ));

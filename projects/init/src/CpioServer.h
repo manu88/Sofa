@@ -22,7 +22,9 @@
 #include "FileServer.h"
 
 
-FileServerHandler* getCPIOServerHandler(void);
+//FileServerHandler* getCPIOServerHandler(void);
+
+Inode* CPIOServerGetINode(void);
 
 int CPIOServerInit(void);
 
