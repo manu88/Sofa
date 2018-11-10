@@ -33,6 +33,7 @@
 #include "Bootstrap.h"
 
 /* File System handler definition */
+/*
 typedef Inode* (* FileServerHandler_Open) (void* context, const char*pathname ,int flags, int *error) ;
 
 typedef struct
@@ -47,11 +48,14 @@ typedef struct
 
 int FileServerHandlerInit(FileServerHandler* hander , const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-int FileServerInit(void) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+ */
 
 
-int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
-int FileServerRemoveHandler( FileServerHandler* handler , const char* atPath) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+int FileServerInit(void) SOFA_UNIT_TESTABLE;
+
+
+//int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+//int FileServerRemoveHandler( FileServerHandler* handler , const char* atPath) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int *error) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 

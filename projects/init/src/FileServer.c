@@ -32,9 +32,6 @@
 #include "StringOperations.h"
 #include <libgen.h>
 
-#define MAX_SIZE_HASH 10
-
-
 typedef struct
 {
     Inode _rootNode;
@@ -44,27 +41,6 @@ typedef struct
 
 static _FileServerContext _fsContext;
 
-/*
-static int MatchPrefix(const char *pre, const char *str)
-{
-    return strncmp(pre, str, strlen(pre)) == 0;
-}
-
-// only works if str starts with '/' !!
-static int GetSecondSlash(const char* str)
-{
-    assert(str[0] == '/');
- 
-    char * ret = strchr(str+1,'/');
-    if(ret == NULL)
-    {
-        return -1;
-    }
-    
-   return (int) (ret-str+1);
-}
-
-*/
 
 int FileServerInit()
 {
@@ -88,19 +64,6 @@ Inode* FileServerGetRootNode()
     return &_fsContext._rootNode;
 }
 
-int FileServerRegisterHandler( FileServerHandler* handler , const char* forPath)
-{
-    
-    return 0;
-}
-
-int FileServerRemoveHandler( FileServerHandler* handler , const char* atPath)
-{
-
-    return 0;
-}
-
-
 Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int*error)
 {
     Inode* n = FileServerGetINodeForPath(pathname);
@@ -117,71 +80,10 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
         }
         
     }
-    
-    
-    return NULL;
-        /*
-    if (pathname[0] != '/')
-    {
-        printf("FileServerOpen : '%s' only absolute path works for now \n" , pathname);
-        *error = -ENODEV;
-        return NULL;
-    }
-    
-    
-    return NULL;
-    
-    int pos = GetSecondSlash(pathname);
-    
-    if (pos == -1)
-    {
-        *error = -EINVAL;
-        return NULL;
-    }
-    
-    
-    char* baseDir =  strndup(pathname, (unsigned long) pos);
-    
-    if (!baseDir)
-    {
-        *error = -ENOMEM;
-        return NULL;
-    }
-    
-    uint32_t key = StringHash(baseDir);
 
-    free(baseDir);
-    baseDir = NULL;
-    
-    FileServerHandler* handler = chash_get(&_fsContext._handlers, key);
-    
-    if (handler && MatchPrefix( handler->prefix, pathname ) )
-    {
-        const char* realPath = pathname + strlen(handler->prefix);
-        
-        Inode* retNode = handler->onOpen(context , realPath , flags , error);
-        
-        if(retNode)
-        {
-            
-            retNode->name = strdup(realPath);
-            InodeAddChild(&handler->inode, retNode);
-        }
-        return retNode;
-    }
-    
     return NULL;
-     */
 }
-
-
-
-
-
-
-
-
-
+/*
 int FileServerHandlerInit(FileServerHandler* hander , const char* name)
 {
     assert(hander);
@@ -193,6 +95,7 @@ int FileServerHandlerInit(FileServerHandler* hander , const char* name)
     }
     return 0;
 }
+*/
 
 
 Inode* FileServerGetINodeForPath( const char* path_)
