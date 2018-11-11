@@ -151,10 +151,10 @@ static int CpioOpen (Inode * node , int flags)
 	}
      */
     
-#ifndef __APPLE__
+#ifndef __APPLE__ 
+/*
     unsigned long fileSize = 0;
-    
-    
+
 	void* dataContent = cpio_get_file(_cpio_archive , pathname , &fileSize);
 
 	if(dataContent == NULL)
@@ -179,6 +179,8 @@ static int CpioOpen (Inode * node , int flags)
 	node->userData = dataContent;
 	node->operations = &cpioOps;
 	return node;
+*/
+    return NULL;
 #else
     return NULL;
     

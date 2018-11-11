@@ -136,7 +136,7 @@ int main(void)
     error = !CPIOServerInit();
     ZF_LOGF_IFERR(error, "Failed to  init CPIO Server\n");
 
-    error = !FileServerRegisterHandler( getCPIOServerHandler() , "cpio" );
+    error = !FileServerAddNodeAtPath( CPIOServerGetINode() , "/");//   FileServerRegisterHandler( getCPIOServerHandler() , "cpio" );
     ZF_LOGF_IFERR(error, "Failed to register CPIO File System \n");
 
     assert(InodeGetChildrenCount(FileServerGetRootNode()) > 0);
