@@ -42,7 +42,7 @@ Inode* InodeAlloc(INodeType type, const char* name)
     Inode* n = malloc(sizeof(Inode));
     if (n && InodeInit(n , type,name))
     {
-        //LIST_INIT(&n->children);
+
         return n;
     }
     
@@ -123,21 +123,6 @@ int InodeAddChild( Inode* root , Inode* child)
         return 0;
     }
     
-    /*
-    uint32_t key = StringHash(child->name);
-    
-    if( chash_get(&root->_children, key))
-    {
-        return 0;
-    }
-    
-    if(chash_set( &root->_children, key, child ) == 0)
-    {
-        child->_parent = root;
-        return 1;
-    }
-     */
-    
     Inode* n = NULL;
     HASH_FIND_STR(root->children, child->name, n);
     
@@ -146,36 +131,13 @@ int InodeAddChild( Inode* root , Inode* child)
         return 0;
     }
     
-    
     HASH_ADD_STR(root->children, name, child);
     
     child->_parent = root;
     
     
     return InodeGetChildByName(root, child->name) != NULL;
-    /*
-    InodeList* sibling = NULL;
-    LIST_FOREACH(sibling, &root->children, entries  )
-    {
-        if (strcmp(sibling->node->name, child->name) == 0)
-        {
-            return 0;
-        }
-    }
-    
-    InodeList* entry = (InodeList*) malloc(sizeof(InodeList)) ;
-    
-    if(!entry)
-    {
-        return 0;
-    }
-    entry->node = child;
-    
-    LIST_INSERT_HEAD(&root->children, entry, entries);
-    
-    child->_parent = root;
-    return 1;
-     */
+
 }
 
 int InodeRemoveChild(Inode* node ,Inode* child )

@@ -93,10 +93,13 @@ struct _inode
 typedef struct _inode Inode;
 
 
+// calls malloc + InodeInit
 Inode* InodeAlloc(INodeType type,const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
 int InodeInit(Inode* node , INodeType type , const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 void InodeRetain(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
 // returns 1 if node can be freed (ie refCount is 0 after decrement)
 int InodeRelease(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
@@ -110,3 +113,5 @@ int InodeRemoveFromParent(Inode* node ) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 Inode* InodeGetChildByName( const Inode* node , const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+#define InodeForEachChildren(node,child,tempChild) HASH_ITER(hh,node->children,child,tempChild)                                                \

@@ -75,9 +75,6 @@ int DriverKit_UnitTests()
     
     assert(DriverKitRemoveDevice( (IOBaseDevice*) &driver) );
     assert(DriverKitGetDeviceForBadge(1) == NULL);
-    
-    // unimplemented
-    //assert(DriverKitRemoveDevice( (IOBaseDevice*) &driver ));
-    
+
     return 1;
 }

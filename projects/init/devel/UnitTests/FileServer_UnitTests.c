@@ -31,21 +31,6 @@
 
 static int FileServer_OperationTests(void);
 
-static int cpioCalled = 0;
-static int cpioReturnsValue = 0;
-
-static Inode* CpioOpen(void* context, const char*pathname ,int flags, int *error)
-{
-    cpioCalled = 1;
-    
-    if(cpioReturnsValue)
-    {
-        Inode* node = InodeAlloc(INodeType_File , pathname);
-
-        return node;
-    }
-    return NULL;
-}
 
 
 static int Inode_tests()
@@ -140,11 +125,31 @@ int FileServer_UnitTests()
     assert(FileServerGetINodeForPath("/dev/") == devNode);
     assert(FileServerGetINodeForPath("//dev/") == devNode);
     
+    int accumIter = 0;
+    
+    Inode* c = NULL;
+    Inode* tempChild = NULL;
+    InodeForEachChildren(FileServerGetRootNode(), c, tempChild)
+    {
+        assert(c);
+        
+        accumIter++;
+    }
+    assert( InodeGetChildrenCount(FileServerGetRootNode()) == accumIter);
+    
+    
     assert(InodeRemoveChild(FileServerGetRootNode(), devNode));
     assert(InodeRemoveChild(FileServerGetRootNode(), procNode));
     
 
     assert( InodeGetChildrenCount(FileServerGetRootNode()) == 0 );
+    
+    assert(procNode->refCount == 1);
+    assert(devNode->refCount == 1);
+    assert(InodeRelease(procNode));
+    assert(InodeRelease(devNode));
+    free(procNode);
+    free(devNode);
     
     
     assert(FileServer_OperationTests() );

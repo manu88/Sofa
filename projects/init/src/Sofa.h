@@ -29,6 +29,8 @@
 #define SOFA_VERSION_MIN   1
 #define SOFA_VERSION_PATCH 0
 
+#define SOFA_DEPRECATED(version) __attribute((deprecated))
+
 #ifndef ALWAYS_INLINE
 #define ALWAYS_INLINE __attribute__((always_inline))
 #endif
@@ -50,9 +52,6 @@
 #endif
 
 #define SOFA_UNIT_TESTABLE
-
-
-
 
 #ifndef MAX_PATH_LOOKUP
 #define MAX_PATH_LOOKUP 128
