@@ -44,6 +44,8 @@ int DriverKit_UnitTests()
     TestDriver driver;
     driver.value = 100;
     assert( IOBaseDeviceInit(&driver.super));
+    assert(driver.super.InitDevice == NULL);
+    assert(driver.super.DeInitDevice == NULL);
     assert(driver.value == 100);
     
     // fails cause no callbacks
@@ -70,6 +72,10 @@ int DriverKit_UnitTests()
     assert(DriverKitGetDeviceForBadge(1) == (IOBaseDevice*) &driver);
     assert(DriverKitGetDeviceForBadge(10000) == NULL);
     assert(DriverKitGetDeviceForBadge(0) == NULL);
+    
+    assert(DriverKitRemoveDevice( (IOBaseDevice*) &driver) );
+    assert(DriverKitGetDeviceForBadge(1) == NULL);
+    
     // unimplemented
     //assert(DriverKitRemoveDevice( (IOBaseDevice*) &driver ));
     

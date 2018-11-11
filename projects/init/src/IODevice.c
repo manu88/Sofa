@@ -29,5 +29,6 @@
 int IOBaseDeviceInit(IOBaseDevice* device)
 {
     memset(device, 0, sizeof(IOBaseDevice) );
+    
     return 1;
 }

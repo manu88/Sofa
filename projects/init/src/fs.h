@@ -72,13 +72,9 @@ typedef struct _iNodeOperations INodeOperations;
 
 struct _inode
 {
-    
-    
     size_t refCount;
     INodeType type;
     const char* name;
-    
-    //chash_t _children;
     
     const FileOperations  *operations;
     const INodeOperations *inodeOperations;
@@ -91,7 +87,7 @@ struct _inode
     struct _inode* children;
     UT_hash_handle hh;
     
-    
+    int flags;
 };
 
 typedef struct _inode Inode;

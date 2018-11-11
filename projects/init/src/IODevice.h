@@ -17,6 +17,7 @@
 #pragma once
 
 #include <sel4/types.h>
+#include "uthash.h"
 #include "Sofa.h"
 
 typedef enum
@@ -30,6 +31,7 @@ struct _IOBaseDevice
 {
     seL4_Word _badge;
     IOBaseDeviceType type;
+    UT_hash_handle hh;
     
     int (*InitDevice) (struct _IOBaseDevice *device);
     int (*DeInitDevice) (struct _IOBaseDevice *device);
@@ -40,5 +42,6 @@ struct _IOBaseDevice
 typedef struct _IOBaseDevice IOBaseDevice;
 
 
+// Will mostly set every fields to 0/NULL
 int IOBaseDeviceInit(IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS;
 

@@ -17,14 +17,25 @@
 
 #include <string.h>
 #include "DriverKit.h"
-#include <data_struct/chash.h>
+#include <assert.h>
 
-#define MAX_SIZE_HASH_DRIVERS 20
+
+/* HASH macros for seL4_Word key*/
+
+#define HASH_ADD_SEL4_WORD(head,key,add)                                          \
+    HASH_ADD(hh,head,key,sizeof(seL4_Word),add)
+
+#define HASH_FIND_SEL4_WORD(head,key,out)                                          \
+HASH_FIND(hh,head,key,sizeof(seL4_Word),out)
+
+/* *** **** */
 
 typedef struct
 {
     InitContext* context;
-    chash_t _devices;
+    //chash_t _devices;
+    
+    IOBaseDevice* _devices;
     
     
 } DriverKitContext;
@@ -37,14 +48,8 @@ int DriverKitInit(InitContext* context)
 // cspace_irq_control_get_cap( simple_get_cnode(&context->simple)) , seL4_CapIRQControl, 1);
     memset(&_DKContext , 0 , sizeof(DriverKitContext));
     _DKContext.context = context;
-    
-    chash_init(&_DKContext._devices, MAX_SIZE_HASH_DRIVERS);
-    
-    if(_DKContext._devices.table == NULL)
-    {
-        return 0;
-    }
-    
+
+    assert(_DKContext._devices == NULL);
 	return 1;
 }
 
@@ -64,24 +69,37 @@ int DriverKitRegisterDevice(seL4_Word badge, IOBaseDevice* device)
     {
         return 0;
     }
+    device->_badge = badge;
+    HASH_ADD_SEL4_WORD(_DKContext._devices, _badge, device);
     
-
-    if( chash_set(&_DKContext._devices, badge, device) == 0)
-    {
-        device->_badge = badge;
 	return 1;
-    }
-    return 0;
-
+    
 }
 
 int DriverKitRemoveDevice( IOBaseDevice* device)
 {
-
+    IOBaseDevice* el = NULL;
+    IOBaseDevice* tmp = NULL;
+    
+    HASH_ITER(hh, _DKContext._devices, el, tmp)
+    {
+        if (el == device)
+        {
+            HASH_DEL(_DKContext._devices, el);
+            return 1;
+        }
+    }
     return 0;
 }
 
 IOBaseDevice* DriverKitGetDeviceForBadge( seL4_Word badge)
 {
-    return chash_get(&_DKContext._devices, (uint32_t) badge);
+    IOBaseDevice* dev = NULL;
+    
+    HASH_FIND_SEL4_WORD(_DKContext._devices, &badge, dev);
+    //HASH_FIND(hh,head,findint,sizeof(int),out)
+    //HASH_FIND(hh, _DKContext._devices, <#keyptr#>, <#keylen#>, <#out#>)
+    
+    return dev;
+    //return chash_get(&_DKContext._devices, (uint32_t) badge);
 }
