@@ -89,7 +89,7 @@ int main( int argc , char* argv[])
 	    	    cmdBuf[index++] = buf[i];
  	        }
 
-	        write(consoleFD ,&buf[i] , 1);
+//	        write(consoleFD ,&buf[i] , 1);
 	    }
 	}
     } // end while

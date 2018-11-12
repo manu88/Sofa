@@ -149,7 +149,7 @@ int main(void)
     error = !FileServerAddNodeAtPath(DevServerGetInode(), "/");
     ZF_LOGF_IFERR(error, "Failed to register Dev File System \n");
 
-
+    assert( FileServerGetINodeForPath("/dev/") == DevServerGetInode() );
 
     assert(InodeGetChildrenCount(FileServerGetRootNode()) > 0);
 
@@ -205,7 +205,7 @@ int main(void)
     error = !DevServerRegisterFile( (Inode*)&_terminal.node );// !DevServerRegisterFile("console", &_terminal.devOps );// EGADriverGetDeviceOps() );
     ZF_LOGF_IFERR(error, "Failed to  register 'console' EGA handler\n");
 
-
+    assert(FileServerGetINodeForPath("/dev/console") == &_terminal.node);
 // Test keyboard
 
 //    error = !KeyboardDeviceInit(&context, &notification_path , &_terminal.keyboard);
