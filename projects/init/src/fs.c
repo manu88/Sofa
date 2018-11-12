@@ -36,7 +36,7 @@
 #include "StringOperations.h"
 
 
-#define MAX_CHILD_NODE 10
+//#define MAX_CHILD_NODE 10
 Inode* InodeAlloc(INodeType type, const char* name)
 {
     Inode* n = malloc(sizeof(Inode));

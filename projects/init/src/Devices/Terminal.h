@@ -27,9 +27,9 @@
 
 typedef struct
 {
-    Inode node;
+    
     KeyboardDevice keyboard;
-
+    Inode node;
 //    DeviceOperations devOps;
 
 

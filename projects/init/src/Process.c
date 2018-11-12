@@ -29,9 +29,13 @@
 Process* ProcessAlloc()
 {
     Process* p = malloc(sizeof(Process));
-
-    ProcessInit(p);
-    return p;
+    if(p)
+    {
+        ProcessInit(p);
+        return p;
+    }
+    
+    return NULL;
 }
 
 int ProcessRelease(Process* process)

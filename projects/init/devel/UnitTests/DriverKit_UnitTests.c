@@ -48,33 +48,34 @@ int DriverKit_UnitTests()
     assert(driver.super.DeInitDevice == NULL);
     assert(driver.value == 100);
     
+    seL4_Word badge = 8000000000000004;
     // fails cause no callbacks
-    assert(DriverKitRegisterDevice(1, (IOBaseDevice*) &driver) == 0);
+    assert(DriverKitRegisterDevice(badge, (IOBaseDevice*) &driver) == 0);
     driver.super.InitDevice =  Driverinit;
     
     // fails cause no callbacks
-    assert(DriverKitRegisterDevice(1, (IOBaseDevice*) &driver) == 0);
+    assert(DriverKitRegisterDevice(badge, (IOBaseDevice*) &driver) == 0);
     
     driver.super.DeInitDevice = DriverDeInitDevice;
     driver.super.HandleIRQ = DriverHandleIRQ;
     
     // fails 1st time cause init returns 0
-    assert(DriverKitRegisterDevice(1, (IOBaseDevice*) &driver) == 0);
+    assert(DriverKitRegisterDevice(badge, (IOBaseDevice*) &driver) == 0);
     
     // now does not fail
     DriverinitReturn = 1;
-    assert(DriverKitRegisterDevice(1, (IOBaseDevice*) &driver));
+    assert(DriverKitRegisterDevice(badge, (IOBaseDevice*) &driver));
     assert(driver.value == 10);
     
     // MUST fail cause badge 0 is reserved
     assert(DriverKitRegisterDevice(0, (IOBaseDevice*) &driver) == 0);
     
-    assert(DriverKitGetDeviceForBadge(1) == (IOBaseDevice*) &driver);
+    assert(DriverKitGetDeviceForBadge(badge) == (IOBaseDevice*) &driver);
     assert(DriverKitGetDeviceForBadge(10000) == NULL);
     assert(DriverKitGetDeviceForBadge(0) == NULL);
     
     assert(DriverKitRemoveDevice( (IOBaseDevice*) &driver) );
-    assert(DriverKitGetDeviceForBadge(1) == NULL);
+    assert(DriverKitGetDeviceForBadge(badge) == NULL);
 
     return 1;
 }

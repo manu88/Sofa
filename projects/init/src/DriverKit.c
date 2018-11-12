@@ -22,11 +22,8 @@
 
 /* HASH macros for seL4_Word key*/
 
-#define HASH_ADD_SEL4_WORD(head,key,add)                                          \
-    HASH_ADD(hh,head,key,sizeof(seL4_Word),add)
-
-#define HASH_FIND_SEL4_WORD(head,key,out)                                          \
-HASH_FIND(hh,head,key,sizeof(seL4_Word),out)
+#define HASH_ADD_SEL4_WORD(head,key,add)  HASH_ADD(hh,head,key,sizeof(seL4_Word),add)
+#define HASH_FIND_SEL4_WORD(head,key,out) HASH_FIND(hh,head,key,sizeof(seL4_Word),out)
 
 /* *** **** */
 
@@ -97,9 +94,6 @@ IOBaseDevice* DriverKitGetDeviceForBadge( seL4_Word badge)
     IOBaseDevice* dev = NULL;
     
     HASH_FIND_SEL4_WORD(_DKContext._devices, &badge, dev);
-    //HASH_FIND(hh,head,findint,sizeof(int),out)
-    //HASH_FIND(hh, _DKContext._devices, <#keyptr#>, <#keylen#>, <#out#>)
-    
+
     return dev;
-    //return chash_get(&_DKContext._devices, (uint32_t) badge);
 }

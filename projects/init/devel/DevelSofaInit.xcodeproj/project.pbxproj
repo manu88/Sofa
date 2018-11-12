@@ -52,6 +52,8 @@
 		59067A5E2195D7ED00E92DD9 /* DevServer_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DevServer_UnitTests.c; sourceTree = "<group>"; };
 		59067A602196FD7600E92DD9 /* CpioServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CpioServer.h; path = ../src/CpioServer.h; sourceTree = "<group>"; };
 		59067A612196FD7700E92DD9 /* CpioServer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = CpioServer.c; path = ../src/CpioServer.c; sourceTree = "<group>"; };
+		59067A642199478500E92DD9 /* Terminal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Terminal.c; sourceTree = "<group>"; };
+		59067A652199478500E92DD9 /* Terminal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Terminal.h; sourceTree = "<group>"; };
 		599D6E0B21897DA100FD93BD /* cpool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cpool.c; path = ../../libdatastruct/src/cpool.c; sourceTree = "<group>"; };
 		599D6E0C21897DA100FD93BD /* coat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = coat.c; path = ../../libdatastruct/src/coat.c; sourceTree = "<group>"; };
 		599D6E0D21897DA100FD93BD /* coat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = coat.h; path = ../../libdatastruct/include/data_struct/coat.h; sourceTree = "<group>"; };
@@ -124,11 +126,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		59067A55219176B200E92DD9 /* Devices */ = {
+		59067A632199478500E92DD9 /* Devices */ = {
 			isa = PBXGroup;
 			children = (
+				59067A642199478500E92DD9 /* Terminal.c */,
+				59067A652199478500E92DD9 /* Terminal.h */,
 			);
-			path = Devices;
+			name = Devices;
+			path = ../src/Devices;
 			sourceTree = "<group>";
 		};
 		599D6E1F21897DA700FD93BD /* libdatastruct */ = {
@@ -259,9 +264,9 @@
 				59AED24B218E1D6F00E12D02 /* Sofa.h */,
 				59AED261219090E400E12D02 /* DriverKit.c */,
 				59AED262219090E400E12D02 /* DriverKit.h */,
-				59067A55219176B200E92DD9 /* Devices */,
 				59AED26A2190A10500E12D02 /* IODevice.c */,
 				59AED2692190A10500E12D02 /* IODevice.h */,
+				59067A632199478500E92DD9 /* Devices */,
 				59AED26521909C9E00E12D02 /* Bootstrap.h */,
 				59AECEE8218DBD1D00E12D02 /* ProcessTable.c */,
 				59AECEE7218DBD1D00E12D02 /* ProcessTable.h */,
