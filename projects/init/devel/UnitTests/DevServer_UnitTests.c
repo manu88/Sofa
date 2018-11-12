@@ -61,7 +61,7 @@ int DevServer_UnitTests()
     assert(DevServerInit() );
     
     assert( FileServerAddNodeAtPath(DevServerGetInode(), "/"));
-    assert( FileServerGetINodeForPath("/dev") != NULL);
+    assert( FileServerGetINodeForPath("/dev" ,NULL) != NULL);
     
     MyDriver consoleNode;
     consoleNode.guardData = GUARD_DATA;
@@ -86,13 +86,13 @@ int DevServer_UnitTests()
     assert(DevServerRegisterFile( (Inode*)&consoleNode ));
     assert( consoleNode.node.refCount == 2);
     
-    assert(FileServerGetINodeForPath("/dev/console") == (Inode*) &consoleNode);
-    assert(FileServerGetINodeForPath("/dev/consol") == NULL);
+    assert(FileServerGetINodeForPath("/dev/console",NULL) == (Inode*) &consoleNode);
+    assert(FileServerGetINodeForPath("/dev/consol",NULL) == NULL);
     
-    InitContext ctx;
+    
     
     int err = 0;
-    Inode* consoleNodeOpened = FileServerOpen(&ctx, "/dev/console", O_RDWR, &err);
+    Inode* consoleNodeOpened = FileServerOpen("/dev/console", O_RDWR, &err);
     assert( consoleNode.node.refCount == 3);
     
     assert(consoleNodeOpened);
@@ -110,14 +110,14 @@ int DevServer_UnitTests()
     
     // now remove the device
     
-    assert(FileServerGetINodeForPath("/dev/console") == (Inode*) &consoleNode);
+    assert(FileServerGetINodeForPath("/dev/console",NULL) == (Inode*) &consoleNode);
     
     
     assert(DevServerRemoveFile( (Inode*) &consoleNode));
     assert( consoleNode.node.refCount == 2);
     
     
-    assert(FileServerGetINodeForPath("/dev/console") == NULL);
+    assert(FileServerGetINodeForPath("/dev/console",NULL) == NULL);
     
     return 1;
 }

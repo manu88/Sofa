@@ -62,9 +62,9 @@ Inode* FileServerGetRootNode()
     return &_fsContext._rootNode;
 }
 
-Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , int*error)
+Inode* FileServerOpen( /*InitContext* context ,*/ const char*pathname , int flags , int*error)
 {
-    Inode* n = FileServerGetINodeForPath(pathname);
+    Inode* n = FileServerGetINodeForPath(pathname , NULL);
     
     *error = -ENOENT;
     if (n )
@@ -82,30 +82,50 @@ Inode* FileServerOpen(InitContext* context , const char*pathname , int flags , i
     return NULL;
 }
 
-Inode* FileServerGetINodeForPath( const char* path_)
+Inode* FileServerGetINodeForPath( const char* path_ , const Inode* relativeTo)
 {
     if (strlen(path_) == 0)
         return NULL;
     
     char* path = strdup(path_);
 
-    Inode* ret = &_fsContext._rootNode;
+    Inode* ret = relativeTo == NULL? &_fsContext._rootNode : (Inode*) relativeTo;
     
     static const char delim[] = "/";
     
     char* token = strtok(path, delim);
     
-    while (token != NULL)
+    while ( token != NULL )
     {
         
-        ret = InodeGetChildByName(ret ,token);
+        if (strcmp(token, "..") == 0)
+        {
+            ret = ret->_parent;
+        }
+        else if (strcmp(token, ".") == 0)
+        {
+            ret = ret;
+        }
+        else
+        {
+            ret = InodeGetChildByName(ret ,token);
+        }
         if(!ret)
         {
             free(path);
             return NULL;
         }
         token = strtok(NULL, delim);
+        
+        
     }
+    /*
+    char *last = strrchr(path, '/');
+    if (last)
+    {
+        printf("Got a last '%s' \n" , last);
+    }
+    */
     
     free(path);
     return ret;
@@ -114,7 +134,7 @@ Inode* FileServerGetINodeForPath( const char* path_)
 
 int FileServerAddNodeAtPath( Inode* node,const char* path)
 {
-    Inode* n = FileServerGetINodeForPath(path);
+    Inode* n = FileServerGetINodeForPath(path, NULL);
     
     if (n)
     {

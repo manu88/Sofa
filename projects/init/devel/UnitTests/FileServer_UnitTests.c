@@ -30,6 +30,7 @@
 #include "CpioServer.h"
 
 static int FileServer_OperationTests(void);
+static int FileServer_WalkTests(void);
 
 
 
@@ -83,10 +84,11 @@ int FileServer_UnitTests()
     assert(Inode_tests());
     //assert(FileServerInit());
     
-    assert(FileServerGetINodeForPath("") == NULL);
-    assert(FileServerGetINodeForPath("/") == FileServerGetRootNode() );
+    assert(FileServerGetINodeForPath("",NULL) == NULL);
+    assert(FileServerGetINodeForPath("/",NULL) == FileServerGetRootNode() );
     
-    assert(FileServerGetINodeForPath("/lolz") == NULL );
+    const Inode* node = FileServerGetINodeForPath("/lolz",NULL);
+    assert(node == NULL );
     
     assert(FileServerGetRootNode());
     assert(FileServerGetRootNode()->_parent == FileServerGetRootNode() );
@@ -113,17 +115,17 @@ int FileServer_UnitTests()
     
     assert(InodeAddChild( FileServerGetRootNode(), procNode));
     assert(procNode->_parent == FileServerGetRootNode());
-    assert(FileServerGetINodeForPath("/proc") == procNode);
-    assert(FileServerGetINodeForPath("/proc/") == procNode);
+    assert(FileServerGetINodeForPath("/proc",NULL) == procNode);
+    assert(FileServerGetINodeForPath("/proc/",NULL) == procNode);
     
     Inode* devNode = InodeAlloc(INodeType_Folder, "dev");
     assert(devNode);
     
     assert(InodeAddChild( FileServerGetRootNode(), devNode));
     assert(devNode->_parent == FileServerGetRootNode());
-    assert(FileServerGetINodeForPath("/dev") == devNode);
-    assert(FileServerGetINodeForPath("/dev/") == devNode);
-    assert(FileServerGetINodeForPath("//dev/") == devNode);
+    assert(FileServerGetINodeForPath("/dev",NULL) == devNode);
+    assert(FileServerGetINodeForPath("/dev/",NULL) == devNode);
+    assert(FileServerGetINodeForPath("//dev/",NULL) == devNode);
     
     int accumIter = 0;
     
@@ -153,6 +155,7 @@ int FileServer_UnitTests()
     
     
     assert(FileServer_OperationTests() );
+    assert(FileServer_WalkTests() );
     
     return 1;
 }
@@ -190,14 +193,14 @@ static int FileServer_OperationTests()
     int error = 0;
     
     // 1st time fails
-    Inode* procNodeRetained = FileServerOpen(&ctx, "/proc/", OpenFlags, &error);
+    Inode* procNodeRetained = FileServerOpen( "/proc/", OpenFlags, &error);
     assert(procNodeRetained == NULL);
     assert(error == ProcOpenReturn);
     assert(procNode.refCount == 1); // refcount unchanged
     
     // 2nd time ok
     ProcOpenReturn = 0;
-    procNodeRetained = FileServerOpen(&ctx, "/proc/", OpenFlags, &error);
+    procNodeRetained = FileServerOpen( "/proc/", OpenFlags, &error);
     assert(procNodeRetained == &procNode);
     assert(procNode.refCount == 2);
     
@@ -211,12 +214,36 @@ static int FileServer_OperationTests()
     assert( CPIOServerInit() );
     
     assert(FileServerAddNodeAtPath( CPIOServerGetINode() , "/"));
-    assert( FileServerGetINodeForPath("/cpio") );
-    assert( FileServerGetINodeForPath("/cpio/") );
+    assert( FileServerGetINodeForPath("/cpio",NULL) );
+    assert( FileServerGetINodeForPath("/cpio/",NULL) );
     
     int err = 0;
-    Inode* testNode = FileServerOpen(&ctx, "/cpio/test", 1, &err);
+    Inode* testNode = FileServerOpen( "/cpio/test", 1, &err);
     
     
+    return 1;
+}
+
+
+static int FileServer_WalkTests()
+{
+    FileServerInit();
+    
+    Inode f1;
+    assert(InodeInit(&f1, INodeType_Folder, "folder1"));
+    
+    assert(FileServerAddNodeAtPath(&f1, "/"));
+    
+    Inode* currentDir = FileServerGetINodeForPath(".", FileServerGetRootNode() );
+    assert(currentDir == FileServerGetRootNode() );
+    
+    Inode* newDir = FileServerGetINodeForPath("/folder1/../", currentDir) ;
+    assert(newDir== currentDir);
+    
+    newDir = FileServerGetINodeForPath("/folder1/./", currentDir);
+    assert(newDir->_parent == FileServerGetRootNode());
+    
+    newDir = FileServerGetINodeForPath("..", newDir);
+    assert(newDir == FileServerGetRootNode());
     return 1;
 }

@@ -20,7 +20,7 @@ int ProcessTable_UnitTests()
     assert(FileServerInit());
     
     assert(FileServerAddNodeAtPath(ProcessTableGetInode() , "/"));
-    assert(FileServerGetINodeForPath("/proc") == ProcessTableGetInode());
+    assert(FileServerGetINodeForPath("/proc" , NULL) == ProcessTableGetInode());
     
     Process initProcess;
     assert(ProcessInit(&initProcess));
@@ -34,7 +34,7 @@ int ProcessTable_UnitTests()
     char strPID[32];
     sprintf(strPID, "/proc/%d", p1._pid);
     
-    Inode* procNode = FileServerGetINodeForPath(strPID);
+    Inode* procNode = FileServerGetINodeForPath(strPID , NULL);
     assert(procNode);
     
     return 1;
