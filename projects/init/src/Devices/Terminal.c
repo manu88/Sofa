@@ -21,7 +21,7 @@
 #include "../Drivers/EGADriver.h"
 
 
-#define MAX_CHAR_QUEUE 32
+#define MAX_CHAR_QUEUE 64
 
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size);
 static int     ConsoleOpen (struct _inode * node, int flags );
@@ -34,11 +34,14 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum);
 static INodeOperations termOps = {ConsoleOpen , ConsoleClose , NULL  };
 static FileOperations  termFileOps = {ConsoleRead , ConsoleWrite, FileOperation_NoLseek };
 
+
+static void terminal_putchar(Terminal* term , char c);
+
 int TerminalInit( InitContext* context,const cspacepath_t* notificationSrc,  Terminal* terminal)
 {
     memset(terminal, 0, sizeof(Terminal));
     
-    if(InodeInit( &terminal->node,INodeType_File, "terminal") == 0)
+    if(InodeInit( &terminal->node,INodeType_File, "console") == 0)
     {
 	return 0;
     }
@@ -50,7 +53,7 @@ int TerminalInit( InitContext* context,const cspacepath_t* notificationSrc,  Ter
 //    terminal->devOps.fileOps.Write      = ConsoleWrite;
 //    terminal->devOps.fileOps.Read  	= ConsoleRead;
 
-
+    terminal->node.userData = terminal;
     // init keyboard
     int error = 0;
     error = !KeyboardDeviceInit( context, notificationSrc , &terminal->keyboard);
@@ -80,6 +83,7 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
     Terminal* term = (Terminal*) device;
     assert(term);
 
+  
     KeyboardDevice* dev = &term->keyboard;
 
     for (;;) 
@@ -91,10 +95,12 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
             //read till we get EOF
             break;
         }
-//        printf("You typed [%c]\n", c);
-
 	cqueue_push(&term->inputChar , (cqueue_item_t) c);
+
+  //      printf("You typed [%c] size %zi\n", c ,  cqueue_size(&term->inputChar ) );
+
 //	terminal_putentryat(c ,VGA_COLOR_GREEN ,  0 , 1);
+	terminal_putchar(term , c);
     }
 
     UNUSED int err = seL4_IRQHandler_Ack(dev->handler.capPtr);
@@ -114,7 +120,8 @@ void terminal_clear(Terminal* term)
 	}
 }
 
-void terminal_putchar(Terminal* term , char c) 
+
+static void terminal_putchar(Terminal* term , char c) 
 {
 	if (c == '\n' || c=='\r')
 	{
@@ -134,6 +141,14 @@ void terminal_putchar(Terminal* term , char c)
                 if (++term->terminal_row == MODE_HEIGHT)
                         term->terminal_row = 0;
         }
+}
+
+void terminal_putString( Terminal* term, const char* str)
+{
+    for(int i =0;i<strlen(str);i++)
+    {
+        terminal_putchar(term,str[i]);
+    }
 }
 
 
@@ -173,10 +188,9 @@ static int     ConsoleClose (Inode * node)
 
 static int ConsoleOpen (struct _inode *node, int flags )
 {
-    Terminal* term = (Terminal*)node;//->userContext;
+    Terminal* term = (Terminal*)node->userData;
     assert(term);
 
-    printf("Console Open request\n");
 /*
     Inode* node = malloc(sizeof(Inode) );
     node->operations = &device->fileOps;
@@ -189,13 +203,14 @@ static int ConsoleOpen (struct _inode *node, int flags )
 
 static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size)
 {
-    Terminal* term = (Terminal*)node;//->userContext;
+    Terminal* term = (Terminal*)node->userData;
     assert(term);
-
-//    printf("Console read req size %li |  buffer size %li\n" ,size, cqueue_size(&term->inputChar ));
 
 
     size_t realReadSize = size < cqueue_size(&term->inputChar ) ? size : cqueue_size(&term->inputChar );
+
+//    printf("Console read req size %li |  buffer size %li | real %li\n" ,size, cqueue_size(&term->inputChar ) , realReadSize);
+
 
     for( int i=0;i <realReadSize; i++)
     {

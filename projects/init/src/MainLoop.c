@@ -147,7 +147,7 @@ void processLoop(InitContext* context, seL4_CPtr epPtr  )
    	    }
 	    else 
 	    {
-	        IOBaseDevice *dev = DriverKitGetDeviceForBadge( sender_badge );
+	        IOBaseDevice *dev = DriverKitGetDeviceForBadge( sender_badge - IRQ_EP_BADGE );
 
    	        if (dev)
 	        {
@@ -156,7 +156,7 @@ void processLoop(InitContext* context, seL4_CPtr epPtr  )
 	        }
 	        else 
    	        {
-			printf("NOT FOUND device for badge %lx\n" , sender_badge);
+			printf("NOT FOUND device for badge %lx\n" , sender_badge - IRQ_EP_BADGE);
 
 	        }
 	    }
