@@ -24,8 +24,13 @@
 #include "list.h"
 #endif
 
+typedef struct
+{
+    Inode procNode;
+    list_t _processes;
+} ProcTableContext;
 
-static list_t _processes;
+static ProcTableContext _ctx;
 
 
 pid_t ProcessTableGetNextPid()
@@ -36,24 +41,33 @@ pid_t ProcessTableGetNextPid()
 
 
 int ProcessTableInit()
-{ 
-    return list_init(&_processes) == 0;
+{
+    if (InodeInit(&_ctx.procNode, INodeType_Folder, "proc") == 0)
+    {
+        return 0;
+    }
+    
+    return list_init(&_ctx._processes) == 0;
 }
 
+Inode* ProcessTableGetInode()
+{
+    return &_ctx.procNode;
+}
 
 int ProcessTableGetCount()
 {
-    return list_length(&_processes);
+    return list_length(&_ctx._processes);
 }
 
 int ProcessTableAppend( Process* process)
 {
-	return list_append(&_processes , process) == 0;
+	return list_append(&_ctx._processes , process) == 0;
 }
 
 Process* ProcessTableGetByPID( pid_t pid)
 {
-    list_t *l = &_processes;
+    list_t *l = &_ctx._processes;
 
     for (struct list_node *n = l->head; n != NULL; n = n->next) 
     {
@@ -76,7 +90,7 @@ static int PtrComp(void*a, void*b)
 
 int ProcessTableRemove(Process* process)
 {
-    return list_remove(&_processes , process,PtrComp) == 0;
+    return list_remove(&_ctx._processes , process,PtrComp) == 0;
 }
 
 

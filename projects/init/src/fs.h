@@ -36,8 +36,9 @@
 
 typedef enum
 {
-    INodeType_File   = 1,
-    INodeType_Folder = 2,
+    InodeType_Invalid = 0,
+    INodeType_File    = 1,
+    INodeType_Folder  = 2,
     
 } INodeType;
 struct _inode;

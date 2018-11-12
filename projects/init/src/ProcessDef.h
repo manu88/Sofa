@@ -26,7 +26,7 @@
 
 #include "Bootstrap.h"
 #include <data_struct/cvector.h>
-
+#include "fs.h"
 
 typedef struct _Process Process;
 
@@ -70,13 +70,14 @@ struct _inode;
 // a process
 struct _Process
 {
+    Inode _processNode;
+    
     sel4utils_process_t _process;
-    ProcessState _state;
+    ProcessState        _state;
     pid_t               _pid;
 
 
-    struct _Process *_parent;
-
+    struct _Process*                       _parent;
     LIST_HEAD(listhead, _ProcessListEntry) children;
     
     LIST_HEAD(listheadWaiters, _WaiterListEntry) waiters;
@@ -84,9 +85,7 @@ struct _Process
 
     struct _inode* currentDir;
     cvector_t fdNodes;
-    //struct _inode *testNode;
-//    seL4_CPtr reply;
-    //Timer* _timer;
+    
 };
 
 

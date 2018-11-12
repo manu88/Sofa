@@ -21,10 +21,12 @@
 
 #include "Sofa.h"
 #include "ProcessDef.h"
-
+#include "fs.h"
 
 
 int ProcessTableInit(void) SOFA_UNIT_TESTABLE;
+
+Inode* ProcessTableGetInode(void) SOFA_UNIT_TESTABLE;
 
 int ProcessTableAppend( Process* process) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 

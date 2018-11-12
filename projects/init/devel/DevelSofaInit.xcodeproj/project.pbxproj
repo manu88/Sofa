@@ -10,6 +10,7 @@
 		59067A5F2195D7ED00E92DD9 /* DevServer_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A5E2195D7ED00E92DD9 /* DevServer_UnitTests.c */; };
 		59067A622196FD7700E92DD9 /* CpioServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A612196FD7700E92DD9 /* CpioServer.c */; };
 		59067A692199506000E92DD9 /* File.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A682199506000E92DD9 /* File.c */; };
+		59067A6C21999CC600E92DD9 /* ProcessTable_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A6B21999CC600E92DD9 /* ProcessTable_UnitTests.c */; };
 		599D6E2021897ECD00FD93BD /* cbpool.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1521897DA200FD93BD /* cbpool.c */; };
 		599D6E2121897ECD00FD93BD /* chash.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1121897DA200FD93BD /* chash.c */; };
 		599D6E2221897ECD00FD93BD /* coat.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E0C21897DA100FD93BD /* coat.c */; };
@@ -57,6 +58,9 @@
 		59067A652199478500E92DD9 /* Terminal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Terminal.h; sourceTree = "<group>"; };
 		59067A672199506000E92DD9 /* File.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = File.h; path = ../src/File.h; sourceTree = "<group>"; };
 		59067A682199506000E92DD9 /* File.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = File.c; path = ../src/File.c; sourceTree = "<group>"; };
+		59067A6A21999CC600E92DD9 /* ProcessTable_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProcessTable_UnitTests.h; sourceTree = "<group>"; };
+		59067A6B21999CC600E92DD9 /* ProcessTable_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ProcessTable_UnitTests.c; sourceTree = "<group>"; };
+		59067A6D2199A13F00E92DD9 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../src/main.c; sourceTree = "<group>"; };
 		599D6E0B21897DA100FD93BD /* cpool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cpool.c; path = ../../libdatastruct/src/cpool.c; sourceTree = "<group>"; };
 		599D6E0C21897DA100FD93BD /* coat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = coat.c; path = ../../libdatastruct/src/coat.c; sourceTree = "<group>"; };
 		599D6E0D21897DA100FD93BD /* coat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = coat.h; path = ../../libdatastruct/include/data_struct/coat.h; sourceTree = "<group>"; };
@@ -228,6 +232,8 @@
 				59AED25E218E2CE300E12D02 /* TimersWheel_UnitTests.c */,
 				59AED250218E25AC00E12D02 /* FileServer_UnitTests.h */,
 				59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */,
+				59067A6A21999CC600E92DD9 /* ProcessTable_UnitTests.h */,
+				59067A6B21999CC600E92DD9 /* ProcessTable_UnitTests.c */,
 				59AED24D218E259700E12D02 /* Init_UnitTests.c */,
 				59AED24E218E259700E12D02 /* Init_UnitTests.h */,
 			);
@@ -288,6 +294,7 @@
 				59AECEE421898E6200E12D02 /* StringOperations.c */,
 				59AECEE0218989D300E12D02 /* DevServer.h */,
 				59AECEE1218989D300E12D02 /* DevServer.c */,
+				59067A6D2199A13F00E92DD9 /* main.c */,
 				599D6E1F21897DA700FD93BD /* libdatastruct */,
 				59E99DD0218703FF00805C68 /* Products */,
 			);
@@ -370,6 +377,7 @@
 				599D6E2221897ECD00FD93BD /* coat.c in Sources */,
 				59067A622196FD7700E92DD9 /* CpioServer.c in Sources */,
 				59AED24F218E259700E12D02 /* Init_UnitTests.c in Sources */,
+				59067A6C21999CC600E92DD9 /* ProcessTable_UnitTests.c in Sources */,
 				59067A692199506000E92DD9 /* File.c in Sources */,
 				59AECEE2218989D300E12D02 /* DevServer.c in Sources */,
 				599D6E2421897ECD00FD93BD /* cqueue.c in Sources */,

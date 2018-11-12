@@ -52,6 +52,9 @@ int ProcessInit(Process* process)
     LIST_INIT(&process->children);
     LIST_INIT(&process->waiters);
 
+    memset(&process->_processNode, 0, sizeof(Inode));
+    process->_processNode.type = InodeType_Invalid;
+    
     cvector_init(&process->fdNodes);
     return 1;
 }
@@ -68,6 +71,9 @@ int ProcessDeInit(Process * process )
         LIST_REMOVE(entry, entries);
         free(entry);
     }
+    
+    InodeRelease(&process->_processNode);
+    free(process->_processNode.name);
     return 1;
 }
 
@@ -77,6 +83,22 @@ int ProcessDeInit(Process * process )
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
+    process->_pid = ProcessTableGetNextPid();
+    
+    char str[32];
+    sprintf(str, "%d", process->_pid);
+    
+    if (!InodeInit(&process->_processNode, INodeType_File, strdup(str) ))
+    {
+        return -1;
+    }
+    
+    if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
+    {
+        return -1;
+    }
+    
+    
 #ifndef __APPLE__
     UNUSED int error = 0;
 
@@ -91,7 +113,7 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
 
 
 
-    process->_pid = ProcessTableGetNextPid();
+    
 
     seL4_CPtr process_ep_cap = 0;
 
@@ -123,6 +145,8 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
 
      error = ProcessSetParentShip(parent , process);
      assert(error == 0);
+    
+    
 
      return error;
 #else

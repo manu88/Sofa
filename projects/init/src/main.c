@@ -63,34 +63,7 @@ static Process initProcess = {0};
 
 static Terminal _terminal;
 
-/*
-void handle_cdev_event( void* _dev) 
-{
-    Terminal* term = (Terminal*) _dev;
-    assert(term);
-    assert(term == &_terminal);
 
-    KeyboardDevice* dev = &term->keyboard;
-
-    for (;;) 
-    {
-        //int c = __arch_getchar();
-        int c = ps_cdev_getchar(&dev->dev);
-        if (c == EOF) {
-            //read till we get EOF
-            break;
-        }
-        printf("You typed [%c]\n", c);
-    }
-
-
-
-    UNUSED int err = seL4_IRQHandler_Ack(dev->handler.capPtr);
-    assert(err == 0);
-
-
-}
-*/
 int main(void)
 {
     memset(&context , 0 , sizeof(InitContext) );
