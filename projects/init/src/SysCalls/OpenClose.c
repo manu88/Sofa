@@ -153,7 +153,10 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 		printf("No error\n");
 		ret = ProcessAppendNode(senderProcess , node);
 	}
-
+	else 
+	{
+		printf("Unable to open '%s' \n" , pathname);
+	}
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
 
 	seL4_SetMR(0, __SOFA_NR_open );

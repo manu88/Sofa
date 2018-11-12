@@ -15,33 +15,4 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#pragma once
-#include "../Sofa.h"
-
-#include "../Bootstrap.h"
-#include "../Drivers/Keyboard.h"
-#include "../DevServer.h"
-#include <data_struct/cqueue.h>
-
-
-typedef struct
-{
-
-    KeyboardDevice keyboard; // needs to stay first !!
-
-    Inode node;
-
-//    DeviceOperations devOps;
-
-    cqueue_t inputChar;
-
-    size_t terminal_row;
-    size_t terminal_column;
-
-} Terminal;
-
-int TerminalInit( InitContext* context, const cspacepath_t* notificationSrc,   Terminal* terminal) NO_NULL_POINTERS ;
-
-
-DeviceOperations* TerminalGetDeviceOps(void);
+#include "File.h"

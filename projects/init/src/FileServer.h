@@ -27,6 +27,7 @@
 #pragma once
 
 #include <stdio.h>
+#include "File.h"
 #include "fs.h"
 #include "Sofa.h"
 

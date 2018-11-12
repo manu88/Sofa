@@ -26,6 +26,7 @@
 
 #pragma once
 
+
 //#include <stdint.h> //ssize_t
 #include <sys/types.h>
 #include "Sofa.h"
@@ -37,6 +38,7 @@ typedef enum
 {
     INodeType_File   = 1,
     INodeType_Folder = 2,
+    
 } INodeType;
 struct _inode;
 
