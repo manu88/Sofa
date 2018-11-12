@@ -27,8 +27,9 @@
 
 typedef struct
 {
+    KeyboardDevice keyboard; // needs to stay first !!
+
     Inode node;
-    KeyboardDevice keyboard;
 
 //    DeviceOperations devOps;
 

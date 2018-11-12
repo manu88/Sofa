@@ -25,10 +25,14 @@
 
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size);
 static int     ConsoleOpen (struct _inode * node, int flags );
+static int     ConsoleClose (Inode * node);
 static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size);
 
 
 static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum);
+
+static INodeOperations termOps = {ConsoleOpen , ConsoleClose , NULL  };
+static FileOperations  termFileOps = {ConsoleRead , ConsoleWrite, FileOperation_NoLseek };
 
 int TerminalInit( InitContext* context,const cspacepath_t* notificationSrc,  Terminal* terminal)
 {
@@ -39,6 +43,8 @@ int TerminalInit( InitContext* context,const cspacepath_t* notificationSrc,  Ter
 	return 0;
     }
 
+    terminal->node.operations = &termFileOps;
+    terminal->node.inodeOperations = &termOps;
 //    terminal->devOps.userContext	= terminal;
 //    terminal->devOps.OpenDevice 	= ConsoleOpen;
 //    terminal->devOps.fileOps.Write      = ConsoleWrite;
@@ -159,6 +165,11 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
     return (ssize_t)size;
 }
 
+
+static int     ConsoleClose (Inode * node)
+{
+	return 0;
+}
 
 static int ConsoleOpen (struct _inode *node, int flags )
 {
