@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef __APPLE__
 #include <SysClient.h>
@@ -97,6 +99,32 @@ static int doWaitTests()
     return 1;
 }
 
+static int doGetCwdTests()
+{
+    errno = 0;
+    char* rOk = getcwd(NULL, 0);
+    assert(rOk);
+    assert(errno == 0);
+    printf("Path '%s'\n" , rOk);
+    
+    
+    char* r;
+    errno = 0;
+    char buf[128];
+    r = getcwd(buf, 1);
+    assert(errno == ERANGE);
+    assert(r == NULL);
+    
+    errno = 0;
+    r = getcwd(buf, 128);
+    assert(errno == 0);
+    
+    assert(strncmp(rOk, buf, strlen(rOk)) == 0) ;
+    
+    free(rOk);
+    return 1;
+}
+
 int main(int argc, char * argv[])
 {
 
@@ -111,5 +139,6 @@ int main(int argc, char * argv[])
     assert(doOpenTests());
     assert(doReadTests());
     assert(doWaitTests() );
+    assert(doGetCwdTests() );
     return 0;
 }
