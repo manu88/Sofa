@@ -23,5 +23,35 @@
 
 int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
+	size_t bufferSize = seL4_GetMR(1);
+
+	printf("Got getcwd request , buf size is %zi\n" , bufferSize);
+
+	char str[4096] = {0}; // muslc says so apparently
+	ssize_t strSize =  InodeGetAbsolutePath( senderProcess->currentDir, str, 4096);
+	printf("Buffer path size %li\n" ,strSize);
+
+	
+	size_t realMsgSize = strSize > bufferSize ? 0 : strSize;
+	printf("Real msg size %li\n",realMsgSize);
+
+	message = seL4_MessageInfo_new(0, 0, 0, 2 + realMsgSize);
+	seL4_SetMR(0,__SOFA_NR_getcwd);
+
+//	message = seL4_MessageInfo_new(0, 0, 0, 2 + strSize);
+
+	if (realMsgSize == 0)
+	{
+		strSize = -ERANGE;
+	}
+
+	seL4_SetMR(1, strSize);
+
+	for(int i=0; i< realMsgSize ; ++i)
+        {
+            seL4_SetMR(2 + i, str[i]);
+        }
+	
+	seL4_Reply( message );
 	return 0;
 }

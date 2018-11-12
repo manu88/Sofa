@@ -102,24 +102,41 @@ static int doWaitTests()
 static int doGetCwdTests()
 {
     errno = 0;
+
+    printf("getcwd 1/4\n");
     char* rOk = getcwd(NULL, 0);
     assert(rOk);
     assert(errno == 0);
+    
     printf("Path '%s'\n" , rOk);
+
     
     
     char* r;
     errno = 0;
     char buf[128];
+    memset(buf, 0, 128);
+
+    printf("getcwd 2/4\n");
+
     r = getcwd(buf, 1);
     assert(errno == ERANGE);
     assert(r == NULL);
     
     errno = 0;
+    memset(buf, 0, 128);
+
+    printf("getcwd 3/4\n");
     r = getcwd(buf, 128);
     assert(errno == 0);
-    
     assert(strncmp(rOk, buf, strlen(rOk)) == 0) ;
+    
+    errno = 0;
+    memset(buf, 0, 128);
+printf("getcwd 4/4\n");
+    r = getcwd(buf, strlen(rOk) - 2);
+    assert(errno == ERANGE);
+    
     
     free(rOk);
     return 1;
@@ -140,5 +157,7 @@ int main(int argc, char * argv[])
     assert(doReadTests());
     assert(doWaitTests() );
     assert(doGetCwdTests() );
+
+    printf("SOFA : Everything is fine!\n");
     return 0;
 }

@@ -78,7 +78,7 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_gettimeofday   , sys_gettimeofday);
     muslcsys_install_syscall(__NR_clock_gettime  , sys_clockgettime);
 
-    muslcsys_install_syscall(__SOFA_NR_getcwd , sys_getcwd);
+    muslcsys_install_syscall(__NR_getcwd , sys_getcwd);
 
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
     return 0;
@@ -495,6 +495,24 @@ static long sys_getcwd(va_list args)
 	size_t size = va_arg (args, size_t);
 
 
-	return 0;
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+	seL4_SetMR(0, __SOFA_NR_getcwd );
+	seL4_SetMR(1, size);
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+	assert(seL4_GetMR(0) == __SOFA_NR_getcwd );
+
+	ssize_t ret = seL4_GetMR(1);
+	printf("sys_getcwd returned %li \n", ret );
+
+	if (ret>0)
+	{
+	    for(int i=0;i<ret;i++)
+	    {
+	    	    buf[i] = seL4_GetMR(2+i);
+	    }
+	}
+
+	return ret;;
 }
 

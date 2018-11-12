@@ -222,7 +222,7 @@ int main(void)
 /* BEGIN PROCESS */
 
     Process *testProcess = ProcessAlloc();
-    testProcess->currentDir =  FileServerGetRootNode();
+    testProcess->currentDir = FileServerGetINodeForPath("/dev/");//  FileServerGetRootNode();
     error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
     if (error == 0)
     {
