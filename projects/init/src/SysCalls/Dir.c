@@ -79,7 +79,7 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	Inode* newPath = NULL;
 	if (strncmp(".." , str , 2) == 0)
 	{
-		printf("GOT .. REqurst\n");
+		printf("GOT .. Requrst\n");
 		newPath = senderProcess->currentDir->_parent;
 		assert( newPath);
 	}
@@ -98,6 +98,7 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	}
 	else 
 	{
+		error = 0;
 		senderProcess->currentDir = newPath;
 	}
 
