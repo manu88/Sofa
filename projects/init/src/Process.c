@@ -24,7 +24,13 @@
 #include "ProcessTable.h"
 
 
+ssize_t ProcRead ( Inode * node, char*buffer  , size_t count);
+//ssize_t ProcWrite ( Inode *node,  const char* buffer ,size_t count);
 
+static FileOperations _processFileOps = 
+{
+	ProcRead , FileOperation_NoWrite , FileOperation_NoLseek
+};
 
 Process* ProcessAlloc()
 {
@@ -88,11 +94,14 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
     char str[32];
     sprintf(str, "%d", process->_pid);
     
-    if (!InodeInit(&process->_processNode, INodeType_File, strdup(str) ))
+    if (!InodeInit(&process->_processNode, INodeType_Folder, strdup(str) ))
     {
         return -1;
     }
-    
+    process->_processNode.operations =&_processFileOps;
+
+    process->_processNode.userData = process;
+
     if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
     {
         return -1;
@@ -277,4 +286,12 @@ int ProcessDoCleanup(Process * process)
 	assert(process);
 
 	return 1;
+}
+
+ssize_t ProcRead ( Inode * node, char*buffer  , size_t count)
+{
+	Process* process = node->userData;
+	assert(process);
+	printf("Request to read process node pid %i\n" , process->_pid);
+	return -1;
 }

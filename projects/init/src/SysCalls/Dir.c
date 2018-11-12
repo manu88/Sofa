@@ -98,6 +98,8 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	}
 	else 
 	{
+		printf("chdir '%s' is valid\n" , str);
+
 		error = 0;
 		senderProcess->currentDir = newPath;
 	}

@@ -28,7 +28,15 @@ typedef struct
 {
     Inode procNode;
     list_t _processes;
+
+
+    FileOperations _procFolderFileOps;
+    INodeOperations _inodeOps;
 } ProcTableContext;
+
+static int ProcFolderOpen( Inode *, int flags);
+static int ProcFolderClose( Inode* node);
+static ssize_t ProcFolderRead (Inode *node, char* buffer , size_t count);
 
 static ProcTableContext _ctx;
 
@@ -42,11 +50,18 @@ pid_t ProcessTableGetNextPid()
 
 int ProcessTableInit()
 {
+    _ctx._inodeOps.Open  = ProcFolderOpen;
+    _ctx._inodeOps.Close = ProcFolderClose;
+    _ctx._procFolderFileOps.Read = ProcFolderRead;
+
+    
     if (InodeInit(&_ctx.procNode, INodeType_Folder, "proc") == 0)
     {
         return 0;
     }
-    
+    _ctx.procNode.operations = &_ctx._procFolderFileOps;
+    _ctx.procNode.inodeOperations = &_ctx._inodeOps;
+
     return list_init(&_ctx._processes) == 0;
 }
 
@@ -95,3 +110,21 @@ int ProcessTableRemove(Process* process)
 
 
 
+
+static int ProcFolderOpen( Inode *node, int flags)
+{
+	printf("ProcFolderOpen request\n");
+	return 0;
+}
+
+static int ProcFolderClose( Inode* node)
+{
+	printf("ProcFolderClose request\n");
+	return 0;
+}
+
+static ssize_t ProcFolderRead (Inode *node, char* buffer , size_t count)
+{
+	printf("ProcFolderRead request\n");
+	return 0;
+}

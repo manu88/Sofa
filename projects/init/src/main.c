@@ -81,6 +81,13 @@ int main(void)
 
     ZF_LOGF_IFERR(error, "Failed to bootstrap system.\n");
 
+/* File Server*/
+
+    error = !FileServerInit();
+    ZF_LOGF_IFERR(error, "Failed to  init FileServer\n");
+
+
+/* DriverKit*/
 
     error = !DriverKitInit(&context);
     ZF_LOGF_IFERR(error, "Failed to init DriverKit.\n");
@@ -95,15 +102,9 @@ int main(void)
 
     ProcessTableAppend(&initProcess);
 
-/* DriverKit*/
+    error = !FileServerAddNodeAtPath(ProcessTableGetInode() , "/");
+    ZF_LOGF_IFERR(error, "unable to add 'proc' fs to filesystem \n");
 
-   error = !DriverKitInit(&context);
-   ZF_LOGF_IFERR(error, "Failed to  init DriverKit\n");
-
-/* File Server*/
-
-    error = !FileServerInit();
-    ZF_LOGF_IFERR(error, "Failed to  init FileServer\n");
 
 // CPIO
     error = !CPIOServerInit();

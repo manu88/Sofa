@@ -101,6 +101,8 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
 
 //	terminal_putentryat(c ,VGA_COLOR_GREEN ,  0 , 1);
 	terminal_putchar(term , c);
+
+
     }
 
     UNUSED int err = seL4_IRQHandler_Ack(dev->handler.capPtr);
