@@ -522,11 +522,24 @@ static long sys_chdir(va_list args)
 {
 	const char* path   = va_arg (args, char*);
 
-	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2 + strlen(path) );
-	seL4_SetMR(0, __SOFA_NR_chdir );
-        seL4_SetMR(1, strlen(path));
+	if (path == NULL)
+	{
+		return -EFAULT;
+	}
+	const size_t strSize = strlen(path);
 
-	for(int i=0;i<strlen(path) ;i++)
+	if (strSize == 0)
+	{
+		return -ENOENT;
+	}
+
+	printf("Call sys_chdir '%s'\n" , path);
+
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2 + strSize );
+	seL4_SetMR(0, __SOFA_NR_chdir );
+        seL4_SetMR(1, strSize);
+
+	for(int i=0;i<strSize ;i++)
 	{
 		seL4_SetMR(2 + i, path[i] );
 	}

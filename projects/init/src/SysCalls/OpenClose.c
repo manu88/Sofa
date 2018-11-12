@@ -142,8 +142,9 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
             pathname[i] =  (char) seL4_GetMR(2+i);
         }
 
-	pathname[msgLen] = '0';
+	pathname[msgLen-2] = 0;
 
+	printf("handle_open request '%s'\n" , pathname);
 	int ret= -ENOSYS;
 
 	Inode* node =  FileServerOpen(context , pathname,flags , &ret);

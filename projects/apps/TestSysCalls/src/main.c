@@ -143,14 +143,18 @@ static int doGetCwdTests()
 
 static int doChdirTests()
 {
+    printf("Probe1\n");
+
     errno = 0;
     assert(chdir(NULL) == -1);
     assert(errno == EFAULT);
-    
+     printf("Probe2\n");
+
     errno = 0;
     assert(chdir("") == -1);
     assert(errno == ENOENT);
     
+
     errno = 0;
     assert(chdir("prout") == -1);
     assert(errno == ENOENT);
@@ -170,7 +174,7 @@ static int doChdirTests()
 
 static int doLsTests()
 {
-    printf("Start ls tests");
+    printf("Start ls tests \n");
     
     errno = 0;
     assert(chdir("/") == 0);

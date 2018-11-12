@@ -67,48 +67,50 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	{
 		error = -ENOMEM;
 	}
-
-	for(int i=0; i< pathSize;i++)
+	else 
 	{
-		str[i] = seL4_GetMR(2+ i);
-	}
-	str[pathSize] = 0;
 
-	printf("handle_chdir request '%s' \n", str);
+		for(int i=0; i< pathSize;i++)
+		{
+			str[i] = seL4_GetMR(2+ i);
+		}
+		str[pathSize] = 0;
+
+		printf("handle_chdir request '%s' pathSize %li \n", str , pathSize);
 	
-	Inode* newPath = NULL;
-	if (strncmp(".." , str , 2) == 0)
-	{
-		printf("GOT .. Requrst\n");
-		newPath = senderProcess->currentDir->_parent;
-		assert( newPath);
-	}
-	else 
-	{
-	    newPath = FileServerGetINodeForPath( str );
-	}
+		Inode* newPath = NULL;
+		if (strncmp(".." , str , 2) == 0)
+		{
+			printf("GOT .. Requrst\n");
+			newPath = senderProcess->currentDir->_parent;
+			assert( newPath);
+		}
+		else 
+		{
+	    		newPath = FileServerGetINodeForPath( str );
+		}
 
-	if (newPath == NULL)
-	{
-		error = -ENOENT;
-	}
-	else if (newPath->type != INodeType_Folder )
-	{
-		error = -ENOTDIR;
-	}
-	else 
-	{
-		printf("chdir '%s' is valid\n" , str);
+		if (newPath == NULL)
+		{
+			error = -ENOENT;
+		}
+		else if (newPath->type != INodeType_Folder )
+		{
+			error = -ENOTDIR;
+		}
+		else 
+		{
+			printf("chdir '%s' is valid\n" , str);
 
-		error = 0;
-		senderProcess->currentDir = newPath;
+			error = 0;
+			senderProcess->currentDir = newPath;
+		}
+	
+		if (str)
+		{
+	    		free(str);
+		}
 	}
-
-	if (str)
-	{
-	    free(str);
-	}
-
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
 	seL4_SetMR(0,__SOFA_NR_chdir);
 	seL4_SetMR(1 , error);
