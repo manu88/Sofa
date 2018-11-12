@@ -15,6 +15,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 
 #ifndef __APPLE__
 #include <SysClient.h>
@@ -25,6 +26,8 @@ static int doTimeTests(void);
 static int doOpenTests(void);
 static int doReadTests(void);
 static int doGetPidTests(void);
+
+static int doLsTests(void);
 
 
 static int doTimeTests()
@@ -165,6 +168,29 @@ static int doChdirTests()
     return 1;
 }
 
+static int doLsTests()
+{
+    printf("Start ls tests");
+    
+    errno = 0;
+    assert(chdir("/") == 0);
+    assert(errno == 0);
+    
+    
+    struct dirent *dir;
+    DIR *d = opendir(".");
+    if (d)
+    {
+        while ((dir = readdir(d)) != NULL)
+        {
+            printf("'%s'\n", dir->d_name);
+        }
+        closedir(d);
+    }
+    
+    return 1;
+}
+
 int main(int argc, char * argv[])
 {
 
@@ -181,6 +207,8 @@ int main(int argc, char * argv[])
     assert(doWaitTests() );
     assert(doGetCwdTests() );
     assert(doChdirTests());
+    
+    assert(doLsTests() );
 
     printf("SOFA : Everything is fine!\n");
     return 0;
