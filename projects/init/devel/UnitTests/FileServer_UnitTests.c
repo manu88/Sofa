@@ -89,7 +89,7 @@ int FileServer_UnitTests()
     assert(FileServerGetINodeForPath("/lolz") == NULL );
     
     assert(FileServerGetRootNode());
-    assert(FileServerGetRootNode()->_parent == NULL);
+    assert(FileServerGetRootNode()->_parent == FileServerGetRootNode() );
     
     assert(FileServerGetRootNode()->refCount == 1);
     InodeRetain(FileServerGetRootNode());

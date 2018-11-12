@@ -103,21 +103,17 @@ static int doGetCwdTests()
 {
     errno = 0;
 
-    printf("getcwd 1/4\n");
+    
     char* rOk = getcwd(NULL, 0);
     assert(rOk);
     assert(errno == 0);
-    
-    printf("Path '%s'\n" , rOk);
 
-    
-    
     char* r;
     errno = 0;
     char buf[128];
     memset(buf, 0, 128);
 
-    printf("getcwd 2/4\n");
+    
 
     r = getcwd(buf, 1);
     assert(errno == ERANGE);
@@ -126,19 +122,46 @@ static int doGetCwdTests()
     errno = 0;
     memset(buf, 0, 128);
 
-    printf("getcwd 3/4\n");
+    
     r = getcwd(buf, 128);
     assert(errno == 0);
     assert(strncmp(rOk, buf, strlen(rOk)) == 0) ;
     
     errno = 0;
     memset(buf, 0, 128);
-printf("getcwd 4/4\n");
+
     r = getcwd(buf, strlen(rOk) - 2);
     assert(errno == ERANGE);
     
     
     free(rOk);
+    return 1;
+}
+
+static int doChdirTests()
+{
+    errno = 0;
+    assert(chdir(NULL) == -1);
+    assert(errno == EFAULT);
+    
+    errno = 0;
+    assert(chdir("") == -1);
+    assert(errno == ENOENT);
+    
+    errno = 0;
+    assert(chdir("prout") == -1);
+    assert(errno == ENOENT);
+    
+    errno = 0;
+    assert(chdir("/") == 0);
+    assert(errno == 0);
+    
+    char *currentDir = getcwd(NULL, 0);
+    assert(currentDir);
+    assert(strcmp(currentDir, "/") == 0);
+    
+    free(currentDir);
+    //printf("ret %i errno %i\n" , ret , errno);
     return 1;
 }
 
@@ -157,6 +180,7 @@ int main(int argc, char * argv[])
     assert(doReadTests());
     assert(doWaitTests() );
     assert(doGetCwdTests() );
+    assert(doChdirTests());
 
     printf("SOFA : Everything is fine!\n");
     return 0;

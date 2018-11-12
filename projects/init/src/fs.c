@@ -231,9 +231,16 @@ ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize)
             return -ELOOP;
         }
         
-        prev = prev->_parent;
+        if (prev->_parent == prev)
+        {
+            prev = NULL;
+        }
+        else
+        {
+            prev = prev->_parent;
+        }
         
-        assert(node->_parent != node);
+        //assert(node->_parent != node);
     }
     
     return strIndex;
