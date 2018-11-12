@@ -55,3 +55,60 @@ int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo
 	seL4_Reply( message );
 	return 0;
 }
+
+
+int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+{
+	size_t pathSize = seL4_GetMR(1);
+
+	int error = 0;
+	char* str = malloc(pathSize);
+	if ( str == NULL)
+	{
+		error = -ENOMEM;
+	}
+
+	for(int i=0; i< pathSize;i++)
+	{
+		str[i] = seL4_GetMR(2+ i);
+	}
+	str[pathSize] = 0;
+
+	printf("handle_chdir request '%s' \n", str);
+	
+	Inode* newPath = NULL;
+	if (strncmp(".." , str , 2) == 0)
+	{
+		printf("GOT .. REqurst\n");
+		newPath = senderProcess->currentDir->_parent;
+		assert( newPath);
+	}
+	else 
+	{
+	    newPath = FileServerGetINodeForPath( str );
+	}
+
+	if (newPath == NULL)
+	{
+		error = -ENOENT;
+	}
+	else if (newPath->type != INodeType_Folder )
+	{
+		error = -ENOTDIR;
+	}
+	else 
+	{
+		senderProcess->currentDir = newPath;
+	}
+
+	if (str)
+	{
+	    free(str);
+	}
+
+	message = seL4_MessageInfo_new(0, 0, 0, 2);
+	seL4_SetMR(0,__SOFA_NR_chdir);
+	seL4_SetMR(1 , error);
+	seL4_Reply( message );
+	return 0;
+}

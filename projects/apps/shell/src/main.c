@@ -8,17 +8,32 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
-
+#include <stdlib.h>
 
 int consoleFD  = -1;
 
-static int execCommand( const char* cmd)
+static int startsWith(const char *pre, const char *str)
+{
+    size_t lenpre = strlen(pre),
+    lenstr = strlen(str);
+    
+    return lenstr < lenpre ? 0 : strncmp(pre, str, lenpre) == 0;
+}
+
+static int execCommand( char* cmd)
 {
 //	write(consoleFD, "\n" , 1);
 
 	if (strcmp(cmd , "ls") == 0)
 	{
 		printf("ls ...\n");
+	}
+	else if (strcmp(cmd , "pwd")  == 0)
+	{
+		char* pwd = getcwd(NULL, 0);
+
+		write(consoleFD , pwd ,strlen(pwd));
+		free(pwd);
 	}
 	else if (strcmp(cmd , "help") == 0)
 	{
@@ -29,6 +44,14 @@ static int execCommand( const char* cmd)
 	{
 		uint8_t msg[] = { 0xA , 0x0 , 0xB };
 		write(consoleFD , msg , 3);
+	}
+	else if (startsWith("cd ", cmd))
+	{
+		char* arg = cmd + strlen("cd ");
+
+		printf("Command ok arg : '%s'\n" , arg);
+		int ret = chdir(arg);
+		printf("chdir returned %i\n", ret);
 	}
 	else 
 	{

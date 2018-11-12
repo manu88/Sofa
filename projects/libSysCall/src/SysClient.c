@@ -41,6 +41,7 @@ static long sys_clockgettime(va_list args);
 
 static long sys_getcwd(va_list args);
 
+static long sys_chdir(va_list args);
 
 static size_t _Sofa_stdio_write(void *data, size_t count);
 
@@ -79,7 +80,7 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_clock_gettime  , sys_clockgettime);
 
     muslcsys_install_syscall(__NR_getcwd , sys_getcwd);
-
+    muslcsys_install_syscall(__NR_chdir , sys_chdir);
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
     return 0;
 }
@@ -513,6 +514,24 @@ static long sys_getcwd(va_list args)
 	    }
 	}
 
-	return ret;;
+	return ret;
 }
 
+// int chdir(const char *path);
+static long sys_chdir(va_list args)
+{
+
+	const char* path   = va_arg (args, char*);
+	
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2 + strlen(path) );
+	seL4_SetMR(0, __SOFA_NR_chdir );
+        seL4_SetMR(1, strlen(path));
+	
+	for(int i=0;i<strlen(path) ;i++)
+	{
+		seL4_SetMR(2 + i, path[i] );
+	}
+	tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_chdir );
+	return seL4_GetMR(1);
+}

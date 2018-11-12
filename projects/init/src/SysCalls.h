@@ -53,3 +53,4 @@ int handle_clock_getTime(InitContext* context, Process *senderProcess, seL4_Mess
 // dirs
 
 int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);

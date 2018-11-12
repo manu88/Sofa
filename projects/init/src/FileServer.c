@@ -52,9 +52,7 @@ int FileServerInit()
         
         return 0;
     }
-    
-    //_fsContext._rootNode.name = "";//strdup( "" );
-    _fsContext._rootNode._parent = NULL;
+    _fsContext._rootNode._parent = &_fsContext._rootNode;
 
     return 1;
 }
