@@ -21,7 +21,7 @@
 #include <SysCallNum.h>
 #include <assert.h>
 #include "Utils.h"
-#include "ProcessTable.h"
+//#include "ProcessTable.h"
 
 
 ssize_t ProcRead ( Inode * node, char*buffer  , size_t count);
@@ -89,22 +89,7 @@ int ProcessDeInit(Process * process )
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
-    process->_pid = ProcessTableGetNextPid();
     
-    char str[32];
-    sprintf(str, "%i", process->_pid);
-    
-    if (!InodeInit(&process->_processNode, INodeType_Folder, strdup(str) ))
-    {
-        return -1;
-    }
-    process->_processNode.operations =&_processFileOps;
-    process->_processNode.userData = process;
-
-    if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
-    {
-        return -1;
-    }
     
     
 #ifndef __APPLE__

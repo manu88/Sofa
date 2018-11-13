@@ -26,10 +26,10 @@
 
 #ifndef __APPLE__
 #include <cpio/cpio.h>
-#endif
+
 
 extern char _cpio_archive[];
-
+#endif
 static int CpioOpen (Inode * node , int flags);
 static int     CpioClose (struct _inode *);
 
@@ -201,6 +201,7 @@ static int CpioOpen (Inode * node , int flags)
 
 static ssize_t CpioRead (struct _inode *node, char* buf , size_t size)
 {
+#ifndef __APPLE__
 	printf("CPIO READ request %lu bytes pos %lu size max %lu\n", size , node->pos , node->size);
 	
 
@@ -220,6 +221,9 @@ static ssize_t CpioRead (struct _inode *node, char* buf , size_t size)
 	node->pos += size;
 
 	return size;
+#else
+    return 0;
+#endif
 }
 
 static ssize_t CpioWrite(struct _inode *node,  const char* buf ,size_t size)

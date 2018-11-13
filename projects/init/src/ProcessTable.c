@@ -34,6 +34,15 @@ typedef struct
     INodeOperations _inodeOps;
 } ProcTableContext;
 
+
+ssize_t ProcRead ( Inode * node, char*buffer  , size_t count);
+//ssize_t ProcWrite ( Inode *node,  const char* buffer ,size_t count);
+
+static FileOperations _processFileOps =
+{
+    ProcRead , FileOperation_NoWrite , FileOperation_NoLseek
+};
+
 static int ProcFolderOpen( Inode *, int flags);
 static int ProcFolderClose( Inode* node);
 static ssize_t ProcFolderRead (Inode *node, char* buffer , size_t count);
@@ -43,7 +52,7 @@ static ProcTableContext _ctx;
 
 pid_t ProcessTableGetNextPid()
 {
-    static pid_t accum = 2; // 1 is reserved for init
+    static pid_t accum = 1; // 1 is reserved for init
     return accum++;
 }
 
@@ -77,7 +86,30 @@ int ProcessTableGetCount()
 
 int ProcessTableAppend( Process* process)
 {
-	return list_append(&_ctx._processes , process) == 0;
+	if(list_append(&_ctx._processes , process) == 0)
+    {
+    
+        process->_pid = ProcessTableGetNextPid();
+    
+        char str[32];
+        sprintf(str, "%i", process->_pid);
+    
+        if (!InodeInit(&process->_processNode, INodeType_Folder, strdup(str) ))
+        {
+            return 0;
+        }
+        process->_processNode.operations =&_processFileOps;
+        process->_processNode.userData = process;
+    
+        if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
+        {
+            return 0;
+        }
+        
+        return 1;
+    }
+    
+    return 0;
 }
 
 Process* ProcessTableGetByPID( pid_t pid)
@@ -128,3 +160,8 @@ static ssize_t ProcFolderRead (Inode *node, char* buffer , size_t count)
 	printf("ProcFolderRead request\n");
 	return 0;
 }
+
+
+/*
+ 
+ */

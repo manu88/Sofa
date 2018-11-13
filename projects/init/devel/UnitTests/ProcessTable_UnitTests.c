@@ -29,7 +29,7 @@ int ProcessTable_UnitTests()
     
     assert(ProcessTableAppend(&p1));
     
-    assert(ProcessStart(&ctx, &p1, "app1", 0, &initProcess, 100) == 0);
+    //assert(ProcessStart(&ctx, &p1, "app1", 0, &initProcess, 100) == 0);
     
     char strPID[32];
     sprintf(strPID, "/proc/%d", p1._pid);
