@@ -81,18 +81,19 @@ int CPIOServerInit()
     {
         return 0;
     }
-    
+
     _context.inodeOperations.Open  = CpioOpen;
     _context.inodeOperations.Close = CpioClose;
-    
+
     _context.operations.Lseek = CpioLseek;
     _context.operations.Write = CpioWrite;
     _context.operations.Read  = CpioRead;
-    
+
     _context.node.inodeOperations = &_context.inodeOperations;
     _context.node.operations      = &_context.operations;
-    
-/*
+
+
+    // populate nodes
 	char **buf = malloc( info.file_count);
 
 	for(int i=0;i<info.file_count;i++)
@@ -102,14 +103,22 @@ int CPIOServerInit()
 
 	cpio_ls(_cpio_archive , buf, info.file_count);
 
-	printf("Got %u files \n",info.file_count);
+//	printf("Got %u files \n",info.file_count);
 
 	for(int i=0;i<info.file_count;i++)
         {
-		printf("File '%s'\n" , buf[i]);
+		Inode* f = InodeAlloc(INodeType_File, buf[i]);
+		if (f)
+		{
+			f->inodeOperations = &_context.inodeOperations;
+			f->operations      = &_context.operations;
+			InodeAddChild(&_context.node , f);
+		}
+
+//		printf("File '%s'\n" , buf[i]);
 	}
 
-*/
+
 
 /* TEST*/
 

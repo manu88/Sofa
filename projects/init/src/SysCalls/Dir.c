@@ -56,6 +56,8 @@ int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo
 
 int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
+	InodePrintTree(FileServerGetRootNode());
+
 	size_t pathSize = seL4_GetMR(1);
 
 	int error = 0;
