@@ -74,3 +74,6 @@ int FileServerAddNodeAtPath( Inode* node, const char* path) NO_NULL_POINTERS SOF
 
 int FileServer_DefaultOpen (Inode *node, int flags);
 int FileServer_DefaultClose (Inode *node);
+
+ssize_t FileServer_DefaultRead (Inode *node, char*buf  , size_t len);
+ssize_t FileServer_DefaultLseek (Inode *node, size_t off, int whence);

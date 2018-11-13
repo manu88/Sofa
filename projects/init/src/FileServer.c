@@ -36,6 +36,8 @@ typedef struct
 {
     Inode _rootNode;
     
+    FileOperations defaultFSOps;
+    
 } _FileServerContext;
 
 
@@ -45,6 +47,10 @@ static _FileServerContext _fsContext;
 int FileServerInit()
 {
     memset(&_fsContext, 0, sizeof(_FileServerContext));
+    
+    
+    _fsContext.defaultFSOps.Lseek = FileServer_DefaultLseek;
+    _fsContext.defaultFSOps.Read = FileServer_DefaultRead;
     
     if( InodeInit(&_fsContext._rootNode , INodeType_Folder ,"") == 0)
     {
@@ -80,6 +86,10 @@ Inode* FileServerOpenRelativeTo( const char* pathname , const Inode* relativeTo 
         
         if (*error == 0)
         {
+            if (n->operations == NULL)
+            {
+                n->operations = &_fsContext.defaultFSOps;
+            }
             InodeRetain(n);
             return n;
         }
@@ -188,6 +198,21 @@ int FileServer_DefaultOpen (Inode *node, int flags)
 }
 
 int FileServer_DefaultClose (Inode *node)
+{
+    return 0;
+}
+
+
+ssize_t FileServer_DefaultRead (Inode *node, char*buf  , size_t len)
+{
+    if (node->type == INodeType_Folder)
+    {
+        printf("FileServer_DefaultRead folder request \n");
+    }
+    return 0;
+}
+
+ssize_t FileServer_DefaultLseek (Inode *node, size_t off, int whence)
 {
     return 0;
 }
