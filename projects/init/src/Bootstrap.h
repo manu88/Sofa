@@ -41,14 +41,9 @@ typedef struct
     ps_io_ops_t ops;
     TimersWheel timersWheel;
 
-
-
     struct ps_io_ops    opsIO;
-//    ps_chardevice_t devKeyboard;
 
 } InitContext;
-
-
 
 
 int bootstrapSystem(InitContext* context);

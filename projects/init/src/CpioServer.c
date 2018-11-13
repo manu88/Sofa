@@ -67,15 +67,7 @@ FileServerHandler* getCPIOServerHandler(void)
 
 int CPIOServerInit()
 {
-#ifndef __APPLE__
-	struct cpio_info info;
 
-	if(cpio_info(_cpio_archive , &info) != 0)
-	{
-		return 0;
-	}
-
-#endif
     
     if (InodeInit(&_context.node, INodeType_Folder, "cpio") == 0)
     {
@@ -92,6 +84,14 @@ int CPIOServerInit()
     _context.node.inodeOperations = &_context.inodeOperations;
     _context.node.operations      = &_context.operations;
 
+#ifndef __APPLE__
+    struct cpio_info info;
+    
+    if(cpio_info(_cpio_archive , &info) != 0)
+    {
+        return 0;
+    }
+    
 
     // populate nodes
 	char **buf = malloc( info.file_count);
@@ -117,7 +117,7 @@ int CPIOServerInit()
 
 //		printf("File '%s'\n" , buf[i]);
 	}
-
+#endif
 
 
 /* TEST*/

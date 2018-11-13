@@ -238,15 +238,17 @@ static int FileServer_WalkTests()
     Inode* newDir = FileServerGetINodeForPath("/folder1/../", currentDir) ;
     assert(newDir== currentDir);
     
+    newDir = NULL;
     newDir = FileServerGetINodeForPath("/folder1/./", currentDir);
     assert(newDir == &f1);
     
     assert(newDir->_parent == FileServerGetRootNode());
     
+    newDir = NULL;
     newDir = FileServerGetINodeForPath("..", newDir);
     assert(newDir == FileServerGetRootNode());
     
-    
+    newDir = NULL;
     newDir = FileServerGetINodeForPath("./folder1/", NULL);
     assert( newDir == &f1);
     
@@ -262,8 +264,10 @@ static int FileServer_WalkTests()
     assert(InodeInit(&f3, INodeType_Folder, "folder3"));
     assert(FileServerAddNodeAtPath(&f3, "/"));
     
+    
     newDir = FileServerGetINodeForPath("folder2", newDir);
     assert(newDir == &f2);
+    
     
     newDir = FileServerGetINodeForPath("../..", newDir);
     assert(newDir == FileServerGetRootNode() );
@@ -277,6 +281,12 @@ static int FileServer_WalkTests()
     
     Inode* filePtr = FileServerGetINodeForPath("folder1/file1" , newDir);
     assert( filePtr == &file1);
+    
+    currentDir = &f1;
+    
+    
+    newDir = FileServerGetINodeForPath("/", currentDir);
+    assert(newDir == FileServerGetRootNode());
     
     InodePrintTree(FileServerGetRootNode());
     return 1;

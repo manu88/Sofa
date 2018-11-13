@@ -46,7 +46,6 @@ int FileServerInit()
 {
     memset(&_fsContext, 0, sizeof(_FileServerContext));
     
-    
     if( InodeInit(&_fsContext._rootNode , INodeType_Folder ,"") == 0)
     {
         
@@ -118,6 +117,14 @@ Inode* FileServerGetINodeForPath( const char* path_ , const Inode* relativeTo)
     static const char delim[] = "/";
 
     char* token = strtok(path, delim);
+    
+    // TODO : Temp workaround until better implementation :)
+    if (token == NULL && strcmp(path, "/") == 0)
+    {
+        free(path);
+        
+        return FileServerGetRootNode();
+    }
 
     while ( token != NULL )
     {
