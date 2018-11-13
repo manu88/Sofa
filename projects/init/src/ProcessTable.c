@@ -23,6 +23,7 @@
 #else
 #include "list.h"
 #endif
+#include <assert.h>
 
 typedef struct
 {
@@ -43,7 +44,7 @@ static FileOperations _processFileOps =
     ProcRead , FileOperation_NoWrite , FileOperation_NoLseek
 };
 
-static ssize_t ProcFolderRead (Inode *node, char* buffer , size_t count);
+//static ssize_t ProcFolderRead (Inode *node, char* buffer , size_t count);
 
 static ProcTableContext _ctx;
 
@@ -98,12 +99,13 @@ int ProcessTableAppend( Process* process)
             return 0;
         }
 
-	Inode* statusNode = InodeAlloc(INodeType_File , statusStr);
-	assert(statusNode);
+        Inode* statusNode = InodeAlloc(INodeType_File , statusStr);
+        assert(statusNode);
         statusNode->operations =&_processFileOps;
-	statusNode->userData = process;
+        statusNode->userData = process;
+        statusNode->size = 1; // one status byte
 
-	InodeAddChild(&process->_processNode , statusNode);
+        InodeAddChild(&process->_processNode , statusNode);
         process->_processNode.userData = process;
     
         if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
@@ -142,7 +144,12 @@ static int PtrComp(void*a, void*b)
 
 int ProcessTableRemove(Process* process)
 {
-    return list_remove(&_ctx._processes , process,PtrComp) == 0;
+    if(list_remove(&_ctx._processes , process,PtrComp) == 0)
+    {
+        return InodeRemoveChild( &_ctx.procNode, &process->_processNode);
+    }
+    
+    return 0;
 }
 
 

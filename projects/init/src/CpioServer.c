@@ -208,8 +208,9 @@ static ssize_t CpioRead (struct _inode *node, char* buf , size_t size)
 	if (node->userData == NULL)
 	{
 		unsigned long fileSize = 0;
-	        void* dataContent = cpio_get_file(_cpio_archive , node->name , &fileSize);
-		node->userData = dataContent;
+        void* dataContent = cpio_get_file(_cpio_archive , node->name , &fileSize);
+		
+        node->userData = dataContent;
 		node->size = fileSize;
 	}
 	if (size > node->size - node->pos)

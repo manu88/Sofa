@@ -37,5 +37,10 @@ int ProcessTable_UnitTests()
     Inode* procNode = FileServerGetINodeForPath(strPID , NULL);
     assert(procNode);
     
+    
+    assert(ProcessTableRemove(&p1));
+    procNode = FileServerGetINodeForPath(strPID , NULL);
+    assert(procNode == NULL);
+    
     return 1;
 }

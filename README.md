@@ -26,3 +26,22 @@ Usefull links :
 ## Features
 * EGA shell
 * Unified File System with CPIO mount point, `dev` and `proc` folders
+
+## How to build
+
+Create a build folder in the root dir :
+
+```bash
+mkdir build
+```
+initialize the build system
+
+```bash
+../init-build.sh  -DPLATFORM=x86_64 -DSIMULATION=TRUE
+```
+
+Then start the build process
+
+```bash
+ninja
+```
