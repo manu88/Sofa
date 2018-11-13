@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
+#include <sel4/sel4.h>
 
 #ifdef __APPLE__
 

@@ -244,8 +244,8 @@ ssize_t FileServer_DefaultRead (Inode *node, char*buf  , size_t len)
         dirp->d_seekoff = 0;
 #endif
 	dirp->d_type = DT_DIR;
-	memcpy(dirp->d_name , cNode->name, strlen(cNode->name));
-
+//	memcpy(dirp->d_name , cNode->name, strlen(cNode->name));
+	strcpy(dirp->d_name ,  cNode->name);
 #ifndef __APPLE__
 	dirp->d_reclen =  sizeof(dirp->d_ino)
                     + sizeof(dirp->d_off)

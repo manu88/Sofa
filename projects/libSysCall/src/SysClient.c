@@ -227,9 +227,12 @@ static long sys_getpid(va_list args)
     seL4_Word msg;
 
     tag = seL4_MessageInfo_new(0, 0, 0, 2);
+    IPCMessageReset();
 
-    seL4_SetMR(0, __SOFA_NR_getpid);
-    seL4_SetMR(1 , 0); // useless?
+    IPCPushWord( __SOFA_NR_getpid);
+    IPCPushWord( 0);// useless?
+//    seL4_SetMR(0, __SOFA_NR_getpid);
+//    seL4_SetMR(1 , 0); // useless?
 
     tag = seL4_Call(sysCallEndPoint, tag);
 
@@ -354,7 +357,7 @@ static long sys_read(va_list args)
 	{
 		b[i] = seL4_GetMR(2+i);
 	}
-
+	b[ret] = 0;
 	return ret;
 }
 
@@ -603,10 +606,11 @@ static long sys_getdents64(va_list args)
 	//struct linux_dirent64 *dirp = va_arg (args, struct linux_dirent64 *);
 	struct dirent64 *dirp = va_arg (args, struct dirent64 *);
 	
-
 	unsigned int count	    = va_arg (args,unsigned int);
 
-	printf("sys_getdents64 fd %i count %i\n" , fd , count);
+	memset(dirp , 0 , count);
+
+//	printf("sys_getdents64 fd %i count %i\n" , fd , count);
 
 /*
 	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3); // syscallnum fd reqtype
