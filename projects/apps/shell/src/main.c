@@ -1,3 +1,20 @@
+/*
+ * This file is part of the Sofa project
+ * Copyright (c) 2018 Manuel Deneu.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef __APPLE__
 #include <SysClient.h>
 #endif
@@ -13,30 +30,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <dirent.h>
-
-#ifndef __APPLE__
-static int consoleFD  = -1;
-#endif
-
-static ssize_t writeConsole( const void* b , size_t len)
-{
-#ifndef __APPLE__
-    return write(consoleFD, b, len);
-#else
-    return write(STDOUT_FILENO, b, len);
-#endif
-}
 
 
-static ssize_t readConsole( void*b , size_t len)
-{
-#ifndef __APPLE__
-    return read(consoleFD, b, len);
-#else
-    return read(STDIN_FILENO, b, len);
-#endif
-}
+#include "BaseCommands.h"
+
 
 static int startsWith(const char *pre, const char *str)
 {
@@ -48,33 +45,15 @@ static int startsWith(const char *pre, const char *str)
 
 static int execCommand( char* cmd)
 {
-//	write(consoleFD, "\n" , 1);
-
-//	if (strcmp(cmd , "ls") == 0)
 	if (startsWith("ls", cmd))
 	{
 		char* arg = cmd + strlen("ls ");
-        
         if ( strlen(arg) == 0 )
         {
             arg = ".";
         }
-		printf("ls arg '%s' \n" , arg);
-		
-		struct dirent *dir;
-    		DIR *d = opendir(arg);
-		if (d)
-    		{
-        		while ((dir = readdir(d)) != NULL)
-        		{
-				writeConsole( dir->d_name , strlen(dir->d_name) );
-				writeConsole( "\n" , 1);
-            			printf("'%s'\n", dir->d_name);
-        		}
-        		closedir(d);
-    		}
-
-
+        
+        return exec_ls(arg);
 	}
 	else if (strcmp(cmd , "pwd")  == 0)
 	{
@@ -82,24 +61,25 @@ static int execCommand( char* cmd)
 
 		writeConsole(  pwd ,strlen(pwd));
 		free(pwd);
+        
+        return 0;
 	}
 	else if (strcmp(cmd , "help") == 0)
 	{
-		const char b[] = "Some help you could use .... \n available command : ls \n";
-    		writeConsole(  b ,strlen(b));
+        PrintHelp();
+        return 0;
 	}
 	else if (strcmp( cmd , "clear") == 0)
 	{
 		uint8_t msg[] = { 0xA , 0x0 , 0xB };
 		writeConsole(  msg , 3);
+        return 0;
 	}
 	else if (startsWith("cd ", cmd))
 	{
 		char* arg = cmd + strlen("cd ");
+		return chdir(arg);
 
-		printf("Command ok arg : '%s'\n" , arg);
-		int ret = chdir(arg);
-		printf("chdir returned %i\n", ret);
 	}
 	else 
 	{
@@ -115,17 +95,20 @@ int main( int argc , char* argv[])
     {
         return 1;
     }
-
-
-
     
     errno = 0;
-    consoleFD = open("/dev/console" , O_RDWR);
+    int consoleFD = open("/dev/console" , O_RDWR);
     assert(consoleFD >=0);
     assert(errno == 0);
     
 #endif
-
+    
+#ifdef __APPLE__
+    InitConsoleFDs(STDIN_FILENO, STDOUT_FILENO);
+#else
+    InitConsoleFDs(consoleFD, consoleFD);
+#endif
+    
     const char b[] = "Sofa Shell - 2018";
     writeConsole(  b ,strlen(b));
 
