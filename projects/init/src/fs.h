@@ -118,3 +118,6 @@ Inode* InodeGetChildByName( const Inode* node , const char* name) NO_NULL_POINTE
 ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 #define InodeForEachChildren(node,child,tempChild) HASH_ITER(hh,node->children,child,tempChild)
+
+
+void InodePrintTree(const Inode* node);

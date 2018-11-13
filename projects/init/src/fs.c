@@ -269,3 +269,32 @@ Inode* InodeGetChildByName( const Inode* node , const char* name)
     */
     return NULL;
 }
+
+static void _printNode(const Inode* node , int indent)
+{
+    Inode* child = NULL;
+    Inode* tempChild = NULL;
+    
+    InodeForEachChildren(node, child, tempChild)
+    {
+        for(int i =0;i<indent;i++)
+            printf("\t");
+        
+        printf("'%s' %s \n" , child->name , child->type == INodeType_Folder? "Folder":"File");
+        if (child->type == INodeType_Folder)
+        {
+            _printNode(child , indent + 1);
+        }
+    }
+}
+
+void InodePrintTree(const Inode* node)
+{
+    
+    printf("-- Start tree -- \n");
+    printf("'%s'\n" , node->name);
+    _printNode(node , 1);
+    
+    
+    printf("-- End tree -- \n");
+}

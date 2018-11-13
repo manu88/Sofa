@@ -174,7 +174,6 @@ static int ProcOpen (struct _inode *node, int flags)
 
 static int FileServer_OperationTests()
 {
-    InitContext ctx;
     FileServerInit();
     
     
@@ -231,7 +230,6 @@ static int FileServer_WalkTests()
     
     Inode f1;
     assert(InodeInit(&f1, INodeType_Folder, "folder1"));
-    
     assert(FileServerAddNodeAtPath(&f1, "/"));
     
     Inode* currentDir = FileServerGetINodeForPath(".", FileServerGetRootNode() );
@@ -241,9 +239,45 @@ static int FileServer_WalkTests()
     assert(newDir== currentDir);
     
     newDir = FileServerGetINodeForPath("/folder1/./", currentDir);
+    assert(newDir == &f1);
+    
     assert(newDir->_parent == FileServerGetRootNode());
     
     newDir = FileServerGetINodeForPath("..", newDir);
     assert(newDir == FileServerGetRootNode());
+    
+    
+    newDir = FileServerGetINodeForPath("./folder1/", NULL);
+    assert( newDir == &f1);
+    
+    Inode f2;
+    assert(InodeInit(&f2, INodeType_Folder, "folder2"));
+    assert(FileServerAddNodeAtPath(&f2, "/folder1"));
+    
+    Inode file1;
+    assert(InodeInit(&file1, INodeType_File, "file1"));
+    assert(FileServerAddNodeAtPath(&file1, "/folder1"));
+    
+    Inode f3;
+    assert(InodeInit(&f3, INodeType_Folder, "folder3"));
+    assert(FileServerAddNodeAtPath(&f3, "/"));
+    
+    newDir = FileServerGetINodeForPath("folder2", newDir);
+    assert(newDir == &f2);
+    
+    newDir = FileServerGetINodeForPath("../..", newDir);
+    assert(newDir == FileServerGetRootNode() );
+    
+    
+    assert( strcmp("folder1", f1.name) == 0);
+    assert( strcmp("folder2", f2.name) == 0);
+    
+    assert(f2._parent == &f1);
+    assert(f1._parent == FileServerGetRootNode() );
+    
+    Inode* filePtr = FileServerGetINodeForPath("folder1/file1" , newDir);
+    assert( filePtr == &file1);
+    
+    InodePrintTree(FileServerGetRootNode());
     return 1;
 }
