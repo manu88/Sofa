@@ -59,8 +59,8 @@ int ProcessTableInit()
     {
         return 0;
     }
-    _ctx.procNode.operations = &_ctx._procFolderFileOps;
-    _ctx.procNode.inodeOperations = &_ctx._inodeOps;
+//    _ctx.procNode.operations = &_ctx._procFolderFileOps;
+//    _ctx.procNode.inodeOperations = &_ctx._inodeOps;
 
     return list_init(&_ctx._processes) == 0;
 }

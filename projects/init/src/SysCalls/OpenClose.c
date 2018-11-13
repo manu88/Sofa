@@ -107,6 +107,7 @@ int handle_write(InitContext* context, Process *senderProcess, seL4_MessageInfo_
         {
 		char* buf = malloc( count);
 		assert(buf); // TODO handle error
+		memset(buf,0,count);
 
 		for(int i =0;i<count;++i)
 		{
