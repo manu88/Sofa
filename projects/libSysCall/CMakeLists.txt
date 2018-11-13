@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 3.7.2)
 
 project(libSysCall C)
 
-add_library(libSysCall EXCLUDE_FROM_ALL  src/SysClient.c)
+file(GLOB deps src/*.c)
+list(SORT deps)
+
+add_library(libSysCall EXCLUDE_FROM_ALL  ${deps})
+
+
 target_include_directories(libSysCall PUBLIC include) 
 
 
