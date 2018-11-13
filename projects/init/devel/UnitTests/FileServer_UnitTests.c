@@ -288,6 +288,10 @@ static int FileServer_WalkTests()
     newDir = FileServerGetINodeForPath("/", currentDir);
     assert(newDir == FileServerGetRootNode());
     
+    int err = 0;
+    Inode* openedFolder =  FileServerOpenRelativeTo(".", newDir, 0, &err);
+    assert(openedFolder);
+    
     InodePrintTree(FileServerGetRootNode());
     return 1;
 }

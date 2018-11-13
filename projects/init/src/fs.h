@@ -71,6 +71,9 @@ struct _iNodeOperations
 
 int INodeOperations_NoOpen (struct _inode *node, int flags);
 
+
+
+
 typedef struct _iNodeOperations INodeOperations;
 
 struct _inode
@@ -94,6 +97,7 @@ struct _inode
 };
 
 typedef struct _inode Inode;
+
 
 
 // calls malloc + InodeInit
@@ -121,3 +125,6 @@ ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize) NO_NULL
 
 
 void InodePrintTree(const Inode* node);
+
+
+

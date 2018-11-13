@@ -69,7 +69,14 @@ Inode* FileServerOpenRelativeTo( const char* pathname , const Inode* relativeTo 
     *error = -ENOENT;
     if (n )
     {
-        *error = n->inodeOperations->Open(n , flags);
+        if (n->inodeOperations && n->inodeOperations->Open)
+        {
+            *error = n->inodeOperations->Open(n , flags);
+        }
+        else
+        {
+            *error = FileServer_DefaultOpen(n, flags);
+        }
         
         if (*error == 0)
         {
@@ -86,7 +93,7 @@ Inode* FileServerOpenRelativeTo( const char* pathname , const Inode* relativeTo 
 Inode* FileServerOpen( /*InitContext* context ,*/ const char*pathname , int flags , int*error)
 {
     return FileServerOpenRelativeTo(pathname , NULL , flags , error);
-
+/*
     Inode* n = FileServerGetINodeForPath(pathname , NULL);
     
     *error = -ENOENT;
@@ -103,6 +110,7 @@ Inode* FileServerOpen( /*InitContext* context ,*/ const char*pathname , int flag
     }
 
     return NULL;
+ */
 }
 
 Inode* FileServerGetINodeForPath( const char* path_ , const Inode* relativeTo)
@@ -170,5 +178,16 @@ int FileServerAddNodeAtPath( Inode* node,const char* path)
     {
         return InodeAddChild(n, node);
     }
+    return 0;
+}
+
+
+int FileServer_DefaultOpen (Inode *node, int flags)
+{
+    return 0;
+}
+
+int FileServer_DefaultClose (Inode *node)
+{
     return 0;
 }
