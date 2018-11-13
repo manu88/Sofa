@@ -235,12 +235,30 @@ ssize_t FileServer_DefaultRead (Inode *node, char*buf  , size_t len)
 	const Inode *cNode = getNthChild(node , node->pos);
 
 	struct dirent *dirp = (struct dirent *) buf;
+        
+        
 	dirp->d_ino = 1;
+#ifndef __APPLE__
 	dirp->d_off = 0;
+#else
+        dirp->d_seekoff = 0;
+#endif
 	dirp->d_type = DT_DIR;
 	memcpy(dirp->d_name , cNode->name, strlen(cNode->name));
 
-	dirp->d_reclen = sizeof(dirp->d_ino) + sizeof(dirp->d_off) + sizeof(dirp->d_reclen) + sizeof(dirp->d_type) + strlen(dirp->d_name);
+#ifndef __APPLE__
+	dirp->d_reclen =  sizeof(dirp->d_ino)
+                    + sizeof(dirp->d_off)
+                    + sizeof(dirp->d_reclen)
+                    + sizeof(dirp->d_type)
+                    + strlen(dirp->d_name);
+#else
+    dirp->d_reclen =   sizeof(dirp->d_ino)
+                     + sizeof(dirp->d_seekoff)
+                     + sizeof(dirp->d_reclen)
+                     + sizeof(dirp->d_type)
+                     + strlen(dirp->d_name);
+#endif
 
 
 	node->pos++;
