@@ -107,12 +107,31 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 }
 
 
-int handle_getdents64(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
-{
-	return 0;
-}
 
 int handle_fcntl(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
+	printf("handle_fcntl\n");
+
+	return 0;
+}
+
+
+int handle_getdents64(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+{
+	printf("handle_getdents64\n");
+
+	const int fd  = seL4_GetMR(1);
+	const int cmd = seL4_GetMR(2);
+
+	Inode* node = ProcessGetNode(senderProcess , fd);
+	printf("handle_getdents64 got node (%li children) \n" ,InodeGetChildrenCount(node) );
+
+	message = seL4_MessageInfo_new(0, 0, 0, 3);
+	seL4_SetMR(0,__SOFA_NR_getdents64);
+	seL4_SetMR(1 , cmd);
+	seL4_SetMR(2 , InodeGetChildrenCount(node));
+
+	seL4_Reply( message );
+
 	return 0;
 }

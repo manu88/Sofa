@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <string.h> 
 
+#include <fcntl.h>
 #include <sys/resource.h>
 #include <SysCallNum.h>
 #include <arch_stdio.h>
@@ -560,12 +561,63 @@ static long sys_chdir(va_list args)
 }
 
 
+// int fcntl(int fd, int cmd, ... /* arg */ );
 static long sys_fcntl(va_list args)
 {
-	return -ENOSYS;
+	return 0;
+	const int fd  = va_arg (args, int);
+	const int cmd = va_arg (args, int);
+	
+        printf("sys_fcntl fd %i cmd %i\n" , fd , cmd);
+
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 4);
+
+	seL4_SetMR(0, __SOFA_NR_fcntl);
+	seL4_SetMR(1, fd);
+	seL4_SetMR(2, cmd);
+
+	switch(cmd)
+	{
+		case F_SETFD:
+		{
+			int flag = va_arg (args, int);
+			seL4_SetMR(3, flag);
+			printf("sys_fcntl flag %i\n" , flag);
+		}
+		break;
+
+		default:
+		return -ENOSYS;
+	}
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_fcntl );
+        return seL4_GetMR(1);
+
 }
 
+//int getdents64(unsigned int fd, struct linux_dirent64 *dirp, unsigned int count);
 static long sys_getdents64(va_list args)
 {
+	const int fd  	  	    = va_arg (args, int);
+	struct linux_dirent64 *dirp = va_arg (args, struct linux_dirent64 *);
+	unsigned int count	    = va_arg (args,unsigned int);
+
+	printf("sys_getdents64 fd %i count %i\n" , fd , count);
+
+/*
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3); // syscallnum fd reqtype
+	seL4_SetMR(0, __SOFA_NR_getdents64);
+	seL4_SetMR(1, fd);
+	seL4_SetMR(2, 1); // get children count
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_getdents64 );
+
+	assert(seL4_GetMR(1) == 1);
+
+	printf("Returned %i\n" , seL4_GetMR(2));
 	return -ENOSYS;
+*/
+	return read(fd , dirp, count);
 }

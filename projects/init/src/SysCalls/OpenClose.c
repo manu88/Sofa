@@ -61,7 +61,12 @@ int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	Inode* node = ProcessGetNode(senderProcess , fd);
 	if(node)
 	{
-		char buf[4];
+		char *buf = malloc(count);
+		assert(buf);
+
+		assert(node->operations);
+		assert(node->operations->Read);
+
 		ssize_t ret = node->operations->Read(node ,buf , count);
 
 		message = seL4_MessageInfo_new(0, 0, 0, 2 + ret);
@@ -77,6 +82,7 @@ int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 			}
 		}
 		seL4_Reply( message );
+		free(buf);
 		return 0;
 	}
 
