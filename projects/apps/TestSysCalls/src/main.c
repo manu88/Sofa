@@ -24,6 +24,7 @@
 
 static int doTimeTests(void);
 static int doOpenTests(void);
+static int doOpenTests2(void);
 static int doReadTests(void);
 static int doGetPidTests(void);
 
@@ -77,6 +78,20 @@ static int doOpenTests()
     assert(errno == ENOENT);
     
     
+    return 1;
+}
+
+static int doOpenTests2()
+{
+    int fd = open("/" , O_RDONLY);
+    assert(fd);
+    char b[128];
+    
+    ssize_t ret = read(fd, b, 128);
+    assert(ret == -1);
+    assert(errno == EISDIR);
+    
+    close(fd);
     return 1;
 }
 
@@ -178,7 +193,7 @@ static int doLsTests()
     printf("Start ls tests \n");
     
     errno = 0;
-    assert(chdir("/cpio/") == 0);
+    assert(chdir("/") == 0);
     assert(errno == 0);
     
     
@@ -209,6 +224,7 @@ int main(int argc, char * argv[])
     assert(doGetPidTests());
     assert(doTimeTests());
     assert(doOpenTests());
+    assert(doOpenTests2());
     assert(doReadTests());
     assert(doWaitTests() );
     assert(doGetCwdTests() );
