@@ -79,7 +79,7 @@ int ProcessDeInit(Process * process )
     }
     
     InodeRelease(&process->_processNode);
-    free(process->_processNode.name);
+//    free(process->_processNode.name);
     return 1;
 }
 
@@ -92,14 +92,13 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
     process->_pid = ProcessTableGetNextPid();
     
     char str[32];
-    sprintf(str, "%d", process->_pid);
+    sprintf(str, "%i", process->_pid);
     
     if (!InodeInit(&process->_processNode, INodeType_Folder, strdup(str) ))
     {
         return -1;
     }
     process->_processNode.operations =&_processFileOps;
-
     process->_processNode.userData = process;
 
     if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
