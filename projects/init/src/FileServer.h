@@ -59,7 +59,7 @@ int FileServerInit(void) SOFA_UNIT_TESTABLE;
 //int FileServerRemoveHandler( FileServerHandler* handler , const char* atPath) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 Inode* FileServerOpen(/*InitContext* context ,*/ const char*pathname , int flags , int *error) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
-Inode* FileServerOpenRelativeTo( const char* pathname , int flags , int *error) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+Inode* FileServerOpenRelativeTo( const char* pathname ,const Inode* relativeTo , int flags , int *error) NO_NULL_ARGS(1,1) NO_NULL_ARGS(4,1) SOFA_UNIT_TESTABLE;
 
 Inode* FileServerGetRootNode(void ) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 

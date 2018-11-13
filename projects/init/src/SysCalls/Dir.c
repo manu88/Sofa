@@ -31,14 +31,11 @@ int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo
 	ssize_t strSize =  InodeGetAbsolutePath( senderProcess->currentDir, str, 4096);
 	printf("Buffer path size %li\n" ,strSize);
 
-	
 	size_t realMsgSize = strSize > bufferSize ? 0 : strSize;
 	printf("Real msg size %li\n",realMsgSize);
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2 + realMsgSize);
 	seL4_SetMR(0,__SOFA_NR_getcwd);
-
-//	message = seL4_MessageInfo_new(0, 0, 0, 2 + strSize);
 
 	if (realMsgSize == 0)
 	{
@@ -51,7 +48,7 @@ int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo
         {
             seL4_SetMR(2 + i, str[i]);
         }
-	
+
 	seL4_Reply( message );
 	return 0;
 }
@@ -62,33 +59,23 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	size_t pathSize = seL4_GetMR(1);
 
 	int error = 0;
-	char* str = malloc(pathSize);
+	char* str = malloc(pathSize+1);
+
 	if ( str == NULL)
 	{
 		error = -ENOMEM;
 	}
-	else 
+	else
 	{
-
 		for(int i=0; i< pathSize;i++)
 		{
 			str[i] = seL4_GetMR(2+ i);
 		}
 		str[pathSize] = 0;
 
-		printf("handle_chdir request '%s' pathSize %li \n", str , pathSize);
-	
-		Inode* newPath = NULL;
-		if (strncmp(".." , str , 2) == 0)
-		{
-			printf("GOT .. Requrst\n");
-			newPath = senderProcess->currentDir->_parent;
-			assert( newPath);
-		}
-		else 
-		{
-	    		newPath = FileServerGetINodeForPath( str );
-		}
+		printf("handle_chdir request '%s' pathSize %li from pid %i\n", str , pathSize , senderProcess->_pid);
+
+		Inode* newPath = FileServerGetINodeForPath( str  , senderProcess->currentDir);
 
 		if (newPath == NULL)
 		{
@@ -98,19 +85,20 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 		{
 			error = -ENOTDIR;
 		}
-		else 
+		else
 		{
-			printf("chdir '%s' is valid\n" , str);
-
 			error = 0;
 			senderProcess->currentDir = newPath;
+			printf("chdir '%s' is valid ('%s')\n" , str , senderProcess->currentDir->name);
+
 		}
-	
 		if (str)
 		{
 	    		free(str);
 		}
 	}
+
+	printf("chdir will return %i\n",error);
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
 	seL4_SetMR(0,__SOFA_NR_chdir);
 	seL4_SetMR(1 , error);

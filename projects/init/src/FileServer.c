@@ -62,8 +62,32 @@ Inode* FileServerGetRootNode()
     return &_fsContext._rootNode;
 }
 
+
+Inode* FileServerOpenRelativeTo( const char* pathname , const Inode* relativeTo , int flags , int *error) 
+{
+    Inode* n = FileServerGetINodeForPath(pathname , relativeTo);
+    
+    *error = -ENOENT;
+    if (n )
+    {
+        *error = n->inodeOperations->Open(n , flags);
+        
+        if (*error == 0)
+        {
+            InodeRetain(n);
+            return n;
+        }
+        
+    }
+
+    return NULL;
+
+}
+
 Inode* FileServerOpen( /*InitContext* context ,*/ const char*pathname , int flags , int*error)
 {
+    return FileServerOpenRelativeTo(pathname , NULL , flags , error);
+
     Inode* n = FileServerGetINodeForPath(pathname , NULL);
     
     *error = -ENOENT;
@@ -86,18 +110,18 @@ Inode* FileServerGetINodeForPath( const char* path_ , const Inode* relativeTo)
 {
     if (strlen(path_) == 0)
         return NULL;
-    
+
     char* path = strdup(path_);
 
     Inode* ret = relativeTo == NULL? &_fsContext._rootNode : (Inode*) relativeTo;
-    
+
     static const char delim[] = "/";
-    
+
     char* token = strtok(path, delim);
-    
+
     while ( token != NULL )
     {
-        
+
         if (strcmp(token, "..") == 0)
         {
             ret = ret->_parent;
@@ -116,8 +140,7 @@ Inode* FileServerGetINodeForPath( const char* path_ , const Inode* relativeTo)
             return NULL;
         }
         token = strtok(NULL, delim);
-        
-        
+
     }
     /*
     char *last = strrchr(path, '/');

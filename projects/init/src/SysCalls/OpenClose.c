@@ -147,7 +147,7 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	printf("handle_open request '%s'\n" , pathname);
 	int ret= -ENOSYS;
 
-	Inode* node =  FileServerOpen(context , pathname,flags , &ret);
+	Inode* node =  FileServerOpenRelativeTo( pathname , senderProcess->currentDir,flags , &ret);
 
 	if(node && ret == 0)
 	{

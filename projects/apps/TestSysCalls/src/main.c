@@ -165,6 +165,7 @@ static int doChdirTests()
     
     char *currentDir = getcwd(NULL, 0);
     assert(currentDir);
+    printf("Currentdir '%s'\n", currentDir);
     assert(strcmp(currentDir, "/") == 0);
     
     free(currentDir);

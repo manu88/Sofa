@@ -123,7 +123,7 @@ int main(void)
     error = !FileServerAddNodeAtPath(DevServerGetInode(), "/");
     ZF_LOGF_IFERR(error, "Failed to register Dev File System \n");
 
-    assert( FileServerGetINodeForPath("/dev/") == DevServerGetInode() );
+    assert( FileServerGetINodeForPath("/dev/" , NULL) == DevServerGetInode() );
 
     assert(InodeGetChildrenCount(FileServerGetRootNode()) > 0);
 
@@ -179,7 +179,7 @@ int main(void)
     error = !DevServerRegisterFile( (Inode*)&_terminal.node );// !DevServerRegisterFile("console", &_terminal.devOps );// EGADriverGetDeviceOps() );
     ZF_LOGF_IFERR(error, "Failed to  register 'console' EGA handler\n");
 
-    assert(FileServerGetINodeForPath("/dev/console") == &_terminal.node);
+    assert(FileServerGetINodeForPath("/dev/console" , NULL) == &_terminal.node);
 // Test keyboard
 
 //    error = !KeyboardDeviceInit(&context, &notification_path , &_terminal.keyboard);
@@ -196,7 +196,7 @@ int main(void)
 /* BEGIN PROCESS */
 
     Process *testProcess = ProcessAlloc();
-    testProcess->currentDir = FileServerGetINodeForPath("/dev/");//  FileServerGetRootNode();
+    testProcess->currentDir = FileServerGetINodeForPath("/dev/" , NULL);//  FileServerGetRootNode();
     error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
     if (error == 0)
     {
