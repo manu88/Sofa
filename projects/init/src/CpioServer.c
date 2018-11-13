@@ -99,6 +99,7 @@ int CPIOServerInit()
 	for(int i=0;i<info.file_count;i++)
 	{
 		buf[i] = malloc(info.max_path_sz);
+		memset(buf[i] , 0 , info.max_path_sz);
 	}
 
 	cpio_ls(_cpio_archive , buf, info.file_count);
@@ -110,6 +111,7 @@ int CPIOServerInit()
 		Inode* f = InodeAlloc(INodeType_File, buf[i]);
 		if (f)
 		{
+//			printf("add CPIO file '%s'\n" , buf[i]);
 			f->inodeOperations = &_context.inodeOperations;
 			f->operations      = &_context.operations;
 			InodeAddChild(&_context.node , f);
@@ -201,6 +203,14 @@ static ssize_t CpioRead (struct _inode *node, char* buf , size_t size)
 {
 	printf("CPIO READ request %lu bytes pos %lu size max %lu\n", size , node->pos , node->size);
 	
+
+	if (node->userData == NULL)
+	{
+		unsigned long fileSize = 0;
+	        void* dataContent = cpio_get_file(_cpio_archive , node->name , &fileSize);
+		node->userData = dataContent;
+		node->size = fileSize;
+	}
 	if (size > node->size - node->pos)
 	{
 		size = node->size - node->pos;

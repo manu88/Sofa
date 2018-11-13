@@ -178,7 +178,7 @@ static int doLsTests()
     printf("Start ls tests \n");
     
     errno = 0;
-    assert(chdir("/") == 0);
+    assert(chdir("/cpio/") == 0);
     assert(errno == 0);
     
     

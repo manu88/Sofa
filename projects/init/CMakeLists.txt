@@ -10,6 +10,7 @@ file(COPY CPIOFiles DESTINATION ".")
 
 # add file to cpio : FIXME : do it for each file in CPIOFiles
 set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:init>/CPIOFiles/hello.txt")
+#set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:init>/CPIOFiles/readme.txt")
 
 
 # list of apps to include in the cpio archive

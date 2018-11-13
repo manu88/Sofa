@@ -19,7 +19,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include "BaseCommands.h"
 
 static int consoleFDWrite  = -1;
