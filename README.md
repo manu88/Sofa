@@ -22,3 +22,7 @@ Usefull links :
 * `chdir`
 * `fcntl`
 * `getdents64`
+
+## Features
+* EGA shell
+* Unified File System with CPIO mount point, `dev` and `proc` folders
