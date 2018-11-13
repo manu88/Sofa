@@ -23,7 +23,7 @@
 #include "Utils.h"
 //#include "ProcessTable.h"
 
-
+/*
 ssize_t ProcRead ( Inode * node, char*buffer  , size_t count);
 //ssize_t ProcWrite ( Inode *node,  const char* buffer ,size_t count);
 
@@ -31,7 +31,7 @@ static FileOperations _processFileOps =
 {
 	ProcRead , FileOperation_NoWrite , FileOperation_NoLseek
 };
-
+*/
 Process* ProcessAlloc()
 {
     Process* p = malloc(sizeof(Process));
@@ -89,9 +89,7 @@ int ProcessDeInit(Process * process )
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
-    
-    
-    
+
 #ifndef __APPLE__
     UNUSED int error = 0;
 
@@ -272,6 +270,7 @@ int ProcessDoCleanup(Process * process)
 	return 1;
 }
 
+/*
 ssize_t ProcRead ( Inode * node, char*buffer  , size_t count)
 {
 	Process* process = node->userData;
@@ -279,3 +278,4 @@ ssize_t ProcRead ( Inode * node, char*buffer  , size_t count)
 	printf("Request to read process node pid %i\n" , process->_pid);
 	return -1;
 }
+*/

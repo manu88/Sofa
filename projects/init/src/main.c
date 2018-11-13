@@ -101,6 +101,7 @@ int main(void)
     ProcessTableInit();
 
     ProcessTableAppend(&initProcess);
+    assert(initProcess._pid == 1);
 
     error = !FileServerAddNodeAtPath(ProcessTableGetInode() , "/");
     ZF_LOGF_IFERR(error, "unable to add 'proc' fs to filesystem \n");
@@ -197,23 +198,21 @@ int main(void)
 
     Process *testProcess = ProcessAlloc();
     testProcess->currentDir = FileServerGetINodeForPath("/dev/" , NULL);//  FileServerGetRootNode();
+
+    error = !ProcessTableAppend(testProcess);
+    assert(error == 0);
     error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
-    if (error == 0)
-    {
-        ProcessTableAppend(testProcess);
-    }
-    else 
+    if (error != 0) 
     {
 	printf("Error spawning  TestSysCalls\n");
     }
 
     Process *process2 = ProcessAlloc();
     process2->currentDir =  FileServerGetRootNode();
+    
+    error = !ProcessTableAppend(process2);
+    assert(error == 0);
     error = ProcessStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, seL4_MaxPrio );
-    if(error == 0)
-    {
-        ProcessTableAppend(process2);
-    }
 
 //
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );

@@ -35,7 +35,7 @@ typedef struct
 } ProcTableContext;
 
 
-ssize_t ProcRead ( Inode * node, char*buffer  , size_t count);
+static ssize_t ProcRead ( Inode * node, char*buffer  , size_t count);
 //ssize_t ProcWrite ( Inode *node,  const char* buffer ,size_t count);
 
 static FileOperations _processFileOps =
@@ -43,8 +43,6 @@ static FileOperations _processFileOps =
     ProcRead , FileOperation_NoWrite , FileOperation_NoLseek
 };
 
-static int ProcFolderOpen( Inode *, int flags);
-static int ProcFolderClose( Inode* node);
 static ssize_t ProcFolderRead (Inode *node, char* buffer , size_t count);
 
 static ProcTableContext _ctx;
@@ -59,9 +57,9 @@ pid_t ProcessTableGetNextPid()
 
 int ProcessTableInit()
 {
-    _ctx._inodeOps.Open  = ProcFolderOpen;
-    _ctx._inodeOps.Close = ProcFolderClose;
-    _ctx._procFolderFileOps.Read = ProcFolderRead;
+//    _ctx._inodeOps.Open  = ProcFolderOpen;
+//    _ctx._inodeOps.Close = ProcFolderClose;
+    _ctx._procFolderFileOps.Read = ProcRead;
 
     
     if (InodeInit(&_ctx.procNode, INodeType_Folder, "proc") == 0)
@@ -84,6 +82,7 @@ int ProcessTableGetCount()
     return list_length(&_ctx._processes);
 }
 
+static const char statusStr[] = "status";
 int ProcessTableAppend( Process* process)
 {
 	if(list_append(&_ctx._processes , process) == 0)
@@ -98,7 +97,13 @@ int ProcessTableAppend( Process* process)
         {
             return 0;
         }
-        process->_processNode.operations =&_processFileOps;
+
+	Inode* statusNode = InodeAlloc(INodeType_File , statusStr);
+	assert(statusNode);
+        statusNode->operations =&_processFileOps;
+	statusNode->userData = process;
+
+	InodeAddChild(&process->_processNode , statusNode);
         process->_processNode.userData = process;
     
         if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
@@ -141,27 +146,12 @@ int ProcessTableRemove(Process* process)
 }
 
 
-
-
-static int ProcFolderOpen( Inode *node, int flags)
+static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 {
-	printf("ProcFolderOpen request\n");
-	return 0;
+	Process* process = node->userData;
+	printf("Proc read request for %i\n" , process->_pid);
+
+	sprintf(buffer, "%i", process->_state);
+	return 1;
 }
 
-static int ProcFolderClose( Inode* node)
-{
-	printf("ProcFolderClose request\n");
-	return 0;
-}
-
-static ssize_t ProcFolderRead (Inode *node, char* buffer , size_t count)
-{
-	printf("ProcFolderRead request\n");
-	return 0;
-}
-
-
-/*
- 
- */
