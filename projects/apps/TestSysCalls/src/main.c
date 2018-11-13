@@ -184,6 +184,7 @@ static int doLsTests()
     
     struct dirent *dir;
     DIR *d = opendir(".");
+    printf("After opendir\n");
     if (d)
     {
         while ((dir = readdir(d)) != NULL)

@@ -54,3 +54,7 @@ int handle_clock_getTime(InitContext* context, Process *senderProcess, seL4_Mess
 
 int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+
+int handle_getdents64(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_fcntl(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+

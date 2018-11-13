@@ -25,14 +25,14 @@ int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo
 {
 	size_t bufferSize = seL4_GetMR(1);
 
-	printf("Got getcwd request , buf size is %zi\n" , bufferSize);
+//	printf("Got getcwd request , buf size is %zi\n" , bufferSize);
 
 	char str[4096] = {0}; // muslc says so apparently
 	ssize_t strSize =  InodeGetAbsolutePath( senderProcess->currentDir, str, 4096);
-	printf("Buffer path size %li\n" ,strSize);
+//	printf("Buffer path size %li\n" ,strSize);
 
 	size_t realMsgSize = strSize > bufferSize ? 0 : strSize;
-	printf("Real msg size %li\n",realMsgSize);
+//	printf("Real msg size %li\n",realMsgSize);
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2 + realMsgSize);
 	seL4_SetMR(0,__SOFA_NR_getcwd);
@@ -56,8 +56,6 @@ int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo
 
 int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-	InodePrintTree(FileServerGetRootNode());
-
 	size_t pathSize = seL4_GetMR(1);
 
 	int error = 0;
@@ -75,7 +73,7 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 		}
 		str[pathSize] = 0;
 
-		printf("handle_chdir request '%s' pathSize %li from pid %i\n", str , pathSize , senderProcess->_pid);
+//		printf("handle_chdir request '%s' pathSize %li from pid %i\n", str , pathSize , senderProcess->_pid);
 
 		Inode* newPath = FileServerGetINodeForPath( str  , senderProcess->currentDir);
 
@@ -91,7 +89,7 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 		{
 			error = 0;
 			senderProcess->currentDir = newPath;
-			printf("chdir '%s' is valid ('%s')\n" , str , senderProcess->currentDir->name);
+//			printf("chdir '%s' is valid ('%s')\n" , str , senderProcess->currentDir->name);
 
 		}
 		if (str)
@@ -100,10 +98,21 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 		}
 	}
 
-	printf("chdir will return %i\n",error);
+//	printf("chdir will return %i\n",error);
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
 	seL4_SetMR(0,__SOFA_NR_chdir);
 	seL4_SetMR(1 , error);
 	seL4_Reply( message );
+	return 0;
+}
+
+
+int handle_getdents64(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+{
+	return 0;
+}
+
+int handle_fcntl(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+{
 	return 0;
 }

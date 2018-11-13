@@ -20,4 +20,5 @@ Usefull links :
 * `clock_gettime`
 * `getcwd`
 * `chdir`
-
+* `fcntl`
+* `getdents64`

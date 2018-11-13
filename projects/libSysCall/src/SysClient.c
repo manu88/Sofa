@@ -43,6 +43,9 @@ static long sys_getcwd(va_list args);
 
 static long sys_chdir(va_list args);
 
+static long sys_fcntl(va_list args);
+static long sys_getdents64(va_list args);
+
 static size_t _Sofa_stdio_write(void *data, size_t count);
 
 static seL4_CPtr sysCallEndPoint = 0;
@@ -81,6 +84,11 @@ int SysClientInit(int argc , char* argv[] )
 
     muslcsys_install_syscall(__NR_getcwd , sys_getcwd);
     muslcsys_install_syscall(__NR_chdir , sys_chdir);
+
+
+    muslcsys_install_syscall(__NR_fcntl      , sys_fcntl);
+    muslcsys_install_syscall(__NR_getdents64 , sys_getdents64);
+
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
     return 0;
 }
@@ -195,6 +203,8 @@ static long sys_nanosleep(va_list args)
 
 static void Abort( int status)
 {
+    printf("Abort called with status %i\n" , status);
+
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
     seL4_SetMR(0, __SOFA_NR_exit);
     seL4_SetMR(1 , status);
@@ -547,4 +557,15 @@ static long sys_chdir(va_list args)
 	tag = seL4_Call(sysCallEndPoint, tag);
         assert(seL4_GetMR(0) == __SOFA_NR_chdir );
 	return seL4_GetMR(1);
+}
+
+
+static long sys_fcntl(va_list args)
+{
+	return -ENOSYS;
+}
+
+static long sys_getdents64(va_list args)
+{
+	return -ENOSYS;
 }

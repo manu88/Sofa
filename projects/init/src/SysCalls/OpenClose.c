@@ -158,6 +158,9 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	{
 		printf("Unable to open '%s' \n" , pathname);
 	}
+
+	printf("handle_open ret%i \n", ret);
+
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
 
 	seL4_SetMR(0, __SOFA_NR_open );

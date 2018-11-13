@@ -50,6 +50,9 @@ static SysCallHandler callTable[] =
 
  	handle_getcwd,
 	handle_chdir,
+	handle_getdents64,
+	handle_fcntl,
+
 
 };
 
