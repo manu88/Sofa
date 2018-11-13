@@ -28,3 +28,5 @@ ssize_t readConsole( void*b , size_t len);
 void PrintHelp(void);
 
 int exec_ls( const char* args);
+
+int exec_cat( const char* args);

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
-#include <sel4/sel4.h>
+
 
 #ifdef __APPLE__
 
@@ -11,6 +11,8 @@ static void seL4_SetMR( uint32_t index ,seL4_Word word )
 {
     
 }
+#else
+#include <sel4/sel4.h>
 #endif
 
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))

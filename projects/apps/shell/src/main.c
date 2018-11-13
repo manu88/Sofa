@@ -55,6 +55,12 @@ static int execCommand( char* cmd)
         
         return exec_ls(arg);
 	}
+    else if (startsWith("cat", cmd))
+    {
+        char* arg = cmd + strlen("cat ");
+
+        return exec_cat(arg);
+    }
 	else if (strcmp(cmd , "pwd")  == 0)
 	{
 		char* pwd = getcwd(NULL, 0);

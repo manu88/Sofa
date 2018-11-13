@@ -18,6 +18,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
+#include <errno.h>
+#include <sys/fcntl.h>
 #include "BaseCommands.h"
 
 static int consoleFDWrite  = -1;
@@ -61,7 +63,27 @@ int exec_ls( const char* args)
             writeConsole( "\n" , 1);
         }
         closedir(d);
+        return 0;
     }
+    return errno;
+    
+}
+
+int exec_cat( const char* args)
+{
+    int f = open(args, O_RDONLY);
+    if (f<0)
+        return f;
+    
+    char b[32] = {0};
+    
+    ssize_t r = 0;
+    do {
+        r = read(f, b, 32);
+        writeConsole(b, r);
+        
+    } while (r > 0);
+    close(f);
     
     return 0;
 }
