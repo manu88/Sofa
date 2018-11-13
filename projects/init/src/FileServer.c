@@ -31,6 +31,7 @@
 #include <data_struct/chash.h>
 #include "StringOperations.h"
 #include <libgen.h>
+#include <dirent.h>
 
 typedef struct
 {
@@ -203,11 +204,50 @@ int FileServer_DefaultClose (Inode *node)
 }
 
 
+
+static Inode* getNthChild( Inode* n , int index)
+{
+	Inode* child = NULL;
+	Inode* temp  = NULL;
+	int acc = 0;
+	InodeForEachChildren(n,child,temp)
+	{
+		if (acc++ == index)
+		{
+			return child;
+		}
+	}
+
+	return NULL;
+}
+
 ssize_t FileServer_DefaultRead (Inode *node, char*buf  , size_t len)
 {
     if (node->type == INodeType_Folder)
     {
-        printf("FileServer_DefaultRead folder request \n");
+	
+	if (node->pos >= InodeGetChildrenCount(node) )
+	{
+		node->pos  = 0;
+		return 0;
+	}
+
+	const Inode *cNode = getNthChild(node , node->pos);
+
+	struct dirent *dirp = (struct dirent *) buf;
+	dirp->d_ino = 1;
+	dirp->d_off = 0;
+	dirp->d_type = DT_DIR;
+	memcpy(dirp->d_name , cNode->name, strlen(cNode->name));
+
+	dirp->d_reclen = sizeof(dirp->d_ino) + sizeof(dirp->d_off) + sizeof(dirp->d_reclen) + sizeof(dirp->d_type) + strlen(dirp->d_name);
+
+
+	node->pos++;
+//        printf("FileServer_DefaultRead folder request len %li (struct size %li/%li) \n" , len ,dirp->d_reclen, sizeof(*dirp));
+	
+	return dirp->d_reclen;
+    
     }
     return 0;
 }

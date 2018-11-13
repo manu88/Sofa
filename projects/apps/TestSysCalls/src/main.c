@@ -189,7 +189,7 @@ static int doLsTests()
     {
         while ((dir = readdir(d)) != NULL)
         {
-            printf("'%s'\n", dir->d_name);
+            printf("dir entry '%s'\n", dir->d_name);
         }
         closedir(d);
     }

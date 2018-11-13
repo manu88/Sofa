@@ -9,6 +9,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <dirent.h>
+
 
 int consoleFD  = -1;
 
@@ -24,9 +27,26 @@ static int execCommand( char* cmd)
 {
 //	write(consoleFD, "\n" , 1);
 
-	if (strcmp(cmd , "ls") == 0)
+//	if (strcmp(cmd , "ls") == 0)
+	if (startsWith("ls ", cmd))
 	{
-		printf("ls ...\n");
+		char* arg = cmd + strlen("ls ");
+		printf("ls arg '%s' \n" , arg);
+		
+		struct dirent *dir;
+    		DIR *d = opendir(arg);
+		if (d)
+    		{
+        		while ((dir = readdir(d)) != NULL)
+        		{
+				write(consoleFD , dir->d_name , strlen(dir->d_name) );
+				write(consoleFD , "\n" , 1);
+            			printf("'%s'\n", dir->d_name);
+        		}
+        		closedir(d);
+    		}
+
+
 	}
 	else if (strcmp(cmd , "pwd")  == 0)
 	{

@@ -81,8 +81,8 @@ int CPIOServerInit()
     _context.operations.Write = CpioWrite;
     _context.operations.Read  = CpioRead;
 
-    _context.node.inodeOperations = &_context.inodeOperations;
-    _context.node.operations      = &_context.operations;
+//    _context.node.inodeOperations = &_context.inodeOperations;
+//    _context.node.operations      = &_context.operations;
 
 #ifndef __APPLE__
     struct cpio_info info;

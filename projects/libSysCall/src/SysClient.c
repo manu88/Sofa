@@ -600,7 +600,10 @@ static long sys_fcntl(va_list args)
 static long sys_getdents64(va_list args)
 {
 	const int fd  	  	    = va_arg (args, int);
-	struct linux_dirent64 *dirp = va_arg (args, struct linux_dirent64 *);
+	//struct linux_dirent64 *dirp = va_arg (args, struct linux_dirent64 *);
+	struct dirent64 *dirp = va_arg (args, struct dirent64 *);
+	
+
 	unsigned int count	    = va_arg (args,unsigned int);
 
 	printf("sys_getdents64 fd %i count %i\n" , fd , count);
