@@ -19,6 +19,7 @@
 #include <SysCallNum.h>
 #include <assert.h>
 #include "../FileServer.h"
+#include <fcntl.h>
 
 
 
@@ -178,6 +179,22 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 	Inode* node =  FileServerOpenRelativeTo( pathname , senderProcess->currentDir,flags , &ret);
 
+	if (node == NULL &&  flags & O_CREAT)
+	{
+		printf("handle_open got O_CREAT flag\n");
+		
+		node = InodeAlloc( INodeType_File , pathname );
+		if (!node)
+		{
+			ret = -EPERM;
+		}
+
+		if(InodeAddChild( senderProcess->currentDir , node))
+		{
+			ret = 0;
+		}
+	
+	}
 	if(node && ret == 0)
 	{
 		printf("No error\n");
