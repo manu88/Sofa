@@ -83,15 +83,19 @@ static int doOpenTests()
 
 static int doOpenTests2()
 {
+
     int fd = open("/" , O_RDONLY);
-    assert(fd);
+    assert(fd >= 0);
     char b[128];
     
     ssize_t ret = read(fd, b, 128);
+
     assert(ret == -1);
     assert(errno == EISDIR);
-    
+
+
     close(fd);
+
     return 1;
 }
 
@@ -158,12 +162,10 @@ static int doGetCwdTests()
 
 static int doChdirTests()
 {
-    printf("Probe1\n");
 
     errno = 0;
     assert(chdir(NULL) == -1);
     assert(errno == EFAULT);
-     printf("Probe2\n");
 
     errno = 0;
     assert(chdir("") == -1);
@@ -226,6 +228,7 @@ int main(int argc, char * argv[])
     assert(doOpenTests());
     assert(doOpenTests2());
     assert(doReadTests());
+
     assert(doWaitTests() );
     assert(doGetCwdTests() );
     assert(doChdirTests());

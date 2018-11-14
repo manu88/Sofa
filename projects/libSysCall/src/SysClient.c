@@ -19,6 +19,7 @@
 #include <SysCallNum.h>
 #include <arch_stdio.h>
 
+static long doRead(int fd, void *buf, size_t count , int expectedNodeType);
 static long sys_read(va_list args);
 static long sys_write(va_list args);
 static long sys_open(va_list args);
@@ -326,14 +327,49 @@ static long sys_setpriority(va_list args)
 
 }
 
+static long doRead(int fd, void *buf, size_t count , int expectedNodeType)
+{
+	if (fd <0)
+        {
+                return -EBADF;
+        }
+//      printf("Read request fd %i count %lu\n", fd , count);
+
+        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 4);
+        seL4_SetMR(0, __SOFA_NR_read);
+        seL4_SetMR(1, fd);
+        seL4_SetMR(2, count);
+	seL4_SetMR(3, expectedNodeType);
+
+        tag = seL4_Call(sysCallEndPoint, tag);
+
+	assert(seL4_MessageInfo_get_length(tag) >= 2);
+
+        assert(seL4_GetMR(0) == __SOFA_NR_read);
+
+
+        ssize_t ret = seL4_GetMR(1);// seL4_MessageInfo_get_length(tag) - 2;
+
+	if (ret > 0)
+	{
+        	char* b = (char*) buf;
+        	for(int i= 0; i<ret;++i)
+        	{
+                	b[i] = seL4_GetMR(2+i);
+        	}
+        	b[ret] = 0;
+	}
+
+        return ret;
+}
 // ssize_t read(int fd, void *buf, size_t count);
 static long sys_read(va_list args)
 {
 	const int fd    = va_arg(args , int);
 	void*     buf   = va_arg(args , void*);
 	size_t    count = va_arg(args , size_t);
-
-
+	return doRead(fd , buf, count , 1);
+/*
 	if (fd <0)
 	{
 		return -EBADF;
@@ -359,6 +395,7 @@ static long sys_read(va_list args)
 	}
 	b[ret] = 0;
 	return ret;
+*/
 }
 
 
@@ -398,7 +435,15 @@ static long sys_open(va_list args)
 
 static long sys_close(va_list args)
 {
-	return 0;
+	int fd  = va_arg(args, int);
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+	seL4_SetMR(0, __SOFA_NR_close);
+	seL4_SetMR(1, fd);
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_close);
+
+        return seL4_GetMR(1);
 }
 
 // off_t lseek(int fd, off_t offset, int whence);
@@ -626,5 +671,5 @@ static long sys_getdents64(va_list args)
 	printf("Returned %i\n" , seL4_GetMR(2));
 	return -ENOSYS;
 */
-	return read(fd , dirp, count);
+	return doRead(fd , dirp, count , 2);
 }

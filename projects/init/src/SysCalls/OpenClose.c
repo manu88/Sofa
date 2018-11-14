@@ -28,9 +28,6 @@ int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	const off_t offset = seL4_GetMR(2);
 	const int whence = seL4_GetMR(3);
 
-	printf("Init : Got a lseek request\n");
-
-
 	//Lseek
 	ssize_t ret= -ENOSYS;
 	
@@ -54,22 +51,43 @@ int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 {
 	const int msgLen = seL4_MessageInfo_get_length(message);
 
-	
+	assert(msgLen == 4);
 	const int fd = seL4_GetMR(1);
 	const size_t count = seL4_GetMR(2);
+	const int readMode = seL4_GetMR(3); //  1 = read, 2 = getdents64
 
 	Inode* node = ProcessGetNode(senderProcess , fd);
+	
+	char *buf = NULL;
+	ssize_t ret = 0;
+
 	if(node)
 	{
-		char *buf = malloc(count);
-		assert(buf);
 
-		assert(node->operations);
-		assert(node->operations->Read);
+		if (readMode == 1 && node->type == INodeType_Folder) //'normal' read
+		{
+			ret = -EISDIR;
+		}
+		
+		if (ret == 0)
+		{
+			buf = malloc(count);
+			if (!buf)
+			{
+				ret = -ENOMEM;
+			}
+		}
 
-		ssize_t ret = node->operations->Read(node ,buf , count);
+		if(buf && ret == 0)
+		{
+			assert(node->operations);
+			assert(node->operations->Read);
+			ret = node->operations->Read(node ,buf , count);
 
-		message = seL4_MessageInfo_new(0, 0, 0, 2 + ret);
+		}
+		const ssize_t msgLen = 2 + ( ret >0? ret : 0);
+		assert(msgLen >= 2);
+		message = seL4_MessageInfo_new(0, 0, 0, msgLen);
 		
 		seL4_SetMR(0, __SOFA_NR_read );
         	seL4_SetMR(1, ret);
@@ -82,7 +100,11 @@ int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 			}
 		}
 		seL4_Reply( message );
-		free(buf);
+
+		if (buf)
+		{
+			free(buf);
+		}
 		return 0;
 	}
 
@@ -183,7 +205,18 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 int handle_close(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-        return 0;
+	const int fd =  seL4_GetMR(1);
+	printf("handle_close on fd %i\n" , fd);
+	
+	int error = 0;
+
+	message = seL4_MessageInfo_new(0, 0, 0, 2);
+        seL4_SetMR(0, __SOFA_NR_close);
+	seL4_SetMR(1, error);
+
+	seL4_Reply( message );
+
+	return 0;
 }
 
 
