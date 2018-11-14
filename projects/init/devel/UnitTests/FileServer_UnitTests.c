@@ -292,8 +292,12 @@ static int FileServer_WalkTests()
     Inode* openedFolder =  FileServerOpenRelativeTo(".", newDir, 0, &err);
     assert(openedFolder);
     
-    FileServerCreateNode("newFile", INodeType_File, NULL);
+    Inode* newFileNode = FileServerCreateNode("folder1/../folder1/folder2/../folder2/newFile", INodeType_File, NULL);
+    assert(newFileNode);
+    assert( strcmp(newFileNode->name, "newFile") == 0);
     
+    // create a 2nd time will fail
+    assert(FileServerCreateNode("folder1/../folder1/folder2/../folder2/newFile", INodeType_File, NULL) == NULL);
     InodePrintTree(FileServerGetRootNode());
     return 1;
 }

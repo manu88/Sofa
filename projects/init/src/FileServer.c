@@ -202,9 +202,24 @@ Inode* FileServerCreateNode(const char* path,INodeType type,const Inode* relativ
         return NULL;
     }
     
-    Inode* node = InodeAlloc(type, path);
+    char relativeToPath[PATH_MAX] = {0};
     
-    if( FileServerAddNodeAtPath(node, path))
+    InodeGetAbsolutePath(relativeTo == NULL? FileServerGetRootNode() : relativeTo, relativeToPath, PATH_MAX);
+    
+    char resolvedPath[PATH_MAX] = {0};
+    int err = 0;
+    assert(GetRealPath(path, relativeToPath, resolvedPath, &err) == resolvedPath);
+
+    
+    char* dirN = dirname(resolvedPath);
+    char* baseN = basename(resolvedPath);
+    
+    
+    
+    
+    Inode* node = InodeAlloc(type, baseN);
+    
+    if( FileServerAddNodeAtPath(node, dirN))
     {
         return node;
     }

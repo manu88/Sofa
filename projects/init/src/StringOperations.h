@@ -29,7 +29,14 @@
 #include <stdint.h>
 #include "Sofa.h"
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 uint32_t StringHash(const char *str) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
 void StringPrepend(char* s, const char* t) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+
+char* GetRealPath(const char *path, const char *relativeTo, char resolved_path[] , int*error) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
