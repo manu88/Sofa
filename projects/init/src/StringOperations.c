@@ -56,6 +56,15 @@ void StringPrepend(char* s, const char* t)
 
 
 
+/*
+ * realpath.c -- canonicalize pathname by removing symlinks
+ * Copyright (C) 1993 Rick Sladkey <jrs@world.std.com>
+ * Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+ *
+ * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+ */
+
+
 
 char* GetRealPath(const char *path, const char *relativeTo, char resolved_path[] ,int* error)
 {
