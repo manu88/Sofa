@@ -29,6 +29,9 @@ static int doReadTests(void);
 static int doGetPidTests(void);
 
 static int doLsTests(void);
+static int doLsTests2(void);
+
+static int doCreateFileTest(void);
 
 
 static int doTimeTests()
@@ -198,7 +201,6 @@ static int doLsTests()
     assert(chdir("/") == 0);
     assert(errno == 0);
     
-    
     struct dirent *dir;
     DIR *d = opendir(".");
     printf("After opendir\n");
@@ -214,6 +216,29 @@ static int doLsTests()
     return 1;
 }
 
+static int doLsTests2()
+{
+    return 1;
+}
+
+
+static int doCreateFileTest()
+{
+    errno = 0;
+    int fd = open("newFile", O_WRONLY | O_APPEND | O_CREAT , 0644);
+    assert(errno == 0);
+    assert(fd >= 0);
+    
+    const char dat[] = "hello";
+    
+    errno = 0;
+    ssize_t ret = write(fd, dat, strlen(dat));
+    assert(ret == strlen(dat));
+    assert(errno == 0);
+    
+    close(fd);
+    return 1;
+}
 int main(int argc, char * argv[])
 {
 
@@ -231,9 +256,17 @@ int main(int argc, char * argv[])
 
     assert(doWaitTests() );
     assert(doGetCwdTests() );
-    assert(doChdirTests());
     
+    
+    
+    assert(doCreateFileTest() );
+    
+    // will change path to '/' so do this last !
+    assert(doChdirTests());
     assert(doLsTests() );
+    assert(doLsTests2() );
+    
+    
 
     printf("SOFA : Everything is fine!\n");
     return 0;

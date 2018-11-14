@@ -30,3 +30,5 @@ void PrintHelp(void);
 int exec_ls( const char* args);
 
 int exec_cat( const char* args);
+
+int exec_touch( const char* args);
