@@ -69,8 +69,7 @@ Inode* FileServerGetINodeForPath(  const char* path ,const Inode* relativeTo) NO
 
 int FileServerAddNodeAtPath( Inode* node, const char* path) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-
-
+Inode* FileServerCreateNode(const char* path, INodeType type, const Inode* relativeTo) NO_NULL_ARGS(1,1) SOFA_UNIT_TESTABLE;
 
 int FileServer_DefaultOpen (Inode *node, int flags);
 int FileServer_DefaultClose (Inode *node);

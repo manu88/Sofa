@@ -61,6 +61,12 @@ static int execCommand( char* cmd)
 
         return exec_cat(arg);
     }
+    else if (startsWith("touch", cmd))
+    {
+        char* arg = cmd + strlen("touch ");
+        
+        return exec_touch(arg);
+    }
 	else if (strcmp(cmd , "pwd")  == 0)
 	{
 		char* pwd = getcwd(NULL, 0);
@@ -87,6 +93,10 @@ static int execCommand( char* cmd)
 		return chdir(arg);
 
 	}
+    else if (strcmp(cmd, "exit") == 0)
+    {
+        exit(0);
+    }
 	else 
 	{
 		printf("unknown Command to exec : '%s' \n" , cmd);

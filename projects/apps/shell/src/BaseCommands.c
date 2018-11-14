@@ -87,3 +87,15 @@ int exec_cat( const char* args)
     
     return 0;
 }
+
+
+int exec_touch( const char* args)
+{
+    int f = open(args, O_WRONLY | O_APPEND | O_CREAT , 0644);
+    if (f >=0)
+    {
+        close(f);
+        return 1;
+    }
+    return 0;
+}

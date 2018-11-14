@@ -292,6 +292,8 @@ static int FileServer_WalkTests()
     Inode* openedFolder =  FileServerOpenRelativeTo(".", newDir, 0, &err);
     assert(openedFolder);
     
+    FileServerCreateNode("newFile", INodeType_File, NULL);
+    
     InodePrintTree(FileServerGetRootNode());
     return 1;
 }

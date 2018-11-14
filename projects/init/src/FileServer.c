@@ -192,6 +192,26 @@ int FileServerAddNodeAtPath( Inode* node,const char* path)
     return 0;
 }
 
+Inode* FileServerCreateNode(const char* path,INodeType type,const Inode* relativeTo)
+{
+    assert(strlen(path) > 0);
+    
+    // node exists, return 0
+    if (FileServerGetINodeForPath(path, relativeTo))
+    {
+        return NULL;
+    }
+    
+    Inode* node = InodeAlloc(type, path);
+    
+    if( FileServerAddNodeAtPath(node, path))
+    {
+        return node;
+    }
+    
+    InodeRelease(node);
+    return NULL;
+}
 
 int FileServer_DefaultOpen (Inode *node, int flags)
 {
