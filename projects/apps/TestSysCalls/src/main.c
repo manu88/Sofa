@@ -228,6 +228,12 @@ static int doCreateFileTest()
     int fd = open("newFile", O_WRONLY | O_APPEND | O_CREAT , 0644);
     assert(errno == 0);
     assert(fd >= 0);
+    
+    // 2nd must fail cause O_EXCL is set
+    errno = 0;
+    int fd2 = open("newFile", O_WRONLY | O_APPEND | O_CREAT | O_EXCL , 0644);
+    assert( errno == EEXIST);
+    assert( fd2 == -1);
     /*
     const char dat[] = "hello";
     
