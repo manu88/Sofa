@@ -535,8 +535,6 @@ static long sys_clockgettime(va_list args)
 	
 	seL4_Word retNS = seL4_GetMR(1);
 
-//	printf("clockgettime (id %i) return %lu\n" ,clk_id, seL4_GetMR(1) );
-
 	if (retNS > 0)
 	{
 		tp->tv_sec  = retNS / 1000000000;
@@ -563,7 +561,6 @@ static long sys_getcwd(va_list args)
 	assert(seL4_GetMR(0) == __SOFA_NR_getcwd );
 
 	ssize_t ret = seL4_GetMR(1);
-	printf("sys_getcwd returned %li \n", ret );
 
 	if (ret>0)
 	{
@@ -592,8 +589,6 @@ static long sys_chdir(va_list args)
 		return -ENOENT;
 	}
 
-	printf("Call sys_chdir '%s'\n" , path);
-
 	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2 + strSize );
 	seL4_SetMR(0, __SOFA_NR_chdir );
         seL4_SetMR(1, strSize);
@@ -616,8 +611,6 @@ static long sys_fcntl(va_list args)
 	const int fd  = va_arg (args, int);
 	const int cmd = va_arg (args, int);
 	
-        printf("sys_fcntl fd %i cmd %i\n" , fd , cmd);
-
 	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 4);
 
 	seL4_SetMR(0, __SOFA_NR_fcntl);

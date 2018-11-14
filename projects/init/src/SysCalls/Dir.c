@@ -115,7 +115,7 @@ int handle_fcntl(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	return 0;
 }
 
-
+/*
 int handle_getdents64(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	printf("handle_getdents64\n");
@@ -135,3 +135,4 @@ int handle_getdents64(InitContext* context, Process *senderProcess, seL4_Message
 
 	return 0;
 }
+*/

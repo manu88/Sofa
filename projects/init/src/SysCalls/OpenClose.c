@@ -174,14 +174,12 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 	pathname[msgLen-2] = 0;
 
-	printf("handle_open request '%s'\n" , pathname);
 	int ret= -ENOSYS;
 
 	Inode* node =  FileServerOpenRelativeTo( pathname , senderProcess->currentDir,flags , &ret);
 
 	if (node == NULL &&  flags & O_CREAT)
 	{
-		printf("handle_open got O_CREAT flag\n");
 		
 		node = InodeAlloc( INodeType_File , pathname );
 		if (!node)
@@ -197,7 +195,6 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 	}
 	if(node && ret == 0)
 	{
-		printf("No error\n");
 		ret = ProcessAppendNode(senderProcess , node);
 	}
 	else 
@@ -205,7 +202,6 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 		printf("Unable to open '%s' \n" , pathname);
 	}
 
-	printf("handle_open ret%i \n", ret);
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
 
@@ -223,7 +219,6 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 int handle_close(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	const int fd =  seL4_GetMR(1);
-	printf("handle_close on fd %i\n" , fd);
 	
 	int error = 0;
 

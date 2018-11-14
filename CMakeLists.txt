@@ -22,7 +22,9 @@ endif()
 
 # We must build the debug kernel because the tutorials rely on seL4_DebugPutChar
 # and they don't initialize a platsupport driver.
+
 ApplyCommonReleaseVerificationSettings(FALSE FALSE)
+#ApplyCommonReleaseVerificationSettings(TRUE TRUE)
 
 # Elfloader settings that correspond to how Data61 sets its boards up.
 #ApplyData61ElfLoaderSettings()
