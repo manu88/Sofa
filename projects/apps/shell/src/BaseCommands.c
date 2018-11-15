@@ -118,12 +118,38 @@ int exec_ps( const char* args)
     
     
     static char b[1024] = {0};
-    
+    static char path[1024] = {0};
     while ((dir = readdir(d)) != NULL)
     {
+	
         memset(b, 0, 1024);
-        size_t s = snprintf(b, 1024, "app '%s'\n", dir->d_name);
+	memset(path, 0, 1024);
+
+	snprintf( path , 1024 , "/proc/%s/cmdline" , dir->d_name);
+	printf("cmd line path is '%s'\n" , path);
+
+	int f = open(path, O_RDONLY);// fopen(path , "r");
+	if(f >= 0)
+	{
+	    char buf[32] = {0};
+
+    	    ssize_t r = 0;
+            do 
+	    {
+        	r = read(f, buf, 32);
+        	writeConsole(buf, r);
+	    } while (r > 0);
+    	    close(f);
+
+	}
+	else 
+	{
+		printf("Error fopen '%s'\n",path);
+	}
+        size_t s = snprintf(b, 1024, "app pid %s \n", dir->d_name);
         writeConsole(b , s);
+
+
     }
     closedir(d);
     

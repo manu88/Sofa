@@ -106,15 +106,15 @@ int ProcessTableAppend( Process* process)
             return 0;
         }
         
-        
+        int err = 0;
         // create statusnode
         Inode* statusNode = InodeAlloc(INodeType_File , statusStr);
         assert(statusNode);
         statusNode->operations =&_processFileOps;
         statusNode->userData = process;
         statusNode->size = 1; // one status byte
-        InodeAddChild(&process->_processNode , statusNode);
-
+        err = !InodeAddChild(&process->_processNode , statusNode);
+	assert(err == 0);
         
     
         
@@ -122,11 +122,11 @@ int ProcessTableAppend( Process* process)
         // create cmdline
         Inode* cmdlineNode = InodeAlloc(INodeType_File , cmdlineStr);
         assert(cmdlineNode);
-        statusNode->operations =&_processFileOps;
-        statusNode->userData = process;
-        statusNode->size = 0; // one status byte
-        InodeAddChild(&process->_processNode , cmdlineNode);
-        
+        cmdlineNode->operations =&_processFileOps;
+        cmdlineNode->userData = process;
+        cmdlineNode->size = 0; // one status byte
+        err = !InodeAddChild(&process->_processNode , cmdlineNode);
+        assert(err == 0);
         return 1;
     }
     
@@ -167,9 +167,51 @@ int ProcessTableRemove(Process* process)
 }
 
 
+
+static ssize_t _CmdLineRead(Inode *node, char* buffer , size_t count)
+{
+/*	Process* process = node->userData;
+
+        if(node->pos == 0)
+        {
+		buffer = node->userData
+                node->pos = 1;
+                return 1;
+        }
+
+        return 0;
+*/
+	return 0;
+}
+static ssize_t _StatusRead(Inode *node, char* buffer , size_t count)
+{
+	Process* process = node->userData;
+
+        if(node->pos == 0)
+        {
+                sprintf(buffer, "%i", process->_state);
+                node->pos = 1;
+                return 1;
+        }
+
+        return 0;
+}
+
 static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 {
+	printf("ProcRead node name '%s'\n" , node->name);
 
+
+	if (strcmp(node->name , statusStr ) == 0)
+	{
+		return _StatusRead(node, buffer , count);
+	}
+	else if (strcmp(node->name , cmdlineStr) == 0)
+	{
+		return _CmdLineRead(node, buffer , count);
+	}
+
+/*
 	Process* process = node->userData;
 
 	if(node->pos == 0)
@@ -178,7 +220,7 @@ static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 		node->pos = 1;
 		return 1;
 	}
-
+*/
 	return 0;
 }
 
@@ -187,7 +229,9 @@ static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 int ProcessTableAddAndStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
 	int error = !ProcessTableAppend(process);
+	assert(error == 0);
 
+	error = !ProcessSetCmdLine(process , imageName);
 	assert(error == 0);
 
 	error = ProcessStart(context , process , imageName , ep_cap_path , parent , priority);

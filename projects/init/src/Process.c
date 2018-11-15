@@ -284,6 +284,19 @@ int ProcessDoCleanup(Process * process)
 	return 1;
 }
 
+
+int ProcessSetCmdLine(Process* process , const char* cmdline)
+{
+	assert(process->_processNode.type == INodeType_Folder);
+	Inode* cmdLineNode =  InodeGetChildByName(&process->_processNode , "cmdline");
+	assert(cmdLineNode);
+
+	cmdLineNode->userData = strdup(cmdline);
+	cmdLineNode->size = strlen(cmdline);
+ 	return 1;
+}
+
+
 /*
 ssize_t ProcRead ( Inode * node, char*buffer  , size_t count)
 {

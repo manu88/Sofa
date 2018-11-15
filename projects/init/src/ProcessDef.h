@@ -105,6 +105,8 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
 int ProcessStop(InitContext* context,Process* process) NO_NULL_POINTERS;
 
 
+int ProcessSetCmdLine(Process* process , const char* cmdline)NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
 NO_NULL_POINTERS static inline void ProcessSetState(Process* process, ProcessState state)
 {
 	process->_state = state;
