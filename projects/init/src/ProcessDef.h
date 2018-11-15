@@ -118,7 +118,7 @@ int ProcessSetParentShip(Process* parent , Process* child) NO_NULL_POINTERS SOFA
 int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio) NO_NULL_POINTERS;
 int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio) NO_NULL_POINTERS;
 
-int ProcessGetNumFDs( /*const*/ Process* process) NO_NULL_POINTERS;
+size_t ProcessGetNumFDs( /*const*/ Process* process) NO_NULL_POINTERS;
 struct _inode* ProcessGetNode( /*const*/ Process* process , int index) NO_NULL_POINTERS;
 
 // return node id

@@ -84,11 +84,12 @@ int ProcessTableGetCount()
 }
 
 static const char statusStr[] = "status";
+static const char cmdlineStr[] = "cmdline";
+
 int ProcessTableAppend( Process* process)
 {
 	if(list_append(&_ctx._processes , process) == 0)
     {
-    
         process->_pid = ProcessTableGetNextPid();
     
         char str[32];
@@ -98,20 +99,33 @@ int ProcessTableAppend( Process* process)
         {
             return 0;
         }
-
+        process->_processNode.userData = process;
+        
+        if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
+        {
+            return 0;
+        }
+        
+        
+        // create statusnode
         Inode* statusNode = InodeAlloc(INodeType_File , statusStr);
         assert(statusNode);
         statusNode->operations =&_processFileOps;
         statusNode->userData = process;
         statusNode->size = 1; // one status byte
-
         InodeAddChild(&process->_processNode , statusNode);
-        process->_processNode.userData = process;
+
+        
     
-        if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))
-        {
-            return 0;
-        }
+        
+        
+        // create cmdline
+        Inode* cmdlineNode = InodeAlloc(INodeType_File , cmdlineStr);
+        assert(cmdlineNode);
+        statusNode->operations =&_processFileOps;
+        statusNode->userData = process;
+        statusNode->size = 0; // one status byte
+        InodeAddChild(&process->_processNode , cmdlineNode);
         
         return 1;
     }

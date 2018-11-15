@@ -219,7 +219,7 @@ struct _inode* ProcessGetNode( Process* process , int index)
 }
 
 // FIXME should go const 
-int ProcessGetNumFDs( /*const*/ Process* process)
+size_t ProcessGetNumFDs( /*const*/ Process* process)
 {
 	return cvector_count(&process->fdNodes);
 }

@@ -35,6 +35,17 @@ int ProcessTable_UnitTests()
     
     Inode* procNode = FileServerGetINodeForPath(strPID , NULL);
     assert(procNode);
+    assert(procNode->type == INodeType_Folder);
+    
+    
+    char strPID2[128];
+    sprintf(strPID2, "/proc/%d/status", p1._pid);
+    Inode* statusNode = FileServerGetINodeForPath(strPID2, NULL);
+    assert(statusNode);
+    
+    sprintf(strPID2, "/proc/%d/cmdline", p1._pid);
+    Inode* cmdLineNode = FileServerGetINodeForPath(strPID2, NULL);
+    assert(cmdLineNode);
     
     
     assert(ProcessTableRemove(&p1));
