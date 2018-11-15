@@ -99,3 +99,11 @@ int exec_touch( const char* args)
     }
     return 0;
 }
+
+int exec_exec( const char* args)
+{
+    int retPid = execve("args",NULL , NULL);
+    
+    
+    return retPid;
+}

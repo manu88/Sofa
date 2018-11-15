@@ -55,6 +55,12 @@ static int execCommand( char* cmd)
         
         return exec_ls(arg);
 	}
+    else if (startsWith("exec", cmd))
+    {
+        char* arg = cmd + strlen("exec ");
+        
+        return exec_exec(arg);
+    }
     else if (startsWith("cat", cmd))
     {
         char* arg = cmd + strlen("cat ");

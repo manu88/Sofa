@@ -15,7 +15,6 @@
 
 int ProcessTable_UnitTests()
 {
-    InitContext ctx;
     assert( ProcessTableInit() );
     assert(FileServerInit());
     
