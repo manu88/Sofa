@@ -178,7 +178,7 @@ static ssize_t _CmdLineRead(Inode *node, char* buffer , size_t count)
 	}
 
 	assert( node->size);
-	printf("_CmdLineRead for process '%s'\n" , process->cmdLine);
+//	printf("_CmdLineRead for process '%s'\n" , process->cmdLine);
 	assert(process->cmdLine);
 	const ssize_t remainSize = node->size - node->pos;
 	assert(remainSize>=0);
@@ -218,7 +218,7 @@ static ssize_t _StatusRead(Inode *node, char* buffer , size_t count)
 
 static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 {
-	printf("ProcRead node name '%s'\n" , node->name);
+//	printf("ProcRead node name '%s'\n" , node->name);
 
 
 	if (strcmp(node->name , statusStr ) == 0)

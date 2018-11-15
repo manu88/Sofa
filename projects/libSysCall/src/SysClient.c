@@ -627,7 +627,7 @@ static long sys_fcntl(va_list args)
 		{
 			int flag = va_arg (args, int);
 			seL4_SetMR(3, flag);
-			printf("sys_fcntl flag %i\n" , flag);
+//			printf("sys_fcntl flag %i\n" , flag);
 		}
 		break;
 

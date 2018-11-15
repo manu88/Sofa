@@ -116,7 +116,6 @@ int exec_ps( const char* args)
     if (!d)
         return -1;
     
-    
     static const char strHeader[] = "  PID TTY          TIME CMD";
     writeConsole(strHeader , strlen(strHeader));
     writeConsole("\n", 1);
