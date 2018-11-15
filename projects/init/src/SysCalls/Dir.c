@@ -19,7 +19,7 @@
 #include <SysCallNum.h>
 #include <assert.h>
 #include "../FileServer.h"
-
+#include <fcntl.h>
 
 int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
@@ -110,8 +110,39 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 
 int handle_fcntl(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-	printf("handle_fcntl\n");
 
+	int fd  = seL4_GetMR(1);
+	int cmd = seL4_GetMR(2);
+	
+	int ret = 0;
+
+	switch(cmd)
+	{
+
+		case F_SETFD:
+		{
+			int flag = seL4_GetMR(3);
+			ret  = 0;
+		}
+			break;
+
+		case F_GETFD:
+			ret = 0;
+			if (ProcessGetNumFDs(senderProcess) <= fd)
+			{
+				ret = -1;
+			}
+			break;
+
+		default:
+		assert(0);
+	}
+
+	message = seL4_MessageInfo_new(0, 0, 0, 2);
+	seL4_SetMR(0 ,__SOFA_NR_fcntl);
+	seL4_SetMR(1 , ret);
+
+	seL4_Reply( message );
 	return 0;
 }
 

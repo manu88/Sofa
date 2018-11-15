@@ -607,7 +607,6 @@ static long sys_chdir(va_list args)
 // int fcntl(int fd, int cmd, ... /* arg */ );
 static long sys_fcntl(va_list args)
 {
-	return 0;
 	const int fd  = va_arg (args, int);
 	const int cmd = va_arg (args, int);
 	
@@ -627,9 +626,15 @@ static long sys_fcntl(va_list args)
 		}
 		break;
 
+		// passthrougth cases
+		case F_GETFD:
+
+		break;
+		
 		default:
 		return -ENOSYS;
 	}
+
 
 	tag = seL4_Call(sysCallEndPoint, tag);
         assert(seL4_GetMR(0) == __SOFA_NR_fcntl );

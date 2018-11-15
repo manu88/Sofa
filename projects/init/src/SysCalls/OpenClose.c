@@ -239,6 +239,10 @@ int handle_close(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 {
 	const int fd =  seL4_GetMR(1);
 	
+
+	
+	printf("handle_close request fd %i\n" , fd);
+
 	int error = 0;
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
