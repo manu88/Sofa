@@ -155,10 +155,16 @@ int ProcessTableRemove(Process* process)
 
 static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 {
-	Process* process = node->userData;
-	printf("Proc read request for %i\n" , process->_pid);
 
-	sprintf(buffer, "%i", process->_state);
-	return 1;
+	Process* process = node->userData;
+
+	if(node->pos == 0)
+	{
+		sprintf(buffer, "%i", process->_state);
+		node->pos = 1;
+		return 1;
+	}
+
+	return 0;
 }
 
