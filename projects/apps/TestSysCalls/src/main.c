@@ -229,20 +229,24 @@ static int doCreateFileTest()
     assert(errno == 0);
     assert(fd >= 0);
     
+    close(fd);
+
     // 2nd must fail cause O_EXCL is set
+    /*
     errno = 0;
     int fd2 = open("newFile", O_WRONLY | O_APPEND | O_CREAT | O_EXCL , 0644);
     assert( errno == EEXIST);
     assert( fd2 == -1);
-    /*
+    
     const char dat[] = "hello";
     
     errno = 0;
     ssize_t ret = write(fd, dat, strlen(dat));
     assert(ret == strlen(dat));
     assert(errno == 0);
+   
+    close(fd2);
     */
-    close(fd);
     return 1;
 }
 int main(int argc, char * argv[])

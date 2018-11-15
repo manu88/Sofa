@@ -50,9 +50,11 @@ void DevChildRemoved( Inode*  lastParent , Inode* node)
     InodeRelease(node);
 }
 
+const char devName[] = "dev";
+
 int DevServerInit()
 {
-    if( InodeInit(&_context._devNode, INodeType_Folder, "dev"))
+    if( InodeInit(&_context._devNode, INodeType_Folder, devName))
     {
         _context._devOperations.ChildRemoved = DevChildRemoved;
         _context._devNode.inodeOperations = &_context._devOperations;

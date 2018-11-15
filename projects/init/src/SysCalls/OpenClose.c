@@ -155,17 +155,23 @@ int handle_write(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 
 int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
+	int flags = seL4_GetMR(1);
 
 	const int msgLen = seL4_MessageInfo_get_length(message);
 	assert(msgLen > 2);
 
+	int ret= 0;
+
 	char* pathname = malloc(sizeof(char)*msgLen -1);
 	if(!pathname)
 	{
+		ret = -ENOMEM;
 		// return some error
 	}
-
-	int flags = seL4_GetMR(1);
+	else 
+	{
+		ret = 0;
+	}
 
 	for(int i=0;i<msgLen-2;++i)
         {
@@ -174,24 +180,37 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
 	pathname[msgLen-2] = 0;
 
-	int ret= -ENOSYS;
-
 	Inode* node =  FileServerOpenRelativeTo( pathname , senderProcess->currentDir,flags , &ret);
 
-	if (node == NULL &&  flags & O_CREAT)
+	if (flags & O_EXCL)
+        {
+                printf("handle_open O_EXCL flag set\n");
+
+		InodePrintTree(FileServerGetRootNode());
+	}
+	else if (node && flags & O_EXCL)
 	{
-		
-		node = InodeAlloc( INodeType_File , pathname );
+		printf("handle_open O_EXCL flag set\n");
+		ret = -EEXIST;
+	}
+	else if (node == NULL &&  flags & O_CREAT)
+	{
+		printf("Create node '%s'\n" , pathname);
+		node = FileServerCreateNode(pathname, INodeType_File , senderProcess->currentDir);//  InodeAlloc( INodeType_File , pathname );
 		if (!node)
 		{
 			ret = -EPERM;
 		}
-
+		else 
+		{
+			ret = 0;
+		}
+/*
 		if(InodeAddChild( senderProcess->currentDir , node))
 		{
 			ret = 0;
 		}
-	
+*/	
 	}
 	if(node && ret == 0)
 	{
