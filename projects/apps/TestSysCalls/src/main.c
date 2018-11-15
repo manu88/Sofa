@@ -24,6 +24,7 @@
 
 static int doTimeTests(void);
 static int doOpenTests(void);
+static int doCloseTests(void);
 static int doOpenTests2(void);
 static int doReadTests(void);
 static int doGetPidTests(void);
@@ -255,6 +256,22 @@ static int doCreateFileTest()
     */
     return 1;
 }
+
+static int doCloseTests()
+{
+    errno = 0;
+    int ret = close(100);
+    assert(errno == EBADF);
+    assert(ret == -1);
+    
+    errno = 0;
+    ret = close(-1);
+    assert(errno == EBADF);
+    assert(ret == -1);
+    
+    
+    return 1;
+}
 int main(int argc, char * argv[])
 {
 
@@ -264,6 +281,7 @@ int main(int argc, char * argv[])
         return 1;
     }
 #endif
+    assert(doCloseTests());
     assert(doGetPidTests());
     assert(doTimeTests());
     assert(doOpenTests());
