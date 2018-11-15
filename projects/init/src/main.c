@@ -52,8 +52,6 @@
 
 #include "Devices/Terminal.h"
 
-// Test
-#include "StringOperations.h"
 
 //#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
@@ -66,71 +64,9 @@ static Process initProcess = {0};
 
 static Terminal _terminal;
 
-/* Tests*/
-
-static void GetRealPath_t1()
-{
-    const char path[] = "someFile";
-    const char currentDir[] = "/dev";
-    
-    char resolved[PATH_MAX] = {0};
-    int err = 0;
-    GetRealPath(path, currentDir, resolved, &err);
-    
-    assert(strcmp("/dev/someFile", resolved) == 0);
-    assert(err == 0);
-}
-static void GetRealPath_t2()
-{
-    const char path[] = "someFile";
-    const char currentDir[] = "/";
-    
-    char resolved[PATH_MAX] = {0};
-    int err = 0;
-    GetRealPath(path, currentDir, resolved, &err);
-    
-    assert(strcmp("/someFile", resolved) == 0);
-    assert(err == 0);
-}
-
-static void GetRealPath_t3()
-{
-    const char path[] = "/dev/lolz/someFile";
-    const char currentDir[] = "/";
-    
-    char resolved[PATH_MAX] = {0};
-    int err = 0;
-    GetRealPath(path, currentDir, resolved, &err);
-    
-    assert(strcmp("/dev/lolz/someFile", resolved) == 0);
-    assert(err == 0);
-}
-
-static void GetRealPath_t4()
-{
-    const char path[] = "../test/../someFile";
-    const char currentDir[] = "/dev/test/";
-    
-    char resolved[PATH_MAX] = {0};
-    int err = 0;
-    GetRealPath(path, currentDir, resolved, &err);
-    
-    assert(strcmp("/dev/someFile", resolved) == 0);
-    assert(err == 0);
-}
-
-
-/* END TESTS*/
 
 int main(void)
 {
-/**/
-
-    GetRealPath_t1();
-    GetRealPath_t2();
-    GetRealPath_t3();
-    GetRealPath_t4();
-/* tests */
 
     memset(&context , 0 , sizeof(InitContext) );
 

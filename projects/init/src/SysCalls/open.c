@@ -51,35 +51,23 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
 
         Inode* node =  FileServerOpenRelativeTo( pathname , senderProcess->currentDir,flags , &ret);
 
-	if (flags & O_EXCL)
+	if (node && flags & O_EXCL)
         {
-                printf("handle_open O_EXCL flag set\n");
-
-                InodePrintTree(FileServerGetRootNode());
-        }
-        else if (node && flags & O_EXCL)
-        {
-                printf("handle_open O_EXCL flag set\n");
+        //        printf("handle_open O_EXCL flag set\n");
                 ret = -EEXIST;
         }
         else if (node == NULL &&  flags & O_CREAT)
         {
-                printf("Create node '%s'\n" , pathname);
-                node = FileServerCreateNode(pathname, INodeType_File , senderProcess->currentDir);//  InodeAlloc( INodeType_File , pathname );
+                ret = 0;
+
+         //       printf("Create node '%s' from currentDir '%s'\n" , pathname , senderProcess->currentDir->name);
+                node = FileServerCreateNode(pathname, INodeType_File , senderProcess->currentDir);
+
                 if (!node)
                 {
                         ret = -EPERM;
                 }
-                else 
-                {
-                        ret = 0;
-                }
-/*
-                if(InodeAddChild( senderProcess->currentDir , node))
-                {
-                        ret = 0;
-                }
-*/      
+
         }
         if(node && ret == 0)
         {
@@ -87,7 +75,7 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
         }
 	else 
         {
-                printf("Unable to open '%s' \n" , pathname);
+                printf("Unable to open '%s' err %i \n" , pathname , ret);
         }
 
 

@@ -105,13 +105,16 @@ static int execCommand( char* cmd)
 		return chdir(arg);
 
 	}
-    else if (strcmp(cmd, "exit") == 0)
-    {
-        exit(0);
-    }
+        else if (strcmp(cmd, "exit") == 0)
+        {
+            exit(0);
+        }
 	else 
 	{
-		printf("unknown Command to exec : '%s' \n" , cmd);
+		const char msg[] = "unknown command ";
+		writeConsole(msg , strlen(msg) );
+		writeConsole(cmd , strlen(cmd) );
+		writeConsole("\n" , 1);
 	}
 	return 0;
 }
