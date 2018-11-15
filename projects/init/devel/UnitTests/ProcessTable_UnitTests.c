@@ -28,6 +28,7 @@ int ProcessTable_UnitTests()
     Process p1;
     assert(ProcessInit(&p1));
     assert(initProcess.cmdLine == NULL);
+    assert(initProcess.startTime == 0);
     //assert(ProcessTableAppend(&p1));
     
     InitContext ctx;

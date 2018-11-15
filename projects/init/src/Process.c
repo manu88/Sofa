@@ -21,6 +21,7 @@
 #include <SysCallNum.h>
 #include <assert.h>
 #include "Utils.h"
+#include "Timer.h"
 //#include "ProcessTable.h"
 
 /*
@@ -123,6 +124,8 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
     sel4utils_create_word_args(string_args, argv, argc ,process_ep_cap);
 
 
+    process->startTime =  TimerGetTime( context );
+    
     printf("init : Start child \n");
     error = sel4utils_spawn_process_v(&process->_process , &context->vka , &context->vspace , argc, (char**) &argv , 1);
     ZF_LOGF_IFERR(error, "Failed to spawn and start the new thread.\n"

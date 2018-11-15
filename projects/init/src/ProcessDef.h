@@ -77,7 +77,8 @@ struct _Process
     pid_t               _pid;
 
     char* cmdLine;
-
+    uint64_t startTime;
+    
     struct _Process*                       _parent;
     LIST_HEAD(listhead, _ProcessListEntry) children;
     
