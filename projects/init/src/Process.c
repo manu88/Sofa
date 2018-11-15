@@ -231,6 +231,14 @@ int ProcessAppendNode( Process* process , struct _inode* node)
  
 }
 
+int ProcessRemoveNode( Process* process , int fd)
+{
+	cvector_delete(&process->fdNodes , fd);
+
+	//FIXME add real retcode
+	return 1;
+}
+
 int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter)
 {
 	LIST_INSERT_HEAD(&process->waiters, waiter, entries);

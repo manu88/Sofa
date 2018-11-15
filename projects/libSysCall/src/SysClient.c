@@ -436,6 +436,11 @@ static long sys_open(va_list args)
 static long sys_close(va_list args)
 {
 	int fd  = va_arg(args, int);
+
+	if (fd < 0)
+	{
+		return -EBADF;
+	}
 	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
 	seL4_SetMR(0, __SOFA_NR_close);
 	seL4_SetMR(1, fd);

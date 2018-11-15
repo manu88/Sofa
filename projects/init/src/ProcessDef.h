@@ -123,7 +123,7 @@ struct _inode* ProcessGetNode( /*const*/ Process* process , int index) NO_NULL_P
 
 // return node id
 int ProcessAppendNode( Process* process , struct _inode* node) NO_NULL_POINTERS;
-
+int ProcessRemoveNode( Process* process , int fd) NO_NULL_POINTERS;
 
 int ProcessDoCleanup(Process * process) NO_NULL_POINTERS;
 int ProcessSignalStop(Process* process) NO_NULL_POINTERS;
