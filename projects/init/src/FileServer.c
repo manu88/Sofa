@@ -211,20 +211,20 @@ Inode* FileServerCreateNode(const char* path,INodeType type,const Inode* relativ
     assert(GetRealPath(path, relativeToPath, resolvedPath, &err) == resolvedPath);
 
     
-    char* dirN = dirname(resolvedPath);
+    char* dirN  = dirname(resolvedPath);
     char* baseN = basename(resolvedPath);
     
     
     
     
-    Inode* node = InodeAlloc(type, baseN);
+    Inode* node = InodeAlloc(type,strdup( baseN ));
     
     if( FileServerAddNodeAtPath(node, dirN))
     {
         return node;
     }
     
-    InodeRelease(node);
+    //InodeRelease(node);
     return NULL;
 }
 

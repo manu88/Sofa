@@ -30,6 +30,7 @@
 #include "DriverKit_UnitTests.h"
 #include "DevServer_UnitTests.h"
 #include "ProcessTable_UnitTests.h"
+#include "Other_UnitTests.h"
 
 static int Test_ProcessInstance(Process* p)
 {
@@ -95,6 +96,7 @@ static int Test_ProcessTable()
 
 int doInit_UnitTests()
 {
+    assert(GetRealPath_tests() );
     assert(TimersWheel_UnitTests() );
     assert(FileServer_UnitTests());
     assert(Test_Process());

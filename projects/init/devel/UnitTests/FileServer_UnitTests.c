@@ -295,9 +295,20 @@ static int FileServer_WalkTests()
     Inode* newFileNode = FileServerCreateNode("folder1/../folder1/folder2/../folder2/newFile", INodeType_File, NULL);
     assert(newFileNode);
     assert( strcmp(newFileNode->name, "newFile") == 0);
+    assert(FileServerGetINodeForPath("folder1/folder2/newFile", NULL) == newFileNode);
     
     // create a 2nd time will fail
     assert(FileServerCreateNode("folder1/../folder1/folder2/../folder2/newFile", INodeType_File, NULL) == NULL);
+    assert(FileServerGetINodeForPath("folder1/folder2/newFile", NULL) == newFileNode);
+    
+    
+    Inode* newFileNode2 = FileServerCreateNode("newFile2", INodeType_File, &f1);
+    assert(FileServerGetINodeForPath("/folder1/newFile2", NULL) == newFileNode2);
+    assert(FileServerGetINodeForPath("/folder1/folder2/../newFile2", NULL) == newFileNode2);
+    assert(FileServerGetINodeForPath("newFile2", &f1) == newFileNode2);
     InodePrintTree(FileServerGetRootNode());
+    
+    //Inode* newFileNode2 = FileServerCreateNode("folder1/", INodeType_File, &f1);
+    
     return 1;
 }

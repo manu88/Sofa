@@ -32,6 +32,7 @@
 		59AED26B2190A10500E12D02 /* IODevice.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED26A2190A10500E12D02 /* IODevice.c */; };
 		59B4188B219AF27B00C0234B /* IPC.c in Sources */ = {isa = PBXBuildFile; fileRef = 59B4188A219AF27B00C0234B /* IPC.c */; };
 		59B4188C219B11D600C0234B /* CpioServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A612196FD7700E92DD9 /* CpioServer.c */; };
+		59B4188F219D3FE700C0234B /* Other_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59B4188E219D3FE700C0234B /* Other_UnitTests.c */; };
 		59E99DE32187078E00805C68 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE12187078E00805C68 /* main.c */; };
 		59E99DE42187078E00805C68 /* FileServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE22187078E00805C68 /* FileServer.c */; };
 		59E99DE721870FCB00805C68 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE621870FCB00805C68 /* fs.c */; };
@@ -117,6 +118,8 @@
 		59AED26E2190AD0F00E12D02 /* types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		59B41889219AF25F00C0234B /* SysClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SysClient.h; path = ../../../libSysCall/include/SysClient.h; sourceTree = "<group>"; };
 		59B4188A219AF27B00C0234B /* IPC.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = IPC.c; path = ../../../libSysCall/src/IPC.c; sourceTree = "<group>"; };
+		59B4188D219D3FE700C0234B /* Other_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Other_UnitTests.h; sourceTree = "<group>"; };
+		59B4188E219D3FE700C0234B /* Other_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Other_UnitTests.c; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -227,6 +230,8 @@
 		59AED24C218E259700E12D02 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				59B4188D219D3FE700C0234B /* Other_UnitTests.h */,
+				59B4188E219D3FE700C0234B /* Other_UnitTests.c */,
 				59067A5D2195D7ED00E92DD9 /* DevServer_UnitTests.h */,
 				59067A5E2195D7ED00E92DD9 /* DevServer_UnitTests.c */,
 				59AED26621909DFD00E12D02 /* DriverKit_UnitTests.h */,
@@ -396,6 +401,7 @@
 				59AECEE2218989D300E12D02 /* DevServer.c in Sources */,
 				599D6E2421897ECD00FD93BD /* cqueue.c in Sources */,
 				599D6E2321897ECD00FD93BD /* cpool.c in Sources */,
+				59B4188F219D3FE700C0234B /* Other_UnitTests.c in Sources */,
 				599D6E2021897ECD00FD93BD /* cbpool.c in Sources */,
 				59E99DE721870FCB00805C68 /* fs.c in Sources */,
 				599D6E2121897ECD00FD93BD /* chash.c in Sources */,
