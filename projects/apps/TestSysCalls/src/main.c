@@ -96,8 +96,14 @@ static int doOpenTests2()
     assert(ret == -1);
     assert(errno == EISDIR);
 
-
+    int status = fcntl(fd, F_GETFD);
+    assert(status == 0); // fd still valid 'cause not closed
+    
     close(fd);
+    
+    status = fcntl(fd, F_GETFD);
+    assert(status == -1); // fd invalid 'cause closed
+    
 
     return 1;
 }
