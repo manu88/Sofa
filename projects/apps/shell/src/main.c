@@ -73,6 +73,12 @@ static int execCommand( char* cmd)
         
         return exec_touch(arg);
     }
+    else if (startsWith("ps", cmd))
+    {
+        char* arg = cmd + strlen("ps ");
+        
+        return exec_ps(arg);
+    }
 	else if (strcmp(cmd , "pwd")  == 0)
 	{
 		char* pwd = getcwd(NULL, 0);

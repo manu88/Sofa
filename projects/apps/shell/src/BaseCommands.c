@@ -17,6 +17,7 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <stdio.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -105,4 +106,27 @@ int exec_exec( const char* args)
     int retPid = execve(args,NULL , NULL);
        
     return retPid;
+}
+
+
+int exec_ps( const char* args)
+{
+    struct dirent *dir;
+    DIR *d = opendir("/proc/");
+    if (!d)
+        return -1;
+    
+    
+    static char b[1024] = {0};
+    
+    while ((dir = readdir(d)) != NULL)
+    {
+        memset(b, 0, 1024);
+        size_t s = snprintf(b, 1024, "app '%s'\n", dir->d_name);
+        writeConsole(b , s);
+    }
+    closedir(d);
+    
+    
+    return 0;
 }

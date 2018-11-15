@@ -34,3 +34,5 @@ int exec_cat( const char* args);
 int exec_touch( const char* args);
 
 int exec_exec( const char* args);
+
+int exec_ps( const char* args);
