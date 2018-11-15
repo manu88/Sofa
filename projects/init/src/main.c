@@ -97,6 +97,8 @@ int main(void)
     ProcessInit(&initProcess);
 
     initProcess._pid = 1;
+    char initName[] = "init";
+    initProcess.cmdLine = initName;
 
     ProcessTableInit();
 

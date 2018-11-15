@@ -170,11 +170,29 @@ int ProcessTableRemove(Process* process)
 
 static ssize_t _CmdLineRead(Inode *node, char* buffer , size_t count)
 {
-/*	Process* process = node->userData;
+	Process* process = node->userData;
 
+	if (node->size == 0)
+	{
+		node->size = strlen(process->cmdLine);
+	}
+
+	assert( node->size);
+	printf("_CmdLineRead for process '%s'\n" , process->cmdLine);
+	assert(process->cmdLine);
+	const ssize_t remainSize = node->size - node->pos;
+	assert(remainSize>=0);
+
+	size_t toRead = count < remainSize ? count : remainSize;
+
+	memcpy(buffer , process->cmdLine + node->pos , toRead);
+
+	node->pos +=toRead;
+	return toRead;
+/*
         if(node->pos == 0)
         {
-		buffer = node->userData
+		//buffer = node->userData
                 node->pos = 1;
                 return 1;
         }
@@ -185,6 +203,7 @@ static ssize_t _CmdLineRead(Inode *node, char* buffer , size_t count)
 }
 static ssize_t _StatusRead(Inode *node, char* buffer , size_t count)
 {
+	
 	Process* process = node->userData;
 
         if(node->pos == 0)

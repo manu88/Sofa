@@ -117,6 +117,10 @@ int exec_ps( const char* args)
         return -1;
     
     
+    static const char strHeader[] = "  PID TTY          TIME CMD";
+    writeConsole(strHeader , strlen(strHeader));
+    writeConsole("\n", 1);
+
     static char b[1024] = {0};
     static char path[1024] = {0};
     while ((dir = readdir(d)) != NULL)
@@ -126,7 +130,11 @@ int exec_ps( const char* args)
 	memset(path, 0, 1024);
 
 	snprintf( path , 1024 , "/proc/%s/cmdline" , dir->d_name);
-	printf("cmd line path is '%s'\n" , path);
+	//printf("cmd line path is '%s'\n" , path);
+
+        size_t s = snprintf(b, 1024, "%s                       ", dir->d_name);
+        writeConsole(b , s);
+
 
 	int f = open(path, O_RDONLY);// fopen(path , "r");
 	if(f >= 0)
@@ -137,6 +145,7 @@ int exec_ps( const char* args)
             do 
 	    {
         	r = read(f, buf, 32);
+//		printf("read cmdline '%s' %li\n",buf , r);
         	writeConsole(buf, r);
 	    } while (r > 0);
     	    close(f);
@@ -146,9 +155,7 @@ int exec_ps( const char* args)
 	{
 		printf("Error fopen '%s'\n",path);
 	}
-        size_t s = snprintf(b, 1024, "app pid %s \n", dir->d_name);
-        writeConsole(b , s);
-
+        writeConsole("\n", 1);
 
     }
     closedir(d);

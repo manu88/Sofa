@@ -247,9 +247,19 @@ int handle_close(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	{
 		error = -EBADF;
 	}
-	else if (ProcessRemoveNode(senderProcess , fd) == 0 )
+	else// if (ProcessRemoveNode(senderProcess , fd) == 0 )
 	{
+
 		error = -EBADF;
+		Inode* node = ProcessGetNode(senderProcess , fd);
+
+		if (node)
+		{	
+			error = 0;
+			node->pos = 0;
+			assert(ProcessRemoveNode(senderProcess , fd) );
+		}
+
 	}
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);
