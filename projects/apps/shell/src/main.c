@@ -73,6 +73,12 @@ static int execCommand( char* cmd)
         
         return exec_touch(arg);
     }
+    else if (startsWith("kill", cmd))
+    {
+        char* arg = cmd + strlen("kill ");
+        
+        return exec_kill(arg);
+    }
     else if (startsWith("ps", cmd))
     {
         char* arg = cmd + strlen("ps ");

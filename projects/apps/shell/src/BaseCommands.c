@@ -22,6 +22,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include "BaseCommands.h"
+#include <stdlib.h>
+#include <signal.h>
 
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
@@ -161,4 +163,11 @@ int exec_ps( const char* args)
     
     
     return 0;
+}
+
+int exec_kill( const char* args)
+{
+	long pidToKill = atol(args);
+
+	return kill(pidToKill , SIGTERM);
 }
