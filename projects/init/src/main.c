@@ -199,9 +199,10 @@ int main(void)
     Process *testProcess = ProcessAlloc();
     testProcess->currentDir = FileServerGetINodeForPath("/dev/" , NULL);//  FileServerGetRootNode();
 
-    error = !ProcessTableAppend(testProcess);
+    error = ProcessTableAddAndStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
+// !ProcessTableAppend(testProcess);
     assert(error == 0);
-    error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
+  //  error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
     if (error != 0) 
     {
 	printf("Error spawning  TestSysCalls\n");
@@ -210,11 +211,9 @@ int main(void)
     Process *process2 = ProcessAlloc();
     process2->currentDir =  FileServerGetRootNode();
     
-    error = !ProcessTableAppend(process2);
+    error = ProcessTableAddAndStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
     assert(error == 0);
-    error = ProcessStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, seL4_MaxPrio );
 
-//
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
     processLoop( &context,ep_object.cptr );

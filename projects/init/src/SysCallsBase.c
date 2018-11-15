@@ -159,14 +159,21 @@ int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo
         
     newProcess->currentDir = senderProcess->currentDir;
 
-    int error = ProcessStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
-    
+    int  error = ProcessTableAddAndStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
+/*
+!ProcessTableAppend(newProcess);
+    assert(error == 0);
+
+    error = ProcessStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
+*/
+    assert(error == 0);
+/*
     if (error == 0)
     {
         error = !ProcessTableAppend(newProcess);
         assert(error == 0);
     }
-
+*/
     /**/
     free(filename);
     

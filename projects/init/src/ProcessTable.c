@@ -168,3 +168,17 @@ static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 	return 0;
 }
 
+
+
+int ProcessTableAddAndStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
+{
+	int error = !ProcessTableAppend(process);
+
+	assert(error == 0);
+
+	error = ProcessStart(context , process , imageName , ep_cap_path , parent , priority);
+
+	assert(error == 0);
+
+	return error;
+}
