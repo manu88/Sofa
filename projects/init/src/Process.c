@@ -89,7 +89,7 @@ int ProcessDeInit(Process * process )
 
 int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
-
+    
 #ifndef __APPLE__
     UNUSED int error = 0;
 
@@ -287,12 +287,15 @@ int ProcessDoCleanup(Process * process)
 
 int ProcessSetCmdLine(Process* process , const char* cmdline)
 {
+    process->cmdLine = strdup(cmdline);
+    /*
 	assert(process->_processNode.type == INodeType_Folder);
 	Inode* cmdLineNode =  InodeGetChildByName(&process->_processNode , "cmdline");
 	assert(cmdLineNode);
 
 	cmdLineNode->userData = strdup(cmdline);
 	cmdLineNode->size = strlen(cmdline);
+     */
  	return 1;
 }
 

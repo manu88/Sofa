@@ -70,12 +70,13 @@ struct _inode;
 // a process
 struct _Process
 {
-    Inode _processNode;
+    Inode _processNode; // might stay first so that Inode can be casted to Process
     
     sel4utils_process_t _process;
     ProcessState        _state;
     pid_t               _pid;
 
+    char* cmdLine;
 
     struct _Process*                       _parent;
     LIST_HEAD(listhead, _ProcessListEntry) children;

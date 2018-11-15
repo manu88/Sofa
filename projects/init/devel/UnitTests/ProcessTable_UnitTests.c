@@ -23,11 +23,18 @@ int ProcessTable_UnitTests()
     
     Process initProcess;
     assert(ProcessInit(&initProcess));
+    assert(initProcess.cmdLine == NULL);
+    
     Process p1;
     assert(ProcessInit(&p1));
+    assert(initProcess.cmdLine == NULL);
+    //assert(ProcessTableAppend(&p1));
     
-    assert(ProcessTableAppend(&p1));
+    InitContext ctx;
+    ProcessTableAddAndStart(&ctx, &p1, "initCmd", 0, &initProcess, 255);
     
+    assert( strcmp( p1.cmdLine , "initCmd" ) == 0 );
+    assert(initProcess.cmdLine == NULL);
     //assert(ProcessStart(&ctx, &p1, "app1", 0, &initProcess, 100) == 0);
     
     char strPID[32];
