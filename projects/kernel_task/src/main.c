@@ -54,13 +54,14 @@
 
 
 //#define APP_PRIORITY seL4_MaxPrio
-#define APP_IMAGE_NAME "app"
+//#define APP_IMAGE_NAME "app"
 
+static char taskName[] =  "kernel_task";
 
 static InitContext context = { 0 };
 
 
-static Process initProcess = {0};
+static Process kernTaskProcess = {0};
 
 static Terminal _terminal;
 
@@ -70,9 +71,9 @@ int main(void)
 
     memset(&context , 0 , sizeof(InitContext) );
 
-    printf("init started\n");
+    printf("%s started\n" , taskName);
 
-    zf_log_set_tag_prefix("init:");
+    zf_log_set_tag_prefix("taskName");
 
     UNUSED int error = 0;
 
@@ -96,24 +97,28 @@ int main(void)
 
 /* Processes table & init */
 
-    ProcessInit(&initProcess);
+    ProcessInit(&kernTaskProcess);
 
-    initProcess._pid = 1;
-    char initName[] = "init";
-    initProcess.cmdLine = initName;
+    kernTaskProcess._pid = 0;
+    kernTaskProcess.cmdLine = taskName;
 
     ProcessTableInit();
 
-    ProcessTableAppend(&initProcess);
-    assert(initProcess._pid == 1);
+    ProcessTableAppend(&kernTaskProcess);
+    assert(kernTaskProcess._pid == 0); // kernel_task MUST BE the first task
 
     error = !FileServerAddNodeAtPath(ProcessTableGetInode() , "/");
     ZF_LOGF_IFERR(error, "unable to add 'proc' fs to filesystem \n");
 
 
 // CPIO
+
+    printf("Init CPIO FileSystem\n");
+
     error = !CPIOServerInit();
     ZF_LOGF_IFERR(error, "Failed to  init CPIO Server\n");
+
+
 
     error = !FileServerAddNodeAtPath( CPIOServerGetINode() , "/");//   FileServerRegisterHandler( getCPIOServerHandler() , "cpio" );
     ZF_LOGF_IFERR(error, "Failed to register CPIO File System \n");
@@ -203,7 +208,7 @@ int main(void)
     Process *testProcess = ProcessAlloc();
     testProcess->currentDir = FileServerGetINodeForPath("/dev/" , NULL);//  FileServerGetRootNode();
 
-    error = ProcessTableAddAndStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
+    error = ProcessTableAddAndStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );
 // !ProcessTableAppend(testProcess);
     assert(error == 0);
   //  error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
@@ -215,7 +220,7 @@ int main(void)
     Process *process2 = ProcessAlloc();
     process2->currentDir =  FileServerGetRootNode();
     
-    error = ProcessTableAddAndStart(&context,  process2,"shell", context.ep_cap_path, &initProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
+    error = ProcessTableAddAndStart(&context,  process2,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
     assert(error == 0);
 
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );

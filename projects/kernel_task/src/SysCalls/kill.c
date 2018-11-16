@@ -30,24 +30,32 @@ int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
     printf("Received a request from %i to kill process %li with signal %li\n",senderProcess->_pid , pidToKill , sigToSend);
     
     int err = 0;
-    Process* toKill =  ProcessTableGetByPID(pidToKill);
-    if ( toKill == NULL)
+
+    if (pidToKill == 0)
     {
-	err = -ESRCH;
+	err = -EPERM;
     }
     else 
     {
-	ProcessSignalStop( toKill);
-	ProcessDoCleanup( toKill);
-	
-	if(!ProcessTableRemove( toKill ))
-    	{
-            printf("Unable to remove process %li!\n" , pidToKill);
-    	}
-	ProcessStop(context ,toKill);
-	ProcessRelease(toKill);
+        Process* toKill =  ProcessTableGetByPID(pidToKill);
+        if ( toKill == NULL)
+        {
+	    err = -ESRCH;
+        }
+        else 
+        {
+	     ProcessSignalStop( toKill);
+	     ProcessDoCleanup( toKill);
+
+  	     if(!ProcessTableRemove( toKill ))
+    	     {
+                 printf("Unable to remove process %li!\n" , pidToKill);
+    	     }
+
+  	     ProcessStop(context ,toKill);
+	     ProcessRelease(toKill);
+        }
     }
-    
 
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 

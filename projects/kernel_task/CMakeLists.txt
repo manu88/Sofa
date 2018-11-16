@@ -2,14 +2,13 @@ cmake_minimum_required(VERSION 3.7.2)
 
 
 
-project(init C) # create a new C project called 'init' 
-
+project(kernel_task C)
 
 # Copy CPIOFiles 
 file(COPY CPIOFiles DESTINATION ".")
 
 # add file to cpio : FIXME : do it for each file in CPIOFiles
-set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:init>/CPIOFiles/hello.txt")
+#set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:kernel_task>/CPIOFiles/hello.txt")
 #set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:init>/CPIOFiles/readme.txt")
 
 
@@ -21,13 +20,13 @@ MakeCPIO(archive.o "${cpio_apps}")
 file(GLOB deps src/*.c src/*/*.c)
 list(SORT deps)
 
-add_executable(init ${deps} archive.o)
+add_executable(kernel_task ${deps} archive.o)
 
-target_link_libraries(init sel4muslcsys sel4allocman sel4platsupport sel4 muslc cpio sel4utils libSysCall libdatastruct) 
+target_link_libraries(kernel_task sel4muslcsys sel4allocman sel4platsupport sel4 muslc cpio sel4utils libSysCall libdatastruct) 
 
 # warn about everything
 add_compile_options(-Wall -Werror -W -Wextra)
 
 # Set this image as the rootserver
-DeclareRootserver(init)
+DeclareRootserver(kernel_task)
 
