@@ -18,16 +18,41 @@
 #include "../SysCalls.h"
 #include <SysCallNum.h>
 #include <assert.h>
-#include "../FileServer.h"
+#include "../ProcessTable.h"
+
 #include <fcntl.h>
 
 int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-        seL4_Word pidToKill = seL4_GetMR(1);
+    seL4_Word pidToKill = seL4_GetMR(1);
     seL4_Word sigToSend = seL4_GetMR(2);
     
     printf("Received a request from %i to kill process %li with signal %li\n",senderProcess->_pid , pidToKill , sigToSend);
-    seL4_SetMR(1, -ENOSYS ); // error for now
+    
+    int err = 0;
+    Process* toKill =  ProcessTableGetByPID(pidToKill);
+    if ( toKill == NULL)
+    {
+	err = -ESRCH;
+    }
+    else 
+    {
+	ProcessSignalStop( toKill);
+	ProcessDoCleanup( toKill);
+	
+	if(!ProcessTableRemove( toKill ))
+    	{
+            printf("Unable to remove process %li!\n" , pidToKill);
+    	}
+	ProcessStop(context ,toKill);
+	ProcessRelease(toKill);
+    }
+    
+
+    printf("Init : Got %i processes \n" , ProcessTableGetCount() );
+
+
+    seL4_SetMR(1, err ); // error for now
     seL4_Reply( message );
 
     return 0;

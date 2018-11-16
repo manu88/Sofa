@@ -171,9 +171,6 @@ static long sys_kill(va_list args)
 
     tag = seL4_Call(sysCallEndPoint, tag);
 
-
-    printf("Got kill response\n");
-
     assert(seL4_GetMR(0) == __SOFA_NR_kill);
     msg = seL4_GetMR(1); // ret code
  
@@ -205,7 +202,7 @@ static long sys_nanosleep(va_list args)
 
 static void Abort( int status)
 {
-    printf("Abort called with status %i\n" , status);
+//    printf("Abort called with status %i from %li\n" , status , getpid() );
 
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
     seL4_SetMR(0, __SOFA_NR_exit);
