@@ -51,7 +51,7 @@ static ProcTableContext _ctx;
 
 pid_t ProcessTableGetNextPid()
 {
-    static pid_t accum = 1; // 1 is reserved for init
+    static pid_t accum = 0; 
     return accum++;
 }
 

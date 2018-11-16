@@ -67,7 +67,7 @@ static int doGetPidTests()
     assert(errno == 0);
     
     errno = 0;
-    assert(getppid() > 0);
+    assert(getppid() >= 0);
     assert(errno == 0);
     return 1;
 }
