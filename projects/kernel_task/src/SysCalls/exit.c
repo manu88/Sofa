@@ -25,7 +25,6 @@
 int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     int exitStatus = seL4_GetMR(1);
-    printf("Got exit from %i status %i\n", senderProcess->_pid , exitStatus);
 
     ProcessSignalStop( senderProcess);
     ProcessDoCleanup( senderProcess);
@@ -36,6 +35,5 @@ int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
     ProcessStop(context , senderProcess);
     ProcessRelease(senderProcess);
 
-    printf("Init : Got %i processes \n" , ProcessTableGetCount() );
     return 0;
 }

@@ -126,14 +126,11 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
 
     process->startTime =  TimerGetTime( context );
     
-    printf("init : Start child \n");
     error = sel4utils_spawn_process_v(&process->_process , &context->vka , &context->vspace , argc, (char**) &argv , 1);
     ZF_LOGF_IFERR(error, "Failed to spawn and start the new thread.\n"
                   "\tVerify: the new thread is being executed in the root thread's VSpace.\n"
                   "\tIn this case, the CSpaces are different, but the VSpaces are the same.\n"
                   "\tDouble check your vspace_t argument.\n");
-
-     printf("init : Did start child pid %i\n" , process->_pid);
 
      ProcessSetState(process , ProcessState_Running);
 

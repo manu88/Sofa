@@ -32,7 +32,6 @@ int handle_getTimeOfTheDay(InitContext* context, Process *senderProcess, seL4_Me
 int handle_clock_getTime(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	const clockid_t clk_id = seL4_GetMR(1);
-	printf("Got clock_gettime for clock %i\n" , clk_id);
 
 	seL4_Word ret = -EINVAL;
 

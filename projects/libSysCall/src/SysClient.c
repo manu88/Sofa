@@ -104,8 +104,6 @@ static long sys_wait4(va_list args)
     const int options     = va_arg(args , int);
     struct rusage *rusage = va_arg(args ,struct rusage *);
 
-    printf("sys_wait4 : pid %i options %i\n",pid,options);
-    
     seL4_MessageInfo_t tag;
     seL4_Word msg;
     
@@ -276,7 +274,6 @@ static long sys_getpriority(va_list args)
     int which  = va_arg(args, int);
     id_t who   = va_arg(args, id_t);
 
-    printf("Client ; getpriority %i %i\n",which , who);
 
     seL4_MessageInfo_t tag;
     seL4_Word msg;
@@ -304,7 +301,6 @@ static long sys_setpriority(va_list args)
     int prio   = va_arg(args, int);
     int mappedPrio = (-prio + 19)*6;
 
-    printf("Client ; setpriority %i %i %i mapped %i\n",which , who , prio , mappedPrio);
 
     seL4_MessageInfo_t tag;
     seL4_Word msg;

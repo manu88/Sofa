@@ -36,9 +36,6 @@ int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 	    return 0;
     }
 
-
-    printf("Process %i has %i child to wait! (req pid %i) \n",senderProcess->_pid,childrenCount , pidToWait);
-
     Process* processToWait = ProcessGetChildByPID(senderProcess , pidToWait);
 
     assert(processToWait);

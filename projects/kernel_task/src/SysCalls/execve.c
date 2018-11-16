@@ -37,8 +37,6 @@ int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo
 
     filename[msgLen] = '0';
 
-    printf("Init : Execve size %i filename '%s'\n", msgLen , filename);
-
     /**/
     Process *newProcess = ProcessAlloc();
     assert(newProcess);

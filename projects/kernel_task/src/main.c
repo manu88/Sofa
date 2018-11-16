@@ -71,8 +71,6 @@ int main(void)
 
     memset(&context , 0 , sizeof(InitContext) );
 
-    printf("%s started\n" , taskName);
-
     zf_log_set_tag_prefix("taskName");
 
     UNUSED int error = 0;
@@ -112,8 +110,6 @@ int main(void)
 
 
 // CPIO
-
-    printf("Init CPIO FileSystem\n");
 
     error = !CPIOServerInit();
     ZF_LOGF_IFERR(error, "Failed to  init CPIO Server\n");
@@ -169,8 +165,6 @@ int main(void)
     uint64_t timerResolution = 0;;
     error = ltimer_get_resolution(&context.timer.ltimer , &timerResolution);
 
-    printf("Timer resolution is %lu (error %i)\n" ,timerResolution , error);
-
 //    sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
 
 // Default terminal (EGA + keyboard)
@@ -184,46 +178,21 @@ int main(void)
     assert( error == 0);
 
     assert( DriverKitGetDeviceForBadge(IRQ_BADGE_KEYBOARD) == (IOBaseDevice*) &_terminal);
-    printf("Keyboard badge %lx\n", _terminal.keyboard.super._badge);
 
     error = !DevServerRegisterFile( (Inode*)&_terminal.node );// !DevServerRegisterFile("console", &_terminal.devOps );// EGADriverGetDeviceOps() );
     ZF_LOGF_IFERR(error, "Failed to  register 'console' EGA handler\n");
 
     assert(FileServerGetINodeForPath("/dev/console" , NULL) == &_terminal.node);
-// Test keyboard
 
-//    error = !KeyboardDeviceInit(&context, &notification_path , &_terminal.keyboard);
-//    ZF_LOGF_IFERR(error, "Unable to initialize Keyboard .\n");
+/* BEGIN INIT PROCESS */
 
-// EGA
+    Process initProcess;
 
-//    error = !InitEGADriver( &context);
-//    ZF_LOGF_IFERR(error, "Failed to  init EGA driver\n");
-
-
-
-
-/* BEGIN PROCESS */
-
-    Process *testProcess = ProcessAlloc();
-    testProcess->currentDir = FileServerGetINodeForPath("/dev/" , NULL);//  FileServerGetRootNode();
-
-    error = ProcessTableAddAndStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );
-// !ProcessTableAppend(testProcess);
-    assert(error == 0);
-  //  error = ProcessStart(&context, testProcess,"TestSysCalls", context.ep_cap_path, &initProcess, seL4_MaxPrio );
-    if (error != 0) 
-    {
-	printf("Error spawning  TestSysCalls\n");
-    }
-
-    Process *process2 = ProcessAlloc();
-    process2->currentDir =  FileServerGetRootNode();
+    ProcessInit( &initProcess );
+    initProcess.currentDir =  FileServerGetRootNode();
     
-    error = ProcessTableAddAndStart(&context,  process2,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
+    error = ProcessTableAddAndStart(&context, &initProcess,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
     assert(error == 0);
-
-    printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
     processLoop( &context,ep_object.cptr );
 

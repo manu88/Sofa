@@ -24,7 +24,6 @@ static void set_devEp(KeyboardDevice* dev);
 
 static int KeyboardInit(IOBaseDevice *device)
 {
-	printf("Keyboard is initialized\n");
 	return 1;
 }
 

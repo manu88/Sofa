@@ -1,13 +1,9 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <SysClient.h>
 
-#include <errno.h>
-#include <signal.h>
-#include <assert.h>
-#include <string.h>
-#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 int main( int argc , char* argv[])
 {
@@ -18,8 +14,13 @@ int main( int argc , char* argv[])
     }
 
 
+    int pidTests = execve("TestSysCalls" , NULL , NULL);
 
-    printf("init : Hello\n");
+
+    int pidShell = execve("shell" , NULL , NULL);
+
+    int status = 0;
+    waitpid(pidShell, &status , 0);
 
     return 0;
 }

@@ -192,7 +192,6 @@ static int doChdirTests()
     
     char *currentDir = getcwd(NULL, 0);
     assert(currentDir);
-    printf("Currentdir '%s'\n", currentDir);
     assert(strcmp(currentDir, "/") == 0);
     
     free(currentDir);
@@ -202,7 +201,6 @@ static int doChdirTests()
 
 static int doLsTests()
 {
-    printf("Start ls tests \n");
     
     errno = 0;
     assert(chdir("/") == 0);
@@ -210,12 +208,12 @@ static int doLsTests()
     
     struct dirent *dir;
     DIR *d = opendir(".");
-    printf("After opendir\n");
     if (d)
     {
         while ((dir = readdir(d)) != NULL)
         {
-            printf("dir entry '%s'\n", dir->d_name);
+	    assert(dir->d_name);
+//            printf("dir entry '%s'\n", dir->d_name);
         }
         closedir(d);
     }
@@ -287,7 +285,7 @@ int main(int argc, char * argv[])
     assert(doReadTests());
 
     assert(doWaitTests() );
-    assert(doGetCwdTests() );
+//    assert(doGetCwdTests() );
     
     
     

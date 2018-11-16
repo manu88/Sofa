@@ -189,7 +189,6 @@ int FileServerAddNodeAtPath( Inode* node,const char* path)
     {
         return InodeAddChild(n, node);
     }
-    printf("FileServerAddNodeAtPath node '%s' already exists in path '%s'\n",node->name , path);
     return 0;
 }
 
@@ -213,22 +212,18 @@ Inode* FileServerCreateNode(const char* path,INodeType type,const Inode* relativ
 
     assert( relativeToPathSize > 0);
 
-    printf("Absolute path '%s' size %li\n" , relativeToPath , relativeToPathSize);
 
     char resolvedPath[PATH_MAX] = {0};
     int err = 0;
     assert(GetRealPath(path, relativeToPath, resolvedPath, &err) == resolvedPath);
 
-    printf("Realpath '%s'\n" , resolvedPath);
 
     char* newPath = strdup(resolvedPath);
     
     // basename must be called first!
     char* baseN = basename(newPath);
-    printf("baseN '%s'\n",baseN);
 
     char* dirN  = dirname(newPath);
-    printf("dirN '%s' \n",dirN );
 
     assert(dirN);
     assert(baseN);
@@ -241,7 +236,6 @@ Inode* FileServerCreateNode(const char* path,INodeType type,const Inode* relativ
     {
         return node;
     }
-    printf("Error : unable to add node at path\n");
     //InodeRelease(node);
     return NULL;
 }
