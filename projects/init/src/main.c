@@ -52,6 +52,7 @@
 
 #include "Devices/Terminal.h"
 
+
 //#define APP_PRIORITY seL4_MaxPrio
 #define APP_IMAGE_NAME "app"
 
@@ -66,6 +67,7 @@ static Terminal _terminal;
 
 int main(void)
 {
+
     memset(&context , 0 , sizeof(InitContext) );
 
     printf("init started\n");

@@ -15,25 +15,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "../SysCalls.h"
+#include <SysCallNum.h>
+#include <assert.h>
+#include "../FileServer.h"
+#include <fcntl.h>
 
+int handle_getpid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+{
+    seL4_SetMR(1, senderProcess->_pid);
+    seL4_Reply( message );
 
-int InitConsoleFDs(int fdRead , int fdWrite);
+    return 0;
+}
 
-ssize_t writeConsole( const void* b , size_t len);
-ssize_t readConsole( void*b , size_t len);
-
-
-
-void PrintHelp(void);
-
-int exec_ls( const char* args);
-
-int exec_cat( const char* args);
-
-int exec_touch( const char* args);
-
-int exec_exec( const char* args);
-
-int exec_ps( const char* args);
-int exec_kill( const char* args);
+int handle_getppid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+{
+    seL4_SetMR(1, senderProcess->_parent->_pid );
+    seL4_Reply( message );
+    return 0;
+}
