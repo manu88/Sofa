@@ -112,8 +112,13 @@ int main(void)
 
 
 // CPIO
+
+    printf("Init CPIO FileSystem\n");
+
     error = !CPIOServerInit();
     ZF_LOGF_IFERR(error, "Failed to  init CPIO Server\n");
+
+
 
     error = !FileServerAddNodeAtPath( CPIOServerGetINode() , "/");//   FileServerRegisterHandler( getCPIOServerHandler() , "cpio" );
     ZF_LOGF_IFERR(error, "Failed to register CPIO File System \n");
@@ -215,7 +220,7 @@ int main(void)
     Process *process2 = ProcessAlloc();
     process2->currentDir =  FileServerGetRootNode();
     
-    error = ProcessTableAddAndStart(&context,  process2,"shell", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
+    error = ProcessTableAddAndStart(&context,  process2,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
     assert(error == 0);
 
     printf("Init : Got %i processes \n" , ProcessTableGetCount() );

@@ -30,6 +30,7 @@
 
 extern char _cpio_archive[];
 #endif
+
 static int CpioOpen (Inode * node , int flags);
 static int     CpioClose (struct _inode *);
 
@@ -91,34 +92,35 @@ int CPIOServerInit()
     {
         return 0;
     }
-    
 
     // populate nodes
-	char **buf = malloc( info.file_count);
+    char **buf = malloc( info.file_count);
+    assert(buf);
 
-	for(int i=0;i<info.file_count;i++)
-	{
-		buf[i] = malloc(info.max_path_sz);
-		memset(buf[i] , 0 , info.max_path_sz);
-	}
+    for(int i=0;i<info.file_count;i++)
+    {
+	buf[i] = malloc(info.max_path_sz );
+	assert(buf[i]);
+	memset(buf[i] , 0 , info.max_path_sz);
 
-	cpio_ls(_cpio_archive , buf, info.file_count);
+    }
 
+    cpio_ls(_cpio_archive , buf, info.file_count);
 //	printf("Got %u files \n",info.file_count);
 
-	for(int i=0;i<info.file_count;i++)
-        {
-		Inode* f = InodeAlloc(INodeType_File, buf[i]);
-		if (f)
-		{
-//			printf("add CPIO file '%s'\n" , buf[i]);
-			f->inodeOperations = &_context.inodeOperations;
-			f->operations      = &_context.operations;
-			InodeAddChild(&_context.node , f);
-		}
+    for(int i=0;i<info.file_count;i++)
+    {
+	assert(buf[i]);
+	Inode* f = InodeAlloc(INodeType_File, buf[i]);
+	if (f)
+	{
+		f->inodeOperations = &_context.inodeOperations;
+		f->operations      = &_context.operations;
+		InodeAddChild(&_context.node , f);
+	}
 
 //		printf("File '%s'\n" , buf[i]);
-	}
+    }
 #endif
 
 

@@ -8,7 +8,7 @@ project(kernel_task C)
 file(COPY CPIOFiles DESTINATION ".")
 
 # add file to cpio : FIXME : do it for each file in CPIOFiles
-set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:kernel_task>/CPIOFiles/hello.txt")
+#set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:kernel_task>/CPIOFiles/hello.txt")
 #set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:init>/CPIOFiles/readme.txt")
 
 
