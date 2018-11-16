@@ -10,7 +10,8 @@
 #include <assert.h>
 #include "StringOperations.h"
 #include <string.h>
-
+#include <libgen.h>
+#include <stdio.h>
 
 static void GetRealPath_t1()
 {
@@ -70,6 +71,16 @@ int GetRealPath_tests()
     GetRealPath_t2();
     GetRealPath_t3();
     GetRealPath_t4();
+    
+    char p[] = "/dev/test";
+    
+    char* baseN = basename(p);
+    
+    printf("Base '%s' \n" , baseN);
+    
+    char* dirN  = dirname(p);
+    
+    printf("Dir '%s' \n" , dirN);
     
     return 1;
 }

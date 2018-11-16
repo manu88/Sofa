@@ -231,6 +231,8 @@ static int doLsTests2()
 
 static int doCreateFileTest()
 {
+
+    
     errno = 0;
     int fd = open("newFile", O_WRONLY | O_APPEND | O_CREAT , 0644);
     assert(errno == 0);
