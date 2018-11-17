@@ -45,6 +45,15 @@ int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 
     // TODO inherit from parent's fd table
     
+
+    const size_t numFds = ProcessGetNumFDs(senderProcess);
+
+    printf("Got %li fds to pass to child\n" , numFds);
+
+    for (size_t i = 0; i < numFds;i++)
+    {
+	ProcessAppendNode(newProcess , ProcessGetNode(senderProcess , i));
+    }
     int  error = ProcessTableAddAndStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
     assert(error == 0);
 
