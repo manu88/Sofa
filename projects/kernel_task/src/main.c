@@ -58,7 +58,7 @@
 
 static char taskName[] =  "kernel_task";
 
-static InitContext context = { 0 };
+static KernelTaskContext context = { 0 };
 
 
 static Process kernTaskProcess = {0};
@@ -69,7 +69,7 @@ static Terminal _terminal;
 int main(void)
 {
 
-    memset(&context , 0 , sizeof(InitContext) );
+    memset(&context , 0 , sizeof(KernelTaskContext) );
 
     zf_log_set_tag_prefix("taskName");
 
