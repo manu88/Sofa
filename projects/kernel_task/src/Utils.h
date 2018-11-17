@@ -21,7 +21,7 @@
 
 
 #ifndef __APPLE__
-seL4_Word get_free_slot( InitContext* context);
-int cnode_savecaller( InitContext* context,seL4_CPtr cap);
-int cnode_delete( InitContext* context,seL4_CPtr slot);
+seL4_Word get_free_slot( KernelTaskContext* context);
+int cnode_savecaller( KernelTaskContext* context,seL4_CPtr cap);
+int cnode_delete( KernelTaskContext* context,seL4_CPtr slot);
 #endif

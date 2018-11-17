@@ -23,7 +23,7 @@
 
 
 
-int DriverKitInit(InitContext* context);
+int DriverKitInit(KernelTaskContext* context);
 
 int DriverKitRegisterDevice( seL4_Word badge,  IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POINTERS ;
 

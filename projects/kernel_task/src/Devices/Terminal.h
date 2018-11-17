@@ -41,7 +41,7 @@ typedef struct
 
 } Terminal;
 
-int TerminalInit( InitContext* context, const cspacepath_t* notificationSrc,   Terminal* terminal) NO_NULL_POINTERS ;
+int TerminalInit( KernelTaskContext* context, const cspacepath_t* notificationSrc,   Terminal* terminal) NO_NULL_POINTERS ;
 
 
 DeviceOperations* TerminalGetDeviceOps(void);

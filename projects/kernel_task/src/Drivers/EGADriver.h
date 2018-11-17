@@ -49,7 +49,7 @@ enum vga_color {
 
 //DeviceOperations* EGADriverGetDeviceOps(void);
 
-int InitEGADriver(InitContext *context);
+int InitEGADriver(KernelTaskContext *context);
 
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y);
 

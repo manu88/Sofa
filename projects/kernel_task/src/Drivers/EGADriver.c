@@ -58,7 +58,7 @@ void terminalClear()
     }
 }
 
-static void* mapVideoRam(InitContext *context) 
+static void* mapVideoRam(KernelTaskContext *context) 
 {
      void* vram = ps_io_map(&_egaContext.io_ops.io_mapper, EGA_TEXT_FB_BASE,
                                 0x1000, false, PS_MEM_NORMAL);
@@ -81,7 +81,7 @@ static void writeVideoRam(uint16_t* vram, int row)
     }
 }
 
-int InitEGADriver(InitContext *context)
+int InitEGADriver(KernelTaskContext *context)
 {
 	memset(&_egaContext , 0 , sizeof(_EGAContext) );
 

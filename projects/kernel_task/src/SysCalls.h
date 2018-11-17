@@ -38,24 +38,24 @@ int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 int handle_wait4(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 
-int handle_getpriority(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_setpriority(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_getpriority(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_setpriority(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 
-int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_lseek(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 
 // time 
-int handle_getTimeOfTheDay(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_clock_getTime(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_getTimeOfTheDay(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_clock_getTime(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 
 // dirs
 
-int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_getcwd(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_chdir(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 //int handle_getdents64(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_fcntl(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_fcntl(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
-int handle_mkdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_mkdir(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);

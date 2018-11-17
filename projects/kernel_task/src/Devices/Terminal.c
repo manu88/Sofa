@@ -37,7 +37,7 @@ static FileOperations  termFileOps = {ConsoleRead , ConsoleWrite, FileOperation_
 
 static void terminal_putchar(Terminal* term , char c);
 
-int TerminalInit( InitContext* context,const cspacepath_t* notificationSrc,  Terminal* terminal)
+int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc,  Terminal* terminal)
 {
     memset(terminal, 0, sizeof(Terminal));
     

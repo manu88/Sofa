@@ -33,7 +33,7 @@ static int KeyboardDeInit (IOBaseDevice *device)
 }
 
 
-int KeyboardDeviceInit(InitContext* context, const cspacepath_t* notificationSrc, KeyboardDevice* keyboard)
+int KeyboardDeviceInit(KernelTaskContext* context, const cspacepath_t* notificationSrc, KeyboardDevice* keyboard)
 {
 	if(IOBaseDeviceInit( &keyboard->super) == 0 )
 	{

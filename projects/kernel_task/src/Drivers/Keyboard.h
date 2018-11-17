@@ -24,7 +24,7 @@ typedef struct
 
     IOBaseDevice super;
 
-    InitContext* context;
+    KernelTaskContext* context;
     /* platsupport char device */
     ps_chardevice_t dev;
     /* IRQHandler cap (with cspace path) */
@@ -38,4 +38,4 @@ typedef struct
 
 
 
-int KeyboardDeviceInit(InitContext* context,const cspacepath_t* notificationSrc, KeyboardDevice* keyboard) NO_NULL_POINTERS;
+int KeyboardDeviceInit(KernelTaskContext* context,const cspacepath_t* notificationSrc, KeyboardDevice* keyboard) NO_NULL_POINTERS;

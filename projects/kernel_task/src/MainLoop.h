@@ -27,8 +27,8 @@
 
 //void handle_cdev_event( void* dev); 
 
-int UpdateTimeout(InitContext* context,uint64_t timeNS);
+int UpdateTimeout(KernelTaskContext* context,uint64_t timeNS);
 
 // never returns
-void processLoop(InitContext* context, seL4_CPtr epPtr);
+void processLoop(KernelTaskContext* context, seL4_CPtr epPtr);
 

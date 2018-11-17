@@ -58,10 +58,10 @@ static SysCallHandler callTable[] =
 };
 
 
-static void processTimer(InitContext* context,seL4_Word sender_badge);
-static void processSyscall(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge);
+static void processTimer(KernelTaskContext* context,seL4_Word sender_badge);
+static void processSyscall(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge);
 
-static void processTimer(InitContext* context,seL4_Word sender_badge)
+static void processTimer(KernelTaskContext* context,seL4_Word sender_badge)
 {
     sel4platsupport_handle_timer_irq(&context->timer, sender_badge);
 
@@ -92,13 +92,13 @@ static void processTimer(InitContext* context,seL4_Word sender_badge)
     }
 }
 
-int UpdateTimeout(InitContext* context,uint64_t timeNS)
+int UpdateTimeout(KernelTaskContext* context,uint64_t timeNS)
 {
     return ltimer_set_timeout(&context->timer.ltimer, timeNS, TIMEOUT_RELATIVE); //TIMEOUT_PERIODIC);
 }
 
 
-static void processSyscall(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge)
+static void processSyscall(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message, seL4_Word badge)
 {
 
     assert(senderProcess);
@@ -112,7 +112,7 @@ static void processSyscall(InitContext* context, Process *senderProcess, seL4_Me
 
 
 
-void processLoop(InitContext* context, seL4_CPtr epPtr  )
+void processLoop(KernelTaskContext* context, seL4_CPtr epPtr  )
 {
     int error = 0;
     while(1)

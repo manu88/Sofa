@@ -29,7 +29,7 @@
 
 typedef struct
 {
-    InitContext* context;
+    KernelTaskContext* context;
     //chash_t _devices;
     
     IOBaseDevice* _devices;
@@ -39,7 +39,7 @@ typedef struct
 
 static DriverKitContext _DKContext;
 
-int DriverKitInit(InitContext* context)
+int DriverKitInit(KernelTaskContext* context)
 {	
 //	seL4_CPtr cap = simple_get_IOPort_cap(&context->simple, 1,1);
 // cspace_irq_control_get_cap( simple_get_cnode(&context->simple)) , seL4_CapIRQControl, 1);

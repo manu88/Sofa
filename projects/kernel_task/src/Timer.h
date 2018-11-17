@@ -20,6 +20,6 @@
 
 #include "Bootstrap.h"
 
-int  TimerDriverInit(InitContext* context, seL4_CPtr notifCap);
+int  TimerDriverInit(KernelTaskContext* context, seL4_CPtr notifCap);
 
-uint64_t TimerGetTime( InitContext* context );
+uint64_t TimerGetTime( KernelTaskContext* context );
