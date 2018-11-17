@@ -19,7 +19,6 @@
 		59AECEE2218989D300E12D02 /* DevServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AECEE1218989D300E12D02 /* DevServer.c */; };
 		59AECEE521898E6200E12D02 /* StringOperations.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AECEE421898E6200E12D02 /* StringOperations.c */; };
 		59AECEE9218DBD1E00E12D02 /* ProcessTable.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AECEE8218DBD1D00E12D02 /* ProcessTable.c */; };
-		59AED244218E1A0D00E12D02 /* list.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED243218E1A0D00E12D02 /* list.c */; };
 		59AED249218E1B9000E12D02 /* Process.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED248218E1B9000E12D02 /* Process.c */; };
 		59AED24F218E259700E12D02 /* Init_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED24D218E259700E12D02 /* Init_UnitTests.c */; };
 		59AED252218E25AC00E12D02 /* FileServer_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */; };
@@ -30,9 +29,9 @@
 		59AED263219090E400E12D02 /* DriverKit.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED261219090E400E12D02 /* DriverKit.c */; };
 		59AED26821909DFD00E12D02 /* DriverKit_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED26721909DFD00E12D02 /* DriverKit_UnitTests.c */; };
 		59AED26B2190A10500E12D02 /* IODevice.c in Sources */ = {isa = PBXBuildFile; fileRef = 59AED26A2190A10500E12D02 /* IODevice.c */; };
-		59B4188B219AF27B00C0234B /* IPC.c in Sources */ = {isa = PBXBuildFile; fileRef = 59B4188A219AF27B00C0234B /* IPC.c */; };
 		59B4188C219B11D600C0234B /* CpioServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A612196FD7700E92DD9 /* CpioServer.c */; };
 		59B4188F219D3FE700C0234B /* Other_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59B4188E219D3FE700C0234B /* Other_UnitTests.c */; };
+		59B4189521A0408300C0234B /* list.c in Sources */ = {isa = PBXBuildFile; fileRef = 59B4189321A0408300C0234B /* list.c */; };
 		59E99DE32187078E00805C68 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE12187078E00805C68 /* main.c */; };
 		59E99DE42187078E00805C68 /* FileServer.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE22187078E00805C68 /* FileServer.c */; };
 		59E99DE721870FCB00805C68 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 59E99DE621870FCB00805C68 /* fs.c */; };
@@ -90,8 +89,6 @@
 		59AECEF3218DC84300E12D02 /* io.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
 		59AECEF5218DC84300E12D02 /* chardev.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = chardev.h; sourceTree = "<group>"; };
 		59AECEF7218DC84300E12D02 /* vka.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vka.h; sourceTree = "<group>"; };
-		59AED242218E1A0D00E12D02 /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = list.h; path = util_libs/libutils/include/utils/list.h; sourceTree = "<group>"; };
-		59AED243218E1A0D00E12D02 /* list.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = list.c; path = util_libs/libutils/src/list.c; sourceTree = "<group>"; };
 		59AED248218E1B9000E12D02 /* Process.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Process.c; path = ../src/Process.c; sourceTree = "<group>"; };
 		59AED24A218E1BD400E12D02 /* SysCallNum.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SysCallNum.h; path = ../../libSysCall/include/SysCallNum.h; sourceTree = "<group>"; };
 		59AED24B218E1D6F00E12D02 /* Sofa.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Sofa.h; path = ../src/Sofa.h; sourceTree = "<group>"; };
@@ -115,11 +112,12 @@
 		59AED2692190A10500E12D02 /* IODevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = IODevice.h; path = ../src/IODevice.h; sourceTree = "<group>"; };
 		59AED26A2190A10500E12D02 /* IODevice.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = IODevice.c; path = ../src/IODevice.c; sourceTree = "<group>"; };
 		59AED26C2190A22200E12D02 /* bootinfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bootinfo.h; sourceTree = "<group>"; };
-		59B41889219AF25F00C0234B /* SysClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SysClient.h; path = ../../../libSysCall/include/SysClient.h; sourceTree = "<group>"; };
-		59B4188A219AF27B00C0234B /* IPC.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = IPC.c; path = ../../../libSysCall/src/IPC.c; sourceTree = "<group>"; };
 		59B4188D219D3FE700C0234B /* Other_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Other_UnitTests.h; sourceTree = "<group>"; };
 		59B4188E219D3FE700C0234B /* Other_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Other_UnitTests.c; sourceTree = "<group>"; };
 		59B41890219DA86900C0234B /* Timer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Timer.h; path = ../src/Timer.h; sourceTree = "<group>"; };
+		59B4189221A03FE400C0234B /* types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
+		59B4189321A0408300C0234B /* list.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = list.c; path = util_libs/libutils/src/list.c; sourceTree = "<group>"; };
+		59B4189421A0408300C0234B /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = list.h; path = util_libs/libutils/include/utils/list.h; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -173,9 +171,9 @@
 		59AECEEB218DC84300E12D02 /* Sel4_Stubs */ = {
 			isa = PBXGroup;
 			children = (
-				59AED243218E1A0D00E12D02 /* list.c */,
-				59AED242218E1A0D00E12D02 /* list.h */,
-				59AED26D2190AD0F00E12D02 /* sel4 */,
+				59B4189321A0408300C0234B /* list.c */,
+				59B4189421A0408300C0234B /* list.h */,
+				59B4189121A03FE400C0234B /* sel4 */,
 				59AECEEC218DC84300E12D02 /* simple */,
 				59AECEEE218DC84300E12D02 /* sel4utils */,
 				59AECEF0218DC84300E12D02 /* sel4platsupport */,
@@ -262,26 +260,17 @@
 			path = ../src/TimerWheel;
 			sourceTree = "<group>";
 		};
-		59AED26D2190AD0F00E12D02 /* sel4 */ = {
+		59B4189121A03FE400C0234B /* sel4 */ = {
 			isa = PBXGroup;
 			children = (
+				59B4189221A03FE400C0234B /* types.h */,
 			);
 			path = sel4;
-			sourceTree = "<group>";
-		};
-		59B41888219AF24200C0234B /* libSysCall */ = {
-			isa = PBXGroup;
-			children = (
-				59B4188A219AF27B00C0234B /* IPC.c */,
-				59B41889219AF25F00C0234B /* SysClient.h */,
-			);
-			path = libSysCall;
 			sourceTree = "<group>";
 		};
 		59E99DC6218703FF00805C68 = {
 			isa = PBXGroup;
 			children = (
-				59B41888219AF24200C0234B /* libSysCall */,
 				59AED253218E2CCB00E12D02 /* TimerWheel */,
 				59AED24A218E1BD400E12D02 /* SysCallNum.h */,
 				59AECEEB218DC84300E12D02 /* Sel4_Stubs */,
@@ -387,14 +376,13 @@
 				59AED26821909DFD00E12D02 /* DriverKit_UnitTests.c in Sources */,
 				59AED249218E1B9000E12D02 /* Process.c in Sources */,
 				59AED263219090E400E12D02 /* DriverKit.c in Sources */,
-				59AED244218E1A0D00E12D02 /* list.c in Sources */,
-				59B4188B219AF27B00C0234B /* IPC.c in Sources */,
 				59067A5F2195D7ED00E92DD9 /* DevServer_UnitTests.c in Sources */,
 				599D6E2521897ECD00FD93BD /* cvector.c in Sources */,
 				59AECEE521898E6200E12D02 /* StringOperations.c in Sources */,
 				59AED25C218E2CCB00E12D02 /* timeout-bitops.c in Sources */,
 				59B4188C219B11D600C0234B /* CpioServer.c in Sources */,
 				599D6E2221897ECD00FD93BD /* coat.c in Sources */,
+				59B4189521A0408300C0234B /* list.c in Sources */,
 				59AED24F218E259700E12D02 /* Init_UnitTests.c in Sources */,
 				59067A6C21999CC600E92DD9 /* ProcessTable_UnitTests.c in Sources */,
 				59067A692199506000E92DD9 /* File.c in Sources */,

@@ -77,14 +77,17 @@ static int Test_ProcessTable()
     
     p1->_pid = 1;
     assert(ProcessTableAppend(p1));
+    
     assert(ProcessTableGetCount() == 1);
-    assert(ProcessTableGetByPID(0) == NULL);
+    assert(ProcessTableGetByPID(10000) == NULL);
+    assert(ProcessTableGetByPID(1) == NULL);
     assert(ProcessTableGetByPID(-1) == NULL);
     
-    assert(ProcessTableGetByPID(1) == p1);
+    assert(ProcessTableGetByPID(0) == p1);
     
     ProcessTableRemove(p1);
     assert(ProcessTableGetCount() == 0);
+    assert(ProcessTableGetByPID(0) == NULL);
     assert(ProcessTableGetByPID(1) == NULL);
     
     ProcessRelease(p1);
