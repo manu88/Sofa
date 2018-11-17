@@ -75,7 +75,7 @@ int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t
         }
 	else 
         {
-                printf("Unable to open '%s' err %i \n" , pathname , ret);
+//                printf("Unable to open '%s' err %i \n" , pathname , ret);
         }
 
 
