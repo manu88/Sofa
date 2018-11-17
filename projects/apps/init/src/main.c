@@ -15,11 +15,6 @@ int main( int argc , char* argv[])
         return 1;
     }
 
-    errno = 0;
-    int retMkDir = mkdir("folder" , 0666);
-    printf("retMkDir %i errno %i \n" , retMkDir , errno);
-
-
     int pidTests = execve("TestSysCalls" , NULL , NULL);
 
 

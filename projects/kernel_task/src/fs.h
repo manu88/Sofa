@@ -33,7 +33,7 @@
 #include "TimerWheel/queue.h"
 #include <data_struct/chash.h>
 #include "uthash.h"
-#include <sys/dirent.h>
+#include <dirent.h>
 /*
  * INodeType should follow
  */
