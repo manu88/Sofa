@@ -4,6 +4,8 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h> // mkdir 
+#include <errno.h>
 
 int main( int argc , char* argv[])
 {
@@ -12,6 +14,10 @@ int main( int argc , char* argv[])
     {
         return 1;
     }
+
+    errno = 0;
+    int retMkDir = mkdir("folder" , 0666);
+    printf("retMkDir %i errno %i \n" , retMkDir , errno);
 
 
     int pidTests = execve("TestSysCalls" , NULL , NULL);

@@ -58,3 +58,4 @@ int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_
 //int handle_getdents64(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_fcntl(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
+int handle_mkdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);

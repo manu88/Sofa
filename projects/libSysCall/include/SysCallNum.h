@@ -46,4 +46,5 @@
 #define __SOFA_NR_chdir                 18
 //#define __SOFA_NR_getdents64		19 // directly handled by read
 #define __SOFA_NR_fcntl			19
+#define __SOFA_NR_mkdir 		20
 

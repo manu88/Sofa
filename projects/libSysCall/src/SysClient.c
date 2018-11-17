@@ -48,6 +48,9 @@ static long sys_chdir(va_list args);
 static long sys_fcntl(va_list args);
 static long sys_getdents64(va_list args);
 
+
+static long sys_mkdir(va_list args);
+
 static size_t _Sofa_stdio_write(void *data, size_t count);
 
 static seL4_CPtr sysCallEndPoint = 0;
@@ -90,6 +93,8 @@ int SysClientInit(int argc , char* argv[] )
 
     muslcsys_install_syscall(__NR_fcntl      , sys_fcntl);
     muslcsys_install_syscall(__NR_getdents64 , sys_getdents64);
+
+    muslcsys_install_syscall(__NR_mkdir	     , sys_mkdir);
 
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
     return 0;
@@ -668,4 +673,12 @@ static long sys_getdents64(va_list args)
 	return -ENOSYS;
 */
 	return doRead(fd , dirp, count , 2);
+}
+
+
+// int mkdir(const char *pathname, mode_t mode);
+static long sys_mkdir(va_list args)
+{
+	
+	return 0;
 }
