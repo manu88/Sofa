@@ -31,7 +31,7 @@ int ProcessTable_UnitTests()
     assert(initProcess.startTime == 0);
     //assert(ProcessTableAppend(&p1));
     
-    InitContext ctx;
+    KernelTaskContext ctx;
     ProcessTableAddAndStart(&ctx, &p1, "initCmd", 0, &initProcess, 255);
     
     assert( strcmp( p1.cmdLine , "initCmd" ) == 0 );

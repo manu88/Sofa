@@ -34,7 +34,7 @@ UNUSED static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
 UNUSED static sel4utils_alloc_data_t data;
 
 
-int bootstrapSystem(InitContext *context)
+int bootstrapSystem(KernelTaskContext *context)
 {
     UNUSED int error = 0;
 

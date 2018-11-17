@@ -29,7 +29,7 @@ int ProcessTableInit(void) SOFA_UNIT_TESTABLE;
 Inode* ProcessTableGetInode(void) SOFA_UNIT_TESTABLE;
 
 // wrapper that do Append and ProcessStart
-int ProcessTableAddAndStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )NO_NULL_POINTERS;
+int ProcessTableAddAndStart(KernelTaskContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )NO_NULL_POINTERS;
 
 int ProcessTableAppend( Process* process) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 

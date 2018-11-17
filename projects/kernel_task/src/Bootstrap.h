@@ -43,7 +43,7 @@ typedef struct
 
     struct ps_io_ops    opsIO;
 
-} InitContext;
+} KernelTaskContext;
 
 
-int bootstrapSystem(InitContext* context);
+int bootstrapSystem(KernelTaskContext* context);

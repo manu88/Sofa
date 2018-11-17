@@ -58,7 +58,7 @@ struct _WaiterListEntry
     Process *process;
     int reason;
     seL4_CPtr reply;
-    InitContext* context;
+    KernelTaskContext* context;
 
     LIST_ENTRY(_WaiterListEntry) entries;
 };
@@ -103,8 +103,9 @@ int ProcessGetNumChildren(const Process* process) NO_NULL_POINTERS SOFA_UNIT_TES
 // ask -1 for any child
 Process* ProcessGetChildByPID( const Process* process , pid_t pid) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority ) NO_NULL_POINTERS;
-int ProcessStop(InitContext* context,Process* process) NO_NULL_POINTERS;
+int ProcessStart(KernelTaskContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority ) NO_NULL_POINTERS;
+
+int ProcessStop(KernelTaskContext* context,Process* process) NO_NULL_POINTERS;
 
 
 int ProcessSetCmdLine(Process* process , const char* cmdline)NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
@@ -119,8 +120,8 @@ NO_NULL_POINTERS static inline void ProcessSetState(Process* process, ProcessSta
 int ProcessSetParentShip(Process* parent , Process* child) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 
-int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio) NO_NULL_POINTERS;
-int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio) NO_NULL_POINTERS;
+int ProcessSetPriority(KernelTaskContext* context,Process* process , uint8_t prio) NO_NULL_POINTERS;
+int ProcessGetPriority(KernelTaskContext* context,Process* process , uint8_t *prio) NO_NULL_POINTERS;
 
 size_t ProcessGetNumFDs( /*const*/ Process* process) NO_NULL_POINTERS;
 struct _inode* ProcessGetNode( /*const*/ Process* process , int index) NO_NULL_POINTERS;
