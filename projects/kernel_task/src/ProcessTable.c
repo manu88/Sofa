@@ -245,7 +245,7 @@ static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 
 
 
-int ProcessTableAddAndStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
+int ProcessTableAddAndStart(KernelTaskContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
 	int error = !ProcessTableAppend(process);
 	assert(error == 0);

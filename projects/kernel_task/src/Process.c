@@ -88,7 +88,7 @@ int ProcessDeInit(Process * process )
 
 
 
-int ProcessStart(InitContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
+int ProcessStart(KernelTaskContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
     
 #ifndef __APPLE__
@@ -145,7 +145,7 @@ int ProcessStart(InitContext* context, Process* process,const char* imageName, c
 #endif
 }
 
-int ProcessStop(InitContext* context,Process* process)
+int ProcessStop(KernelTaskContext* context,Process* process)
 {
 #ifndef __APPLE__
     sel4utils_destroy_process( &process->_process, &context->vka);
@@ -196,7 +196,7 @@ Process* ProcessGetChildByPID( const Process* process , pid_t pid)
 	return NULL;
 }
 
-int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio)
+int ProcessSetPriority(KernelTaskContext* context,Process* process , uint8_t prio)
 {
 #ifndef __APPLE__
 	return seL4_TCB_SetPriority( sel4utils_get_tcb(&process->_process.thread),
@@ -207,7 +207,7 @@ int ProcessSetPriority(InitContext* context,Process* process , uint8_t prio)
 #endif
 }
 
-int ProcessGetPriority(InitContext* context,Process* process , uint8_t *prio)
+int ProcessGetPriority(KernelTaskContext* context,Process* process , uint8_t *prio)
 {
 	return -1;
 }
