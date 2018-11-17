@@ -24,6 +24,7 @@
 #include "BaseCommands.h"
 #include <stdlib.h>
 #include <signal.h>
+#include <sys/stat.h>
 
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
@@ -170,4 +171,10 @@ int exec_kill( const char* args)
 	long pidToKill = atol(args);
 
 	return kill(pidToKill , SIGTERM);
+}
+
+
+int exec_mkdir( const char* args)
+{
+	return mkdir(args , 1);
 }

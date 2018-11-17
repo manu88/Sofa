@@ -23,6 +23,7 @@ Usefull links :
 * `chdir`
 * `fcntl`
 * `getdents64`
+* `mkdir`
 
 ## Features
 * EGA shell

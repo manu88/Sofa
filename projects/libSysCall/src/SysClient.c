@@ -18,6 +18,7 @@
 #include <sys/resource.h>
 #include <SysCallNum.h>
 #include <arch_stdio.h>
+#include <assert.h>
 
 static long doRead(int fd, void *buf, size_t count , int expectedNodeType);
 static long sys_read(va_list args);
@@ -649,29 +650,11 @@ static long sys_fcntl(va_list args)
 static long sys_getdents64(va_list args)
 {
 	const int fd  	  	    = va_arg (args, int);
-	//struct linux_dirent64 *dirp = va_arg (args, struct linux_dirent64 *);
+
 	struct dirent64 *dirp = va_arg (args, struct dirent64 *);
-	
 	unsigned int count	    = va_arg (args,unsigned int);
 
 	memset(dirp , 0 , count);
-
-//	printf("sys_getdents64 fd %i count %i\n" , fd , count);
-
-/*
-	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3); // syscallnum fd reqtype
-	seL4_SetMR(0, __SOFA_NR_getdents64);
-	seL4_SetMR(1, fd);
-	seL4_SetMR(2, 1); // get children count
-
-	tag = seL4_Call(sysCallEndPoint, tag);
-        assert(seL4_GetMR(0) == __SOFA_NR_getdents64 );
-
-	assert(seL4_GetMR(1) == 1);
-
-	printf("Returned %i\n" , seL4_GetMR(2));
-	return -ENOSYS;
-*/
 	return doRead(fd , dirp, count , 2);
 }
 
@@ -679,6 +662,30 @@ static long sys_getdents64(va_list args)
 // int mkdir(const char *pathname, mode_t mode);
 static long sys_mkdir(va_list args)
 {
-	
-	return 0;
+	const char* pathname = va_arg(args , char*);
+	const mode_t mode    = va_arg(args , mode_t);
+
+	assert(pathname);
+
+	const size_t pathLen = strlen(pathname);
+
+	assert( pathLen );
+
+
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3 + pathLen );
+
+	seL4_SetMR(0, __SOFA_NR_mkdir);
+	seL4_SetMR(1,  mode);
+	seL4_SetMR(2 , pathLen);
+
+	for( size_t i = 0; i< pathLen; ++i)
+	{
+		seL4_SetMR(3+i , pathname[i] );
+	}
+
+	tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_mkdir );
+        return seL4_GetMR(1);
+
+
 }

@@ -67,6 +67,12 @@ static int execCommand( char* cmd)
 
         return exec_cat(arg);
     }
+    else if (startsWith("mkdir", cmd))
+    {
+        char* arg = cmd + strlen("mkdir ");
+
+        return exec_mkdir(arg);
+    }
     else if (startsWith("touch", cmd))
     {
         char* arg = cmd + strlen("touch ");

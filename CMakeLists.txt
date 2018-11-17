@@ -31,7 +31,7 @@ ApplyCommonReleaseVerificationSettings(FALSE FALSE)
 
 # add  '-vga std' to qemu for bga mode ?
 
-#SetSimulationScriptProperty(GRAPHIC TRUE)
+SetSimulationScriptProperty(GRAPHIC TRUE)
 GenerateSimulateScript()
 
 
