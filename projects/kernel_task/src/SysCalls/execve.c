@@ -43,8 +43,12 @@ int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo
         
     newProcess->currentDir = senderProcess->currentDir;
 
+    // TODO inherit from parent's fd table
+    
     int  error = ProcessTableAddAndStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
     assert(error == 0);
+
+
 
     /**/
     free(filename);
