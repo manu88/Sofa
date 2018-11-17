@@ -23,7 +23,7 @@
 #include "../ProcessTable.h"
 
 
-int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     const int msgLen = seL4_MessageInfo_get_length(message);
     assert(msgLen > 0);

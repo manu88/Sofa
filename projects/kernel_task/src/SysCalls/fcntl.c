@@ -22,7 +22,7 @@
 #include <fcntl.h>
 
 
-int handle_fcntl(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_fcntl(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 
 	int fd  = seL4_GetMR(1);

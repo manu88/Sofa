@@ -22,7 +22,7 @@
 #include <SysCallNum.h>
 
 
-int handle_nanosleep(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_nanosleep(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 
     int error = 0;

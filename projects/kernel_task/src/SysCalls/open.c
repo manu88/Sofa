@@ -22,7 +22,7 @@
 #include <fcntl.h>
 
 
-int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
         int flags = seL4_GetMR(1);
 

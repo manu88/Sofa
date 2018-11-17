@@ -19,7 +19,7 @@
 #include "../SysCalls.h"
 #include "../ProcessDef.h"
 
-int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_wait4(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     const pid_t pidToWait = seL4_GetMR(1);
     const int options     = seL4_GetMR(2);

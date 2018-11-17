@@ -22,7 +22,7 @@
 #include <fcntl.h>
 
 
-int handle_mkdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_mkdir(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	// 0 sys call num
 	// 1 mode

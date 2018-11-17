@@ -22,7 +22,7 @@
 #include <fcntl.h>
 
 
-int handle_chdir(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_chdir(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	size_t pathSize = seL4_GetMR(1);
 

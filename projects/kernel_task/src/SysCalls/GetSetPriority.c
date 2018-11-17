@@ -19,7 +19,7 @@
 #include <sys/resource.h>
 #include <SysCallNum.h>
 
-int handle_getpriority(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_getpriority(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	const int which = seL4_GetMR(1);
 	const id_t who  = seL4_GetMR(2);
@@ -30,7 +30,7 @@ int handle_getpriority(InitContext* context, Process *senderProcess, seL4_Messag
 	return 0;
 }
 
-int handle_setpriority(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_setpriority(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 { 
 	const int which = seL4_GetMR(1);
 	const id_t who  = seL4_GetMR(2);

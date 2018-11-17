@@ -21,21 +21,21 @@
 #include "Bootstrap.h"
 #include "ProcessDef.h"
 
-typedef int (*SysCallHandler)(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+typedef int (*SysCallHandler)(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 
-int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_write(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_open(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_close(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_read(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_write(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_close(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
-int handle_nanosleep(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_getpid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_getppid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_execve(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
-int handle_wait4(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_nanosleep(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_getpid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_getppid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_exit(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_kill(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_wait4(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 
 int handle_getpriority(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message);

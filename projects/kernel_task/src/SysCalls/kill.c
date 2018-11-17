@@ -22,7 +22,7 @@
 
 #include <fcntl.h>
 
-int handle_kill(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_kill(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     seL4_Word pidToKill = seL4_GetMR(1);
     seL4_Word sigToSend = seL4_GetMR(2);

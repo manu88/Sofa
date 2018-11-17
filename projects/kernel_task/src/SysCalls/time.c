@@ -23,13 +23,13 @@
 #include "../Timer.h"
 
 
-int handle_getTimeOfTheDay(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_getTimeOfTheDay(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	return 0;
 }
 
 
-int handle_clock_getTime(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_clock_getTime(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	const clockid_t clk_id = seL4_GetMR(1);
 

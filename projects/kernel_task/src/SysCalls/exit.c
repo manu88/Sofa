@@ -22,7 +22,7 @@
 #include <fcntl.h>
 #include "../ProcessTable.h"
 
-int handle_exit(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_exit(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     int exitStatus = seL4_GetMR(1);
 

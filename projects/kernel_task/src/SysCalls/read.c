@@ -21,7 +21,7 @@
 #include "../FileServer.h"
 #include <fcntl.h>
 
-int handle_read(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_read(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	const int msgLen = seL4_MessageInfo_get_length(message);
 

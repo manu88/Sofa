@@ -22,7 +22,7 @@
 #include <fcntl.h>
 
 
-int handle_write(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_write(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 
 	// 0 : sysNum

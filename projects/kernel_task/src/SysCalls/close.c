@@ -22,7 +22,7 @@
 #include <fcntl.h>
 
 
-int handle_close(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_close(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	const int fd =  seL4_GetMR(1);
 	

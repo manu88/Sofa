@@ -21,7 +21,7 @@
 #include "../FileServer.h"
 #include <fcntl.h>
 
-int handle_getcwd(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_getcwd(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	size_t bufferSize = seL4_GetMR(1);
 

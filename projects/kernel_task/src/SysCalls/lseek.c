@@ -21,7 +21,7 @@
 #include "../FileServer.h"
 #include <fcntl.h>
 
-int handle_lseek(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_lseek(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
         const int fd = seL4_GetMR(1);
         const off_t offset = seL4_GetMR(2);

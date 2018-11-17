@@ -21,7 +21,7 @@
 #include "../FileServer.h"
 #include <fcntl.h>
 
-int handle_getpid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_getpid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     seL4_SetMR(1, senderProcess->_pid);
     seL4_Reply( message );
@@ -29,7 +29,7 @@ int handle_getpid(InitContext* context, Process *senderProcess, seL4_MessageInfo
     return 0;
 }
 
-int handle_getppid(InitContext* context, Process *senderProcess, seL4_MessageInfo_t message)
+int handle_getppid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
     seL4_SetMR(1, senderProcess->_parent->_pid );
     seL4_Reply( message );
