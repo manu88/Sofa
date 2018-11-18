@@ -97,9 +97,6 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
         }
 	cqueue_push(&term->inputChar , (cqueue_item_t) c);
 
-  //      printf("You typed [%c] size %zi\n", c ,  cqueue_size(&term->inputChar ) );
-
-//	terminal_putentryat(c ,VGA_COLOR_GREEN ,  0 , 1);
 	terminal_putchar(term , c);
 
 
@@ -117,9 +114,11 @@ void terminal_clear(Terminal* term)
 	{
 		for(int j = 0;j<MODE_HEIGHT;j++)
 		{
-			terminal_putentryat(' ', VGA_COLOR_RED, term->terminal_column, term->terminal_row);
+			terminal_putentryat(' ', VGA_COLOR_RED, i, j);
 		}
 	}
+	term->terminal_column = 0;
+	term->terminal_row    = 0;
 }
 
 
@@ -132,7 +131,7 @@ static void terminal_putchar(Terminal* term , char c)
 	}
 	else 
 	{
-             terminal_putentryat(c, VGA_COLOR_RED, term->terminal_column, term->terminal_row);
+             terminal_putentryat(c, VGA_COLOR_WHITE, term->terminal_column, term->terminal_row);
 	}
 
 	

@@ -91,6 +91,12 @@ static int execCommand( char* cmd)
         
         return exec_ps(arg);
     }
+    else if (strcmp(cmd , "whoami")  == 0)
+    {
+	const char b[] = "god";
+        writeConsole( b  ,strlen(b));
+        return 0;
+    }
 	else if (strcmp(cmd , "pwd")  == 0)
 	{
 		char* pwd = getcwd(NULL, 0);

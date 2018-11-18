@@ -57,7 +57,11 @@ static size_t _Sofa_stdio_write(void *data, size_t count);
 static seL4_CPtr sysCallEndPoint = 0;
 
 
-
+static long sys_writev(va_list args)
+{
+	assert(0);
+	return 0;
+}
 
 int SysClientInit(int argc , char* argv[] )
 {
@@ -96,6 +100,8 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_getdents64 , sys_getdents64);
 
     muslcsys_install_syscall(__NR_mkdir	     , sys_mkdir);
+
+//    muslcsys_install_syscall(__NR_writev , sys_writev);
 
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
     return 0;

@@ -6,10 +6,18 @@ if (${PLATFORM} IN_LIST KernelX86Sel4Arch_all_strings)
 endif()
 
 
+
+
 include(tools/cmake-tool/default-CMakeLists.txt)
+
+
+config_set(LIB_PICOTCP LIB_PICOTCP True)
+
 
 #config_option(SUPPORT_SERIAL_TEXT_EGA LIB_PLAT_SUPPORT_SERIAL_TEXT_EGA "Makes library awesome" DEFAULT ON)
 #LIB_PLAT_SUPPORT_SERIAL_TEXT_EGA
+
+#CONFIG_LIB_PICOTCP
 
 
 if(SIMULATION)

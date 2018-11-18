@@ -20,9 +20,13 @@ MakeCPIO(archive.o "${cpio_apps}")
 file(GLOB deps src/*.c src/*/*.c)
 list(SORT deps)
 
+
+set(LibPicotcp ON CACHE BOOL "" FORCE)
+config_set(LIB_PICOTCP LIB_PICOTCP True)
+
 add_executable(kernel_task ${deps} archive.o)
 
-target_link_libraries(kernel_task sel4muslcsys sel4allocman sel4platsupport sel4 muslc cpio sel4utils libSysCall libdatastruct) 
+target_link_libraries(kernel_task sel4muslcsys sel4allocman sel4platsupport sel4 muslc cpio sel4utils libSysCall libdatastruct picotcp ethdrivers) 
 
 # warn about everything
 add_compile_options(-Wall -Werror -W -Wextra)

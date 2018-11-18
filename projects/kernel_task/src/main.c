@@ -51,7 +51,7 @@
 
 
 #include "Devices/Terminal.h"
-
+#include "SysHandler.h"
 
 //#define APP_PRIORITY seL4_MaxPrio
 //#define APP_IMAGE_NAME "app"
@@ -132,6 +132,13 @@ int main(void)
     assert( FileServerGetINodeForPath("/dev/" , NULL) == DevServerGetInode() );
 
     assert(InodeGetChildrenCount(FileServerGetRootNode()) > 0);
+
+
+    error = !SysHandlerInit();
+    assert(error == 0);
+
+    error = !FileServerAddNodeAtPath( SysHandlerGetINode() , "/");
+    ZF_LOGF_IFERR(error, "Failed to register Sys File System \n");
 
  /* create an endpoint. */
     vka_object_t ep_object = {0};

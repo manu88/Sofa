@@ -23,5 +23,9 @@ int main( int argc , char* argv[])
     int status = 0;
     waitpid(pidShell, &status , 0);
 
+    printf("shell returned \n");
+
+    while(1){}
+
     return 0;
 }
