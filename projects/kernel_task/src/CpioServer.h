@@ -22,11 +22,6 @@
 #include "FileServer.h"
 
 
-
-
-
-
-
 int CPIOServerInit(void);
 
 Inode* CPIOServerGetINode(void);

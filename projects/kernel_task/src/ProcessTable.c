@@ -95,8 +95,10 @@ int ProcessTableAppend( Process* process)
         char str[32];
         sprintf(str, "%i", process->_pid);
     
-        if (!InodeInit(&process->_processNode, INodeType_Folder, strdup(str) ))
+        char* nodeName = strdup(str);
+        if (!InodeInit(&process->_processNode, INodeType_Folder, nodeName ))
         {
+            free(nodeName);
             return 0;
         }
         process->_processNode.userData = process;
@@ -180,14 +182,14 @@ static ssize_t _CmdLineRead(Inode *node, char* buffer , size_t count)
 	assert( node->size);
 //	printf("_CmdLineRead for process '%s'\n" , process->cmdLine);
 	assert(process->cmdLine);
-	const ssize_t remainSize = node->size - node->pos;
+	const ssize_t remainSize = (ssize_t)(node->size - node->pos);
 	assert(remainSize>=0);
 
-	size_t toRead = count < remainSize ? count : remainSize;
+	ssize_t toRead = count < remainSize ? (ssize_t)count : remainSize;
 
 	memcpy(buffer , process->cmdLine + node->pos , toRead);
 
-	node->pos +=toRead;
+	node->pos += (size_t)toRead;
 	return toRead;
 /*
         if(node->pos == 0)

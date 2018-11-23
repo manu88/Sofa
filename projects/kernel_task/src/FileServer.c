@@ -69,7 +69,7 @@ Inode* FileServerGetRootNode()
 }
 
 
-Inode* FileServerOpenRelativeTo( const char* pathname , const Inode* relativeTo , int flags , int *error) 
+File* FileServerOpenRelativeTo( const char* pathname , const Inode* relativeTo , int flags , int *error)
 {
     Inode* n = FileServerGetINodeForPath(pathname , relativeTo);
     
@@ -101,7 +101,7 @@ Inode* FileServerOpenRelativeTo( const char* pathname , const Inode* relativeTo 
 
 }
 
-Inode* FileServerOpen( /*InitContext* context ,*/ const char*pathname , int flags , int*error)
+File* FileServerOpen( /*InitContext* context ,*/ const char*pathname , int flags , int*error)
 {
     return FileServerOpenRelativeTo(pathname , NULL , flags , error);
 /*

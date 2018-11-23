@@ -35,32 +35,6 @@
 
 #include "Init_UnitTests.h"
 
-static int cpioCalled = 0;
-static Inode* CpioOpen(void* context, const char*pathname ,int flags, int *error)
-{
-    printf("CpioOpen '%s' flags %i\n" ,pathname , flags);
-    
-    cpioCalled = 1;
-    
-    return NULL;
-}
-
-static int consoleOpenCalled = 0;
-static Inode* ConsoleOpen (struct _DeviceOperations * device, int flags )
-{
-    consoleOpenCalled = 1;
-    Inode* node = malloc(sizeof(Inode) );
-    node->operations = &device->fileOps;
-    return node;
-}
-
-
-static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size)
-{
-    printf("ConsolesWrite '%s' %zi \n" , buffer , size);
-    
-    return (ssize_t)size;
-}
 
 int main(int argc, const char * argv[])
 {
