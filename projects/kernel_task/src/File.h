@@ -16,12 +16,15 @@
  */
 
 #pragma once
+#include "utlist.h"
 
 struct _inode;
 
 struct _File
 {
-    struct _inode *inode;
+    struct _inode *inode; // Needs to stay first !!
+    
+    struct _File *next;
 };
 
 typedef struct _File File;

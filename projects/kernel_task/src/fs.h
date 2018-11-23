@@ -33,6 +33,7 @@
 #include "TimerWheel/queue.h"
 #include <data_struct/chash.h>
 #include "uthash.h"
+#include "utlist.h"
 #include <dirent.h>
 /*
  * INodeType should follow
@@ -103,6 +104,10 @@ struct _inode
     size_t pos;
     size_t size;
     void* userData;
+    
+    
+    
+    File* _files; // linked list
     
     struct _inode* _parent;
     struct _inode* children;

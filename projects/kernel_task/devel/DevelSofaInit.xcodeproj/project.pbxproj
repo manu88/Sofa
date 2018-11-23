@@ -118,6 +118,7 @@
 		59B4189221A03FE400C0234B /* types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		59B4189321A0408300C0234B /* list.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = list.c; path = util_libs/libutils/src/list.c; sourceTree = "<group>"; };
 		59B4189421A0408300C0234B /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = list.h; path = util_libs/libutils/include/utils/list.h; sourceTree = "<group>"; };
+		59B4189621A7DCCB00C0234B /* utlist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = utlist.h; path = ../src/utlist.h; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -290,6 +291,7 @@
 				59AED248218E1B9000E12D02 /* Process.c */,
 				59067A612196FD7700E92DD9 /* CpioServer.c */,
 				59067A602196FD7600E92DD9 /* CpioServer.h */,
+				59B4189621A7DCCB00C0234B /* utlist.h */,
 				59067A5C2195C30400E92DD9 /* uthash.h */,
 				59067A672199506000E92DD9 /* File.h */,
 				59067A682199506000E92DD9 /* File.c */,
