@@ -88,7 +88,7 @@ struct _iNodeOperations
 int INodeOperations_NoOpen (struct _inode *node, int flags);
 
 
-
+struct _File;
 
 typedef struct _iNodeOperations INodeOperations;
 
@@ -107,7 +107,7 @@ struct _inode
     
     
     
-    File* _files; // linked list
+    struct _File* _files; // linked list
     
     struct _inode* _parent;
     struct _inode* children;

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <sel4/sel4.h>
 #include <stdlib.h> // atol
-
+#include <limits.h>
 #include <utils/time.h>
 #include <time.h>
 
@@ -19,6 +19,7 @@
 #include <SysCallNum.h>
 #include <arch_stdio.h>
 #include <assert.h>
+#include <sys/uio.h>
 
 static long doRead(int fd, void *buf, size_t count , int expectedNodeType);
 static long sys_read(va_list args);
@@ -57,11 +58,7 @@ static size_t _Sofa_stdio_write(void *data, size_t count);
 static seL4_CPtr sysCallEndPoint = 0;
 
 
-static long sys_writev(va_list args)
-{
-	assert(0);
-	return 0;
-}
+static long sys_writev(va_list args);
 
 int SysClientInit(int argc , char* argv[] )
 {
@@ -693,5 +690,45 @@ static long sys_mkdir(va_list args)
         assert(seL4_GetMR(0) == __SOFA_NR_mkdir );
         return seL4_GetMR(1);
 
+
+}
+
+static long sys_writev(va_list args)
+{
+	int fildes        = va_arg(args, int);
+	struct iovec *iov = va_arg(args, struct iovec *);
+	int iovcnt 	  = va_arg(args, int);
+
+	long long sum = 0;
+	ssize_t ret = 0;
+        return 0;
+	
+/*
+	// The iovcnt argument is valid if greater than 0 and less than or equal to IOV_MAX. 
+    	if (iovcnt <= 0 || iovcnt > IOV_MAX) {
+        	return -EINVAL;
+    	}
+*/
+    	// The sum of iov_len is valid if less than or equal to SSIZE_MAX i.e. cannot overflow a ssize_t. 
+    	for (int i = 0; i < iovcnt; i++) 
+	{
+        	sum += (long long)iov[i].iov_len;
+        	if (sum > SSIZE_MAX) {
+            		return -EINVAL;
+        	}
+    	}
+
+	// If all the iov_len members in the array are 0, return 0. 
+    	if (!sum) 
+	{
+        	return 0;
+    	}
+
+	for (int i = 0; i < iovcnt; i++) 
+	{
+                ret += write( fildes,iov[i].iov_base, iov[i].iov_len);
+        }
+
+	return ret;
 
 }

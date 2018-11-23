@@ -87,6 +87,7 @@ static int execCommand( char* cmd)
     }
     else if (startsWith("ps", cmd))
     {
+	printf("test\n");
         char* arg = cmd + strlen("ps ");
         
         return exec_ps(arg);
