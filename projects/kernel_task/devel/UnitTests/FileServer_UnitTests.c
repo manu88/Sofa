@@ -216,8 +216,8 @@ static int FileServer_OperationTests()
     assert( FileServerGetINodeForPath("/cpio",NULL) );
     assert( FileServerGetINodeForPath("/cpio/",NULL) );
     
-    int err = 0;
-    Inode* testNode = FileServerOpen( "/cpio/test", 1, &err);
+    //int err = 0;
+    //Inode* testNode = FileServerOpen( "/cpio/test", 1, &err);
     
     
     return 1;

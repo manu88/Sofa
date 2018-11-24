@@ -35,10 +35,12 @@
 
 int FileServerInit(void) SOFA_UNIT_TESTABLE;
 
-File* FileServerOpen(/*InitContext* context ,*/ const char*pathname , int flags , int *error) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+// Use FileServerOpenRelativeTo
+SOFA_DEPRECATED("") File* FileServerOpen(/*InitContext* context ,*/ const char*pathname , int flags , int *error) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
 File* FileServerOpenRelativeTo( const char* pathname ,const Inode* relativeTo , int flags , int *error) NO_NULL_ARGS(1,1) NO_NULL_ARGS(4,1) SOFA_UNIT_TESTABLE;
 
-Inode* FileServerGetRootNode(void ) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+Inode* FileServerGetRootNode(void ) SOFA_UNIT_TESTABLE;
 
 // pass relativeTo = NULL to start from root ONLY IF the given path is absolute
 Inode* FileServerGetINodeForPath(  const char* path ,const Inode* relativeTo) NO_NULL_ARGS(1,1) SOFA_UNIT_TESTABLE;

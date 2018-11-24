@@ -51,7 +51,7 @@ ssize_t readConsole( void*b , size_t len)
 
 void PrintHelp()
 {
-    const char b[] = "Some help you could use .... \n available command : ls pwd cd  \n";
+    const char b[] = "Some help you could use .... \n available command : ls pwd cd cat touch ps kill clear exec mkdir \n";
     writeConsole(  b ,strlen(b));
 }
 

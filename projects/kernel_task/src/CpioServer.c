@@ -195,7 +195,7 @@ static int CpioOpen (Inode * node , int flags)
 */
     return NULL;
 #else
-    return NULL;
+    return 0;
     
 #endif
 }

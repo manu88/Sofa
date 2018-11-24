@@ -94,7 +94,7 @@ static int execCommand( char* cmd)
     }
     else if (strcmp(cmd , "whoami")  == 0)
     {
-	const char b[] = "god";
+        const char b[] = "god";
         writeConsole( b  ,strlen(b));
         return 0;
     }
@@ -124,17 +124,19 @@ static int execCommand( char* cmd)
 		return chdir(arg);
 
 	}
-        else if (strcmp(cmd, "exit") == 0)
-        {
-            exit(0);
-        }
-	else 
+    else if (strcmp(cmd, "exit") == 0)
+    {
+        exit(0);
+    }
+	else if( strlen(cmd))
 	{
 		const char msg[] = "unknown command ";
 		writeConsole(msg , strlen(msg) );
 		writeConsole(cmd , strlen(cmd) );
-		writeConsole("\n" , 1);
+		
 	}
+
+    
 	return 0;
 }
 
@@ -159,7 +161,7 @@ int main( int argc , char* argv[])
     InitConsoleFDs(consoleFD, consoleFD);
 #endif
     
-    const char b[] = "Sofa Shell - 2018";
+    const char b[] = "Sofa Shell - 2018\n";
     writeConsole(  b ,strlen(b));
 
     char buf[4] = {0};
@@ -183,7 +185,11 @@ int main( int argc , char* argv[])
                 if (buf[i] == '\n' || buf[i] == '\r')
                 {
                     cmdBuf[index++] = 0;
-                    execCommand(cmdBuf);
+                    if(execCommand(cmdBuf))
+                    {
+                        writeConsole("\n" , 1);
+                    }
+
 		
                     index = 0;
                     memset(&cmdBuf , 0 , 128);
