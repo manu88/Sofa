@@ -24,6 +24,7 @@ Usefull links :
 * `fcntl`
 * `getdents64`
 * `mkdir`
+* `stat`
 
 ## Features
 * EGA shell

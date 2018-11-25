@@ -738,9 +738,33 @@ static long sys_writev(va_list args)
 static long sys_stat(va_list args)
 {
 	const char *pathname = va_arg(args , char*);
+	if (pathname == NULL)
+	{
+		return -EFAULT;
+	}
+	const size_t pathLen = strlen(pathname);
+
+	if ( pathLen == 0)
+	{
+		return -ENOENT;
+	}
+
 	struct stat *statbuf = va_arg(args , struct stat*);
 
-	printf("stat request for path '%s'\n" ,pathname);
 
-	return 0;
+        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2 + pathLen );
+
+        seL4_SetMR(0, __SOFA_NR_stat);
+        seL4_SetMR(1,  pathLen);
+
+        for( size_t i = 0; i< pathLen; ++i)
+        {
+                seL4_SetMR(2+i , pathname[i] );
+        }
+
+        tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_stat );
+
+	long ret = seL4_GetMR(1);
+        return ret;
 }

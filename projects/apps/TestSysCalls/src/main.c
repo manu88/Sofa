@@ -253,6 +253,11 @@ static int doCreateAndStatFileTest()
     assert( ret == -1);
     
     errno = 0;
+    ret = stat("newFileThatIsInexistant", &s);
+    assert( errno == ENOENT);
+    assert( ret == -1);
+
+    errno = 0;
     ret = stat("newFile", &s);
     assert( errno == 0);
     assert( ret == 0);
