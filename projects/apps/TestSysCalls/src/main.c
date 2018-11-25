@@ -297,8 +297,8 @@ int main(int argc, char * argv[])
     assert(doLsTests() );
     assert(doLsTests2() );
     
-    
-
+    printf("Now sleep\n");
+    sleep(2);
     printf("SOFA : Everything is fine!\n");
     return 0;
 }

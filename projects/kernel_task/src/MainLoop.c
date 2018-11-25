@@ -21,6 +21,7 @@
 #include "Utils.h"
 #include "SysCalls.h"
 #include "DriverKit.h"
+#include <platsupport/local_time_manager.h>
 
 /*
 Jump call table, MUST BE ORDERED with respect to __SOFA_NR_* numbers idefined in libSysCall/SysCallNum.h
@@ -63,6 +64,10 @@ static void processSyscall(KernelTaskContext* context, Process *senderProcess, s
 
 static void processTimer(KernelTaskContext* context,seL4_Word sender_badge)
 {
+	sel4platsupport_handle_timer_irq(&context->timer, sender_badge);
+	int err = tm_update(&context->tm);
+
+/*
     sel4platsupport_handle_timer_irq(&context->timer, sender_badge);
 
     Timer*firedTimer = NULL;
@@ -72,6 +77,7 @@ static void processTimer(KernelTaskContext* context,seL4_Word sender_badge)
 
     while (( firedTimer = TimerWheelGetFiredTimers(  &context->timersWheel ) ) != NULL )
     {
+	printf("Got a timer to handle\n");
 	TimerContext* timerCtx = TimerGetUserContext( firedTimer);
 	assert(timerCtx);
 	assert(timerCtx->process);
@@ -90,11 +96,14 @@ static void processTimer(KernelTaskContext* context,seL4_Word sender_badge)
   //      attachedProcess->reply = 0;
 	free(timerCtx);
     }
+
+*/
 }
+
 
 int UpdateTimeout(KernelTaskContext* context,uint64_t timeNS)
 {
-    return ltimer_set_timeout(&context->timer.ltimer, timeNS, TIMEOUT_RELATIVE); //TIMEOUT_PERIODIC);
+    return  0;//ltimer_set_timeout(&context->timer.ltimer, timeNS, TIMEOUT_RELATIVE); //TIMEOUT_PERIODIC);
 }
 
 
@@ -117,21 +126,23 @@ void processLoop(KernelTaskContext* context, seL4_CPtr epPtr  )
     int error = 0;
     while(1)
     {
+/*
         uint64_t startTimeNS;
         ltimer_get_time(&context->timer.ltimer, &startTimeNS);
-
+*/
         seL4_Word sender_badge = 0;
         seL4_MessageInfo_t message;
         seL4_Word label;
 
         message = seL4_Recv(epPtr, &sender_badge);
 
-
+/*
         uint64_t endTimeNS;
         ltimer_get_time(&context->timer.ltimer, &endTimeNS);
 
         const uint64_t timeSpentNS = endTimeNS - startTimeNS;
-
+*/
+/*
         TimerWheelStep(&context->timersWheel, timeSpentNS/1000000);
 
         TimerTick remain = TimerWheelGetTimeout(&context->timersWheel);
@@ -140,7 +151,7 @@ void processLoop(KernelTaskContext* context, seL4_CPtr epPtr  )
             int error = UpdateTimeout(context, NS_IN_MS*remain);
             assert(error == 0);
         }
-
+*/
         label = seL4_MessageInfo_get_label(message);
 
         if(sender_badge & IRQ_EP_BADGE)
@@ -148,7 +159,7 @@ void processLoop(KernelTaskContext* context, seL4_CPtr epPtr  )
 	    
 	    if (sender_badge & IRQ_BADGE_TIMER)
 	    {
-		 processTimer(context ,sender_badge);
+//		 processTimer(context ,sender_badge);
    	    }
 	    else 
 	    {

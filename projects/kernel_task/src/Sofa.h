@@ -26,7 +26,7 @@
 #define Sofa_h
 
 #define SOFA_VERSION_MAJ   0
-#define SOFA_VERSION_MIN   2
+#define SOFA_VERSION_MIN   3
 #define SOFA_VERSION_PATCH 0
 
 #define SOFA_DEPRECATED(version) __attribute((deprecated))

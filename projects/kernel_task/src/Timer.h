@@ -17,9 +17,13 @@
 
 #pragma once
 
-
 #include "Bootstrap.h"
 
-int  TimerDriverInit(KernelTaskContext* context, seL4_CPtr notifCap);
+int TimerInit(KernelTaskContext* ctx , seL4_CPtr notifCap);
 
-uint64_t TimerGetTime( KernelTaskContext* context );
+
+int TimerAllocAndRegister(time_manager_t *tm , uint64_t period_ns, uint64_t start, uint32_t id, timeout_cb_fn_t callback, uintptr_t token);
+int TimerAllocAndRegisterOneShot(time_manager_t *tm , uint64_t rel_ns, uint32_t id,  timeout_cb_fn_t callback, uintptr_t token);
+
+
+uint64_t GetCurrentTime( KernelTaskContext* context );

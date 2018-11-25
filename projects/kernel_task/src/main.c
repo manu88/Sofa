@@ -37,7 +37,6 @@
 #include "Bootstrap.h"
 #include "ProcessDef.h"
 #include "ProcessTable.h"
-#include "Timer.h"
 #include "DriverKit.h"
 #include "Utils.h"
 #include "MainLoop.h"
@@ -52,7 +51,7 @@
 
 #include "Devices/Terminal.h"
 #include "SysHandler.h"
-
+#include "Timer.h"
 //#define APP_PRIORITY seL4_MaxPrio
 //#define APP_IMAGE_NAME "app"
 
@@ -140,7 +139,7 @@ int main(void)
     error = !FileServerAddNodeAtPath( SysHandlerGetINode() , "/");
     ZF_LOGF_IFERR(error, "Failed to register Sys File System \n");
 
- /* create an endpoint. */
+/* create an endpoint. */
     vka_object_t ep_object = {0};
     error = vka_alloc_endpoint(&context.vka, &ep_object);
     ZF_LOGF_IFERR(error, "Failed to allocate new endpoint object.\n");
@@ -162,17 +161,9 @@ int main(void)
 
 /* System Timer */
 
-    error  = !TimerDriverInit(&context ,notification_path.capPtr);
-
+    error = TimerInit(&context , notification_path.capPtr);
     assert( error == 0);
 
-    error = !TimersWheelInit(&context.timersWheel); // TimersWheelInit returns 1 on sucess -> negate
-    ZF_LOGF_IFERR(error, "Unable to initialize Timers Wheel.\n");
-
-    uint64_t timerResolution = 0;;
-    error = ltimer_get_resolution(&context.timer.ltimer , &timerResolution);
-
-//    sel4platsupport_get_io_port_ops(&context.opsIO.io_port_ops, &context.simple , &context.vka);
 
 // Default terminal (EGA + keyboard)
 

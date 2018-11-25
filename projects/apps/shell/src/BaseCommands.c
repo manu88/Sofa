@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/stat.h>
+#include <time.h>
 
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
@@ -177,4 +178,16 @@ int exec_kill( const char* args)
 int exec_mkdir( const char* args)
 {
 	return mkdir(args , 1);
+}
+
+
+int exec_sleep(const char* args)
+{
+	struct timespec ts;
+	ts.tv_sec = atoi(args);
+	ts.tv_nsec = 0;
+
+
+	return nanosleep(&ts , NULL);
+
 }

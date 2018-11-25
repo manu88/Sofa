@@ -85,6 +85,12 @@ static int execCommand( char* cmd)
         
         return exec_kill(arg);
     }
+    else if (startsWith("sleep", cmd))
+    {
+        char* arg = cmd + strlen("sleep ");
+        
+        return exec_sleep(arg);
+    }
     else if (startsWith("ps", cmd))
     {
 	printf("test\n");
@@ -121,7 +127,14 @@ static int execCommand( char* cmd)
 	else if (startsWith("cd ", cmd))
 	{
 		char* arg = cmd + strlen("cd ");
-		return chdir(arg);
+		int ret = chdir(arg);
+
+		if (ret != 0 && errno == ENOTDIR)
+		{
+			const char b[] = "Not a directory";
+        		writeConsole( b  ,strlen(b));
+		}
+		return ret;
 
 	}
     else if (strcmp(cmd, "exit") == 0)
