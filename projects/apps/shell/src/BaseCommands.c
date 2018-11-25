@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <stdint.h>
 
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
@@ -49,6 +50,11 @@ ssize_t readConsole( void*b , size_t len)
     return read(consoleFDWRead, b, len);
 }
 
+void setTermColor( int color)
+{
+ 	uint8_t msg[] = { 0xA , 0x2 , color };
+        writeConsole(  msg , 3);
+}
 
 void PrintHelp()
 {

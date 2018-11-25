@@ -39,6 +39,7 @@ typedef struct
     size_t terminal_row;
     size_t terminal_column;
 
+    char color;
 } Terminal;
 
 int TerminalInit( KernelTaskContext* context, const cspacepath_t* notificationSrc,   Terminal* terminal) NO_NULL_POINTERS ;

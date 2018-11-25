@@ -71,8 +71,8 @@ int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc
     {
 	return 0;
     }
-    
-
+     
+    terminal->color = VGA_COLOR_WHITE;
     cqueue_init( &terminal->inputChar , MAX_CHAR_QUEUE);
 
     return  1;
@@ -114,7 +114,7 @@ void terminal_clear(Terminal* term)
 	{
 		for(int j = 0;j<MODE_HEIGHT;j++)
 		{
-			terminal_putentryat(' ', VGA_COLOR_RED, i, j);
+			terminal_putentryat(' ', term->color, i, j);
 		}
 	}
 	term->terminal_column = 0;
@@ -131,7 +131,7 @@ static void terminal_putchar(Terminal* term , char c)
 	}
 	else 
 	{
-             terminal_putentryat(c, VGA_COLOR_WHITE, term->terminal_column, term->terminal_row);
+             terminal_putentryat(c, term->color, term->terminal_column, term->terminal_row);
 	}
 
 	
@@ -171,6 +171,11 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
 		term->terminal_row    = 0;
 		return 0;
 	} 
+	else if (cmd[1] == 0x2 )
+	{
+		term->color= cmd[2];
+		return 0;
+	}
     }
 
     for(int i =0;i<size;i++)

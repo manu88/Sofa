@@ -93,7 +93,6 @@ static int execCommand( char* cmd)
     }
     else if (startsWith("ps", cmd))
     {
-	printf("test\n");
         char* arg = cmd + strlen("ps ");
         
         return exec_ps(arg);
@@ -174,6 +173,7 @@ int main( int argc , char* argv[])
     InitConsoleFDs(consoleFD, consoleFD);
 #endif
     
+    setTermColor(VGA_COLOR_RED);
     const char b[] = "Sofa Shell - 2018\n";
     writeConsole(  b ,strlen(b));
 
@@ -182,9 +182,10 @@ int main( int argc , char* argv[])
 
     char cmdBuf[128] = {0};
     size_t index = 0;
+    setTermColor(VGA_COLOR_GREEN);
 
     writeConsole( ":>" , 2);
-
+    setTermColor(VGA_COLOR_WHITE);
     while(1)
     {
         ssize_t readRet = readConsole( buf , 4);
@@ -206,7 +207,9 @@ int main( int argc , char* argv[])
 		
                     index = 0;
                     memset(&cmdBuf , 0 , 128);
-                    writeConsole( ":>" , 2);
+                   setTermColor(VGA_COLOR_GREEN); 
+	   	   writeConsole( ":>" , 2);
+			setTermColor(VGA_COLOR_WHITE);
 
                 }
                 else
