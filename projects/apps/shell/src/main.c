@@ -121,7 +121,14 @@ static int execCommand( char* cmd)
 	else if (startsWith("cd ", cmd))
 	{
 		char* arg = cmd + strlen("cd ");
-		return chdir(arg);
+		int ret = chdir(arg);
+
+		if (ret != 0 && errno == ENOTDIR)
+		{
+			const char b[] = "Not a directory";
+        		writeConsole( b  ,strlen(b));
+		}
+		return ret;
 
 	}
     else if (strcmp(cmd, "exit") == 0)

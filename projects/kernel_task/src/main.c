@@ -66,6 +66,8 @@ static Process kernTaskProcess = {0};
 static Terminal _terminal;
 
 
+static Timer testTimer;
+
 int main(void)
 {
 
@@ -201,6 +203,14 @@ int main(void)
     error = ProcessTableAddAndStart(&context, &initProcess,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
     assert(error == 0);
 
+
+/* Test Timer*/
+
+    TimerInit(&testTimer, NULL, 0/*Oneshot*/);
+    TimerWheelAddTimer(&context.timersWheel , &testTimer , 4000);
+
+    UpdateTimeout(&context,4000 * NS_IN_MS);
+/* END Test Timer*/
     processLoop( &context,ep_object.cptr );
 
 

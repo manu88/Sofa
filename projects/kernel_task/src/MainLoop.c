@@ -72,6 +72,7 @@ static void processTimer(KernelTaskContext* context,seL4_Word sender_badge)
 
     while (( firedTimer = TimerWheelGetFiredTimers(  &context->timersWheel ) ) != NULL )
     {
+	printf("Got a timer to handle\n");
 	TimerContext* timerCtx = TimerGetUserContext( firedTimer);
 	assert(timerCtx);
 	assert(timerCtx->process);
