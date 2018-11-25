@@ -20,15 +20,61 @@
 #include "../ProcessTable.h"
 #include "../MainLoop.h" // UpdateTimeout
 #include <SysCallNum.h>
+#include "../Timer.h"
 
+typedef struct
+{
+	KernelTaskContext* context;
+	Process *senderProcess;
+	seL4_CPtr reply;
+
+} ReplyContext;
+
+
+int afterSleep(uintptr_t token)
+{
+	ReplyContext* ctx = (ReplyContext*) token;
+	assert(ctx);
+	assert(ctx->context);
+	assert(ctx->senderProcess);
+	assert(ctx->reply);
+
+	int err = tm_deregister_cb(&ctx->context->tm  , ctx->senderProcess->_pid);
+        assert(err == 0);
+
+	err = tm_free_id(&ctx->context->tm , ctx->senderProcess->_pid);
+	assert(err == 0);
+
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+        seL4_SetMR(0, __SOFA_NR_nanosleep);
+        seL4_SetMR(1, 0); // sucess
+
+        seL4_Send(ctx->reply , tag);
+
+        cnode_delete(ctx->context,ctx->reply);
+}
 
 int handle_nanosleep(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
+    int error = -ENOSYS;
 
-    int error = 0;
     seL4_Word millisToWait = seL4_GetMR(1);
-    //printf("Process %i request to sleep %li ms\n" , senderProcess->_pid , millisToWait);
+    
+    assert(millisToWait > 0); // special 0 value must have been handled client side!
 
+    ReplyContext* timerCtx = (ReplyContext*) malloc(sizeof(ReplyContext) );
+
+    assert(timerCtx);
+    timerCtx->context = context;
+    timerCtx->senderProcess = senderProcess;
+    timerCtx->reply = get_free_slot(context);
+    error = cnode_savecaller( context, timerCtx->reply );
+    assert(error == 0);
+
+    error = TimerAllocAndRegisterOneShot(&context->tm , millisToWait * NS_IN_MS  , senderProcess->_pid , afterSleep , (uintptr_t) timerCtx );
+    assert(!error);
+
+#if 0
     TimerContext* timerCtx =(TimerContext*) malloc(sizeof(TimerContext));
 
     if(timerCtx)
@@ -89,6 +135,8 @@ int handle_nanosleep(KernelTaskContext* context, Process *senderProcess, seL4_Me
     assert(TimerWheelAddTimer(&context->timersWheel , &timerCtx->timer , millisToWait));
     UpdateTimeout(context,millisToWait * NS_IN_MS);
 	*/
+
+#endif
     return 0;
 }
 

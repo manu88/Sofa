@@ -85,6 +85,12 @@ static int execCommand( char* cmd)
         
         return exec_kill(arg);
     }
+    else if (startsWith("sleep", cmd))
+    {
+        char* arg = cmd + strlen("sleep ");
+        
+        return exec_sleep(arg);
+    }
     else if (startsWith("ps", cmd))
     {
 	printf("test\n");

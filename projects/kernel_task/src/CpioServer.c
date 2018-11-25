@@ -193,7 +193,7 @@ static int CpioOpen (Inode * node , int flags)
 	node->operations = &cpioOps;
 	return node;
 */
-    return NULL;
+    return 0;
 #else
     return 0;
     

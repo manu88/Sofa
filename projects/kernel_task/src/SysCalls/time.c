@@ -39,9 +39,9 @@ int handle_clock_getTime(KernelTaskContext* context, Process *senderProcess, seL
 	switch(clk_id)
 	{
 		case CLOCK_MONOTONIC:
-		
-			ret = TimerGetTime(context);
-		
+
+			ret = GetCurrentTime(context);
+
 		break;
 		
 		default:

@@ -20,9 +20,6 @@
 
 #include "Sofa.h"
 #include <sel4utils/process.h>
-#include "TimerWheel/TimersWheel.h"
-
-#include "TimerWheel/queue.h"
 
 #include "Bootstrap.h"
 #include <data_struct/cvector.h>
@@ -138,7 +135,6 @@ int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter) NO_NULL_P
 
 typedef struct
 {
-	Timer timer;
 	Process *process;
 	seL4_CPtr reply;
 
