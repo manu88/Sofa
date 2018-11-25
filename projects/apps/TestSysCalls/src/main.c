@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #ifndef __APPLE__
 #include <SysClient.h>
@@ -29,10 +30,11 @@ static int doOpenTests2(void);
 static int doReadTests(void);
 static int doGetPidTests(void);
 
+
 static int doLsTests(void);
 static int doLsTests2(void);
 
-static int doCreateFileTest(void);
+static int doCreateAndStatFileTest(void);
 
 
 static int doTimeTests()
@@ -228,7 +230,7 @@ static int doLsTests2()
 }
 
 
-static int doCreateFileTest()
+static int doCreateAndStatFileTest()
 {
 
     
@@ -236,6 +238,25 @@ static int doCreateFileTest()
     int fd = open("newFile", O_WRONLY | O_APPEND | O_CREAT , 0644);
     assert(errno == 0);
     assert(fd >= 0);
+    
+    
+    // test stat
+    errno = 0;
+    struct stat s;
+    int ret = stat(NULL, &s);
+    assert(errno == EFAULT);
+    assert( ret == -1);
+    
+    errno = 0;
+    ret = stat("", NULL); // non existing file
+    assert(errno == ENOENT);
+    assert( ret == -1);
+    
+    errno = 0;
+    ret = stat("newFile", &s);
+    assert( errno == 0);
+    assert( ret == 0);
+    
     
     close(fd);
 
@@ -246,11 +267,14 @@ static int doCreateFileTest()
     assert( errno == EEXIST);
     assert( fd2 == -1);
     
-    const char dat[] = "hello";
-    
  
-    close(fd2);
+
     
+    return 1;
+}
+
+static int doStatTests()
+{
     return 1;
 }
 
@@ -290,15 +314,14 @@ int main(int argc, char * argv[])
     
     
     
-    assert(doCreateFileTest() );
+    assert(doCreateAndStatFileTest() );
     
     // will change path to '/' so do this last !
     assert(doChdirTests());
     assert(doLsTests() );
     assert(doLsTests2() );
     
-    printf("Now sleep\n");
-    sleep(2);
+    assert(sleep(1) == 0);
     printf("SOFA : Everything is fine!\n");
     return 0;
 }
