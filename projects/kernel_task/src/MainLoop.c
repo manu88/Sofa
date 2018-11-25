@@ -78,7 +78,7 @@ static void processTimer(KernelTaskContext* context,seL4_Word sender_badge)
 
         seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
         seL4_SetMR(0, __SOFA_NR_nanosleep);
-	seL4_SetMR(1, 0); // sucess
+        seL4_SetMR(1, 0); // sucess
 
         seL4_Send(timerCtx->reply , tag);
 

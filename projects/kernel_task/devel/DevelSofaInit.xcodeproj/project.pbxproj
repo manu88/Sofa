@@ -119,6 +119,7 @@
 		59B4189321A0408300C0234B /* list.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = list.c; path = util_libs/libutils/src/list.c; sourceTree = "<group>"; };
 		59B4189421A0408300C0234B /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = list.h; path = util_libs/libutils/include/utils/list.h; sourceTree = "<group>"; };
 		59B4189621A7DCCB00C0234B /* utlist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = utlist.h; path = ../src/utlist.h; sourceTree = "<group>"; };
+		59B4189721AA9AAB00C0234B /* MainLoop.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = MainLoop.c; path = ../src/MainLoop.c; sourceTree = "<group>"; };
 		59E99DCF218703FF00805C68 /* DevelSofaInit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DevelSofaInit; sourceTree = BUILT_PRODUCTS_DIR; };
 		59E99DE02187078E00805C68 /* FileServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileServer.h; path = ../src/FileServer.h; sourceTree = "<group>"; };
 		59E99DE12187078E00805C68 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
@@ -275,6 +276,7 @@
 				59AED253218E2CCB00E12D02 /* TimerWheel */,
 				59AED24A218E1BD400E12D02 /* SysCallNum.h */,
 				59AECEEB218DC84300E12D02 /* Sel4_Stubs */,
+				59B4189721AA9AAB00C0234B /* MainLoop.c */,
 				59E99DE12187078E00805C68 /* main.c */,
 				59AED24C218E259700E12D02 /* UnitTests */,
 				59AED24B218E1D6F00E12D02 /* Sofa.h */,

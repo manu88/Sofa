@@ -55,6 +55,9 @@ pid_t ProcessTableGetNextPid()
     return accum++;
 }
 
+static const char procName[]  = "proc";
+static const char statusStr[] = "status";
+static const char cmdlineStr[] = "cmdline";
 
 int ProcessTableInit()
 {
@@ -63,7 +66,7 @@ int ProcessTableInit()
     _ctx._procFolderFileOps.Read = ProcRead;
 
     
-    if (InodeInit(&_ctx.procNode, INodeType_Folder, "proc") == 0)
+    if (InodeInit(&_ctx.procNode, INodeType_Folder, procName) == 0)
     {
         return 0;
     }
@@ -83,8 +86,7 @@ int ProcessTableGetCount()
     return list_length(&_ctx._processes);
 }
 
-static const char statusStr[] = "status";
-static const char cmdlineStr[] = "cmdline";
+
 
 int ProcessTableAppend( Process* process)
 {
