@@ -101,6 +101,8 @@ struct _inode
     const FileOperations  *operations;
     const INodeOperations *inodeOperations;
 
+    uint64_t modTS;
+
     size_t pos;
     size_t size;
     void* userData;

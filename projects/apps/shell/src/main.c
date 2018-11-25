@@ -97,6 +97,12 @@ static int execCommand( char* cmd)
         
         return exec_ps(arg);
     }
+    else if (startsWith("stat", cmd))
+    {
+        char* arg = cmd + strlen("stat ");
+        
+        return exec_stat(arg);
+    }
     else if (strcmp(cmd , "whoami")  == 0)
     {
         const char b[] = "god";
@@ -142,7 +148,7 @@ static int execCommand( char* cmd)
     }
 	else if( strlen(cmd))
 	{
-		const char msg[] = "unknown command ";
+		const char msg[] = "unknown command\n";
 		writeConsole(msg , strlen(msg) );
 		writeConsole(cmd , strlen(cmd) );
 		

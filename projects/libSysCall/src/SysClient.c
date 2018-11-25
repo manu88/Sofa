@@ -20,7 +20,8 @@
 #include <arch_stdio.h>
 #include <assert.h>
 #include <sys/uio.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
 static long doRead(int fd, void *buf, size_t count , int expectedNodeType);
 static long sys_read(va_list args);
 static long sys_write(va_list args);
@@ -765,6 +766,15 @@ static long sys_stat(va_list args)
         tag = seL4_Call(sysCallEndPoint, tag);
         assert(seL4_GetMR(0) == __SOFA_NR_stat );
 
+	const int msgLen = seL4_MessageInfo_get_length(tag)-2;
 	long ret = seL4_GetMR(1);
+
+	if (msgLen)
+	{
+		unsigned long nanos =  seL4_GetMR(2);
+		printf("stat : got a modTS %lu\n" , seL4_GetMR(2) );
+		statbuf->st_mtim.tv_sec  = nanos / 1000000000;
+		statbuf->st_mtim.tv_nsec =(nanos % 1000000000); 
+	}
         return ret;
 }

@@ -26,4 +26,4 @@ int TimerAllocAndRegister(time_manager_t *tm , uint64_t period_ns, uint64_t star
 int TimerAllocAndRegisterOneShot(time_manager_t *tm , uint64_t rel_ns, uint32_t id,  timeout_cb_fn_t callback, uintptr_t token);
 
 
-uint64_t GetCurrentTime( KernelTaskContext* context );
+uint64_t GetCurrentTime(void);

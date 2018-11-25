@@ -40,7 +40,7 @@ int handle_clock_getTime(KernelTaskContext* context, Process *senderProcess, seL
 	{
 		case CLOCK_MONOTONIC:
 
-			ret = GetCurrentTime(context);
+			ret = GetCurrentTime();
 
 		break;
 		

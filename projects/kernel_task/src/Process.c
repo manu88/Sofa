@@ -125,7 +125,7 @@ int ProcessStart(KernelTaskContext* context, Process* process,const char* imageN
     sel4utils_create_word_args(string_args, argv, argc ,process_ep_cap);
 
 // FIXME
-    process->startTime = GetCurrentTime( context );
+    process->startTime = GetCurrentTime();
     
     error = sel4utils_spawn_process_v(&process->_process , &context->vka , &context->vspace , argc, (char**) &argv , 1);
     ZF_LOGF_IFERR(error, "Failed to spawn and start the new thread.\n"

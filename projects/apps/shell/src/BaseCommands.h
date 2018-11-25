@@ -65,3 +65,4 @@ int exec_kill( const char* args);
 int exec_mkdir( const char* args);
 
 int exec_sleep(const char* args);
+int exec_stat(const char* args);

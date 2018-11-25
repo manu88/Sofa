@@ -23,9 +23,9 @@ typedef struct
 	Inode sysRootNode; //   /sys/
 	Inode sysKernNode; //   /sys/kernel/
 
-	Inode sysKernLogNode //    /sys/kernel/log
+	Inode sysKernLogNode; //    /sys/kernel/log
 
-} SysHandlerContext;
+}SysHandlerContext;
 
 static SysHandlerContext _context;
 

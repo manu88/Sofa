@@ -21,6 +21,9 @@
 
 #define MAX_TIMERS 64
 
+
+static  time_manager_t* _tm = NULL;
+
 int TimerInit(KernelTaskContext* ctx , seL4_CPtr notifCap)
 {
 	int err = 0;
@@ -48,6 +51,7 @@ int TimerInit(KernelTaskContext* ctx , seL4_CPtr notifCap)
 
 	err = tm_init(&ctx->tm ,&ctx->timer.ltimer ,&ctx->ops , MAX_TIMERS);
     	assert(err == 0); 
+	_tm = &ctx->tm;
 
 	return err;
 }
@@ -75,10 +79,10 @@ int TimerAllocAndRegister(time_manager_t *tm , uint64_t period_ns, uint64_t star
 } 
 
 
-uint64_t GetCurrentTime( KernelTaskContext* context )
+uint64_t GetCurrentTime()
 {
 	uint64_t t;
 	
-	tm_get_time(&context->tm , &t);
+	tm_get_time(_tm , &t);
 	return t;
 }

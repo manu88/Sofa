@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <stdint.h>
-
+#include <sys/stat.h>
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
 
@@ -58,7 +58,7 @@ void setTermColor( int color)
 
 void PrintHelp()
 {
-    const char b[] = "Some help you could use .... \n available command : ls pwd cd cat touch ps kill clear exec mkdir \n";
+    const char b[] = "Some help you could use .... \n available command : ls pwd cd cat touch ps kill clear exec mkdir sleep stat\n";
     writeConsole(  b ,strlen(b));
 }
 
@@ -196,4 +196,13 @@ int exec_sleep(const char* args)
 
 	return nanosleep(&ts , NULL);
 
+}
+
+int exec_stat(const char* args)
+{
+	struct stat s;
+
+	int ret = stat(args , &s);
+	printf("Created a %li seconds %li ns\n" , s.st_mtim.tv_sec,s.st_mtim.tv_nsec);
+	return ret;
 }

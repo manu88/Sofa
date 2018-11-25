@@ -41,16 +41,21 @@ int handle_stat(KernelTaskContext* context, Process *senderProcess, seL4_Message
 
 	Inode* node = FileServerGetINodeForPath( path , senderProcess->currentDir);
 	int ret = 0;
+	size_t msgSize = 1;
 	if (!node)
 	{
+		msgSize = 0;
 		ret = -ENOENT;
 	}
 
-	message = seL4_MessageInfo_new(0, 0, 0, 2);
+	message = seL4_MessageInfo_new(0, 0, 0, 2 + msgSize);
 
         seL4_SetMR(0, __SOFA_NR_stat );
         seL4_SetMR(1, ret);
-
-        seL4_Reply( message );
+	if(msgSize)
+	{
+		seL4_SetMR(2 , node->modTS);
+        }
+	seL4_Reply( message );
 	return 0;
 }

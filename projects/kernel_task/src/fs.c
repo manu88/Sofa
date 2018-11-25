@@ -31,7 +31,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <stdio.h>
-
+#include "Timer.h"
 
 #include "StringOperations.h"
 
@@ -58,7 +58,7 @@ int InodeInit(Inode* node ,INodeType type , const char* name)
     node->name = name;
     
     node->children = NULL;
-    
+    node->modTS = GetCurrentTime();
     
     //chash_init(&node->_children, MAX_CHILD_NODE);
     return 1;
