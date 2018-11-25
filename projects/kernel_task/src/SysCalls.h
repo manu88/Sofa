@@ -28,6 +28,7 @@ int handle_read(KernelTaskContext* context, Process *senderProcess, seL4_Message
 int handle_write(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_close(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_stat(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 int handle_nanosleep(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_getpid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);

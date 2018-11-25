@@ -26,6 +26,7 @@ static long sys_read(va_list args);
 static long sys_write(va_list args);
 static long sys_open(va_list args);
 static long sys_close(va_list args);
+static long sys_stat(va_list args);
 
 static long sys_nanosleep(va_list args);
 static long sys_getpid(va_list args);
@@ -72,7 +73,7 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_write, sys_write);
     muslcsys_install_syscall(__NR_open,  sys_open);
     muslcsys_install_syscall(__NR_close, sys_close);
-
+    muslcsys_install_syscall(__NR_stat,  sys_stat);
 
     muslcsys_install_syscall(__NR_nanosleep ,  sys_nanosleep);
     muslcsys_install_syscall(__NR_getpid ,     sys_getpid);
@@ -731,4 +732,15 @@ static long sys_writev(va_list args)
 
 	return ret;
 
+}
+
+
+static long sys_stat(va_list args)
+{
+	const char *pathname = va_arg(args , char*);
+	struct stat *statbuf = va_arg(args , struct stat*);
+
+	printf("stat request for path '%s'\n" ,pathname);
+
+	return 0;
 }

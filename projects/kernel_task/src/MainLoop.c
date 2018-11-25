@@ -34,7 +34,7 @@ static SysCallHandler callTable[] =
 	handle_write,
 	handle_open,
 	handle_close,
-
+	handle_stat,
 	handle_nanosleep,
 	handle_getpid,
 	handle_getppid,
