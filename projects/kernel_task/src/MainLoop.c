@@ -170,11 +170,12 @@ void processLoop(KernelTaskContext* context, seL4_CPtr epPtr  )
 		    dev->HandleIRQ(dev , -1);
 //		    continue;
 	        }
-	        else 
+/*	        else 
    	        {
 			printf("NOT FOUND device for badge %lx\n" , sender_badge - IRQ_EP_BADGE);
 
 	        }
+*/
 	    }
 
 	    processTimer(context ,sender_badge);

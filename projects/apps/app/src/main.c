@@ -17,11 +17,13 @@ int main( int argc , char* argv[])
         return 1;
     }
 
-    const char t[] = "Test Client\n";
-
-    write(0 , t , strlen(t) );
-    printf("Client : Hello\n");
-
+    for(int i= 0;i<4;i++)
+    {
+	sleep(1);
+    	const char t[] = "Test Client\n";
+        write(0 , t , strlen(t) );
+	
+    }
 /*
     int ret = usleep(1000*4000);
     assert(ret == 0);
