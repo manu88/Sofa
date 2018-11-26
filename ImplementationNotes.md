@@ -1,7 +1,7 @@
 # Implementation notes
 
 ## kernel_task : the Root Server
-This is the first user space process started by the kernel, It's tasks are:
+This is the first user space process started by the kernel, Its tasks are:
 
 * To boostrap the rest of the system ( mostly delegated by the 'init' process).
 * To handle all syscalls.
