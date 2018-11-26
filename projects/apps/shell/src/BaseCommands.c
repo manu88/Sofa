@@ -28,6 +28,9 @@
 #include <time.h>
 #include <stdint.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+
+
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
 
@@ -115,6 +118,8 @@ int exec_exec( const char* args)
 {
     int retPid = execve(args,NULL , NULL);
        
+    int status = 0;
+    waitpid(retPid, &status , 0);
     return retPid;
 }
 

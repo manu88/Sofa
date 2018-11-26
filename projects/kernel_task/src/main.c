@@ -81,6 +81,35 @@ int main(void)
 
     ZF_LOGF_IFERR(error, "Failed to bootstrap system.\n");
 
+
+/* create an endpoint. */
+    vka_object_t ep_object = {0};
+    error = vka_alloc_endpoint(&context.vka, &ep_object);
+    ZF_LOGF_IFERR(error, "Failed to allocate new endpoint object.\n");
+
+    vka_cspace_make_path(&context.vka, ep_object.cptr, &context.ep_cap_path);
+
+    error = vka_alloc_notification(&context.vka, &context.ntfn_object);
+    assert(error == 0);
+
+    error = seL4_TCB_BindNotification(seL4_CapInitThreadTCB, context.ntfn_object.cptr);
+    ZF_LOGF_IFERR(error, "Unable to BindNotification.\n");
+
+
+
+
+    cspacepath_t notification_path;
+
+    vka_cspace_make_path( &context.vka, context.ntfn_object.cptr, &notification_path);
+
+/* System Timer */
+
+    error = TimerInit(&context , notification_path.capPtr);
+    assert( error == 0);
+
+
+
+
 /* File Server*/
 
     error = !FileServerInit();
@@ -139,30 +168,6 @@ int main(void)
     error = !FileServerAddNodeAtPath( SysHandlerGetINode() , "/");
     ZF_LOGF_IFERR(error, "Failed to register Sys File System \n");
 
-/* create an endpoint. */
-    vka_object_t ep_object = {0};
-    error = vka_alloc_endpoint(&context.vka, &ep_object);
-    ZF_LOGF_IFERR(error, "Failed to allocate new endpoint object.\n");
-
-    vka_cspace_make_path(&context.vka, ep_object.cptr, &context.ep_cap_path);
-
-    error = vka_alloc_notification(&context.vka, &context.ntfn_object);
-    assert(error == 0);
-
-    error = seL4_TCB_BindNotification(seL4_CapInitThreadTCB, context.ntfn_object.cptr);
-    ZF_LOGF_IFERR(error, "Unable to BindNotification.\n");
-
-
-
-
-    cspacepath_t notification_path;
-
-    vka_cspace_make_path( &context.vka, context.ntfn_object.cptr, &notification_path);
-
-/* System Timer */
-
-    error = TimerInit(&context , notification_path.capPtr);
-    assert( error == 0);
 
 
 // Default terminal (EGA + keyboard)

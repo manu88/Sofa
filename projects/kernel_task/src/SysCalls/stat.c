@@ -36,8 +36,6 @@ int handle_stat(KernelTaskContext* context, Process *senderProcess, seL4_Message
 		path[i] = seL4_GetMR(2+i);
 	}
 	path[pathLen] = 0;
-	printf("handle_stat for file '%s' \n" , path);
-
 
 	Inode* node = FileServerGetINodeForPath( path , senderProcess->currentDir);
 	int ret = 0;
@@ -59,3 +57,4 @@ int handle_stat(KernelTaskContext* context, Process *senderProcess, seL4_Message
 	seL4_Reply( message );
 	return 0;
 }
+
