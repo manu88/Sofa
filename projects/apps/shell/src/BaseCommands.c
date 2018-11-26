@@ -116,10 +116,35 @@ int exec_touch( const char* args)
 
 int exec_exec( const char* args)
 {
-    int retPid = execve(args,NULL , NULL);
-       
-    int status = 0;
-    waitpid(retPid, &status , 0);
+    int shouldWait = 1;
+    char* pPosition = strchr(args, '&');
+    
+    ptrdiff_t sizeArg = pPosition? (pPosition  - args) : strlen(args);
+    printf("Arg size %zi \n" , sizeArg);
+    
+    if (pPosition)
+    {
+        shouldWait = 0;
+    }
+    
+    if (sizeArg <=0)
+    {
+        return -1;
+    }
+    char* newArg = malloc(sizeArg);
+    
+    strncpy(newArg, args, sizeArg);
+    
+    
+    printf("exec '%s' should wait? %i\n" ,newArg, shouldWait);
+    int retPid = execve(newArg,NULL , NULL);
+    
+    free(newArg);
+    if (shouldWait)
+    {
+        int status = 0;
+        waitpid(retPid, &status , 0);
+    }
     return retPid;
 }
 
@@ -208,6 +233,8 @@ int exec_stat(const char* args)
 	struct stat s;
 
 	int ret = stat(args , &s);
+#ifndef __APPLE__
 	printf("Created a %li seconds %li ns\n" , s.st_mtim.tv_sec,s.st_mtim.tv_nsec);
+#endif
 	return ret;
 }

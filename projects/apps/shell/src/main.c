@@ -142,11 +142,13 @@ static int execCommand( char* cmd)
 		return ret;
 
 	}
+#ifndef __APPLE__
     else if (strcmp(cmd, "sched") == 0)
     {
-	DebugDumpScheduler();
-	return 0;
+        DebugDumpScheduler();
+        return 0;
     }
+#endif
     else if (strcmp(cmd, "exit") == 0)
     {
         exit(0);
