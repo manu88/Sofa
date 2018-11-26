@@ -24,28 +24,28 @@
 // Numbers must be contigeous as their serve as array indexes!
 
 
-#define __SOFA_NR_read                  1
-#define __SOFA_NR_write                 2
-#define __SOFA_NR_open                  3
-#define __SOFA_NR_close                 4
-#define __SOFA_NR_stat			5
-#define __SOFA_NR_nanosleep		6
-#define __SOFA_NR_getpid		7
-#define __SOFA_NR_getppid		8
-#define __SOFA_NR_exit			9
-#define __SOFA_NR_kill			10
-#define __SOFA_NR_execve		11
-#define __SOFA_NR_wait4			12
+#define __SOFA_NR_debugSys		1
+#define __SOFA_NR_read                  2
+#define __SOFA_NR_write                 3
+#define __SOFA_NR_open                  4
+#define __SOFA_NR_close                 5
+#define __SOFA_NR_stat			6
+#define __SOFA_NR_nanosleep		7
+#define __SOFA_NR_getpid		8
+#define __SOFA_NR_getppid		9
+#define __SOFA_NR_exit			10
+#define __SOFA_NR_kill			11
+#define __SOFA_NR_execve		12
+#define __SOFA_NR_wait4			13
 
-#define __SOFA_NR_setpriority           13
-#define __SOFA_NR_getpriority           14
-#define __SOFA_NR_lseek			15
+#define __SOFA_NR_setpriority           14
+#define __SOFA_NR_getpriority           15
+#define __SOFA_NR_lseek			16
 
-#define __SOFA_NR_gettimeofday          16
-#define __SOFA_NR_clock_gettime         17
-#define __SOFA_NR_getcwd		18
-#define __SOFA_NR_chdir                 19
-//#define __SOFA_NR_getdents64		19 // directly handled by read
-#define __SOFA_NR_fcntl			20
-#define __SOFA_NR_mkdir 		21
+#define __SOFA_NR_gettimeofday          17
+#define __SOFA_NR_clock_gettime         18
+#define __SOFA_NR_getcwd		19
+#define __SOFA_NR_chdir                 20
+#define __SOFA_NR_fcntl			21
+#define __SOFA_NR_mkdir 		22
 

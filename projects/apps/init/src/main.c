@@ -17,7 +17,6 @@ int main( int argc , char* argv[])
 
     int pidTests = execve("TestSysCalls" , NULL , NULL);
 
-
     int pidShell = execve("shell" , NULL , NULL);
 
     int status = 0;

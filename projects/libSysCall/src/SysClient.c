@@ -778,3 +778,13 @@ static long sys_stat(va_list args)
 	}
         return ret;
 }
+
+
+void DebugDumpScheduler()
+{
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2 );
+
+        seL4_SetMR(0, __SOFA_NR_debugSys);
+        seL4_SetMR(1,  1);
+	seL4_Send(sysCallEndPoint , tag);
+}

@@ -142,6 +142,11 @@ static int execCommand( char* cmd)
 		return ret;
 
 	}
+    else if (strcmp(cmd, "sched") == 0)
+    {
+	DebugDumpScheduler();
+	return 0;
+    }
     else if (strcmp(cmd, "exit") == 0)
     {
         exit(0);

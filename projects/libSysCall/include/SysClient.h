@@ -4,7 +4,7 @@
 
 int SysClientInit(int argc , char* argv[] );
 
-
+void DebugDumpScheduler(void);
 
 // IPC Part
 

@@ -52,8 +52,7 @@
 #include "Devices/Terminal.h"
 #include "SysHandler.h"
 #include "Timer.h"
-//#define APP_PRIORITY seL4_MaxPrio
-//#define APP_IMAGE_NAME "app"
+#include "Stats.h"
 
 static char taskName[] =  "kernel_task";
 
@@ -196,6 +195,11 @@ int main(void)
     
     error = ProcessTableAddAndStart(&context, &initProcess,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
     assert(error == 0);
+
+
+
+
+    TestStats();
 
     processLoop( &context,ep_object.cptr );
 

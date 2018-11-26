@@ -12,8 +12,10 @@ include(tools/cmake-tool/default-CMakeLists.txt)
 
 
 config_set(LIB_PICOTCP LIB_PICOTCP True)
+#config_set(BENCHMARK_TRACK_UTILISATION BENCHMARK_TRACK_UTILISATION True)
 
 
+config_option(EnableBenchmarkUtilisationTracking BENCHMARK_TRACK_UTILISATION "Use benchmark functions for stats" DEFAULT ON)
 #config_option(SUPPORT_SERIAL_TEXT_EGA LIB_PLAT_SUPPORT_SERIAL_TEXT_EGA "Makes library awesome" DEFAULT ON)
 #LIB_PLAT_SUPPORT_SERIAL_TEXT_EGA
 

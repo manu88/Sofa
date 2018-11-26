@@ -24,6 +24,8 @@
 typedef int (*SysCallHandler)(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 
+int handle_debugSys(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+
 int handle_read(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_write(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
