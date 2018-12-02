@@ -129,6 +129,12 @@ static int execCommand( char* cmd)
 		writeConsole(  msg , 3);
         return 0;
 	}
+    else if (startsWith("renice ", cmd))
+    {
+        char* arg = cmd + strlen("renice ");
+        
+        return exec_renice(arg);
+    }
 	else if (startsWith("cd ", cmd))
 	{
 		char* arg = cmd + strlen("cd ");

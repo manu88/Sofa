@@ -66,3 +66,5 @@ int exec_mkdir( const char* args);
 
 int exec_sleep(const char* args);
 int exec_stat(const char* args);
+
+int exec_renice( const char* args);

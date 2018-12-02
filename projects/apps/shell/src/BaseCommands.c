@@ -242,3 +242,24 @@ int exec_stat(const char* args)
 #endif
 	return ret;
 }
+
+
+int exec_renice( const char* args)
+{
+    int who = 0;
+    int niceVal = 0;
+    int n = sscanf(args, "%i %i" , &who , &niceVal);
+    
+    if (n == 2)
+    {
+        printf("renice pid %i value %i\n" , who , niceVal);
+        
+        return setpriority(PRIO_PROCESS, who, niceVal);
+    }
+    else
+    {
+        return -EINVAL;
+    }
+    
+    return 0;
+}
