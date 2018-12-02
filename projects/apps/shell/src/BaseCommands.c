@@ -55,13 +55,15 @@ ssize_t readConsole( void*b , size_t len)
 
 void setTermColor( int color)
 {
+#ifndef __APPLE__
  	uint8_t msg[] = { 0xA , 0x2 , color };
-        writeConsole(  msg , 3);
+    writeConsole(  msg , 3);
+#endif
 }
 
 void PrintHelp()
 {
-    const char b[] = "Some help you could use .... \n available command : ls pwd cd cat touch ps kill clear exec mkdir sleep stat\n";
+    static const char b[] = "Some help you could use .... \n available command : ls pwd cd cat touch ps kill clear exec mkdir sleep stat\n";
     writeConsole(  b ,strlen(b));
 }
 
@@ -162,38 +164,40 @@ int exec_ps( const char* args)
 
     static char b[1024] = {0};
     static char path[1024] = {0};
+    
     while ((dir = readdir(d)) != NULL)
     {
 	
         memset(b, 0, 1024);
-	memset(path, 0, 1024);
+        memset(path, 0, 1024);
 
-	snprintf( path , 1024 , "/proc/%s/cmdline" , dir->d_name);
-	//printf("cmd line path is '%s'\n" , path);
+        snprintf( path , 1024 , "/proc/%s/cmdline" , dir->d_name);
+        //printf("cmd line path is '%s'\n" , path);
 
         size_t s = snprintf(b, 1024, "%s                       ", dir->d_name);
         writeConsole(b , s);
 
 
-	int f = open(path, O_RDONLY);// fopen(path , "r");
-	if(f >= 0)
-	{
-	    char buf[32] = {0};
+        int f = open(path, O_RDONLY);// fopen(path , "r");
+        if(f >= 0)
+        {
+            char buf[32] = {0};
 
     	    ssize_t r = 0;
             do 
-	    {
-        	r = read(f, buf, 32);
-//		printf("read cmdline '%s' %li\n",buf , r);
-        	writeConsole(buf, r);
-	    } while (r > 0);
-    	    close(f);
+            {
+                r = read(f, buf, 32);
 
-	}
-	else 
-	{
-		printf("Error fopen '%s'\n",path);
-	}
+                writeConsole(buf, r);
+            } while (r > 0);
+    	    
+            close(f);
+
+        }
+        else
+        {
+            printf("Error fopen '%s'\n",path);
+        }
         writeConsole("\n", 1);
 
     }
@@ -234,7 +238,7 @@ int exec_stat(const char* args)
 
 	int ret = stat(args , &s);
 #ifndef __APPLE__
-	printf("Created a %li seconds %li ns\n" , s.st_mtim.tv_sec,s.st_mtim.tv_nsec);
+	printf("Created at %li seconds %li ns\n" , s.st_mtim.tv_sec,s.st_mtim.tv_nsec);
 #endif
 	return ret;
 }
