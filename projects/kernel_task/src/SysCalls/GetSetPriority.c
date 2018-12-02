@@ -18,6 +18,7 @@
 #include "../SysCalls.h"
 #include <sys/resource.h>
 #include <SysCallNum.h>
+#include "../ProcessTable.h"
 
 int handle_getpriority(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
@@ -38,11 +39,13 @@ int handle_setpriority(KernelTaskContext* context, Process *senderProcess, seL4_
 	
 	int error = -ENOSYS;
 
-	if( which == 0 && who == 0)
+	if( which == 0)// && who == 0)
 	{
-		printf("Process %i asks to nice itset to %i\n", senderProcess->_pid , prio);
+		Process* procToRenice = who == 0 ? senderProcess : ProcessTableGetByPID( who);
+		assert(procToRenice);
+		printf("Process %i asks to nice %i to %i\n", senderProcess->_pid , procToRenice->_pid , prio);
 		// the sender nices itself
-		error = ProcessSetPriority(context,senderProcess , prio);
+		error = ProcessSetPriority(context,procToRenice , prio);
 	}
 
 	seL4_SetMR(0 , __SOFA_NR_setpriority);

@@ -25,6 +25,7 @@ Usefull links :
 * `getdents64`
 * `mkdir`
 * `stat`
+* `get(set)prioriy`
 
 ## Features
 * EGA shell
