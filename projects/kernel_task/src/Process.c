@@ -133,7 +133,9 @@ int ProcessStart(KernelTaskContext* context, Process* process,const char* imageN
                   "\tIn this case, the CSpaces are different, but the VSpaces are the same.\n"
                   "\tDouble check your vspace_t argument.\n");
 
+
      ProcessSetState(process , ProcessState_Running);
+     process->_prio = priority;
 
      error = ProcessSetParentShip(parent , process);
      assert(error == 0);
@@ -200,9 +202,16 @@ Process* ProcessGetChildByPID( const Process* process , pid_t pid)
 int ProcessSetPriority(KernelTaskContext* context,Process* process , uint8_t prio)
 {
 #ifndef __APPLE__
-	return seL4_TCB_SetPriority( sel4utils_get_tcb(&process->_process.thread),
+	int ret =  seL4_TCB_SetPriority( sel4utils_get_tcb(&process->_process.thread),
 				     seL4_CapInitThreadTCB,//sel4utils_get_tcb(&process->_process.thread),
 				     prio);
+
+	if (ret == 0)
+	{
+	    process->_prio = prio;
+	}
+
+	return ret;
 #else
     return 0;
 #endif
@@ -210,7 +219,8 @@ int ProcessSetPriority(KernelTaskContext* context,Process* process , uint8_t pri
 
 int ProcessGetPriority(KernelTaskContext* context,Process* process , uint8_t *prio)
 {
-	return -1;
+	*prio = process->_prio;
+	return 1;
 }
 
 // FIXME should go const 

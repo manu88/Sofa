@@ -68,7 +68,7 @@ struct _inode;
 struct _Process
 {
     Inode _processNode; // might stay first so that Inode can be casted to Process
-    
+    uint8_t _prio;
     sel4utils_process_t _process;
     ProcessState        _state;
     pid_t               _pid;
