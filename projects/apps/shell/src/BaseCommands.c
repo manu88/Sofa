@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-
+#include <stddef.h>
 
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
