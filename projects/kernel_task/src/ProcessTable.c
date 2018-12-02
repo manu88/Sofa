@@ -16,7 +16,7 @@
  */
 
 #include "ProcessTable.h"
-
+#include <stdio.h>
 
 #ifndef __APPLE__
 #include <utils/list.h>

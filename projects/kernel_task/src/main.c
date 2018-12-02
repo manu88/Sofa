@@ -66,7 +66,7 @@ static Terminal _terminal;
 
 static int addDefaultDevices(void)
 {
-	int error =  DevNullInit();
+	int error =  !DevNullInit();
 	assert(error == 0);
 	return 0;
 }

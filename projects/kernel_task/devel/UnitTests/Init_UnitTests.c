@@ -26,7 +26,7 @@
 #include "FileServer_UnitTests.h"
 #include "Init_UnitTests.h"
 #include "ProcessTable.h"
-#include "TimersWheel_UnitTests.h"
+
 #include "DriverKit_UnitTests.h"
 #include "DevServer_UnitTests.h"
 #include "ProcessTable_UnitTests.h"
@@ -100,7 +100,7 @@ static int Test_ProcessTable()
 int doInit_UnitTests()
 {
     assert(GetRealPath_tests() );
-    assert(TimersWheel_UnitTests() );
+    
     assert(FileServer_UnitTests());
     assert(Test_Process());
     assert(Test_ProcessTable());

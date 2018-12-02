@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <sel4/types.h>
 #include "Bootstrap.h"
 
 int TimerInit(KernelTaskContext* ctx , seL4_CPtr notifCap);
