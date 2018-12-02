@@ -44,6 +44,8 @@ int handle_kill(KernelTaskContext* context, Process *senderProcess, seL4_Message
         }
         else 
         {
+	     ProcessSendSignal( context, toKill , sigToSend);
+	     /*
 	     ProcessSignalStop( toKill);
 	     ProcessDoCleanup( toKill);
 
@@ -54,10 +56,10 @@ int handle_kill(KernelTaskContext* context, Process *senderProcess, seL4_Message
 
   	     ProcessStop(context ,toKill);
 	     ProcessRelease(toKill);
+	    */
         }
     }
 
-    printf("Init : Got %i processes \n" , ProcessTableGetCount() );
 
 
     seL4_SetMR(1, err ); // error for now

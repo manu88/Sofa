@@ -132,6 +132,8 @@ int ProcessSignalStop(Process* process) NO_NULL_POINTERS;
 //
 int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter) NO_NULL_POINTERS;
 
+int ProcessDoExit(KernelTaskContext* context,Process* process , int retCode)NO_NULL_POINTERS;
+int ProcessSendSignal(KernelTaskContext* context,Process *process, int sig)NO_NULL_POINTERS;
 
 typedef struct
 {

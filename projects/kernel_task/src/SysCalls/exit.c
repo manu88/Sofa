@@ -26,6 +26,9 @@ int handle_exit(KernelTaskContext* context, Process *senderProcess, seL4_Message
 {
     int exitStatus = seL4_GetMR(1);
 
+
+    ProcessDoExit( context,senderProcess , exitStatus);
+    /*
     ProcessSignalStop( senderProcess);
     ProcessDoCleanup( senderProcess);
     if(!ProcessTableRemove( senderProcess))
@@ -34,6 +37,6 @@ int handle_exit(KernelTaskContext* context, Process *senderProcess, seL4_Message
     }
     ProcessStop(context , senderProcess);
     ProcessRelease(senderProcess);
-
+    */
     return 0;
 }

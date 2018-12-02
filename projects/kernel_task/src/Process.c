@@ -23,7 +23,7 @@
 #include "Utils.h"
 #include "Timer.h"
 //#include "Timer.h"
-//#include "ProcessTable.h"
+#include "ProcessTable.h"
 
 /*
 ssize_t ProcRead ( Inode * node, char*buffer  , size_t count);
@@ -277,6 +277,27 @@ int ProcessSignalStop(Process* process)
 #endif
 }
 
+
+
+int ProcessSendSignal(KernelTaskContext* context,Process *process, int sig)
+{
+	printf("ProcessSendSignal %i to process %i \n", sig,  process->_pid);
+	return ProcessDoExit(context, process, -sig);
+}
+
+int ProcessDoExit(KernelTaskContext* context,Process* process , int retCode)
+{
+    ProcessSignalStop( process);
+    ProcessDoCleanup( process);
+    if(!ProcessTableRemove( process))
+    {
+        printf("Unable to remove process!\n");
+    }
+    ProcessStop(context , process);
+    ProcessRelease(process);
+
+    return 1;
+}
 
 int ProcessDoCleanup(Process * process)
 {

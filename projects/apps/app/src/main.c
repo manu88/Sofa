@@ -17,9 +17,11 @@ int main( int argc , char* argv[])
         return 1;
     }
 
-    for(int i= 0;i<4;i++)
+
+//    for(int i= 0;i<4;i++)
+    while(1)
     {
-	sleep(1);
+	sleep(4);
     	const char t[] = "Test Client\n";
         write(0 , t , strlen(t) );
 	
