@@ -118,7 +118,27 @@ int exec_touch( const char* args)
 
 int exec_exec( const char* args)
 {
-    int shouldWait = 1;
+    
+    char shouldWaitChar = 0;
+    char appName[128] = {0};
+    int n = sscanf(args, "%s %c" , appName , &shouldWaitChar);
+    
+    int shouldWait = shouldWaitChar == '&';
+    if (n > 0)
+    {
+        printf("Exec '%s' shouldWait %i\n" , appName , shouldWait );
+        
+        int retPid = execve(appName,NULL , NULL);
+        
+        if (shouldWait)
+        {
+            int status = 0;
+            waitpid(retPid, &status , 0);
+        }
+        return retPid;
+    }
+    return 0;
+    /*
     char* pPosition = strchr(args, '&');
     
     ptrdiff_t sizeArg = pPosition? (pPosition  - args) : strlen(args);
@@ -148,6 +168,7 @@ int exec_exec( const char* args)
         waitpid(retPid, &status , 0);
     }
     return retPid;
+     */
 }
 
 
