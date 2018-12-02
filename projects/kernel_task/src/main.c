@@ -48,7 +48,7 @@
 #include "Drivers/EGADriver.h"
 #include "Drivers/Keyboard.h"
 
-
+#include "Devices/Null.h"
 #include "Devices/Terminal.h"
 #include "SysHandler.h"
 #include "Timer.h"
@@ -63,6 +63,13 @@ static Process kernTaskProcess = {0};
 
 static Terminal _terminal;
 
+
+static int addDefaultDevices(void)
+{
+	int error =  DevNullInit();
+	assert(error == 0);
+	return 0;
+}
 
 int main(void)
 {
@@ -168,6 +175,8 @@ int main(void)
     ZF_LOGF_IFERR(error, "Failed to register Sys File System \n");
 
 
+    error = addDefaultDevices();
+    assert( error == 0);
 
 // Default terminal (EGA + keyboard)
 

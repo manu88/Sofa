@@ -123,7 +123,7 @@ int exec_exec( const char* args)
     char appName[128] = {0};
     int n = sscanf(args, "%s %c" , appName , &shouldWaitChar);
     
-    int shouldWait = shouldWaitChar == '&';
+    int shouldWait = shouldWaitChar == 0;
     if (n > 0)
     {
         printf("Exec '%s' shouldWait %i\n" , appName , shouldWait );
