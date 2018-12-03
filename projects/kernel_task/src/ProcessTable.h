@@ -23,7 +23,6 @@
 #include "ProcessDef.h"
 #include "fs.h"
 
-
 int ProcessTableInit(void) SOFA_UNIT_TESTABLE;
 
 Inode* ProcessTableGetInode(void) SOFA_UNIT_TESTABLE;

@@ -311,7 +311,6 @@ static int _ProcessReapChildrenIfNeeded(Process* process)
     ProcessListEntry* entry = NULL;
     LIST_FOREACH(entry, &process->children, entries)
     {
-        printf("Reattach process %i to init\n" , entry->process->_pid);
         ProcessSetParentShip(initProcess, entry->process);
     }
     return 1;

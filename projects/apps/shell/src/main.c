@@ -30,10 +30,51 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-
+#include <ctype.h>
 
 #include "BaseCommands.h"
 
+
+static char *trim(char *str)
+{
+    size_t len = 0;
+    char *frontp = str;
+    char *endp = NULL;
+    
+    if( str == NULL ) { return NULL; }
+    if( str[0] == '\0' ) { return str; }
+    
+    len = strlen(str);
+    endp = str + len;
+    
+    /* Move the front and back pointers to address the first non-whitespace
+     * characters from each end.
+     */
+    while( isspace((unsigned char) *frontp) ) { ++frontp; }
+    if( endp != frontp )
+    {
+        while( isspace((unsigned char) *(--endp)) && endp != frontp ) {}
+    }
+    
+    if( str + len - 1 != endp )
+        *(endp + 1) = '\0';
+    else if( frontp != str &&  endp == frontp )
+        *str = '\0';
+    
+    /* Shift the string so that it starts at str so that if it's dynamically
+     * allocated, we can still free it on the returned pointer.  Note the reuse
+     * of endp to mean the front of the string buffer now.
+     */
+    endp = str;
+    if( frontp != str )
+    {
+        while( *frontp ) { *endp++ = *frontp++; }
+        *endp = '\0';
+    }
+    
+    
+    return str;
+}
 
 static int startsWith(const char *pre, const char *str)
 {
@@ -45,14 +86,15 @@ static int startsWith(const char *pre, const char *str)
 
 static int execCommand( char* cmd)
 {
+    printf("CMD '%s'\n" , cmd);
 	if (startsWith("ls", cmd))
 	{
-		char* arg = cmd + strlen("ls ");
-        if ( strlen(arg) == 0 )
+        char* arg = strlen(cmd) > 2? cmd + strlen("ls ") : ".";
+        /*if ( strlen(arg) == 0 )
         {
             arg = ".";
         }
-        
+        */
         return exec_ls(arg);
 	}
     else if (startsWith("exec", cmd))
@@ -200,6 +242,7 @@ int main( int argc , char* argv[])
 
 
     char cmdBuf[128] = {0};
+    char realCmd[128] = {0};
     size_t index = 0;
     setTermColor(VGA_COLOR_GREEN);
 
@@ -218,17 +261,24 @@ int main( int argc , char* argv[])
                 if (buf[i] == '\n' || buf[i] == '\r')
                 {
                     cmdBuf[index++] = 0;
-                    if(execCommand(cmdBuf))
+                    
+                    
+                    //char* realCmd = strdup(cmdBuf);
+                     strncpy(realCmd, cmdBuf, 128);
+                    
+                    char* trimmed = trim(realCmd);
+                    
+                    if(execCommand( trimmed))
                     {
                         writeConsole("\n" , 1);
                     }
-
-		
+                    
+                    //free(realCmd);
                     index = 0;
                     memset(&cmdBuf , 0 , 128);
-                   setTermColor(VGA_COLOR_GREEN); 
-	   	   writeConsole( ":>" , 2);
-			setTermColor(VGA_COLOR_WHITE);
+                    setTermColor(VGA_COLOR_GREEN);
+                    writeConsole( ":>" , 2);
+                    setTermColor(VGA_COLOR_WHITE);
 
                 }
                 else
