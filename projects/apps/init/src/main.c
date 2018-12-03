@@ -15,10 +15,14 @@ int main( int argc , char* argv[])
         return 1;
     }
 
-    int pidTests = execve("TestSysCalls" , NULL , NULL);
+    int pidTests = execve("/cpio/TestSysCalls" , NULL , NULL);
 
-    int pidShell = execve("shell" , NULL , NULL);
+    int pidShell = execve("/cpio/shell" , NULL , NULL);
 
+    if (pidShell == -1)
+    {
+	return 1;
+    }
     // wait on any child
     while(1)
     {

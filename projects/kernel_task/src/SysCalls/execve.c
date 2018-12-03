@@ -27,45 +27,54 @@ int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 {
     const int msgLen = seL4_MessageInfo_get_length(message);
     assert(msgLen > 0);
-    char* filename = malloc(sizeof(char)*msgLen );/* msglen minus header + 1 byte for NULL byte*/
+    const size_t strSize = msgLen-1;
+    char* filename = malloc(sizeof(char)*strSize );/* msglen minus header + 1 byte for NULL byte*/
     assert(filename);
     
-    for(int i=0;i<msgLen-1;++i)
+    for(int i=0;i<strSize;++i)
     {
         filename[i] =  (char) seL4_GetMR(1+i);
     }
 
-    filename[msgLen] = '0';
+    filename[strSize] = 0;
 
-    /**/
-    Process *newProcess = ProcessAlloc();
-    assert(newProcess);
-        
-    newProcess->currentDir = senderProcess->currentDir;
+    long err = 0;
 
-    // TODO inherit from parent's fd table
-    
+    Inode* nodeToExec = FileServerGetINodeForPath(filename ,  senderProcess->currentDir);
 
-    const size_t numFds = ProcessGetNumFDs(senderProcess);
-
-    printf("Got %li fds to pass to child\n" , numFds);
-
-    for (size_t i = 0; i < numFds;i++)
-    {
-	ProcessAppendNode(newProcess , ProcessGetNode(senderProcess , i));
-    }
-    int  error = ProcessTableAddAndStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
-    assert(error == 0);
-
-    assert(ProcessGetParent(newProcess) == senderProcess);
-    assert(ProcessGetNumChildren(senderProcess) > 0);
-    assert(ProcessGetChildByPID(senderProcess , newProcess->_pid) == newProcess);
-
-    /**/
     free(filename);
+
+    if(nodeToExec)
+    {
+	assert(nodeToExec->name);
+        Process *newProcess = ProcessAlloc();
+        assert(newProcess);
+
+        newProcess->currentDir = senderProcess->currentDir;
+
+        const size_t numFds = ProcessGetNumFDs(senderProcess);
+
+        for (size_t i = 0; i < numFds;i++)
+        {
+	    ProcessAppendNode(newProcess , ProcessGetNode(senderProcess , i));
+        }
+
+        int  error = ProcessTableAddAndStart(context,  newProcess, nodeToExec->name, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
+        assert(error == 0);
+
+        assert(ProcessGetParent(newProcess) == senderProcess);
+        assert(ProcessGetNumChildren(senderProcess) > 0);
+        assert(ProcessGetChildByPID(senderProcess , newProcess->_pid) == newProcess);
+
+	err = newProcess->_pid;
+    }
+    else 
+    {
+	err = -ENOENT;
+    }
     
     seL4_SetMR(0,__SOFA_NR_execve);
-    seL4_SetMR(1, newProcess->_pid/*  -ENOSYS*/ ); // return code is the new pid
+    seL4_SetMR(1, err );
     seL4_Reply( message );
         return 0;
 }

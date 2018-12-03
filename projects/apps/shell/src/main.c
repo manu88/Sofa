@@ -86,7 +86,6 @@ static int startsWith(const char *pre, const char *str)
 
 static int execCommand( char* cmd)
 {
-    printf("CMD '%s'\n" , cmd);
 	if (startsWith("ls", cmd))
 	{
         char* arg = strlen(cmd) > 2? cmd + strlen("ls ") : ".";
