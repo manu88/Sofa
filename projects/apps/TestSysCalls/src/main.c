@@ -30,6 +30,7 @@ static int doOpenTests2(void);
 static int doReadTests(void);
 static int doGetPidTests(void);
 
+static int doDevNullTests(void);
 
 static int doLsTests(void);
 static int doLsTests2(void);
@@ -298,6 +299,30 @@ static int doCloseTests()
     
     return 1;
 }
+
+
+static int doDevNullTests()
+{
+    errno = 0;
+    
+    int fd =  open("/dev/null", O_RDWR);
+    assert(fd >= 0);
+    assert(errno == 0);
+    
+    const char t[] = "Some text";
+    ssize_t retWrite = write(fd, t, sizeof(t) );
+    assert( retWrite == sizeof(t));
+    assert(errno == 0);
+    
+    char b[3] = {0};
+    ssize_t retRead = read(fd, b, 3);
+    assert( retRead == 0);    
+    
+    int ret = close(fd);
+    assert(ret == 0);
+    return 1;
+}
+
 int main(int argc, char * argv[])
 {
 
@@ -317,7 +342,7 @@ int main(int argc, char * argv[])
     assert(doWaitTests() );
     assert(doGetCwdTests() );
     
-    
+    assert(doDevNullTests());
     
     assert(doCreateAndStatFileTest() );
     
