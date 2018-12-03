@@ -33,7 +33,13 @@ static ssize_t NULLWrite (struct _inode *node,  const char*buffer ,size_t size)
     return (ssize_t) size;
 }
 
-static FileOperations  nullFileOps = {FileOperation_NoRead , NULLWrite, FileOperation_NoLseek };
+static ssize_t NULLRead (struct _inode *node, char*buf  , size_t len)
+{
+    return 0;
+}
+
+
+static FileOperations  nullFileOps = { NULLRead , NULLWrite, FileOperation_NoLseek };
 
 int DevNullInit()
 {

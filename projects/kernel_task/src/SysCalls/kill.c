@@ -61,7 +61,7 @@ int handle_kill(KernelTaskContext* context, Process *senderProcess, seL4_Message
     }
 
 
-
+    seL4_SetMR(0, __SOFA_NR_kill);
     seL4_SetMR(1, err ); // error for now
     seL4_Reply( message );
 

@@ -316,6 +316,7 @@ static int doDevNullTests()
     
     char b[3] = {0};
     ssize_t retRead = read(fd, b, 3);
+
     assert( retRead == 0);    
     
     int ret = close(fd);
