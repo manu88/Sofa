@@ -137,6 +137,25 @@ int ProcessTableAppend( Process* process)
     return 0;
 }
 
+int ProcessTableContains( const Process* process)
+{
+    assert(process);
+    
+    list_t *l = &_ctx._processes;
+    
+    for (struct list_node *n = l->head; n != NULL; n = n->next)
+    {
+        Process* p = (Process*) n->data;
+        
+        if (p == process)
+        {
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
 Process* ProcessTableGetByPID( pid_t pid)
 {
     list_t *l = &_ctx._processes;

@@ -33,6 +33,10 @@ int ProcessTableAddAndStart(KernelTaskContext* context, Process* process,const c
 
 int ProcessTableAppend( Process* process) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
+// ineficient method that will 'for each' the process table
+int ProcessTableContains( const Process* process) SOFA_UNIT_TESTABLE;
+
+// ineficient method that will 'for each' the process table
 Process* ProcessTableGetByPID( pid_t pid) SOFA_UNIT_TESTABLE;
 
 int ProcessTableRemove(Process* process) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;

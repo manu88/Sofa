@@ -32,8 +32,10 @@ int ProcessTable_UnitTests()
     //assert(ProcessTableAppend(&p1));
     
     KernelTaskContext ctx;
+    assert(ProcessTableContains(&p1) == 0);
     ProcessTableAddAndStart(&ctx, &p1, "initCmd", 0, &initProcess, 255);
     
+    assert(ProcessTableContains(&p1));
     assert( strcmp( p1.cmdLine , "initCmd" ) == 0 );
     assert(initProcess.cmdLine == NULL);
     //assert(ProcessStart(&ctx, &p1, "app1", 0, &initProcess, 100) == 0);
@@ -57,6 +59,7 @@ int ProcessTable_UnitTests()
     
     
     assert(ProcessTableRemove(&p1));
+    assert(ProcessTableContains(&p1) == 0);
     procNode = FileServerGetINodeForPath(strPID , NULL);
     assert(procNode == NULL);
     

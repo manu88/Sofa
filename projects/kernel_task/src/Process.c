@@ -266,19 +266,20 @@ int ProcessSignalStop(Process* process)
 
     LIST_FOREACH_SAFE(entry, &process->waiters, entries ,entry_temp ) 
     {
-	printf("Signal Stop : Got a process to notify!\n");
-	assert(entry->context);
-	assert(entry->process);
-
-	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
-	seL4_SetMR(0, __SOFA_NR_wait4);
-	seL4_SetMR(1, process->_pid);
+        printf("Signal Stop : Got a process to notify!\n");
+        assert(entry->context);
+        assert(entry->process);
+        
+        // ensure process is still relevant
+        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+        seL4_SetMR(0, __SOFA_NR_wait4);
+        seL4_SetMR(1, process->_pid);
 	
-         seL4_Send(entry->reply , tag); 
-	cnode_delete(entry->context,entry->reply);
+        seL4_Send(entry->reply , tag);
+        cnode_delete(entry->context,entry->reply);
 
-	LIST_REMOVE(entry , entries);
-	free(entry);
+        LIST_REMOVE(entry , entries);
+        free(entry);
     }
 
     return error;
