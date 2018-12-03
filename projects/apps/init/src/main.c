@@ -19,12 +19,16 @@ int main( int argc , char* argv[])
 
     int pidShell = execve("shell" , NULL , NULL);
 
-    int status = 0;
-    waitpid(pidShell, &status , 0);
+    // wait on any child
+    while(1)
+    {
+	int status = 0;
 
-    printf("shell returned \n");
+        pid_t childPid = waitpid(-1, &status , 0);
 
-    while(1){}
+        printf("pid %i returned \n" , childPid);
+
+    }
 
     return 0;
 }

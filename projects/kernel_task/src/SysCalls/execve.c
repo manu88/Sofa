@@ -57,7 +57,9 @@ int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_Messa
     int  error = ProcessTableAddAndStart(context,  newProcess,filename, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
     assert(error == 0);
 
-
+    assert(ProcessGetParent(newProcess) == senderProcess);
+    assert(ProcessGetNumChildren(senderProcess) > 0);
+    assert(ProcessGetChildByPID(senderProcess , newProcess->_pid) == newProcess);
 
     /**/
     free(filename);

@@ -130,6 +130,7 @@ int exec_exec( const char* args)
         
         int retPid = execve(appName,NULL , NULL);
         
+	
         if (shouldWait)
         {
             int status = 0;
@@ -138,37 +139,6 @@ int exec_exec( const char* args)
         return retPid;
     }
     return 0;
-    /*
-    char* pPosition = strchr(args, '&');
-    
-    ptrdiff_t sizeArg = pPosition? (pPosition  - args) : strlen(args);
-    printf("Arg size %zi \n" , sizeArg);
-    
-    if (pPosition)
-    {
-        shouldWait = 0;
-    }
-    
-    if (sizeArg <=0)
-    {
-        return -1;
-    }
-    char* newArg = malloc(sizeArg);
-    
-    strncpy(newArg, args, sizeArg);
-    
-    
-    printf("exec '%s' should wait? %i\n" ,newArg, shouldWait);
-    int retPid = execve(newArg,NULL , NULL);
-    
-    free(newArg);
-    if (shouldWait)
-    {
-        int status = 0;
-        waitpid(retPid, &status , 0);
-    }
-    return retPid;
-     */
 }
 
 
