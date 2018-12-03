@@ -275,18 +275,16 @@ int ProcessSignalStop(Process* process)
         assert(entry->process);
         
         // ensure process is still relevant
-        
-	if(ProcessTableContains(entry->process) )
-	{
-		seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+        if(ProcessTableContains(entry->process) )
+        {
+            seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
         	seL4_SetMR(0, __SOFA_NR_wait4);
         	seL4_SetMR(1, process->_pid);
 
 	        seL4_Send(entry->reply , tag);
         }
 	
-	cnode_delete(entry->context,entry->reply);
-
+        cnode_delete(entry->context,entry->reply);
         LIST_REMOVE(entry , entries);
         free(entry);
     }
@@ -305,10 +303,25 @@ int ProcessSendSignal(KernelTaskContext* context,Process *process, int sig)
 	return ProcessDoExit(context, process, -sig);
 }
 
+static int _ProcessReapChildrenIfNeeded(Process* process)
+{
+    Process* initProcess = ProcessTableGetByPID(1);
+    assert(initProcess);
+    
+    ProcessListEntry* entry = NULL;
+    LIST_FOREACH(entry, &process->children, entries)
+    {
+        printf("Reattach process %i to init\n" , entry->process->_pid);
+        ProcessSetParentShip(initProcess, entry->process);
+    }
+    return 1;
+}
+
 int ProcessDoExit(KernelTaskContext* context,Process* process , int retCode)
 {
     ProcessSignalStop( process);
     ProcessDoCleanup( process);
+    _ProcessReapChildrenIfNeeded(process);
     if(!ProcessTableRemove( process))
     {
         printf("Unable to remove process!\n");
