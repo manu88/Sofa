@@ -38,7 +38,7 @@ static int Test_ProcessInstance(Process* p)
     assert(ProcessGetChildByPID(p, 0) == NULL);
     assert(ProcessGetChildByPID(p, 1) == NULL);
     
-    assert(p->_parent == NULL);
+    assert(ProcessGetParent(p) == NULL);
     return 1;
 }
 
@@ -56,7 +56,7 @@ static int Test_Process()
     p2._pid = 2;
     
     assert(ProcessSetParentShip(p1, &p2) == 0); // 0 means no error on this one
-    assert(p2._parent == p1);
+    assert(ProcessGetParent(&p2) == p1);
     assert(ProcessGetChildByPID(p1, 2) == &p2);
     
     ProcessRelease(p1);
@@ -73,7 +73,7 @@ static int Test_ProcessTable()
     Process* p1 = ProcessAlloc();
     assert(p1);
     assert(p1->_pid == 0);
-    assert(p1->_parent == 0);
+    assert(ProcessGetParent(p1) == NULL );
     
     p1->_pid = 1;
     assert(ProcessTableAppend(p1));
