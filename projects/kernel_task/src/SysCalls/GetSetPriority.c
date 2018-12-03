@@ -17,7 +17,6 @@
 
 #include "../SysCalls.h"
 #include <sys/resource.h>
-#include <SysCallNum.h>
 #include "../ProcessTable.h"
 
 int handle_getpriority(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)

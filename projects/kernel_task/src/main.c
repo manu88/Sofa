@@ -33,7 +33,6 @@
 #include <vka/object_capops.h> // vka_mint_object
 //#include <sel4platsupport/arch/io.h>
 
-#include <SysCallNum.h>
 #include "Bootstrap.h"
 #include "ProcessDef.h"
 #include "ProcessTable.h"
@@ -76,17 +75,17 @@ int main(void)
 
     memset(&context , 0 , sizeof(KernelTaskContext) );
 
-    zf_log_set_tag_prefix("taskName");
+    zf_log_set_tag_prefix("kernel_task");
 
     UNUSED int error = 0;
 
     context.info = platsupport_get_bootinfo();
     ZF_LOGF_IF(context.info == NULL, "Failed to get bootinfo.");
 
-    bootstrapSystem( &context);
-
+    error = bootstrapSystem( &context);
     ZF_LOGF_IFERR(error, "Failed to bootstrap system.\n");
 
+    assert(error == 0);
 
 /* create an endpoint. */
     vka_object_t ep_object = {0};
@@ -196,12 +195,13 @@ int main(void)
     assert(FileServerGetINodeForPath("/dev/console" , NULL) == &_terminal.node);
 
 /* BEGIN INIT PROCESS */
+    printf("Kernel_task : start init process\n");
 
     Process initProcess;
 
     ProcessInit( &initProcess );
     initProcess.currentDir =  FileServerGetRootNode();
-    
+
     error = ProcessTableAddAndStart(&context, &initProcess,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
     assert(error == 0);
 
@@ -209,6 +209,9 @@ int main(void)
 
 
     TestStats();
+
+    printf("Kernel_task : start runloop \n");
+
 
     processLoop( &context,ep_object.cptr );
 

@@ -17,7 +17,7 @@
 
 #pragma once
 
-
+#include "SysCallNum.h"
 #include "Bootstrap.h"
 #include "ProcessDef.h"
 

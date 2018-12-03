@@ -19,7 +19,6 @@
 #include "../Utils.h"
 #include "../ProcessTable.h"
 #include "../MainLoop.h" // UpdateTimeout
-#include <SysCallNum.h>
 #include "../Timer.h"
 
 typedef struct

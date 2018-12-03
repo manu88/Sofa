@@ -7,7 +7,9 @@ list(SORT deps)
 
 add_library(libSysCall EXCLUDE_FROM_ALL  ${deps})
 
+
 target_include_directories(libSysCall PUBLIC include) 
+
 
 target_link_libraries(libSysCall Configuration  sel4 sel4muslcsys)
 

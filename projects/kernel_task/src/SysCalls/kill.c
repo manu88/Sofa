@@ -16,7 +16,6 @@
  */
 
 #include "../SysCalls.h"
-#include <SysCallNum.h>
 #include <assert.h>
 #include "../ProcessTable.h"
 
