@@ -76,7 +76,7 @@ struct _Process
     char* cmdLine;
     uint64_t startTime;
     
-    struct _Process*                       _parent;
+    struct _Process*                       parent;
     LIST_HEAD(listhead, _ProcessListEntry) children;
     
     LIST_HEAD(listheadWaiters, _WaiterListEntry) waiters;
@@ -103,6 +103,11 @@ Process* ProcessGetChildByPID( const Process* process , pid_t pid) NO_NULL_POINT
 int ProcessStart(KernelTaskContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority ) NO_NULL_POINTERS;
 
 int ProcessStop(KernelTaskContext* context,Process* process) NO_NULL_POINTERS;
+
+static inline Process* ProcessGetParent( const Process* p)
+{
+	return p->parent;
+}
 
 
 int ProcessSetCmdLine(Process* process , const char* cmdline)NO_NULL_POINTERS SOFA_UNIT_TESTABLE;

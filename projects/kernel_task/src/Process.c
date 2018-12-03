@@ -161,7 +161,7 @@ int ProcessStop(KernelTaskContext* context,Process* process)
 // returns 0 on sucess
 int ProcessSetParentShip(Process* parent , Process* child)
 {
-     child->_parent = parent;
+     child->parent = parent;
 
      ProcessListEntry* entry = (ProcessListEntry*) malloc(sizeof(ProcessListEntry)) ;
      assert(entry);
@@ -179,8 +179,12 @@ int ProcessGetNumChildren(const Process* process)
 	int count = 0;
 	LIST_FOREACH(entry, &process->children, entries) 
 	{
-		// sanity check child's parent must be the parent
-		assert(entry->process->_parent == process);
+		if(entry->process->parent != process)
+		{
+		    printf("Process %i supposed to be the parent of %i but found %i\n" , process->_pid , entry->process->_pid , entry->process->parent->_pid);
+		    // sanity check child's parent must be the parent
+		    assert(entry->process->parent == process);
+		}
 		count++;
 	}
 	return count;
@@ -271,12 +275,17 @@ int ProcessSignalStop(Process* process)
         assert(entry->process);
         
         // ensure process is still relevant
-        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
-        seL4_SetMR(0, __SOFA_NR_wait4);
-        seL4_SetMR(1, process->_pid);
+        
+	if(ProcessTableContains(entry->process) )
+	{
+		seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+        	seL4_SetMR(0, __SOFA_NR_wait4);
+        	seL4_SetMR(1, process->_pid);
+
+	        seL4_Send(entry->reply , tag);
+        }
 	
-        seL4_Send(entry->reply , tag);
-        cnode_delete(entry->context,entry->reply);
+	cnode_delete(entry->context,entry->reply);
 
         LIST_REMOVE(entry , entries);
         free(entry);

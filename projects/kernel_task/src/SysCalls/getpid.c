@@ -31,7 +31,7 @@ int handle_getpid(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 
 int handle_getppid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-    seL4_SetMR(1, senderProcess->_parent->_pid );
+    seL4_SetMR(1, ProcessGetParent( senderProcess)->_pid );
     seL4_Reply( message );
     return 0;
 }
