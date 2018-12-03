@@ -49,7 +49,7 @@ Process* ProcessAlloc()
 int ProcessRelease(Process* process)
 {
     ProcessDeInit(process);
-    free(process);
+    free(process); // FIXME to remove since Process can be allocated on the stack
     return 1;
 }
 
