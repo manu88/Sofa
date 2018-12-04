@@ -26,6 +26,8 @@ static  time_manager_t* _tm = NULL;
 
 int TimerInit(KernelTaskContext* ctx , seL4_CPtr notifCap)
 {
+    _tm = &ctx->tm;
+    
 	int err = 0;
     
 #ifndef __APPLE__
@@ -44,7 +46,7 @@ int TimerInit(KernelTaskContext* ctx , seL4_CPtr notifCap)
 
 	err = tm_init(&ctx->tm ,&ctx->timer.ltimer ,&ctx->ops , MAX_TIMERS);
     assert(err == 0);
-	_tm = &ctx->tm;
+	
 #endif
 	return err;
 }
