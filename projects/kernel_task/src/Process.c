@@ -69,7 +69,6 @@ int ProcessInit(Process* process)
 
 int ProcessDeInit(Process * process )
 {
-    
     ProcessListEntry* entry = NULL;
     ProcessListEntry* entry_s = NULL;
     
@@ -81,7 +80,13 @@ int ProcessDeInit(Process * process )
     }
     
     InodeRelease(&process->_processNode);
-//    free(process->_processNode.name);
+
+    if( process->cmdLine)
+    {
+        free(process->cmdLine);
+    }
+
+
     return 1;
 }
 
@@ -126,8 +131,6 @@ int ProcessStart(KernelTaskContext* context, Process* process,const char* imageN
 
     process->startTime = GetCurrentTime();
     
-    printf("Start process '%s'\n" , imageName);
-
     error = sel4utils_spawn_process_v(&process->_process , &context->vka , &context->vspace , argc, (char**) &argv , 1);
     ZF_LOGF_IFERR(error, "Failed to spawn and start the new thread.\n"
                   "\tVerify: the new thread is being executed in the root thread's VSpace.\n"

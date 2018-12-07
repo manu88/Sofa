@@ -126,7 +126,6 @@ int exec_exec( const char* args)
     int shouldWait = shouldWaitChar == 0;
     if (n > 0)
     {
-        printf("Exec '%s' shouldWait %i\n" , appName , shouldWait );
         
         int retPid = execve(appName,NULL , NULL);
         
