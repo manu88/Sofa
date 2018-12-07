@@ -20,18 +20,19 @@
 #include "../FileServer.h"
 #include <fcntl.h>
 
+
+#define MAX_PATH_LEN 4096
 int handle_getcwd(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
 	size_t bufferSize = seL4_GetMR(1);
 
-//	printf("Got getcwd request , buf size is %zi\n" , bufferSize);
 
-	char str[4096] = {0}; // muslc says so apparently
-	ssize_t strSize =  InodeGetAbsolutePath( senderProcess->currentDir, str, 4096);
-//	printf("Buffer path size %li\n" ,strSize);
+	char str[MAX_PATH_LEN] = {0}; // muslc says so apparently
+	ssize_t strSize =  InodeGetAbsolutePath( senderProcess->currentDir, str, MAX_PATH_LEN );
+
+//	printf("cwd : '%s' \n" , str);
 
 	size_t realMsgSize = strSize > bufferSize ? 0 : strSize;
-//	printf("Real msg size %li\n",realMsgSize);
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2 + realMsgSize);
 	seL4_SetMR(0,__SOFA_NR_getcwd);

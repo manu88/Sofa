@@ -48,11 +48,6 @@ int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_Message
 
         pathname[msgLen-2] = 0;
 
-	char t[128] = {0};
-
-	InodeGetAbsolutePath(senderProcess->currentDir , t , 128);
-
- 	printf("Open file '%s' relative to '%s'\n" , pathname , t);
 
         Inode* node =  FileServerOpenRelativeTo( pathname , senderProcess->currentDir,flags , &ret);
 
@@ -78,11 +73,12 @@ int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_Message
         {
                 ret = ProcessAppendNode(senderProcess , node);
         }
+/*
 	else 
         {
                 printf("Unable to open '%s' err %i \n" , pathname , ret);
         }
-
+*/
 
         message = seL4_MessageInfo_new(0, 0, 0, 2);
 

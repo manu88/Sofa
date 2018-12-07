@@ -577,6 +577,7 @@ static long sys_getcwd(va_list args)
 	    {
 	    	    buf[i] = seL4_GetMR(2+i);
 	    }
+	    buf[ret] = 0;
 	}
 
 	return ret;
