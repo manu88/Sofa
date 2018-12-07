@@ -48,14 +48,20 @@ int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_Message
 
         pathname[msgLen-2] = 0;
 
+	char t[128] = {0};
+
+	InodeGetAbsolutePath(senderProcess->currentDir , t , 128);
+
+ 	printf("Open file '%s' relative to '%s'\n" , pathname , t);
+
         Inode* node =  FileServerOpenRelativeTo( pathname , senderProcess->currentDir,flags , &ret);
 
-	if (node && flags & O_EXCL)
+	if (node && (flags & O_EXCL) )
         {
         //        printf("handle_open O_EXCL flag set\n");
                 ret = -EEXIST;
         }
-        else if (node == NULL &&  flags & O_CREAT)
+        else if (node == NULL &&  (flags & O_CREAT) )
         {
                 ret = 0;
 
@@ -74,7 +80,7 @@ int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_Message
         }
 	else 
         {
-//                printf("Unable to open '%s' err %i \n" , pathname , ret);
+                printf("Unable to open '%s' err %i \n" , pathname , ret);
         }
 
 

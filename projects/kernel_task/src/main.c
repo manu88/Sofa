@@ -62,6 +62,8 @@ static Process kernTaskProcess = {0};
 
 static Terminal _terminal;
 
+static vka_object_t ep_object = {0};
+
 
 static int addDefaultDevices(void)
 {
@@ -69,6 +71,33 @@ static int addDefaultDevices(void)
 	assert(error == 0);
 	return 0;
 }
+
+
+static int lateSystemInit()
+{
+    int error = 0;
+    /* BEGIN INIT PROCESS */
+    printf("Kernel_task : start init process\n");
+
+    Process initProcess;
+
+    ProcessInit( &initProcess );
+    initProcess.currentDir =  FileServerGetRootNode();
+
+    error = ProcessTableAddAndStart(&context, &initProcess,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
+    assert(error == 0);
+
+
+
+
+    TestStats();
+
+    printf("Kernel_task : start runloop \n");
+
+
+    processLoop( &context,ep_object.cptr );
+}
+
 
 int main(void)
 {
@@ -88,7 +117,6 @@ int main(void)
     assert(error == 0);
 
 /* create an endpoint. */
-    vka_object_t ep_object = {0};
     error = vka_alloc_endpoint(&context.vka, &ep_object);
     ZF_LOGF_IFERR(error, "Failed to allocate new endpoint object.\n");
 
@@ -194,7 +222,9 @@ int main(void)
 
     assert(FileServerGetINodeForPath("/dev/console" , NULL) == &_terminal.node);
 
-/* BEGIN INIT PROCESS */
+    error = lateSystemInit();
+/*
+    {
     printf("Kernel_task : start init process\n");
 
     Process initProcess;
@@ -214,7 +244,7 @@ int main(void)
 
 
     processLoop( &context,ep_object.cptr );
-
-
+    }
+*/
     return 0;
 }
