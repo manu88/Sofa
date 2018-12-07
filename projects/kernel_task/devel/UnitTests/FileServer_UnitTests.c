@@ -308,7 +308,16 @@ static int FileServer_WalkTests()
     assert(FileServerGetINodeForPath("newFile2", &f1) == newFileNode2);
     InodePrintTree(FileServerGetRootNode());
     
-    //Inode* newFileNode2 = FileServerCreateNode("folder1/", INodeType_File, &f1);
-    
+    {
+        currentDir = FileServerGetINodeForPath("/folder3/", NULL);
+        assert(currentDir);
+        assert(currentDir->_parent == FileServerGetRootNode());
+        
+        err = 0;
+        Inode* newNode = FileServerOpenRelativeTo("/folder1/folder2/newFile", currentDir, 0, &err);
+        assert(newNode);
+        assert(err == 0);
+        //Inode* newFileNode2 = FileServerCreateNode("folder1/", INodeType_File, &f1);
+    }
     return 1;
 }

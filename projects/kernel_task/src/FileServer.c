@@ -129,6 +129,11 @@ Inode* FileServerGetINodeForPath( const char* path_ , const Inode* relativeTo)
     if (strlen(path_) == 0)
         return NULL;
 
+    // FIXME this needs a better logic
+    if (path_[0] == '/' && relativeTo != NULL) // this is an absolute path so we dont need a 'relativeTo' inode
+    {
+        return FileServerGetINodeForPath(path_, NULL);
+    }
     char* path = strdup(path_);
 
     Inode* ret = relativeTo == NULL? &_fsContext._rootNode : (Inode*) relativeTo;
