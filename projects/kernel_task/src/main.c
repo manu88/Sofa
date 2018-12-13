@@ -53,6 +53,9 @@
 #include "Timer.h"
 #include "Stats.h"
 
+
+#include "Thread.h"
+
 static char taskName[] =  "kernel_task";
 
 static KernelTaskContext context = { 0 };
@@ -64,6 +67,8 @@ static Terminal _terminal;
 
 static vka_object_t ep_object = {0};
 
+static     Thread thread;
+
 
 static int addDefaultDevices(void)
 {
@@ -73,9 +78,44 @@ static int addDefaultDevices(void)
 }
 
 
+static void ThreadTest(Thread *self, void *arg, void *ipc_buf)
+{
+	printf("Thread test Started\n");
+	assert(self == &thread);
+
+	while(1)
+ 	{
+		
+	}
+}
+
 static int lateSystemInit()
 {
     int error = 0;
+
+/* start thread test*/
+
+    sel4utils_thread_config_t threadConf = thread_config_new(&context.simple);
+
+    if(ThreadInit(&thread , &context.vka , &context.vspace , threadConf))
+    {
+	error = ThreadSetPriority(&thread  , seL4_MaxPrio);
+	assert(error == 0);
+
+	thread.entryPoint = ThreadTest;
+	error = ThreadStart(&thread , NULL , 1);
+	assert(error == 0);
+    }
+
+    else 
+    {
+	printf("Unable to create thread \n");
+	assert( 0);
+    }
+
+/* END start thread test*/
+
+
     /* BEGIN INIT PROCESS */
     printf("Kernel_task : start init process\n");
 
@@ -92,9 +132,8 @@ static int lateSystemInit()
 
     TestStats();
 
-    printf("Kernel_task : start runloop \n");
 
-
+    seL4_DebugDumpScheduler();
     processLoop( &context,ep_object.cptr );
 }
 
