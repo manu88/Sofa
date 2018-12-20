@@ -91,7 +91,7 @@ File* FileServerOpenRelativeTo( const char* pathname , const Inode* relativeTo ,
             {
                 n->operations = &_fsContext.defaultFSOps;
             }
-            InodeRetain(n);
+            //InodeRetain(n);
             return n;
         }
         
@@ -243,6 +243,11 @@ Inode* FileServerCreateNode(const char* path,INodeType type,const Inode* relativ
     }
     //InodeRelease(node);
     return NULL;
+}
+
+int FileServerUnlinkNode(Inode* node)
+{
+    return InodeRelease(node);
 }
 
 int FileServer_DefaultOpen (Inode *node, int flags)

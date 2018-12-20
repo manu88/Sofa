@@ -201,9 +201,9 @@ static int FileServer_OperationTests()
     ProcOpenReturn = 0;
     procNodeRetained = FileServerOpen( "/proc/", OpenFlags, &error);
     assert(procNodeRetained == &procNode);
-    assert(procNode.refCount == 2);
+    assert(procNode.refCount == 1); // refcount unchanged
     
-    assert(InodeRelease(procNodeRetained) == 0);
+    assert(InodeRelease(procNodeRetained) == 1);
     
     assert(InodeGetChildrenCount(procNodeRetained) == 0);
     
@@ -317,6 +317,13 @@ static int FileServer_WalkTests()
         Inode* newNode = FileServerOpenRelativeTo("/folder1/folder2/newFile", currentDir, 0, &err);
         assert(newNode);
         assert(err == 0);
+        
+        assert( FileServerUnlinkNode(newNode) );
+        
+        newNode = FileServerOpenRelativeTo("/folder1/folder2/newFile", currentDir, 0, &err);
+        assert(newNode == NULL);
+        
+        
         //Inode* newFileNode2 = FileServerCreateNode("folder1/", INodeType_File, &f1);
     }
     return 1;

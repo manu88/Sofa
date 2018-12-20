@@ -93,7 +93,7 @@ int DevServer_UnitTests()
     
     int err = 0;
     Inode* consoleNodeOpened = FileServerOpen("/dev/console", O_RDWR, &err);
-    assert( consoleNode.node.refCount == 3);
+    assert( consoleNode.node.refCount == 2);
     
     assert(consoleNodeOpened);
     assert(consoleNodeOpened == (Inode*) &consoleNode);
@@ -114,7 +114,7 @@ int DevServer_UnitTests()
     
     
     assert(DevServerRemoveFile( (Inode*) &consoleNode));
-    assert( consoleNode.node.refCount == 2);
+    assert( consoleNode.node.refCount == 1);
     
     
     assert(FileServerGetINodeForPath("/dev/console",NULL) == NULL);

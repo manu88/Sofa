@@ -74,6 +74,7 @@ int InodeRelease(Inode* node)
 {
     if( --node->refCount == 0)
     {
+        InodeRemoveFromParent(node);
         //chash_release(&node->_children);
         return 1;
     }
