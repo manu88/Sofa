@@ -34,3 +34,8 @@ add_compile_options(-Wall -Werror -W -Wextra)
 # Set this image as the rootserver
 DeclareRootserver(kernel_task)
 
+if(CONFIG_BENCHMARK_TRACK_UTILISATION)
+	message("BENCHMARK_TRACK_UTILISATION is set")
+else()
+	message("BENCHMARK_TRACK_UTILISATION is NOT set")
+endif()

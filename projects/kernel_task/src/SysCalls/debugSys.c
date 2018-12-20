@@ -30,6 +30,7 @@ int handle_debugSys(KernelTaskContext* context, Process *senderProcess, seL4_Mes
 		seL4_DebugDumpScheduler();
 	}
 	
+//	seL4_BenchmarkGetThreadUtilisation(senderProcess->_process.thread.tcb);
 
 /* No response for now
 	message = seL4_MessageInfo_new(0, 0, 0, 2);

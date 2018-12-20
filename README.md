@@ -26,6 +26,7 @@ Usefull links :
 * `mkdir`
 * `stat`
 * `get(set)prioriy`
+* `unlink`
 
 ## Features
 * EGA shell

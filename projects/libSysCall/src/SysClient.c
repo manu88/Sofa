@@ -51,7 +51,7 @@ static long sys_chdir(va_list args);
 
 static long sys_fcntl(va_list args);
 static long sys_getdents64(va_list args);
-
+static long sys_unlink(va_list args);
 
 static long sys_mkdir(va_list args);
 
@@ -100,6 +100,7 @@ int SysClientInit(int argc , char* argv[] )
 
     muslcsys_install_syscall(__NR_mkdir	     , sys_mkdir);
 
+    muslcsys_install_syscall(__NR_unlink  , sys_unlink);
 //    muslcsys_install_syscall(__NR_writev , sys_writev);
 
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
@@ -400,6 +401,38 @@ static long sys_read(va_list args)
 	b[ret] = 0;
 	return ret;
 */
+}
+
+static long sys_unlink(va_list args)
+{
+	const char* pathname = va_arg(args,const char*);
+	
+	if(pathname == NULL)
+        {
+                return -EFAULT;
+        }
+        if(strlen(pathname) == 0)
+        {
+                return -ENOENT;
+        }
+
+	seL4_MessageInfo_t tag;
+        seL4_Word msg;
+
+        tag = seL4_MessageInfo_new(0, 0, 0, 1 + strlen(pathname));
+        seL4_SetMR(0, __SOFA_NR_unlink);
+
+        for(int i=0;i<strlen(pathname);++i)
+        {
+                seL4_SetMR(i+1,pathname[i]);
+        }
+
+        tag = seL4_Call(sysCallEndPoint, tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_unlink);
+        msg = seL4_GetMR(1);
+
+        return msg;
+	return 0;
 }
 
 
@@ -789,3 +822,5 @@ void DebugDumpScheduler()
         seL4_SetMR(1,  1);
 	seL4_Send(sysCallEndPoint , tag);
 }
+
+

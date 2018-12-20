@@ -132,6 +132,11 @@ static int execCommand( char* cmd)
         
         return exec_sleep(arg);
     }
+    else if (startsWith("rm", cmd))
+    {
+	const char* arg = cmd + strlen("rm ");
+	return remove(arg);
+    }
     else if (startsWith("ps", cmd))
     {
         char* arg = cmd + strlen("ps ");
