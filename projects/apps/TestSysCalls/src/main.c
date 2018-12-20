@@ -203,6 +203,49 @@ static int doChdirTests()
     return 1;
 }
 
+static int doUnlinkTests()
+{
+    
+    int ret = 0;
+    
+    errno = 0;
+    ret = unlink(NULL);
+    assert(ret == - 1);
+    assert(errno == EFAULT);
+    
+    errno = 0;
+    ret = unlink("foo123");// should not exist
+    assert(ret == - 1);
+    assert(errno == ENOENT);
+    
+    errno = 0;
+    const char filename[]  = "myFile";
+    int fd2 = open (filename, O_RDWR|O_CREAT);
+    assert( fd2 >= 0);
+    assert(errno == 0);
+    
+    errno = 0;
+    ret = close(fd2);
+    assert(ret == 0);
+    assert(errno == 0);
+    
+    errno = 0;
+    ret = unlink(filename);
+    assert(ret == 0);
+    assert(errno == 0);
+    
+    // 2nd time must fail
+    errno = 0;
+    ret = unlink(filename);
+
+    assert(ret == -1);
+    assert(errno == ENOENT);
+    
+
+    
+    return 1;
+}
+
 static int doLsTests()
 {
     
@@ -346,6 +389,8 @@ int main(int argc, char * argv[])
     assert(doDevNullTests());
     
     assert(doCreateAndStatFileTest() );
+    
+    assert(doUnlinkTests());
     
     // will change path to '/' so do this last !
     assert(doChdirTests());
