@@ -46,9 +46,20 @@ int handle_unlink(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 
         pathname[msgLen-1] = 0;
 
-	printf("unlink request for '%s'\n" , pathname);
+	Inode* node = FileServerGetINodeForPath(pathname , senderProcess->currentDir);
+	free(pathname);
 
-
+	if (node)
+	{
+		if (FileServerUnlinkNode(node))
+		{
+			ret = 0;
+		}
+	}
+	else 
+	{
+		ret = -ENOENT;
+	}
 
 
         message = seL4_MessageInfo_new(0, 0, 0, 2);

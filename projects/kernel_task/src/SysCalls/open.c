@@ -69,6 +69,9 @@ int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_Message
                 }
 
         }
+
+        free(pathname);
+
         if(node && ret == 0)
         {
                 ret = ProcessAppendNode(senderProcess , node);
@@ -88,7 +91,6 @@ int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_Message
         seL4_Reply( message );
 
 
-//      free(pathname);
         return 0;
 }
 
