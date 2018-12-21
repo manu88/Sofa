@@ -54,6 +54,8 @@ static SysCallHandler callTable[] =
 	handle_fcntl,
 	handle_mkdir,
 	handle_unlink,
+	handle_setresuid,
+	handle_geteuid,
 
 };
 

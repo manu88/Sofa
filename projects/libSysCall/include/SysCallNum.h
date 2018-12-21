@@ -49,3 +49,4 @@
 #define __SOFA_NR_fcntl			21
 #define __SOFA_NR_mkdir 		22
 #define __SOFA_NR_unlink                23
+#define __SOFA_NR_setresuid	  	24

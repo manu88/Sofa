@@ -154,12 +154,13 @@ ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize) NO_NULL
 
 int InodeSetIdentity(Inode* node , const Identity* identityToCopy) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
-static inline int InodeIdentityHasWritePermissions( const Inode* node , const Identity* idToCheck) NO_NULL_POINTERS SOFA_UNIT_TESTABLE
+
+static inline NO_NULL_POINTERS SOFA_UNIT_TESTABLE int InodeIdentityHasWritePermissions( const Inode* node , const Identity* idToCheck)
 {
     return IdentityHasAuthority(&node->_identity, idToCheck);
 }
 
-int InodeIdentityHasReadPermissions( const Inode* node , const Identity* idToCheck) NO_NULL_POINTERS SOFA_UNIT_TESTABLE
+static inline NO_NULL_POINTERS SOFA_UNIT_TESTABLE int InodeIdentityHasReadPermissions( const Inode* node , const Identity* idToCheck)
 {
     return IdentityHasAuthority(&node->_identity, idToCheck);
 }

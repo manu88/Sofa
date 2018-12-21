@@ -27,6 +27,8 @@ Usefull links :
 * `stat`
 * `get(set)prioriy`
 * `unlink`
+* `setresuid`
+* `geteuid`
 
 ## Features
 * EGA shell

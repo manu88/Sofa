@@ -47,19 +47,27 @@ int handle_unlink(KernelTaskContext* context, Process *senderProcess, seL4_Messa
         pathname[msgLen-1] = 0;
 
 	Inode* node = FileServerGetINodeForPath(pathname , senderProcess->currentDir);
-	free(pathname);
 
 	if (node)
 	{
-		if (FileServerUnlinkNode(node))
+		printf("Process %lu ask to remove %lu (%s)\n" , senderProcess->_identity.uid , node->_identity.uid , pathname);
+		if (InodeIdentityHasWritePermissions(node , &senderProcess->_identity))
 		{
+		    if (FileServerUnlinkNode(node))
+		    {
 			ret = 0;
+		    }
+		}
+		else 
+		{
+		    ret = -EPERM;
 		}
 	}
 	else 
 	{
 		ret = -ENOENT;
 	}
+	free(pathname);
 
 
         message = seL4_MessageInfo_new(0, 0, 0, 2);

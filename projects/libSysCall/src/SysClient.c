@@ -8,7 +8,7 @@
 #include <limits.h>
 #include <utils/time.h>
 #include <time.h>
-
+//#include <linux/futex.h>
 #include <muslcsys/vsyscall.h>
 #include <assert.h>
 #include <errno.h>
@@ -54,6 +54,10 @@ static long sys_getdents64(va_list args);
 static long sys_unlink(va_list args);
 
 static long sys_mkdir(va_list args);
+static long sys_setresuid(va_list args);
+static long sys_futex(va_list args);
+static long sys_geteuid(va_list args);
+
 
 static size_t _Sofa_stdio_write(void *data, size_t count);
 
@@ -101,6 +105,11 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_mkdir	     , sys_mkdir);
 
     muslcsys_install_syscall(__NR_unlink  , sys_unlink);
+
+    muslcsys_install_syscall(__NR_setresuid , sys_setresuid);
+    muslcsys_install_syscall(__NR_futex , sys_futex);
+    muslcsys_install_syscall(__NR_geteuid , sys_geteuid);
+
 //    muslcsys_install_syscall(__NR_writev , sys_writev);
 
 //    sel4muslcsys_register_stdio_write_fn(_Sofa_stdio_write);
@@ -806,11 +815,59 @@ static long sys_stat(va_list args)
 	if (msgLen)
 	{
 		unsigned long nanos =  seL4_GetMR(2);
-		printf("stat : got a modTS %lu\n" , seL4_GetMR(2) );
 		statbuf->st_mtim.tv_sec  = nanos / 1000000000;
 		statbuf->st_mtim.tv_nsec =(nanos % 1000000000); 
 	}
         return ret;
+}
+
+// uid_t geteuid(void);
+static long sys_geteuid(va_list args)
+{
+	return 0;
+}
+
+// int setresuid(uid_t ruid, uid_t euid, uid_t suid);
+static long sys_setresuid(va_list args)
+{
+	uid_t ruid = va_arg(args , uid_t);
+	uid_t euid = va_arg(args , uid_t);
+	uid_t suid = va_arg(args , uid_t);
+
+
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 4 );
+
+        seL4_SetMR(0, __SOFA_NR_setresuid);
+        seL4_SetMR(1,  ruid );
+	seL4_SetMR(2,  euid );
+	seL4_SetMR(3,  suid );
+
+        seL4_Call(sysCallEndPoint , tag);
+	assert(seL4_GetMR(0) == __SOFA_NR_setresuid);
+
+	return seL4_GetMR(1);
+}
+
+// int futex(int *uaddr, int futex_op, int val,const struct timespec *timeout,  or: uint32_t val2  int *uaddr2, int val3);
+static long sys_futex(va_list args)
+{
+	int* uaddr = va_arg(args ,int*);
+	int futex_op = va_arg(args , int);
+	const struct timespec *timeout = va_arg(args , struct timespec *);
+	int *uaddr2 = va_arg(args ,int*);
+	int val3   = va_arg(args , int);
+
+	switch(futex_op)
+	{
+		// FIXME litteral value!
+		case 129: //FUTEX_WAKE_PRIVATE:
+		return 1; // one has woken
+		break;
+
+		default:
+		printf("sys_futex req op %i\n", futex_op);
+		assert(0);
+	}
 }
 
 

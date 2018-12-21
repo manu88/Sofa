@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h> // mkdir 
 #include <errno.h>
+#include <assert.h>
 
 int main( int argc , char* argv[])
 {
@@ -14,6 +15,18 @@ int main( int argc , char* argv[])
     {
         return 1;
     }
+
+
+    int ret = seteuid(1);
+    printf("seteuid ret %i err %i\n" , ret , errno);
+
+    assert(ret == 0);
+    assert(errno == 0);
+
+
+    uid_t uid = geteuid();
+    assert(uid == 1);
+
 
     int pidTests = execve("/cpio/TestSysCalls" , NULL , NULL);
 

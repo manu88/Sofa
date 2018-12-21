@@ -15,31 +15,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "../SysCalls.h"
+#include <assert.h>
+#include "../ProcessTable.h"
 
-
-#include <stdint.h>
-#include <string.h> // memcpy
-#include "Sofa.h"
-
-#define _KERNEL_CAPABILITY_U64S 1
-
-typedef struct
+int handle_geteuid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
 {
-	uint64_t cap[_KERNEL_CAPABILITY_U64S];
-} Capacity;
 
-#define ROOT_IDENTITY 0
-
-
-typedef struct
-{
-    uint64_t uid;
-} Identity;
-
-int IdentityHasAuthority( const Identity* refIdentity, const Identity* identityToCheck) SOFA_UNIT_TESTABLE  NO_NULL_POINTERS;
-
-static inline SOFA_UNIT_TESTABLE  NO_NULL_POINTERS int IdentityCopy(const Identity* source , Identity* dest) 
-{
-	return memcpy(dest , source , sizeof(Identity) ) == dest;
+	return 0;
 }

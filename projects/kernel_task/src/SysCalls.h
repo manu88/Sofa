@@ -63,3 +63,5 @@ int handle_chdir(KernelTaskContext* context, Process *senderProcess, seL4_Messag
 int handle_fcntl(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
 
 int handle_mkdir(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_setresuid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
+int handle_geteuid(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message);
