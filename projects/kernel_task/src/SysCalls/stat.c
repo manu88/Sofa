@@ -38,7 +38,8 @@ int handle_stat(KernelTaskContext* context, Process *senderProcess, seL4_Message
 
 	Inode* node = FileServerGetINodeForPath( path , senderProcess->currentDir);
 	int ret = 0;
-	size_t msgSize = 1;
+
+	size_t msgSize = 2;
 	if (!node)
 	{
 		msgSize = 0;
@@ -52,6 +53,7 @@ int handle_stat(KernelTaskContext* context, Process *senderProcess, seL4_Message
 	if(msgSize)
 	{
 		seL4_SetMR(2 , node->modTS);
+		seL4_SetMR(3 , node->_identity.uid);
         }
 	seL4_Reply( message );
 	return 0;

@@ -817,6 +817,7 @@ static long sys_stat(va_list args)
 		unsigned long nanos =  seL4_GetMR(2);
 		statbuf->st_mtim.tv_sec  = nanos / 1000000000;
 		statbuf->st_mtim.tv_nsec =(nanos % 1000000000); 
+		statbuf->st_uid = seL4_GetMR(3);
 	}
         return ret;
 }

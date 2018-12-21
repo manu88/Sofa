@@ -126,14 +126,19 @@ int ProcessTableAppend( Process* process)
         
     
         char str[32];
-        sprintf(str, "%i", process->_pid);
-    
+        size_t retS = sprintf(str, "%i", process->_pid);
+    	assert(retS <= 32); // sanity check
+
         char* nodeName = strdup(str);
         if (!InodeInit(&process->_processNode, INodeType_Folder, nodeName ))
         {
             free(nodeName);
             return 0;
         }
+	int ret = InodeSetIdentity(&process->_processNode , &process->_identity);
+	printf("Process node identity set to %i \n" , process->_processNode._identity);
+	assert(ret);
+
         process->_processNode.userData = process;
         
         if( !InodeAddChild(ProcessTableGetInode(), &process->_processNode))

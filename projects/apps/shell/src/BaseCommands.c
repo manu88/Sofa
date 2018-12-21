@@ -30,6 +30,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <stddef.h>
+#include <assert.h>
+
 
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
@@ -147,24 +149,44 @@ int exec_ps( const char* args)
     DIR *d = opendir("/proc/");
     if (!d)
         return -1;
-    
-    static const char strHeader[] = "  PID TTY          TIME CMD";
+
+    static const char strHeader[] = "USER PID TTY          TIME CMD";
     writeConsole(strHeader , strlen(strHeader));
     writeConsole("\n", 1);
 
     static char b[1024] = {0};
     static char path[1024] = {0};
-    
+    static char strUid[5] ={0}; 
     while ((dir = readdir(d)) != NULL)
     {
 	
         memset(b, 0, 1024);
         memset(path, 0, 1024);
+	memset(strUid , 0 , 5);
 
+	// get folder stat
+	struct stat st;
+
+        snprintf( path , 1024 , "/proc/%s/" , dir->d_name);
+	int ret = stat(path , &st);
+	assert(ret == 0);
+	//
         snprintf( path , 1024 , "/proc/%s/cmdline" , dir->d_name);
         //printf("cmd line path is '%s'\n" , path);
+	
+	//write the user
+	uid_t userId = st.st_uid;
+	
+	size_t sizeUid = snprintf( strUid ,5, "%u" , userId);
+	writeConsole(strUid,  sizeUid);
 
-        size_t s = snprintf(b, 1024, "%s                       ", dir->d_name);
+	// some pad
+	for(int i=0;i<5-sizeUid;++i)
+	{
+		writeConsole(" ",1);
+	}
+	// write the PID
+        size_t s = snprintf(b, 1024, "%s                     ", dir->d_name);
         writeConsole(b , s);
 
 
@@ -230,6 +252,7 @@ int exec_stat(const char* args)
 #ifndef __APPLE__
 	printf("Created at %li seconds %li ns\n" , s.st_mtim.tv_sec,s.st_mtim.tv_nsec);
 #endif
+	printf("file uid %u\n" , s.st_uid);
 	return ret;
 }
 
