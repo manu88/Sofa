@@ -52,3 +52,4 @@
 #define __SOFA_NR_mkdir 		22
 #define __SOFA_NR_unlink                23
 #define __SOFA_NR_setresuid             24
+#define __SOFA_NR_geteuid               25

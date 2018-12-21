@@ -107,7 +107,7 @@ int SysClientInit(int argc , char* argv[] )
     muslcsys_install_syscall(__NR_unlink  , sys_unlink);
 
     muslcsys_install_syscall(__NR_setresuid , sys_setresuid);
-    muslcsys_install_syscall(__NR_futex , sys_futex);
+//    muslcsys_install_syscall(__NR_futex , sys_futex);
     muslcsys_install_syscall(__NR_geteuid , sys_geteuid);
 
 //    muslcsys_install_syscall(__NR_writev , sys_writev);
@@ -824,7 +824,14 @@ static long sys_stat(va_list args)
 // uid_t geteuid(void);
 static long sys_geteuid(va_list args)
 {
-	return 0;
+	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 1 );
+	seL4_SetMR(0, __SOFA_NR_geteuid);
+
+	seL4_Call(sysCallEndPoint , tag);
+        assert(seL4_GetMR(0) == __SOFA_NR_geteuid);
+
+        return seL4_GetMR(1);
+
 }
 
 // int setresuid(uid_t ruid, uid_t euid, uid_t suid);

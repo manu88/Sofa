@@ -58,10 +58,12 @@ int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 	    ProcessAppendNode(newProcess , ProcessGetNode(senderProcess , i));
         }
 
+	printf("(%s) execve uid is sender %i  new %i \n" ,nodeToExec->name, senderProcess->_identity.uid , newProcess->_identity.uid);
+
+
 	int retCpy = IdentityCopy(&newProcess->_identity , &senderProcess->_identity);
 	assert(retCpy );
 	assert( IdentityHasAuthority(&newProcess->_identity , &senderProcess->_identity) );
-	printf("(%s) execve uid is %i %i \n" ,nodeToExec->name, senderProcess->_identity.uid , newProcess->_identity.uid);
 
         int  error = ProcessTableAddAndStart(context,  newProcess, nodeToExec->name, context->ep_cap_path ,senderProcess, seL4_MaxPrio);
         assert(error == 0);
