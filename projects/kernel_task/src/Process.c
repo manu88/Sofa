@@ -357,6 +357,23 @@ int ProcessSetCmdLine(Process* process , const char* cmdline)
  	return 1;
 }
 
+int ProcessSetIdentity(Process* process , const Identity* identityToCopy)
+{
+    if(memcpy(&process->_identity, identityToCopy, sizeof(Identity)) == &process->_identity)
+    {
+        return InodeSetIdentity(&process->_processNode, &process->_identity);
+    }
+    
+    return 0;
+}
+
+int ProcessSetIdentityUID(Process* process , uid_t uid)
+{
+    process->_identity.uid = uid;
+    process->_processNode._identity.uid = uid;
+    return 1;
+}
+
 
 /*
 ssize_t ProcRead ( Inode * node, char*buffer  , size_t count)

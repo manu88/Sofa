@@ -69,7 +69,7 @@ struct _inode;
 // a process
 struct _Process
 {
-    Inode _processNode; // might stay first so that Inode can be casted to Process
+    Inode _processNode; // might stay first so that Inode can be cast to Process
     uint8_t _prio;
     sel4utils_process_t _process;
     ProcessState        _state;
@@ -145,6 +145,9 @@ int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter) NO_NULL_P
 
 int ProcessDoExit(KernelTaskContext* context,Process* process , int retCode)NO_NULL_POINTERS;
 int ProcessSendSignal(KernelTaskContext* context,Process *process, int sig)NO_NULL_POINTERS;
+
+int ProcessSetIdentity(Process* process , const Identity* identityToCopy) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+int ProcessSetIdentityUID(Process* process , uid_t uid) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 typedef struct
 {
