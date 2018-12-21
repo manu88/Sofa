@@ -37,11 +37,14 @@ static FileOperations  termFileOps = {ConsoleRead , ConsoleWrite, FileOperation_
 
 static void terminal_putchar(Terminal* term , char c);
 
+static const char consoleName[] = "console";
+
+
 int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc,  Terminal* terminal)
 {
     memset(terminal, 0, sizeof(Terminal));
     
-    if(InodeInit( &terminal->node,INodeType_File, "console") == 0)
+    if(InodeInit( &terminal->node,INodeType_File, consoleName) == 0)
     {
 	return 0;
     }
@@ -90,14 +93,39 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
     {
         //int c = __arch_getchar();
         int c = ps_cdev_getchar(&dev->dev);
+
+
         if (c == EOF) 
  	{
             //read till we get EOF
             break;
         }
-	cqueue_push(&term->inputChar , (cqueue_item_t) c);
+	else if (c < 0) // error
+	{
+		printf("ps_cdev_getchar returned error %i\n", c);
+		break;
+	}
 
-	terminal_putchar(term , c);
+	if (c == 0x03) // ctrl-c
+	{
+		printf("CTRL-C \n");
+
+	}
+	// special chars
+	else if (c >= 0x11 && c <= 0x14)
+	{
+		printf("control char %x\n", c);
+	}
+
+	else 
+	{
+		cqueue_push(&term->inputChar , (cqueue_item_t) c);
+
+		terminal_putchar(term , c);
+	
+//	        printf("normal char %x\n", c);
+	}
+
 
 
     }

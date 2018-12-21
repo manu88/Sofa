@@ -17,7 +17,7 @@
 
 #include "Keyboard.h"
 #include <vka/object_capops.h> // vka_mint_object
-#include "../MainLoop.h"
+#include "../MainLoop.h" // for IRQ_BADGE_KEYBOARD | IRQ_EP_BADGE
 
 
 static void set_devEp(KeyboardDevice* dev);
