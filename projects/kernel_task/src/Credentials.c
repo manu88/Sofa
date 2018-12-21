@@ -17,3 +17,7 @@
 
 #include "Credentials.h"
 
+int IdentityHasAuthority( const Identity* refIdentity, const Identity* identityToCheck)
+{
+    return identityToCheck->uid <= refIdentity->uid;
+}

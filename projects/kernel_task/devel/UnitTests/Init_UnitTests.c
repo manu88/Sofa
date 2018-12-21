@@ -46,11 +46,16 @@ static int Test_Process()
 {
     Process* p1 = ProcessAlloc();
     assert(Test_ProcessInstance(p1));
+    assert(p1->_identity.uid == 0);
     
     Process p2;
     
     assert(ProcessInit(&p2));
     assert(Test_ProcessInstance(&p2));
+    assert(p2._identity.uid == 0);
+    
+    assert(IdentityHasAuthority(&p1->_identity, &p2._identity));
+    
     
     p1->_pid = 1;
     p2._pid = 2;

@@ -25,6 +25,7 @@
 #include <data_struct/cvector.h>
 #include "uthash.h"
 #include "fs.h"
+#include "Credentials.h"
 
 typedef struct _Process Process;
 
@@ -86,6 +87,8 @@ struct _Process
     struct _inode* currentDir;
     cvector_t fdNodes;
     
+    
+    Identity _identity;
     
     UT_hash_handle hh; // main proc hash, i.e the Process table
 };

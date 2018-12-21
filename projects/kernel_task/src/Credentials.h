@@ -19,6 +19,7 @@
 
 
 #include <stdint.h>
+#include "Sofa.h"
 
 #define _KERNEL_CAPABILITY_U64S 1
 
@@ -27,3 +28,12 @@ typedef struct
 	uint64_t cap[_KERNEL_CAPABILITY_U64S];
 } Capacity;
 
+#define ROOT_IDENTITY 0
+
+
+typedef struct
+{
+    uint64_t uid;
+} Identity;
+
+int IdentityHasAuthority( const Identity* refIdentity, const Identity* identityToCheck) SOFA_UNIT_TESTABLE  NO_NULL_POINTERS;

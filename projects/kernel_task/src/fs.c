@@ -70,6 +70,8 @@ void InodeRetain(Inode* node)
     node->refCount++;
 }
 
+
+
 int InodeRelease(Inode* node)
 {
     if( --node->refCount == 0)
@@ -302,3 +304,7 @@ void InodePrintTree(const Inode* node)
 
 
 
+int InodeSetIdentity(Inode* node , const Identity* identityToCopy)
+{
+    return memcpy(&node->_identity, identityToCopy, sizeof(Identity)) == &node->_identity;
+}

@@ -241,8 +241,12 @@ static int doUnlinkTests()
     assert(ret == -1);
     assert(errno == ENOENT);
     
-
-    
+    // unlink but no permission
+    errno = 0;
+    ret = unlink("/dev/");
+    assert( errno == EPERM);
+    assert(ret == -1);
+    //printf("%i %i \n" , errno , ret);
     return 1;
 }
 

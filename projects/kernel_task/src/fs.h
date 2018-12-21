@@ -35,6 +35,7 @@
 #include "uthash.h"
 #include "utlist.h"
 #include <dirent.h>
+#include "Credentials.h"
 /*
  * INodeType should follow
  */
@@ -101,7 +102,7 @@ struct _inode
     const FileOperations  *operations;
     const INodeOperations *inodeOperations;
 
-    uint64_t modTS;
+    uint64_t modTS; // modification timestampcr
 
     size_t pos;
     size_t size;
@@ -116,6 +117,8 @@ struct _inode
     UT_hash_handle hh;
     
     int flags;
+    
+    Identity _identity;
 };
 
 typedef struct _inode Inode;
@@ -128,6 +131,10 @@ Inode* InodeAlloc(INodeType type,const char* name) NO_NULL_POINTERS SOFA_UNIT_TE
 int InodeInit(Inode* node , INodeType type , const char* name) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
 
 void InodeRetain(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+
+
+
 
 // returns 1 if node can be freed (ie refCount is 0 after decrement)
 int InodeRelease(Inode* node) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
@@ -145,6 +152,17 @@ ssize_t InodeGetAbsolutePath(const Inode* node, char* b, size_t maxSize) NO_NULL
 
 #define InodeForEachChildren(node,child,tempChild) HASH_ITER(hh,node->children,child,tempChild)
 
+int InodeSetIdentity(Inode* node , const Identity* identityToCopy) NO_NULL_POINTERS SOFA_UNIT_TESTABLE;
+
+static inline int InodeIdentityHasWritePermissions( const Inode* node , const Identity* idToCheck) NO_NULL_POINTERS SOFA_UNIT_TESTABLE
+{
+    return IdentityHasAuthority(&node->_identity, idToCheck);
+}
+
+int InodeIdentityHasReadPermissions( const Inode* node , const Identity* idToCheck) NO_NULL_POINTERS SOFA_UNIT_TESTABLE
+{
+    return IdentityHasAuthority(&node->_identity, idToCheck);
+}
 
 void InodePrintTree(const Inode* node);
 
