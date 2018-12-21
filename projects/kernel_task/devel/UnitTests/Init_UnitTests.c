@@ -31,6 +31,7 @@
 #include "DevServer_UnitTests.h"
 #include "ProcessTable_UnitTests.h"
 #include "Other_UnitTests.h"
+#include "Identity_UnitTests.h"
 
 static int Test_ProcessInstance(Process* p)
 {
@@ -112,5 +113,6 @@ int doInit_UnitTests()
     assert(DriverKit_UnitTests() );
     assert(DevServer_UnitTests() );
     assert(ProcessTable_UnitTests() );
+    assert(Identity_UnitTests());
     return 1;
 }

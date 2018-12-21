@@ -11,6 +11,7 @@
 		59067A692199506000E92DD9 /* File.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A682199506000E92DD9 /* File.c */; };
 		59067A6C21999CC600E92DD9 /* ProcessTable_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A6B21999CC600E92DD9 /* ProcessTable_UnitTests.c */; };
 		5939CD6621CCD9590098CE65 /* Credentials.c in Sources */ = {isa = PBXBuildFile; fileRef = 5939CD6421CCD9580098CE65 /* Credentials.c */; };
+		5939CD6921CCF2260098CE65 /* Identity_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 5939CD6821CCF2260098CE65 /* Identity_UnitTests.c */; };
 		599D6E2021897ECD00FD93BD /* cbpool.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1521897DA200FD93BD /* cbpool.c */; };
 		599D6E2121897ECD00FD93BD /* chash.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1121897DA200FD93BD /* chash.c */; };
 		599D6E2221897ECD00FD93BD /* coat.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E0C21897DA100FD93BD /* coat.c */; };
@@ -63,6 +64,8 @@
 		59067A6D2199A13F00E92DD9 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../src/main.c; sourceTree = "<group>"; };
 		5939CD6421CCD9580098CE65 /* Credentials.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Credentials.c; path = ../src/Credentials.c; sourceTree = "<group>"; };
 		5939CD6521CCD9590098CE65 /* Credentials.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Credentials.h; path = ../src/Credentials.h; sourceTree = "<group>"; };
+		5939CD6721CCF2260098CE65 /* Identity_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Identity_UnitTests.h; sourceTree = "<group>"; };
+		5939CD6821CCF2260098CE65 /* Identity_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Identity_UnitTests.c; sourceTree = "<group>"; };
 		599D6E0B21897DA100FD93BD /* cpool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cpool.c; path = ../../libdatastruct/src/cpool.c; sourceTree = "<group>"; };
 		599D6E0C21897DA100FD93BD /* coat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = coat.c; path = ../../libdatastruct/src/coat.c; sourceTree = "<group>"; };
 		599D6E0D21897DA100FD93BD /* coat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = coat.h; path = ../../libdatastruct/include/data_struct/coat.h; sourceTree = "<group>"; };
@@ -240,6 +243,8 @@
 				59AED251218E25AC00E12D02 /* FileServer_UnitTests.c */,
 				59067A6A21999CC600E92DD9 /* ProcessTable_UnitTests.h */,
 				59067A6B21999CC600E92DD9 /* ProcessTable_UnitTests.c */,
+				5939CD6721CCF2260098CE65 /* Identity_UnitTests.h */,
+				5939CD6821CCF2260098CE65 /* Identity_UnitTests.c */,
 				59AED24D218E259700E12D02 /* Init_UnitTests.c */,
 				59AED24E218E259700E12D02 /* Init_UnitTests.h */,
 			);
@@ -374,6 +379,7 @@
 				59CA161B21B45EB2001C9F05 /* Timer.c in Sources */,
 				599D6E2221897ECD00FD93BD /* coat.c in Sources */,
 				59B4189521A0408300C0234B /* list.c in Sources */,
+				5939CD6921CCF2260098CE65 /* Identity_UnitTests.c in Sources */,
 				59AED24F218E259700E12D02 /* Init_UnitTests.c in Sources */,
 				59067A6C21999CC600E92DD9 /* ProcessTable_UnitTests.c in Sources */,
 				59067A692199506000E92DD9 /* File.c in Sources */,
