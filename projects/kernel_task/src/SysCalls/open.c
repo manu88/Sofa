@@ -62,6 +62,8 @@ int handle_open(KernelTaskContext* context, Process *senderProcess, seL4_Message
 
          //       printf("Create node '%s' from currentDir '%s'\n" , pathname , senderProcess->currentDir->name);
                 node = FileServerCreateNode(pathname, INodeType_File , senderProcess->currentDir);
+		
+		ret = !InodeSetIdentity(node , &senderProcess->_identity);
 
                 if (!node)
                 {

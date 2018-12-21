@@ -58,10 +58,12 @@ int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 	    ProcessAppendNode(newProcess , ProcessGetNode(senderProcess , i));
         }
 
+
+
+	int retCpy = IdentityCopy( &senderProcess->_identity , &newProcess->_identity);
+
 	printf("(%s) execve uid is sender %i  new %i \n" ,nodeToExec->name, senderProcess->_identity.uid , newProcess->_identity.uid);
 
-
-	int retCpy = IdentityCopy(&newProcess->_identity , &senderProcess->_identity);
 	assert(retCpy );
 	assert( IdentityHasAuthority(&newProcess->_identity , &senderProcess->_identity) );
 
