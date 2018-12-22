@@ -77,10 +77,24 @@ int exec_ls( const char* args)
     DIR *d = opendir(args);
     if (d)
     {
+	char p[1024] = {0};
         while ((dir = readdir(d)) != NULL)
         {
+	    ssize_t retS = snprintf(p , 1024 , "%s/%s",args,dir->d_name);
+
+	    struct stat _stat;
+	    int ret = stat(p , &_stat);
+//	    printf("path '%s' ret %i errno %iuid %u\n" , p ,ret , errno, _stat.st_uid );
+
+	    assert(ret == 0);
+
+
             writeConsole( dir->d_name , strlen(dir->d_name) );
-            writeConsole( "\n" , 1);
+
+	    retS = snprintf(p  , 1024 , " %u " , _stat.st_uid);
+	    writeConsole(p , retS);
+
+	    writeConsole( "\n" , 1);
         }
         closedir(d);
         return 0;
