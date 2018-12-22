@@ -65,7 +65,9 @@ void setTermColor( int color)
 
 void PrintHelp()
 {
-    static const char b[] = "Some help you could use .... \n available command : ls pwd cd cat touch ps kill clear exec mkdir sleep stat\n";
+    static const char b[] = "available command :\n"
+    "ls exec cat mkdir touch kill sleep rm ps stat pwd help clear renice cd exit\n";
+    
     writeConsole(  b ,strlen(b));
 }
 

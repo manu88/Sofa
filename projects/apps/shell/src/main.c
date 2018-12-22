@@ -132,6 +132,7 @@ static int execCommand( char* cmd)
         
         return exec_sleep(arg);
     }
+
     else if (startsWith("rm", cmd))
     {
 	const char* arg = cmd + strlen("rm ");
@@ -272,9 +273,14 @@ int main( int argc , char* argv[])
                     
                     char* trimmed = trim(realCmd);
                     
-                    if(execCommand( trimmed))
+                    int ret = execCommand( trimmed);
+                    if( ret == 0)
                     {
                         writeConsole("\n" , 1);
+                    }
+                    else
+                    {
+                        printf("cmd '%s' got ret %i %i\n" , trimmed , ret , errno);
                     }
                     
                     //free(realCmd);
