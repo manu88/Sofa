@@ -47,7 +47,8 @@ ssize_t writeConsole( const void* b , size_t len);
 ssize_t readConsole( void*b , size_t len);
 
 void setTermColor( int color);
-
+void clearTerm(void);
+void setTermCoords(uint8_t x , uint8_t y);
 
 void PrintHelp(void);
 

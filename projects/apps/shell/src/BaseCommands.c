@@ -63,6 +63,18 @@ void setTermColor( int color)
 #endif
 }
 
+void clearTerm()
+{
+    uint8_t msg[] = { 0xA , 0x0 , 0xB };
+    writeConsole(  msg , 3);
+}
+
+void setTermCoords(uint8_t x , uint8_t y)
+{
+    uint8_t msg[] = { 0xA , 0x3 , x , y };
+    writeConsole(  msg , 4);
+}
+
 void PrintHelp()
 {
     static const char b[] = "available command :\n"

@@ -189,22 +189,32 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
 
 //0xA , 0x0 , 0xB 
 
-    if (size == 3 && (uint8_t)buffer[0] == 0xA)
+    if (size >= 3 && (uint8_t)buffer[0] == 0xA)
     {
-	const uint8_t *cmd = (const uint8_t *) buffer;
-	if (cmd[1] == 0x0 && cmd[2] == 0xB)
-	{
-		terminal_clear(term);
-		term->terminal_column = 0;
-		term->terminal_row    = 0;
-		return 0;
-	} 
-	else if (cmd[1] == 0x2 )
-	{
-		term->color= cmd[2];
-		return 0;
-	}
+        const uint8_t *cmd = (const uint8_t *) buffer;
+        
+        if (cmd[1] == 0x0 && cmd[2] == 0xB) // clear and reset to coords to {0,0}
+        {
+            terminal_clear(term);
+            term->terminal_column = 0;
+            term->terminal_row    = 0;
+            return 0;
+        }
+        else if (cmd[1] == 0x2 ) // set color
+        {
+            term->color= cmd[2];
+            return 0;
+        }
+        else if (cmd[1] == 0x3) // set coords
+        {
+            uint8_t x = cmd[2];
+            uint8_t y = cmd[3];
+            term->terminal_column = x;
+            term->terminal_row    = y;
+            
+        }
     }
+    
 
     for(int i =0;i<size;i++)
     {

@@ -172,8 +172,7 @@ static int execCommand( char* cmd)
 	}
 	else if (strcmp( cmd , "clear") == 0)
 	{
-		uint8_t msg[] = { 0xA , 0x0 , 0xB };
-		writeConsole(  msg , 3);
+        clearTerm();
         return 0;
 	}
     else if (startsWith("renice ", cmd))
