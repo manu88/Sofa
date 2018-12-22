@@ -12,6 +12,7 @@
 		59067A6C21999CC600E92DD9 /* ProcessTable_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 59067A6B21999CC600E92DD9 /* ProcessTable_UnitTests.c */; };
 		5939CD6621CCD9590098CE65 /* Credentials.c in Sources */ = {isa = PBXBuildFile; fileRef = 5939CD6421CCD9580098CE65 /* Credentials.c */; };
 		5939CD6921CCF2260098CE65 /* Identity_UnitTests.c in Sources */ = {isa = PBXBuildFile; fileRef = 5939CD6821CCF2260098CE65 /* Identity_UnitTests.c */; };
+		5939CD8521CEAA080098CE65 /* cansid.c in Sources */ = {isa = PBXBuildFile; fileRef = 5939CD8321CEAA080098CE65 /* cansid.c */; };
 		599D6E2021897ECD00FD93BD /* cbpool.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1521897DA200FD93BD /* cbpool.c */; };
 		599D6E2121897ECD00FD93BD /* chash.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E1121897DA200FD93BD /* chash.c */; };
 		599D6E2221897ECD00FD93BD /* coat.c in Sources */ = {isa = PBXBuildFile; fileRef = 599D6E0C21897DA100FD93BD /* coat.c */; };
@@ -66,6 +67,8 @@
 		5939CD6521CCD9590098CE65 /* Credentials.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Credentials.h; path = ../src/Credentials.h; sourceTree = "<group>"; };
 		5939CD6721CCF2260098CE65 /* Identity_UnitTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Identity_UnitTests.h; sourceTree = "<group>"; };
 		5939CD6821CCF2260098CE65 /* Identity_UnitTests.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Identity_UnitTests.c; sourceTree = "<group>"; };
+		5939CD8321CEAA080098CE65 /* cansid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cansid.c; sourceTree = "<group>"; };
+		5939CD8421CEAA080098CE65 /* cansid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cansid.h; sourceTree = "<group>"; };
 		599D6E0B21897DA100FD93BD /* cpool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cpool.c; path = ../../libdatastruct/src/cpool.c; sourceTree = "<group>"; };
 		599D6E0C21897DA100FD93BD /* coat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = coat.c; path = ../../libdatastruct/src/coat.c; sourceTree = "<group>"; };
 		599D6E0D21897DA100FD93BD /* coat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = coat.h; path = ../../libdatastruct/include/data_struct/coat.h; sourceTree = "<group>"; };
@@ -149,6 +152,16 @@
 			);
 			name = Devices;
 			path = ../src/Devices;
+			sourceTree = "<group>";
+		};
+		5939CD8221CEAA080098CE65 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				5939CD8321CEAA080098CE65 /* cansid.c */,
+				5939CD8421CEAA080098CE65 /* cansid.h */,
+			);
+			name = Utils;
+			path = ../src/Utils;
 			sourceTree = "<group>";
 		};
 		599D6E1F21897DA700FD93BD /* libdatastruct */ = {
@@ -283,6 +296,7 @@
 				5939CD6421CCD9580098CE65 /* Credentials.c */,
 				5939CD6521CCD9590098CE65 /* Credentials.h */,
 				59067A612196FD7700E92DD9 /* CpioServer.c */,
+				5939CD8221CEAA080098CE65 /* Utils */,
 				59067A602196FD7600E92DD9 /* CpioServer.h */,
 				59B4189621A7DCCB00C0234B /* utlist.h */,
 				59067A5C2195C30400E92DD9 /* uthash.h */,
@@ -371,6 +385,7 @@
 				59AED26821909DFD00E12D02 /* DriverKit_UnitTests.c in Sources */,
 				59AED249218E1B9000E12D02 /* Process.c in Sources */,
 				59AED263219090E400E12D02 /* DriverKit.c in Sources */,
+				5939CD8521CEAA080098CE65 /* cansid.c in Sources */,
 				59067A5F2195D7ED00E92DD9 /* DevServer_UnitTests.c in Sources */,
 				599D6E2521897ECD00FD93BD /* cvector.c in Sources */,
 				59AECEE521898E6200E12D02 /* StringOperations.c in Sources */,
