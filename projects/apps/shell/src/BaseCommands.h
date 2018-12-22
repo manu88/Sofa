@@ -18,6 +18,7 @@
 #pragma once
 
 
+#include <stdint.h>
 
 
 // from EGA driver

@@ -211,7 +211,7 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
             uint8_t y = cmd[3];
             term->terminal_column = x;
             term->terminal_row    = y;
-            
+            return 0;
         }
     }
     

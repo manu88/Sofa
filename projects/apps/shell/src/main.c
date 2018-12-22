@@ -205,16 +205,19 @@ static int execCommand( char* cmd)
     {
         exit(0);
     }
-	else if( strlen(cmd))
-	{
-		const char msg[] = "unknown command\n";
-		writeConsole(msg , strlen(msg) );
-		writeConsole(cmd , strlen(cmd) );
-		
-	}
+    else if (startsWith("test", cmd))
+    {
+	setTermCoords(5,5);
+	writeConsole("test" , 4 );
+    }
+    else if( strlen(cmd))
+    {
+	const char msg[] = "unknown command\n";
+	writeConsole(msg , strlen(msg) );
+	writeConsole(cmd , strlen(cmd) );
+    }
 
-    
-	return 0;
+    return 0;
 }
 
 int main( int argc , char* argv[])

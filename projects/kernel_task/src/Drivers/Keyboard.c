@@ -58,9 +58,14 @@ int KeyboardDeviceInit(KernelTaskContext* context, const cspacepath_t* notificat
         assert(error == 0); 
  
 
-	ps_chardevice_t *ret;
-        ret = ps_cdev_init(PC99_KEYBOARD_PS2, &context->opsIO, &keyboard->dev);
-        assert(ret != NULL);
+	ps_chardevice_t *ret = NULL;
+	int tries = 0; 
+	while(ret == NULL && tries <= 10)
+	{
+            ret = ps_cdev_init(PC99_KEYBOARD_PS2, &context->opsIO, &keyboard->dev);
+	    tries++;
+	}
+//        assert(ret != NULL);
 	
 	if (ret == NULL)
 	{
