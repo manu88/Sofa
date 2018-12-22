@@ -53,3 +53,5 @@ int InitEGADriver(KernelTaskContext *context);
 
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y);
 
+
+void terminal_scroll(uint8_t offset);

@@ -23,6 +23,7 @@
 
 #define MAX_CHAR_QUEUE 64
 
+
 static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t size);
 static int     ConsoleOpen (struct _inode * node, int flags );
 static int     ConsoleClose (Inode * node);
@@ -79,7 +80,7 @@ int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc
     cqueue_init( &terminal->inputChar , MAX_CHAR_QUEUE);
 
     terminal->_escState = cansid_init();
-
+    terminal->scroll = 1;
     return  1;
 }
 
@@ -158,6 +159,12 @@ static void terminal_putchar(Terminal* term , char c)
 	{
 	     term->terminal_column = 0;
 	     term->terminal_row +=1;
+
+	     if(term->terminal_row == MODE_HEIGHT)
+	     {
+		 term->terminal_row -=1;
+ 	         terminal_scroll(1);
+	     }
 	}
 	else 
 	{
@@ -289,3 +296,4 @@ static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size)
 */
     return realReadSize;
 }
+

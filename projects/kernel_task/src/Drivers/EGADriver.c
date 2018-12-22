@@ -39,6 +39,21 @@ static inline uint16_t vga_entry(unsigned char uc, uint8_t color)
         return (uint16_t) uc | (uint16_t) color << 8;
 }
 
+void terminal_scroll(uint8_t offset)
+{
+	for(int i =1;i<MODE_HEIGHT;i++)
+	{
+		const size_t index = i * MODE_WIDTH ;
+		uint16_t* lineStart = _egaContext.videoPtr + index;
+		uint16_t* lineDest  = _egaContext.videoPtr +(index - MODE_WIDTH);
+
+		memcpy(lineDest , lineStart , MODE_WIDTH);
+	}
+
+	const size_t index = (MODE_HEIGHT-1) * MODE_WIDTH;
+	memset(_egaContext.videoPtr + index , 0 , MODE_WIDTH);
+}
+
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) 
 {
         const size_t index = y * MODE_WIDTH + x;
