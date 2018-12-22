@@ -65,8 +65,14 @@ void setTermColor( int color)
 
 void clearTerm()
 {
-    uint8_t msg[] = { 0xA , 0x0 , 0xB };
-    writeConsole(  msg , 3);
+    static const char cmd[] = "\033[2J\033[0;0H";
+    
+    writeConsole(  cmd , sizeof(cmd));
+    
+    //static const char c2[] = "\033[0;0H";
+    //writeConsole(  c2 , sizeof(c2));
+    //uint8_t msg[] = { 0xA , 0x0 , 0xB };
+    //writeConsole(  msg , 3);
 }
 
 void setTermCoords(uint8_t x , uint8_t y)
