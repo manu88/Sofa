@@ -96,6 +96,11 @@ static int execCommand( char* cmd)
         */
         return exec_ls(arg);
 	}
+    else if (startsWith("echo", cmd))
+    {
+        char* arg = cmd + strlen("echo ");
+        return exec_echo(arg);
+    }
     else if (startsWith("exec", cmd))
     {
         char* arg = cmd + strlen("exec ");

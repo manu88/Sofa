@@ -57,33 +57,19 @@ ssize_t readConsole( void*b , size_t len)
 
 void setTermColor( int color)
 {
-	//\033[31;40;0m
 	char b[12] = {0};
 	ssize_t ret = snprintf(b , 12 , "\033[%i;40;0m" , color + 30);
 	writeConsole(b , ret);
-/*
-#ifndef __APPLE__
- 	uint8_t msg[] = { 0xA , 0x2 , color };
-    writeConsole(  msg , 3);
-#endif
-*/
 }
 
 void clearTerm()
 {
     static const char cmd[] = "\033[2J\033[0;0H";
-    
     writeConsole(  cmd , sizeof(cmd));
-    
-    //static const char c2[] = "\033[0;0H";
-    //writeConsole(  c2 , sizeof(c2));
-    //uint8_t msg[] = { 0xA , 0x0 , 0xB };
-    //writeConsole(  msg , 3);
 }
 
 void setTermCoords(uint8_t x , uint8_t y)
 {
-   // \033[%u;%uH
     char b[12] = {0};
     ssize_t ret = snprintf(b , 12 , "\033[%u;%uH" , y,x);
     writeConsole(b , ret);
@@ -103,28 +89,31 @@ int exec_ls( const char* args)
     DIR *d = opendir(args);
     if (d)
     {
-	char p[1024] = {0};
+        char p[1024] = {0};
+        
         while ((dir = readdir(d)) != NULL)
         {
-	    ssize_t retS = snprintf(p , 1024 , "%s/%s",args,dir->d_name);
+            ssize_t retS = snprintf(p , 1024 , "%s/%s",args,dir->d_name);
 
-	    struct stat _stat;
-	    int ret = stat(p , &_stat);
-//	    printf("path '%s' ret %i errno %iuid %u\n" , p ,ret , errno, _stat.st_uid );
+            struct stat _stat;
+            int ret = stat(p , &_stat);
 
-	    assert(ret == 0);
+            assert(ret == 0);
 
 
             writeConsole( dir->d_name , strlen(dir->d_name) );
 
-	    retS = snprintf(p  , 1024 , " %u " , _stat.st_uid);
-	    writeConsole(p , retS);
+            retS = snprintf(p  , 1024 , " %u " , _stat.st_uid);
+            writeConsole(p , retS);
 
-	    writeConsole( "\n" , 1);
+            writeConsole( "\n" , 1);
         }
+        
         closedir(d);
         return 0;
+        
     }
+    
     return errno;
     
 }
@@ -132,17 +121,21 @@ int exec_ls( const char* args)
 int exec_cat( const char* args)
 {
     int f = open(args, O_RDONLY);
+    
     if (f<0)
+    {
         return f;
+    }
     
     char b[32] = {0};
     
     ssize_t r = 0;
-    do {
+    do
+    {
         r = read(f, b, 32);
         writeConsole(b, r);
-        
     } while (r > 0);
+    
     close(f);
     
     return 0;
@@ -152,6 +145,7 @@ int exec_cat( const char* args)
 int exec_touch( const char* args)
 {
     int f = open(args, O_WRONLY | O_APPEND | O_CREAT , 0644);
+    
     if (f >=0)
     {
         close(f);
@@ -162,7 +156,6 @@ int exec_touch( const char* args)
 
 int exec_exec( const char* args)
 {
-    
     char shouldWaitChar = 0;
     char appName[128] = {0};
     int n = sscanf(args, "%s %c" , appName , &shouldWaitChar);
@@ -173,12 +166,12 @@ int exec_exec( const char* args)
         
         int retPid = execve(appName,NULL , NULL);
         
-	
         if (shouldWait)
         {
             int status = 0;
             waitpid(retPid, &status , 0);
         }
+        
         return retPid;
     }
     return 0;
@@ -189,8 +182,11 @@ int exec_ps( const char* args)
 {
     struct dirent *dir;
     DIR *d = opendir("/proc/");
+    
     if (!d)
+    {
         return -1;
+    }
 
     static const char strHeader[] = "USER PID TTY          TIME CMD";
     writeConsole(strHeader , strlen(strHeader));
@@ -198,41 +194,43 @@ int exec_ps( const char* args)
 
     static char b[1024] = {0};
     static char path[1024] = {0};
-    static char strUid[5] ={0}; 
+    static char strUid[5] ={0};
+    
     while ((dir = readdir(d)) != NULL)
     {
 	
         memset(b, 0, 1024);
         memset(path, 0, 1024);
-	memset(strUid , 0 , 5);
+        memset(strUid , 0 , 5);
 
-	// get folder stat
-	struct stat st;
+        // get folder stat
+        struct stat st;
 
         snprintf( path , 1024 , "/proc/%s/" , dir->d_name);
-	int ret = stat(path , &st);
-	assert(ret == 0);
-	//
+        int ret = stat(path , &st);
+        assert(ret == 0);
+        //
         snprintf( path , 1024 , "/proc/%s/cmdline" , dir->d_name);
         //printf("cmd line path is '%s'\n" , path);
 	
-	//write the user
-	uid_t userId = st.st_uid;
+        //write the user
+        uid_t userId = st.st_uid;
 	
-	size_t sizeUid = snprintf( strUid ,5, "%u" , userId);
-	writeConsole(strUid,  sizeUid);
+        size_t sizeUid = snprintf( strUid ,5, "%u" , userId);
+        writeConsole(strUid,  sizeUid);
 
-	// some pad
-	for(int i=0;i<5-sizeUid;++i)
-	{
-		writeConsole(" ",1);
-	}
-	// write the PID
+        // some pad
+        for(int i=0;i<5-sizeUid;++i)
+        {
+            writeConsole(" ",1);
+        }
+        
+        // write the PID
         size_t s = snprintf(b, 1024, "%s                     ", dir->d_name);
         writeConsole(b , s);
 
-
         int f = open(path, O_RDONLY);// fopen(path , "r");
+        
         if(f >= 0)
         {
             char buf[32] = {0};
@@ -252,9 +250,11 @@ int exec_ps( const char* args)
         {
             printf("Error fopen '%s'\n",path);
         }
+        
         writeConsole("\n", 1);
 
     }
+    
     closedir(d);
     
     
@@ -265,7 +265,7 @@ int exec_kill( const char* args)
 {
 	long pidToKill = atol(args);
 
-	return kill(pidToKill , SIGTERM);
+	return kill( (pid_t)pidToKill , SIGTERM);
 }
 
 
@@ -316,5 +316,11 @@ int exec_renice( const char* args)
         return -EINVAL;
     }
     
+    return 0;
+}
+
+int exec_echo( const char* args)
+{
+    writeConsole(args, strlen(args));
     return 0;
 }

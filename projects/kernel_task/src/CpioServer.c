@@ -50,22 +50,6 @@ typedef struct
 
 static CPIOContext _context;
 
-/*
-static const FileOperations cpioOps = 
-{
-	CPIORead,
-	CPIOWrite,
-	CPIOLseek,
-};
-*/
-/*
-FileServerHandler* getCPIOServerHandler(void)
-{
-	return &_handler;
-}
-*/
-
-
 int CPIOServerInit()
 {
 
@@ -82,9 +66,6 @@ int CPIOServerInit()
     _context.operations.Write = CpioWrite;
     _context.operations.Read  = CpioRead;
 
-//    _context.node.inodeOperations = &_context.inodeOperations;
-//    _context.node.operations      = &_context.operations;
-
 #ifndef __APPLE__
     struct cpio_info info;
     
@@ -99,43 +80,26 @@ int CPIOServerInit()
 
     for(int i=0;i<info.file_count;i++)
     {
-	buf[i] = malloc(info.max_path_sz );
-	assert(buf[i]);
-	memset(buf[i] , 0 , info.max_path_sz);
-
+        buf[i] = malloc(info.max_path_sz );
+        assert(buf[i]);
+        memset(buf[i] , 0 , info.max_path_sz);
     }
 
     cpio_ls(_cpio_archive , buf, info.file_count);
-//	printf("Got %u files \n",info.file_count);
 
     for(int i=0;i<info.file_count;i++)
     {
-	assert(buf[i]);
-	Inode* f = InodeAlloc(INodeType_File, buf[i]);
-	if (f)
-	{
-		f->inodeOperations = &_context.inodeOperations;
-		f->operations      = &_context.operations;
-		InodeAddChild(&_context.node , f);
-	}
-
-//		printf("File '%s'\n" , buf[i]);
+        assert(buf[i]);
+        Inode* f = InodeAlloc(INodeType_File, buf[i]);
+        if (f)
+        {
+            f->inodeOperations = &_context.inodeOperations;
+            f->operations      = &_context.operations;
+            InodeAddChild(&_context.node , f);
+        }
     }
 #endif
 
-
-/* TEST*/
-
-/*
-unsigned long fileSize = 0;
-        void* dataContent = cpio_get_file(_cpio_archive , "hello.txt" , &fileSize);
-
-	if( dataContent)
-	{
-		printf("Found Hello %lu bytes\n" , fileSize);
-		printf("%.*s", fileSize, dataContent);
-	}
-*/
 	return 1;
 }
 
@@ -149,55 +113,9 @@ static int CpioClose ( Inode * node)
     return 0;
 }
 
-//static Inode*  CpioOpen(void* context, const char*pathname ,int flags, int *error)
-
 static int CpioOpen (Inode * node , int flags)
 {
-    /*
-	//printf("CpioOpen '%s' , flags %i\n" , pathname , flags);
-
-	// O_RDONLY, O_WRONLY ou O_RDWR
-	if (flags != O_RDONLY)
-	{
-		*error = -EPERM;
-		return NULL;
-	}
-     */
-    
-#ifndef __APPLE__ 
-/*
-    unsigned long fileSize = 0;
-
-	void* dataContent = cpio_get_file(_cpio_archive , pathname , &fileSize);
-
-	if(dataContent == NULL)
-	{
-		*error = -ENOENT;
-		return NULL;
-	}
-
-	*error = 0;
-	Inode* node = malloc(sizeof(Inode) );
-
-	if (!node)
-	{
-		*error = -ENOMEM;
-		return NULL;
-	}
-
-	printf("CPIO File found : size %lu\n", fileSize);
-	*error = 0;
-	node->size = fileSize;
-	node->pos = 0;
-	node->userData = dataContent;
-	node->operations = &cpioOps;
-	return node;
-*/
     return 0;
-#else
-    return 0;
-    
-#endif
 }
 
 
@@ -206,7 +124,6 @@ static ssize_t CpioRead (struct _inode *node, char* buf , size_t size)
 #ifndef __APPLE__
 	printf("CPIO READ request %lu bytes pos %lu size max %lu\n", size , node->pos , node->size);
 	
-
 	if (node->userData == NULL)
 	{
 		unsigned long fileSize = 0;

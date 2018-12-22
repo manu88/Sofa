@@ -102,7 +102,7 @@ Inode* ProcessTableGetInode()
 
 int ProcessTableGetCount()
 {
-    return HASH_COUNT(_ctx._processes);
+    return (int) HASH_COUNT(_ctx._processes);
     //return list_length(&_ctx._processes);
 }
 
@@ -126,7 +126,7 @@ int ProcessTableAppend( Process* process)
         
     
         char str[32];
-        size_t retS = sprintf(str, "%i", process->_pid);
+        ssize_t retS = sprintf(str, "%i", process->_pid);
     	assert(retS <= 32); // sanity check
 
         char* nodeName = strdup(str);
@@ -135,9 +135,10 @@ int ProcessTableAppend( Process* process)
             free(nodeName);
             return 0;
         }
-	int ret = InodeSetIdentity(&process->_processNode , &process->_identity);
+        
+        int ret = InodeSetIdentity(&process->_processNode , &process->_identity);
 
-	assert(ret);
+        assert(ret);
 
         process->_processNode.userData = process;
         
@@ -183,54 +184,24 @@ int ProcessTableContains( const Process* process)
         return 1;
     }
     return 0;
-    /*
-    
-    list_t *l = &_ctx._processes;
-    
-    for (struct list_node *n = l->head; n != NULL; n = n->next)
-    {
-        Process* p = (Process*) n->data;
-        
-        if (p == process)
-        {
-            return 1;
-        }
-    }
-    
-    return 0;
-     */
+
 }
 
 Process* ProcessTableGetByPID( pid_t pid)
 {
-    
     Process* p = NULL;
     
     HASH_FIND_PID(_ctx._processes, &pid, p);
     
     return p;
-    /*
-    list_t *l = &_ctx._processes;
-
-    for (struct list_node *n = l->head; n != NULL; n = n->next) 
-    {
-        Process* p = (Process*) n->data;
-        
-        if(p->_pid == pid)
-        {
-            return p;
-        }
-    }
-
-	return NULL;
-     */
 }
 
-
+/*
 static int PtrComp(void*a, void*b)
 {
     return a != b;
 }
+ */
 
 int ProcessTableRemove(Process* process)
 {
@@ -239,15 +210,8 @@ int ProcessTableRemove(Process* process)
         HASH_DEL(_ctx._processes, process);
         return InodeRemoveChild( &_ctx.procNode, &process->_processNode);
     }
-    return 0;
-    /*
-    if(list_remove(&_ctx._processes , process,PtrComp) == 0)
-    {
-        return InodeRemoveChild( &_ctx.procNode, &process->_processNode);
-    }
     
     return 0;
-     */
 }
 
 
@@ -262,7 +226,7 @@ static ssize_t _CmdLineRead(Inode *node, char* buffer , size_t count)
 	}
 
 	assert( node->size);
-//	printf("_CmdLineRead for process '%s'\n" , process->cmdLine);
+
 	assert(process->cmdLine);
 	const ssize_t remainSize = (ssize_t)(node->size - node->pos);
 	assert(remainSize>=0);
@@ -273,38 +237,25 @@ static ssize_t _CmdLineRead(Inode *node, char* buffer , size_t count)
 
 	node->pos += (size_t)toRead;
 	return toRead;
-/*
-        if(node->pos == 0)
-        {
-		//buffer = node->userData
-                node->pos = 1;
-                return 1;
-        }
-
-        return 0;
-*/
-	return 0;
 }
+
 static ssize_t _StatusRead(Inode *node, char* buffer , size_t count)
 {
 	
 	Process* process = node->userData;
 
-        if(node->pos == 0)
-        {
-                sprintf(buffer, "%i", process->_state);
-                node->pos = 1;
-                return 1;
-        }
+    if(node->pos == 0)
+    {
+            sprintf(buffer, "%i", process->_state);
+            node->pos = 1;
+            return 1;
+    }
 
-        return 0;
+    return 0;
 }
 
 static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 {
-//	printf("ProcRead node name '%s'\n" , node->name);
-
-
 	if (strcmp(node->name , statusStr ) == 0)
 	{
 		return _StatusRead(node, buffer , count);
@@ -314,16 +265,6 @@ static ssize_t ProcRead (Inode *node, char* buffer , size_t count)
 		return _CmdLineRead(node, buffer , count);
 	}
 
-/*
-	Process* process = node->userData;
-
-	if(node->pos == 0)
-	{
-		sprintf(buffer, "%i", process->_state);
-		node->pos = 1;
-		return 1;
-	}
-*/
 	return 0;
 }
 

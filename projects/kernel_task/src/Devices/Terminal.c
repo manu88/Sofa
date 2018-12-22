@@ -47,17 +47,14 @@ int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc
     
     if(InodeInit( &terminal->node,INodeType_File, consoleName) == 0)
     {
-	return 0;
+        return 0;
     }
 
     terminal->node.operations = &termFileOps;
     terminal->node.inodeOperations = &termOps;
-//    terminal->devOps.userContext	= terminal;
-//    terminal->devOps.OpenDevice 	= ConsoleOpen;
-//    terminal->devOps.fileOps.Write      = ConsoleWrite;
-//    terminal->devOps.fileOps.Read  	= ConsoleRead;
 
     terminal->node.userData = terminal;
+    
     // init keyboard
     int error = 0;
     error = !KeyboardDeviceInit( context, notificationSrc , &terminal->keyboard);
@@ -65,7 +62,7 @@ int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc
 
     if (error != 0)
     {
-	return 0;
+        return 0;
     }
 
 
@@ -73,7 +70,7 @@ int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc
 
     if( InitEGADriver( context) == 0)
     {
-	return 0;
+        return 0;
     }
      
     terminal->color = VGA_COLOR_WHITE;
@@ -81,6 +78,7 @@ int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc
 
     terminal->_escState = cansid_init();
     terminal->scroll = 1;
+    
     return  1;
 }
 
@@ -99,41 +97,38 @@ static int HandleKeyboardIRQ ( IOBaseDevice *device, int irqNum)
 
 
         if (c == EOF) 
- 	{
+        {
             //read till we get EOF
             break;
         }
-	else if (c < 0) // error
-	{
-		printf("ps_cdev_getchar returned error %i\n", c);
-		break;
-	}
+        else if (c < 0) // error
+        {
+            printf("ps_cdev_getchar returned error %i\n", c);
+            break;
+        }
 
-	if (c == 0x03) // ctrl-c
-	{
-		printf("CTRL-C \n");
+        if (c == 0x03) // ctrl-c
+        {
+            printf("CTRL-C \n");
 
-	}
-	// special chars
-	else if (c >= 0x11 && c <= 0x14)
-	{
-		printf("control char %x\n", c);
-	}
+        }
+        // special chars
+        else if (c >= 0x11 && c <= 0x14)
+        {
+            printf("control char %x\n", c);
+        }
 
-	else 
-	{
-		cqueue_push(&term->inputChar , (cqueue_item_t) c);
+        else
+        {
+            cqueue_push(&term->inputChar , (cqueue_item_t) c);
 
-		terminal_putchar(term , c);
-	
-//	        printf("normal char %x\n", c);
-	}
+            terminal_putchar(term , c);
+        }
 
-
-
-    }
+    } // end for (;;)
 
     UNUSED int err = seL4_IRQHandler_Ack(dev->handler.capPtr);
+    
     assert(err == 0);
 
     return 1;
@@ -168,17 +163,19 @@ static void terminal_putchar(Terminal* term , char c)
 	}
 	else 
 	{
-             terminal_putentryat(c, term->color, term->terminal_column, term->terminal_row);
+        terminal_putentryat(c, term->color, term->terminal_column, term->terminal_row);
 	}
 
 	
 
-        if (++term->terminal_column == MODE_WIDTH) 
+    if (++term->terminal_column == MODE_WIDTH)
 	{
-                term->terminal_column = 0;
-                if (++term->terminal_row == MODE_HEIGHT)
-                        term->terminal_row = 0;
+        term->terminal_column = 0;
+        if (++term->terminal_row == MODE_HEIGHT)
+        {
+            term->terminal_row = 0;
         }
+    }
 }
 
 void terminal_putString( Terminal* term, const char* str)
@@ -196,60 +193,31 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
     Terminal* term = node->userData;
     assert(term);
 
-//0xA , 0x0 , 0xB 
-/*
-    if (size >= 3 && (uint8_t)buffer[0] == 0xA)
+    for(int i =0;i<size;i++)
     {
-        const uint8_t *cmd = (const uint8_t *) buffer;
+        struct color_char ch = cansid_process(&term->_escState, buffer[i] );
         
-        if (cmd[1] == 0x0 && cmd[2] == 0xB) // clear and reset to coords to {0,0}
+        if (term->_escState.operation == CANSID_CLEAR)
         {
             terminal_clear(term);
             term->terminal_column = 0;
             term->terminal_row    = 0;
-            return 0;
         }
-        else if (cmd[1] == 0x2 ) // set color
+        else if (term->_escState.operation == CANSID_COLOR)
         {
-            term->color= cmd[2];
-            return 0;
+            term->color = term->_escState.values[0] - 30;
         }
-        else if (cmd[1] == 0x3) // set coords
-        {
-            uint8_t x = cmd[2];
-            uint8_t y = cmd[3];
-            term->terminal_column = x;
-            term->terminal_row    = y;
-            return 0;
-        }
-    }
-    */
-
-    for(int i =0;i<size;i++)
-    {
-	struct color_char ch = cansid_process(&term->_escState, buffer[i] );
-	
-	if (term->_escState.operation == CANSID_CLEAR)
-        {
- 	    terminal_clear(term);
-            term->terminal_column = 0;
-            term->terminal_row    = 0;
-	}
-	else if (term->_escState.operation == CANSID_COLOR)
-        {
-	    term->color = term->_escState.values[0] - 30;
-	}
         if (ch.ascii)
         {
-  	    terminal_putchar(term,buffer[i]);
-//	terminal_putentryat(buffer[i] ,VGA_COLOR_RED ,  i , 0);
-	}
+            terminal_putchar(term,buffer[i]);
+        }
     }
+    
     return (ssize_t)size;
 }
 
 
-static int     ConsoleClose (Inode * node)
+static int ConsoleClose (Inode * node)
 {
 	return 0;
 }
@@ -259,12 +227,6 @@ static int ConsoleOpen (struct _inode *node, int flags )
     Terminal* term = (Terminal*)node->userData;
     assert(term);
 
-/*
-    Inode* node = malloc(sizeof(Inode) );
-    node->operations = &device->fileOps;
-    node->userData   = term;
-    return node;
-*/
     return 0;
 }
 
@@ -277,23 +239,12 @@ static ssize_t ConsoleRead (struct _inode * node, char* buffer  , size_t size)
 
     size_t realReadSize = size < cqueue_size(&term->inputChar ) ? size : cqueue_size(&term->inputChar );
 
-//    printf("Console read req size %li |  buffer size %li | real %li\n" ,size, cqueue_size(&term->inputChar ) , realReadSize);
-
-
     for( int i=0;i <realReadSize; i++)
     {
-	char c = (char) cqueue_pop(&term->inputChar);
+        char c = (char) cqueue_pop(&term->inputChar);
         buffer[i] = c;
     }
-    /*
-    if(cqueue_size(&term->inputChar ))
-    {
-	char c = (char) cqueue_pop(&term->inputChar);
-	buffer[0] = c;
-
-	return 1;
-    }
-*/
+    
     return realReadSize;
 }
 
