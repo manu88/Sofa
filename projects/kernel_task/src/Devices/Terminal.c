@@ -78,6 +78,8 @@ int TerminalInit( KernelTaskContext* context,const cspacepath_t* notificationSrc
     terminal->color = VGA_COLOR_WHITE;
     cqueue_init( &terminal->inputChar , MAX_CHAR_QUEUE);
 
+    terminal->_escState = cansid_init();
+
     return  1;
 }
 
@@ -188,7 +190,7 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
     assert(term);
 
 //0xA , 0x0 , 0xB 
-
+/*
     if (size >= 3 && (uint8_t)buffer[0] == 0xA)
     {
         const uint8_t *cmd = (const uint8_t *) buffer;
@@ -214,12 +216,27 @@ static ssize_t ConsoleWrite (struct _inode *node,  const char*buffer ,size_t siz
             return 0;
         }
     }
-    
+    */
 
     for(int i =0;i<size;i++)
     {
-	terminal_putchar(term,buffer[i]);
+	struct color_char ch = cansid_process(&term->_escState, buffer[i] );
+	
+	if (term->_escState.operation == CANSID_CLEAR)
+        {
+ 	    terminal_clear(term);
+            term->terminal_column = 0;
+            term->terminal_row    = 0;
+	}
+	else if (term->_escState.operation == CANSID_COLOR)
+        {
+	    term->color = term->_escState.values[0] - 30;
+	}
+        if (ch.ascii)
+        {
+  	    terminal_putchar(term,buffer[i]);
 //	terminal_putentryat(buffer[i] ,VGA_COLOR_RED ,  i , 0);
+	}
     }
     return (ssize_t)size;
 }

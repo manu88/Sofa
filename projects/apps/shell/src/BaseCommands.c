@@ -57,10 +57,16 @@ ssize_t readConsole( void*b , size_t len)
 
 void setTermColor( int color)
 {
+	//\033[31;40;0m
+	char b[12] = {0};
+	ssize_t ret = snprintf(b , 12 , "\033[%i;40;0m" , color + 30);
+	writeConsole(b , ret);
+/*
 #ifndef __APPLE__
  	uint8_t msg[] = { 0xA , 0x2 , color };
     writeConsole(  msg , 3);
 #endif
+*/
 }
 
 void clearTerm()
@@ -77,8 +83,10 @@ void clearTerm()
 
 void setTermCoords(uint8_t x , uint8_t y)
 {
-    uint8_t msg[] = { 0xA , 0x3 , x , y };
-    writeConsole(  msg , 4);
+   // \033[%u;%uH
+    char b[12] = {0};
+    ssize_t ret = snprintf(b , 12 , "\033[%u;%uH" , y,x);
+    writeConsole(b , ret);
 }
 
 void PrintHelp()

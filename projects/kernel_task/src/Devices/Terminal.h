@@ -22,6 +22,8 @@
 #include "../Bootstrap.h"
 #include "../Drivers/Keyboard.h"
 #include "../DevServer.h"
+#include "../Utils/cansid.h"
+
 #include <data_struct/cqueue.h>
 
 
@@ -40,6 +42,9 @@ typedef struct
     size_t terminal_column;
 
     char color;
+
+   struct cansid_state _escState;
+
 } Terminal;
 
 int TerminalInit( KernelTaskContext* context, const cspacepath_t* notificationSrc,   Terminal* terminal) NO_NULL_POINTERS ;
