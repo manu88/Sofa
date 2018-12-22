@@ -35,7 +35,7 @@ endif()
 # We must build the debug kernel because the tutorials rely on seL4_DebugPutChar
 # and they don't initialize a platsupport driver.
 
-ApplyCommonReleaseVerificationSettings(FALSE FALSE)
+#ApplyCommonReleaseVerificationSettings(FALSE FALSE)
 #ApplyCommonReleaseVerificationSettings(TRUE TRUE)
 
 # Elfloader settings that correspond to how Data61 sets its boards up.
@@ -51,4 +51,4 @@ GenerateSimulateScript()
 # the specific test values. By default it is disabled
 #set(Sel4benchAllowSettingsOverride OFF CACHE BOOL "Allow user to override configuration settings")
 
-set(KernelBenchmarks "generic" CACHE STRING "" FORCE)
+#set(KernelBenchmarks "generic" CACHE STRING "" FORCE)

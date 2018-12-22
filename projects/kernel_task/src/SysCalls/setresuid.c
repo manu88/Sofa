@@ -28,18 +28,11 @@ int handle_setresuid(KernelTaskContext* context, Process *senderProcess, seL4_Me
         uid_t euid = seL4_GetMR(2); // this is the one we care about for now
         uid_t suid = seL4_GetMR(3);
 
-
-
-	printf("Process request to change uid from %lu to %u \n" , senderProcess->_identity.uid , euid);
-	
 	long ret = -EPERM;
 
 	if (euid >= senderProcess->_identity.uid)
 	{
-		senderProcess->_identity.uid = euid;
-		printf("setuid ok %lu\n" , senderProcess->_identity.uid);
-
-		ret = 0;
+		ret = !ProcessSetIdentityUID(senderProcess , euid);
 	}
 
 	message = seL4_MessageInfo_new(0, 0, 0, 2);

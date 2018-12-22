@@ -62,8 +62,6 @@ int handle_execve(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 
 	int retCpy = IdentityCopy( &senderProcess->_identity , &newProcess->_identity);
 
-	printf("(%s) execve uid is sender %i  new %i \n" ,nodeToExec->name, senderProcess->_identity.uid , newProcess->_identity.uid);
-
 	assert(retCpy );
 	assert( IdentityHasAuthority(&newProcess->_identity , &senderProcess->_identity) );
 

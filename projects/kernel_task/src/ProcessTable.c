@@ -136,7 +136,7 @@ int ProcessTableAppend( Process* process)
             return 0;
         }
 	int ret = InodeSetIdentity(&process->_processNode , &process->_identity);
-	printf("Process node identity set to %i \n" , process->_processNode._identity);
+
 	assert(ret);
 
         process->_processNode.userData = process;

@@ -50,7 +50,6 @@ int handle_unlink(KernelTaskContext* context, Process *senderProcess, seL4_Messa
 
 	if (node)
 	{
-		printf("Process (pid %i) %lu ask to remove %lu (%s)\n" ,senderProcess->_pid, senderProcess->_identity.uid , node->_identity.uid , pathname);
 		if (InodeIdentityHasWritePermissions(node , &senderProcess->_identity))
 		{
 		    if (FileServerUnlinkNode(node))
