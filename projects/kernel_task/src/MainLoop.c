@@ -115,6 +115,8 @@ static void processSyscall(KernelTaskContext* context, Process *senderProcess, s
 
     seL4_Word msg;
     msg = seL4_GetMR(0);
+    senderProcess->_procStats.numSysCalls++;
+    
     int error = callTable[msg](context , senderProcess,message);
 
     assert(error == 0);
@@ -183,7 +185,7 @@ void processLoop(KernelTaskContext* context, seL4_CPtr epPtr  )
 	}
         else if (label == seL4_VMFault)
         {
-            printf("Init : VM Fault \n");
+            printf("kernel_task : VM Fault \n");
         }
         else if (label == seL4_NoFault)
         {
@@ -191,8 +193,8 @@ void processLoop(KernelTaskContext* context, seL4_CPtr epPtr  )
 
             if(!senderProcess)
             {
-                printf("Init : no sender process for badge %li\n", sender_badge);
-		assert(0);
+                printf("kernel_task : no sender process for badge %li\n", sender_badge);
+                assert(0);
                 continue;
             }
 
@@ -200,7 +202,7 @@ void processLoop(KernelTaskContext* context, seL4_CPtr epPtr  )
         }
         else
         {
-            printf("ProcessLoop : other msg \n");
+            printf("kernel_task.ProcessLoop : other msg \n");
         }
     } // end while(1)
 }

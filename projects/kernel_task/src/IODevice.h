@@ -22,10 +22,9 @@
 
 typedef enum
 {
-    IOBaseDeviceType_Unknown = 0
+    IOBaseDeviceType_Unknown = 0,
+    IOBaseDeviceType_PCI          = 100,
 } IOBaseDeviceType;
-
-
 
 struct _IOBaseDevice
 {
@@ -40,6 +39,17 @@ struct _IOBaseDevice
 };
 
 typedef struct _IOBaseDevice IOBaseDevice;
+
+
+typedef struct
+{
+    IOBaseDevice base;
+    
+    uint16_t vendor_id;
+    uint16_t device_id;
+    uint16_t subsystem_id;
+    
+} IODevicePCI;
 
 
 // Will mostly set every fields to 0/NULL

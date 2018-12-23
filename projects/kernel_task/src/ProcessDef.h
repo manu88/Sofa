@@ -66,6 +66,12 @@ struct _WaiterListEntry
 struct _inode;
 
 
+typedef struct
+{
+    size_t numSysCalls;
+    
+} ProcessStats;
+
 // a process
 struct _Process
 {
@@ -89,6 +95,7 @@ struct _Process
     
     
     Identity _identity;
+    ProcessStats _procStats;
     
     UT_hash_handle hh; // main proc hash, i.e the Process table
 };

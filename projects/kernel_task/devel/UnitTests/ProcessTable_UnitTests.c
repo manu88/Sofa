@@ -18,12 +18,17 @@ int ProcessTable_UnitTests()
     assert( ProcessTableInit() );
     assert(FileServerInit());
     
+    
     assert(FileServerAddNodeAtPath(ProcessTableGetInode() , "/"));
     assert(FileServerGetINodeForPath("/proc" , NULL) == ProcessTableGetInode());
     
     Process initProcess;
     assert(ProcessInit(&initProcess));
     assert(initProcess.cmdLine == NULL);
+    assert( initProcess._procStats.numSysCalls == 0);
+    assert(initProcess._pid == 0);
+    assert(initProcess._prio == 0);
+    assert(ProcessGetNumChildren(&initProcess) == 0);
     
     Process p1;
     assert(ProcessInit(&p1));
