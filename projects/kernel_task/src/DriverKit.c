@@ -18,7 +18,7 @@
 #include <string.h>
 #include "DriverKit.h"
 #include <assert.h>
-
+#include <pci/pci.h>
 
 /* HASH macros for seL4_Word key*/
 
@@ -47,7 +47,15 @@ int DriverKitInit(KernelTaskContext* context)
     _DKContext.context = context;
 
     assert(_DKContext._devices == NULL);
-	return 1;
+
+
+    if(libpci_num_devices == 0)
+    {
+        libpci_scan( context->ops.io_port_ops);
+    }
+
+    printf("Got %i pci devices\n", libpci_num_devices);
+    return 1;
 }
 
 

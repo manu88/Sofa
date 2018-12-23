@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <stdint.h>
 
+#include<signal.h>
+
 static int consoleFDWRead  = 0;
 static int consoleFDWrite  = 0;
 
@@ -21,23 +23,31 @@ ssize_t writeConsole( const void* b , size_t len)
 
 void setTermColor( int color)
 {
-#ifndef __APPLE__
- 	uint8_t msg[] = { 0xA , 0x2 , color };
-    writeConsole(  msg , 3);
-#endif
+	char b[12] = {0};
+	ssize_t ret = snprintf(b , 12 , "\033[%i;40;0m" , color + 30);
+	writeConsole(b , ret);
 }
 
 void clearTerm()
 {
-    uint8_t msg[] = { 0xA , 0x0 , 0xB };
-    writeConsole(  msg , 3);
+	static const char cmd[] = "\033[2J\033[0;0H";
+
+	writeConsole(  cmd , sizeof(cmd));
 }
 
 void setTermCoords(uint8_t x , uint8_t y)
 {
-    uint8_t msg[] = { 0xA , 0x3 , x , y };
-    writeConsole(  msg , 4);
+    char b[12] = {0};
+    ssize_t ret = snprintf(b , 12 , "\033[%u;%uH" , y,x);
+    writeConsole(b , ret);
 }
+
+void sig_handler(int signo)
+{
+  if (signo == SIGINT)
+    printf("received SIGINT\n");
+}
+
 
 int main( int argc , char* argv[])
 {
@@ -46,7 +56,12 @@ int main( int argc , char* argv[])
     {
         return 1;
     }
-
+/*
+    if (signal(SIGINT, sig_handler) == SIG_ERR)
+    {
+	printf("\ncan't catch SIGINT\n");
+    }
+*/
     clearTerm();
 
 //    for(int i= 0;i<4;i++)
@@ -57,9 +72,10 @@ int main( int argc , char* argv[])
 	//setTermCoords(
     //}
 
-    for(uint8_t y = 0; y<25;++y)
+    for(uint8_t y = 0; y<5/*25*/;++y)
     {
 	setTermColor(y+1);
+
         for(uint8_t x = 0; x<80;++x)
 	{
 		setTermCoords(x ,y);
@@ -67,6 +83,8 @@ int main( int argc , char* argv[])
 	}
 
     }
+
+    clearTerm();
 /*
     int ret = usleep(1000*4000);
     assert(ret == 0);

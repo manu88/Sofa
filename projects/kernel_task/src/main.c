@@ -46,7 +46,8 @@
 
 #include "Drivers/EGADriver.h"
 #include "Drivers/Keyboard.h"
-
+#include "Drivers/Fat.h"
+#include "Drivers/Usb.h"
 #include "Devices/Null.h"
 #include "Devices/Terminal.h"
 #include "SysHandler.h"
@@ -242,6 +243,12 @@ int main(void)
     error = addDefaultDevices();
     assert( error == 0);
 
+// USB
+//    error = USBInit( &context);
+//    assert(error == 0);
+
+// Fat driver
+    FatTestInit();
 // Default terminal (EGA + keyboard)
 
     error = !TerminalInit( &context, &notification_path, &_terminal);
