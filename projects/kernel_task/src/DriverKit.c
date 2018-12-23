@@ -16,10 +16,15 @@
  */
 
 #include <string.h>
-#include "DriverKit.h"
-#include <assert.h>
-#include <pci/pci.h>
+#include <stdio.h>
 
+#include <assert.h>
+
+#include "DriverKit.h"
+
+#ifndef SOFA_TESTS_ONLY
+#include <pci/pci.h>
+#endif
 /* HASH macros for seL4_Word key*/
 
 #define HASH_ADD_SEL4_WORD(head,key,add)  HASH_ADD(hh,head,key,sizeof(seL4_Word),add)
@@ -39,6 +44,20 @@ typedef struct
 
 static DriverKitContext _DKContext;
 
+static int _ScanPCIDevices(KernelTaskContext* context)
+{
+#ifndef SOFA_TESTS_ONLY
+    if(libpci_num_devices == 0)
+    {
+        libpci_scan( context->ops.io_port_ops);
+    }
+    
+    return libpci_num_devices;
+#else
+    return 0;
+#endif
+}
+
 int DriverKitInit(KernelTaskContext* context)
 {	
 //	seL4_CPtr cap = simple_get_IOPort_cap(&context->simple, 1,1);
@@ -48,13 +67,9 @@ int DriverKitInit(KernelTaskContext* context)
 
     assert(_DKContext._devices == NULL);
 
-
-    if(libpci_num_devices == 0)
-    {
-        libpci_scan( context->ops.io_port_ops);
-    }
-
-    printf("Got %i pci devices\n", libpci_num_devices);
+    int numPCIDevices = _ScanPCIDevices(context);
+    
+    printf("Got %i pci devices\n", numPCIDevices);
     return 1;
 }
 

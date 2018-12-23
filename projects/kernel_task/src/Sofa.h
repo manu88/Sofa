@@ -51,7 +51,12 @@
 #define UNUSED_PARAMETER(x) (void)(x)
 #endif
 
+// Mark methods with no Sel4 dependencies that can be tested on other platforms
 #define SOFA_UNIT_TESTABLE
+
+#ifdef __APPLE__
+#define SOFA_TESTS_ONLY
+#endif
 
 #ifndef MAX_PATH_LOOKUP
 #define MAX_PATH_LOOKUP 128

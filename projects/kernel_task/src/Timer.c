@@ -16,7 +16,9 @@
  */
 
 #include "Timer.h"
-#ifndef __APPLE__
+#include "Sofa.h"
+
+#ifndef SOFA_TESTS_ONLY
 #include <platsupport/local_time_manager.h>
 #endif
 #define MAX_TIMERS 64
@@ -30,7 +32,7 @@ int TimerInit(KernelTaskContext* ctx , seL4_CPtr notifCap)
     
 	int err = 0;
     
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
     err = sel4platsupport_new_io_ops(ctx->vspace, ctx->vka, &ctx->ops);
     assert(err == 0);
 
@@ -51,7 +53,7 @@ int TimerInit(KernelTaskContext* ctx , seL4_CPtr notifCap)
 	return err;
 }
 
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
 int TimerAllocAndRegisterOneShot(time_manager_t *tm , uint64_t rel_ns, uint32_t id,  timeout_cb_fn_t callback, uintptr_t token)
 {
 	int err = tm_alloc_id_at(tm , id);
@@ -76,7 +78,7 @@ int TimerAllocAndRegister(time_manager_t *tm , uint64_t period_ns, uint64_t star
 
 uint64_t GetCurrentTime()
 {
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
 	uint64_t t;
 	
 	tm_get_time(_tm , &t);

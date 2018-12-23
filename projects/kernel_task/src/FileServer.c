@@ -295,7 +295,7 @@ ssize_t FileServer_DefaultRead (Inode *node, char*buf  , size_t len)
         
         
 	dirp->d_ino = 1;
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
 	dirp->d_off = 0;
 #else
         dirp->d_seekoff = 0;
@@ -303,7 +303,8 @@ ssize_t FileServer_DefaultRead (Inode *node, char*buf  , size_t len)
 	dirp->d_type = DT_DIR;
 //	memcpy(dirp->d_name , cNode->name, strlen(cNode->name));
 	strcpy(dirp->d_name ,  cNode->name);
-#ifndef __APPLE__
+
+#ifndef SOFA_TESTS_ONLY
 	dirp->d_reclen =  sizeof(dirp->d_ino)
                     + sizeof(dirp->d_off)
                     + sizeof(dirp->d_reclen)

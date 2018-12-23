@@ -24,10 +24,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
 #include <cpio/cpio.h>
-
-
 extern char _cpio_archive[];
 #endif
 
@@ -66,7 +64,7 @@ int CPIOServerInit()
     _context.operations.Write = CpioWrite;
     _context.operations.Read  = CpioRead;
 
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
     struct cpio_info info;
     
     if(cpio_info(_cpio_archive , &info) != 0)
@@ -121,7 +119,7 @@ static int CpioOpen (Inode * node , int flags)
 
 static ssize_t CpioRead (struct _inode *node, char* buf , size_t size)
 {
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
 	printf("CPIO READ request %lu bytes pos %lu size max %lu\n", size , node->pos , node->size);
 	
 	if (node->userData == NULL)

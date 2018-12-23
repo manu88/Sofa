@@ -302,8 +302,6 @@ void InodePrintTree(const Inode* node)
     printf("-- End tree -- \n");
 }
 
-
-
 int InodeSetIdentity(Inode* node , const Identity* identityToCopy)
 {
     return memcpy(&node->_identity, identityToCopy, sizeof(Identity)) == &node->_identity;

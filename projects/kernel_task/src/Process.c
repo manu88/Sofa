@@ -97,7 +97,7 @@ int ProcessDeInit(Process * process )
 int ProcessStart(KernelTaskContext* context, Process* process,const char* imageName, cspacepath_t ep_cap_path , Process* parent, uint8_t priority )
 {
     
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
     UNUSED int error = 0;
 
     sel4utils_process_config_t config = process_config_default_simple( &context->simple, imageName, priority);
@@ -154,7 +154,7 @@ int ProcessStart(KernelTaskContext* context, Process* process,const char* imageN
 
 int ProcessStop(KernelTaskContext* context,Process* process)
 {
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
     sel4utils_destroy_process( &process->_process, &context->vka);
 #else
     return 0;
@@ -209,7 +209,7 @@ Process* ProcessGetChildByPID( const Process* process , pid_t pid)
 
 int ProcessSetPriority(KernelTaskContext* context,Process* process , uint8_t prio)
 {
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
 	int ret =  seL4_TCB_SetPriority( sel4utils_get_tcb(&process->_process.thread),
 				     seL4_CapInitThreadTCB,//sel4utils_get_tcb(&process->_process.thread),
 				     prio);
@@ -266,7 +266,7 @@ int ProcessRegisterWaiter( Process* process , WaiterListEntry* waiter)
 
 int ProcessSignalStop(Process* process)
 {
-#ifndef __APPLE__
+#ifndef SOFA_TESTS_ONLY
     UNUSED int error = 0;
 
     WaiterListEntry* entry = NULL;
