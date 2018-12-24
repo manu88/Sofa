@@ -20,8 +20,7 @@
 #include"Bootstrap.h"
 #include "Sofa.h"
 
-
-
+typedef struct _inode Inode;
 
 int DriverKitInit(KernelTaskContext* context);
 
@@ -31,3 +30,6 @@ int DriverKitRemoveDevice( IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POIN
 
 
 IOBaseDevice* DriverKitGetDeviceForBadge( seL4_Word badge) SOFA_UNIT_TESTABLE NO_NULL_POINTERS;
+
+
+Inode* DriverKitGetDeviceNode() SOFA_UNIT_TESTABLE;

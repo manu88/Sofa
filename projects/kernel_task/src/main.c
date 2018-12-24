@@ -96,7 +96,7 @@ static int lateSystemInit()
 
 /* start thread test*/
 
-    sel4utils_thread_config_t threadConf = thread_config_new(&context.simple);
+/*    sel4utils_thread_config_t threadConf = thread_config_new(&context.simple);
 
     if(ThreadInit(&thread , &context.vka , &context.vspace , threadConf))
     {
@@ -113,7 +113,7 @@ static int lateSystemInit()
 	printf("Unable to create thread \n");
 	assert( 0);
     }
-
+*/
 /* END start thread test*/
 
 
@@ -239,6 +239,8 @@ int main(void)
     error = !FileServerAddNodeAtPath( SysHandlerGetINode() , "/");
     ZF_LOGF_IFERR(error, "Failed to register Sys File System \n");
 
+    error = !FileServerAddNodeAtPath(DriverKitGetDeviceNode() , "/sys/");
+    ZF_LOGF_IFERR(error, "Failed to register sys/devices folder\n");
 
     error = addDefaultDevices();
     assert( error == 0);
@@ -267,28 +269,6 @@ int main(void)
     assert(FileServerGetINodeForPath("/dev/console" , NULL) == &_terminal.node);
 
     error = lateSystemInit();
-/*
-    {
-    printf("Kernel_task : start init process\n");
 
-    Process initProcess;
-
-    ProcessInit( &initProcess );
-    initProcess.currentDir =  FileServerGetRootNode();
-
-    error = ProcessTableAddAndStart(&context, &initProcess,"init", context.ep_cap_path, &kernTaskProcess, seL4_MaxPrio );// !ProcessTableAppend(process2);
-    assert(error == 0);
-
-
-
-
-    TestStats();
-
-    printf("Kernel_task : start runloop \n");
-
-
-    processLoop( &context,ep_object.cptr );
-    }
-*/
     return 0;
 }

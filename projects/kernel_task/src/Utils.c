@@ -24,8 +24,8 @@ seL4_Word get_free_slot( KernelTaskContext* context)
 {
     seL4_CPtr slot;
     UNUSED int error = vka_cspace_alloc(&context->vka, &slot);
-    assert(!error);
-    return slot;
+//    assert(!error);
+    return error == 0?slot : 0;
 }
 
 

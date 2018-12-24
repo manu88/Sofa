@@ -28,7 +28,7 @@ int main( int argc , char* argv[])
     assert(uid == 1);
 
 
-    int pidTests = execve("/cpio/TestSysCalls" , NULL , NULL);
+//    int pidTests = execve("/cpio/TestSysCalls" , NULL , NULL);
 
     int pidShell = execve("/cpio/shell" , NULL , NULL);
 

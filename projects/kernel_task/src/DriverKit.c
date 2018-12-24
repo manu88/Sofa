@@ -25,6 +25,10 @@
 #ifndef SOFA_TESTS_ONLY
 #include <pci/pci.h>
 #endif
+
+#include "fs.h"
+
+
 /* HASH macros for seL4_Word key*/
 
 #define HASH_ADD_SEL4_WORD(head,key,add)  HASH_ADD(hh,head,key,sizeof(seL4_Word),add)
@@ -39,10 +43,17 @@ typedef struct
     
     IOBaseDevice* _devices;
     
-    
+    Inode deviceNode; // 'sys/devices'
+    Inode systemNode; // 'sys/devices/system/
 } DriverKitContext;
 
 static DriverKitContext _DKContext;
+
+
+Inode* DriverKitGetDeviceNode()
+{
+	return &_DKContext.deviceNode;
+}
 
 static int _ScanPCIDevices(KernelTaskContext* context)
 {
@@ -58,6 +69,9 @@ static int _ScanPCIDevices(KernelTaskContext* context)
 #endif
 }
 
+static const char DeviceFolderName[] = "devices";
+static const char SystemFolderName[] = "system";
+
 int DriverKitInit(KernelTaskContext* context)
 {	
     memset(&_DKContext , 0 , sizeof(DriverKitContext));
@@ -68,7 +82,20 @@ int DriverKitInit(KernelTaskContext* context)
     int numPCIDevices = _ScanPCIDevices(context);
     
     printf("Got %i pci devices\n", numPCIDevices);
-    return 1;
+
+    int error = InodeInit(&_DKContext.deviceNode , INodeType_Folder ,  DeviceFolderName);
+
+    assert(error == 1);
+
+    error = InodeInit(&_DKContext.systemNode , INodeType_Folder , SystemFolderName);
+
+    assert(error == 1);
+
+    error = InodeAddChild(&_DKContext.deviceNode , &_DKContext.systemNode );
+
+    assert(error == 1);
+
+    return error;
 }
 
 

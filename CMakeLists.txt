@@ -43,7 +43,7 @@ endif()
 
 # add  '-vga std' to qemu for bga mode ?
 
-#SetSimulationScriptProperty(GRAPHIC TRUE)
+SetSimulationScriptProperty(GRAPHIC TRUE)
 
 list(
         APPEND QemuFlags

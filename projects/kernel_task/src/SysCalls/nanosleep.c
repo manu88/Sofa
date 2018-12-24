@@ -36,7 +36,6 @@ int afterSleep(uintptr_t token)
 	assert(ctx);
 	assert(ctx->context);
 	assert(ctx->senderProcess);
-	assert(ctx->reply);
 
 	int err = tm_deregister_cb(&ctx->context->tm  , ctx->senderProcess->_pid);
         assert(err == 0);
@@ -44,13 +43,18 @@ int afterSleep(uintptr_t token)
 	err = tm_free_id(&ctx->context->tm , ctx->senderProcess->_pid);
 	assert(err == 0);
 
-	seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
-        seL4_SetMR(0, __SOFA_NR_nanosleep);
-        seL4_SetMR(1, 0); // sucess
+	if(ctx->reply)
+	{
+	    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+            seL4_SetMR(0, __SOFA_NR_nanosleep);
+            seL4_SetMR(1, 0); // sucess
 
-        seL4_Send(ctx->reply , tag);
+            seL4_Send(ctx->reply , tag);
 
-        cnode_delete(ctx->context,ctx->reply);
+            cnode_delete(ctx->context,ctx->reply);
+	}
+
+	free(ctx);
 }
 
 int handle_nanosleep(KernelTaskContext* context, Process *senderProcess, seL4_MessageInfo_t message)
@@ -67,12 +71,22 @@ int handle_nanosleep(KernelTaskContext* context, Process *senderProcess, seL4_Me
     timerCtx->context = context;
     timerCtx->senderProcess = senderProcess;
     timerCtx->reply = get_free_slot(context);
-    error = cnode_savecaller( context, timerCtx->reply );
-    assert(error == 0);
+    
+    if( timerCtx->reply != 0)
+    {
+        error = cnode_savecaller( context, timerCtx->reply );
+        assert(error == 0);
 
-    error = TimerAllocAndRegisterOneShot(&context->tm , millisToWait * NS_IN_MS  , senderProcess->_pid , afterSleep , (uintptr_t) timerCtx );
-    assert(!error);
-
+        error = TimerAllocAndRegisterOneShot(&context->tm , millisToWait * NS_IN_MS  , senderProcess->_pid , afterSleep , (uintptr_t) timerCtx );
+        assert(!error);
+    }
+    else 
+    {
+	free(timerCtx);
+	error = -ENOMEM;
+	seL4_SetMR(1,error);
+        seL4_Reply( message );
+    }
 #if 0
     TimerContext* timerCtx =(TimerContext*) malloc(sizeof(TimerContext));
 

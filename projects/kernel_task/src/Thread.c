@@ -22,7 +22,6 @@
 
 static void _ThreadStart(void *arg0, void *arg1, void *ipc_buf)
 {
-	printf("_ThreadStart\n");
 	Thread* self = (Thread*) arg0;
 	assert(self);
 

@@ -322,13 +322,18 @@ static int _ProcessReapChildrenIfNeeded(Process* process)
 
 int ProcessDoExit(KernelTaskContext* context,Process* process , int retCode)
 {
+    printf("ProcessDoExit '%s' retCode %i\n" , process->cmdLine , retCode);
+
     ProcessSignalStop( process);
     ProcessDoCleanup( process);
+
     _ProcessReapChildrenIfNeeded(process);
+
     if(!ProcessTableRemove( process))
     {
         printf("Unable to remove process!\n");
     }
+
     ProcessStop(context , process);
     ProcessRelease(process);
 
