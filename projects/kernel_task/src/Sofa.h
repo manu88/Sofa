@@ -55,7 +55,7 @@
 #define SOFA_UNIT_TESTABLE
 
 #ifdef __APPLE__
-#define SOFA_TESTS_ONLY
+    #define SOFA_TESTS_ONLY
 #endif
 
 #ifndef MAX_PATH_LOOKUP

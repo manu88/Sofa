@@ -32,4 +32,4 @@ int DriverKitRemoveDevice( IOBaseDevice* device) SOFA_UNIT_TESTABLE NO_NULL_POIN
 IOBaseDevice* DriverKitGetDeviceForBadge( seL4_Word badge) SOFA_UNIT_TESTABLE NO_NULL_POINTERS;
 
 
-Inode* DriverKitGetDeviceNode() SOFA_UNIT_TESTABLE;
+Inode* DriverKitGetDeviceNode(void) SOFA_UNIT_TESTABLE;
