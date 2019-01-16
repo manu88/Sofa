@@ -298,7 +298,6 @@ void InodePrintTree(const Inode* node)
     printf("'%s'\n" , node->name);
     _printNode(node , 1);
     
-    
     printf("-- End tree -- \n");
 }
 
