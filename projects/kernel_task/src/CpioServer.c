@@ -27,6 +27,8 @@
 #ifndef SOFA_TESTS_ONLY
 #include <cpio/cpio.h>
 extern char _cpio_archive[];
+extern char _cpio_archive_end[];
+
 #endif
 
 static int CpioOpen (Inode * node , int flags);
@@ -67,7 +69,9 @@ int CPIOServerInit()
 #ifndef SOFA_TESTS_ONLY
     struct cpio_info info;
     
-    if(cpio_info(_cpio_archive , &info) != 0)
+    unsigned long len = _cpio_archive_end - _cpio_archive;
+
+    if(cpio_info(_cpio_archive, len , &info) != 0)
     {
         return 0;
     }
@@ -83,7 +87,7 @@ int CPIOServerInit()
         memset(buf[i] , 0 , info.max_path_sz);
     }
 
-    cpio_ls(_cpio_archive , buf, info.file_count);
+    cpio_ls(_cpio_archive ,len, buf, info.file_count);
 
     for(int i=0;i<info.file_count;i++)
     {
@@ -125,7 +129,8 @@ static ssize_t CpioRead (struct _inode *node, char* buf , size_t size)
 	if (node->userData == NULL)
 	{
 		unsigned long fileSize = 0;
-        void* dataContent = cpio_get_file(_cpio_archive , node->name , &fileSize);
+        unsigned long len = _cpio_archive_end - _cpio_archive;
+        void* dataContent = cpio_get_file(_cpio_archive ,len, node->name , &fileSize);
 		
         node->userData = dataContent;
 		node->size = fileSize;
