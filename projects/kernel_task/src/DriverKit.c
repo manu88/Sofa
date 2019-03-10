@@ -58,12 +58,12 @@ Inode* DriverKitGetDeviceNode()
 static int _ScanPCIDevices(KernelTaskContext* context)
 {
 #ifndef SOFA_TESTS_ONLY
-    if(libpci_num_devices == 0)
+/*    if(libpci_num_devices == 0)
     {
         libpci_scan( context->ops.io_port_ops);
     }
     
-    return libpci_num_devices;
+    return libpci_num_devices;*/
 #else
     return 0;
 #endif

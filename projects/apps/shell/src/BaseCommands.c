@@ -321,6 +321,17 @@ int exec_renice( const char* args)
 
 int exec_echo( const char* args)
 {
-    writeConsole(args, strlen(args));
+    if (strcmp(args , "$$" ) == 0)
+    {
+	const pid_t pid = getpid();
+	char str[16] = "";
+	snprintf(str , 16 , "%i" , pid);
+
+	writeConsole(str, strlen(str) );
+    }
+    else
+    {
+        writeConsole(args, strlen(args));
+    }
     return 0;
 }
