@@ -51,6 +51,7 @@ void setTermColor( int color);
 void clearTerm(void);
 void setTermCoords(uint8_t x , uint8_t y);
 
+void setLastReturnCode(int retCode);
 void PrintHelp(void);
 
 int exec_ls( const char* args);

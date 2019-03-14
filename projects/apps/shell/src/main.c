@@ -286,7 +286,9 @@ int main( int argc , char* argv[])
                     char* trimmed = trim(realCmd);
                     
                     int ret = execCommand( trimmed);
-                    if( ret == 0)
+		    setLastReturnCode(ret);
+                    
+		    if( ret == 0)
                     {
                         writeConsole("\n" , 1);
                     }

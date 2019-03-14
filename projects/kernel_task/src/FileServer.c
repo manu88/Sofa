@@ -52,6 +52,7 @@ int FileServerInit()
     
     _fsContext.defaultFSOps.Lseek = FileServer_DefaultLseek;
     _fsContext.defaultFSOps.Read = FileServer_DefaultRead;
+    _fsContext.defaultFSOps.Write = FileServer_DefaultWrite;
     
     if( InodeInit(&_fsContext._rootNode , INodeType_Folder ,"") == 0)
     {
@@ -331,4 +332,11 @@ ssize_t FileServer_DefaultRead (Inode *node, char*buf  , size_t len)
 ssize_t FileServer_DefaultLseek (Inode *node, size_t off, int whence)
 {
     return 0;
+}
+
+
+ssize_t FileServer_DefaultWrite(Inode* node , const char* buff ,size_t len )
+{
+	printf("Default write called with content '%s' \n" , buff);
+	return 0;
 }

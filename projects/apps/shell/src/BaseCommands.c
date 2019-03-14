@@ -33,6 +33,15 @@
 #include <assert.h>
 
 
+static int lastRet = 0;
+
+
+void setLastReturnCode(int retCode)
+{
+	lastRet = retCode;
+}
+
+
 static int consoleFDWrite  = -1;
 static int consoleFDWRead  = -1;
 
@@ -329,6 +338,12 @@ int exec_echo( const char* args)
 
 	writeConsole(str, strlen(str) );
     }
+    else if (strcmp(args , "$?") == 0)
+    {
+	char str[3] = "";
+	snprintf(str ,3, "%i" , lastRet);
+	writeConsole(str, strlen(str) );
+    }
     else
     {
         writeConsole(args, strlen(args));
@@ -339,6 +354,43 @@ int exec_echo( const char* args)
 
 int exec_write( const char* args)
 {
-	printf("Write args '%s'\n" , args);
-	return 0;
+	if (strlen(args) == 0)
+		return -EINVAL;
+
+	char* const arguments = strdup(args);
+	if (arguments == NULL)
+		return - EINVAL;
+
+
+	const char delim[] = " ";
+	char *file = strtok(arguments, delim);
+	char* content = arguments + strlen(file) + 1;// strtok(NULL, delim);
+
+
+	int ret = -1;
+	if (file && content)
+	{
+		FILE* f = fopen(file, "w");
+		if (f)
+		{
+			fprintf(f , "%s" , content);
+			fclose(f);
+			ret = 0;
+		}
+		else 
+		{
+			printf("Error opening '%s' for write \n" , file);
+		}
+	}
+	else 
+	{
+		ret = -EINVAL;
+		printf("ERROR Write to file '%s'\n" , file);
+		printf("ERROR Write content '%s'\n" , content);
+
+	}
+
+
+	free(arguments);
+	return ret;
 }
