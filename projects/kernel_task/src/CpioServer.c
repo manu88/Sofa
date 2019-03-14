@@ -124,7 +124,6 @@ static int CpioOpen (Inode * node , int flags)
 static ssize_t CpioRead (struct _inode *node, char* buf , size_t size)
 {
 #ifndef SOFA_TESTS_ONLY
-	printf("CPIO READ request %lu bytes pos %lu size max %lu\n", size , node->pos , node->size);
 	
 	if (node->userData == NULL)
 	{
