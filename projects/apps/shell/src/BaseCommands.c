@@ -335,3 +335,10 @@ int exec_echo( const char* args)
     }
     return 0;
 }
+
+
+int exec_write( const char* args)
+{
+	printf("Write args '%s'\n" , args);
+	return 0;
+}

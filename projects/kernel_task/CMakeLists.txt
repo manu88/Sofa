@@ -26,7 +26,7 @@ config_set(LIB_PICOTCP LIB_PICOTCP True)
 
 add_executable(kernel_task ${deps} archive.o)
 
-target_link_libraries(kernel_task sel4muslcsys sel4allocman sel4platsupport sel4 muslc cpio sel4utils  libdatastruct picotcp ethdrivers fatio usbdrivers)
+target_link_libraries(kernel_task sel4muslcsys sel4allocman sel4platsupport sel4 muslc cpio sel4utils  libdatastruct picotcp ethdrivers fatio usbdrivers libACPI)
 
 # warn about everything
 add_compile_options(-Wall -Werror -W -Wextra)

@@ -72,3 +72,5 @@ int exec_stat(const char* args);
 int exec_renice( const char* args);
 
 int exec_echo( const char* args);
+
+int exec_write( const char* args);

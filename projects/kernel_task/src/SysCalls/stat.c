@@ -50,12 +50,15 @@ int handle_stat(KernelTaskContext* context, Process *senderProcess, seL4_Message
 
         seL4_SetMR(0, __SOFA_NR_stat );
         seL4_SetMR(1, ret);
+
 	if(msgSize)
 	{
 		seL4_SetMR(2 , node->modTS);
 		seL4_SetMR(3 , node->_identity.uid);
         }
+
 	seL4_Reply( message );
+
 	return 0;
 }
 

@@ -281,7 +281,8 @@ int ProcessSignalStop(Process* process)
         // ensure process is still relevant
         if(ProcessTableContains(entry->process) )
         {
-            seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+		assert(entry->reply);
+                seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
         	seL4_SetMR(0, __SOFA_NR_wait4);
         	seL4_SetMR(1, process->_pid);
 
@@ -315,6 +316,8 @@ static int _ProcessReapChildrenIfNeeded(Process* process)
     ProcessListEntry* entry = NULL;
     LIST_FOREACH(entry, &process->children, entries)
     {
+	printf("ReapChild %i \n" , entry->process->_pid);
+
         ProcessSetParentShip(initProcess, entry->process);
     }
     return 1;
