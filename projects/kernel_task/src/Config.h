@@ -18,4 +18,4 @@
 #pragma once
 
 
-#define SOFA_DEFAULT_PRIORITY 5
+#define SOFA_DEFAULT_PRIORITY 100

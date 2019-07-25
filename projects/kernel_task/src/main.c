@@ -27,7 +27,7 @@
 #include "Timer.h"
 #include "ProcessSysCall.h"
 #include "NameServer.h"
-
+#include "Config.h"
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
@@ -60,6 +60,8 @@ static void earlyInit()
 
     printf("[kernel_task] bootstrap returned %i\n" , error);
 
+    int ret = seL4_TCB_SetPriority(simple_get_tcb(getSimple()) , simple_get_tcb(getSimple()) , SOFA_DEFAULT_PRIORITY);
+    
 	error = initRootEndPoint();
 	printf("[kernel_task] root EndPoint returned %i\n" , error);
     

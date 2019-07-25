@@ -40,12 +40,20 @@ else
 	git clone https://github.com/seL4/seL4_libs.git projects/seL4_libs
 fi
 
-echo "==> Getting seL4sel4runtime.git"
+echo "==> Getting seL4 sel4runtime"
 if [ -d "projects/sel4runtime/" ]; then
         git -C projects/sel4runtime/ pull
 else
         git clone https://github.com/SEL4PROJ/sel4runtime.git projects/sel4runtime
 fi
+
+echo "==> Getting libACPI"
+if [ -d "projects/libACPI/" ]; then
+        git -C projects/libACPI/ pull
+else
+        git clone https://github.com/manu88/libACPI.git projects/libACPI
+fi
+
 
 
 
