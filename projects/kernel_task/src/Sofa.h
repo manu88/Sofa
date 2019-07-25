@@ -64,12 +64,7 @@
 // Mark methods with no Sel4 dependencies that can be tested on other platforms
 #define SOFA_UNIT_TESTABLE
 
-#ifdef __APPLE__
-#ifndef SOFA_TESTS_ONLY
-#define SOFA_TESTS_ONLY
-#endif
-typedef void* seL4_CPtr;
-#endif
+
 
 #ifndef MAX_PATH_LOOKUP
 #define MAX_PATH_LOOKUP 128

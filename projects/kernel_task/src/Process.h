@@ -52,7 +52,6 @@ typedef struct _Process
 	uint32_t pid;
     
     ProcessState status;
-    //char name[MAX_PROCESS_NAME];
 	
     ThreadEnvir* env; // This is shared with the process and defined in libSysCall
     void *vaddr; // This is the shared addr of env
@@ -62,7 +61,7 @@ typedef struct _Process
     seL4_CPtr reply; // slot for async replies
     ReplyState replyState;
     
-    struct _Process *parent;
+//    struct _Process *parent;
 
     Stats stats;
     
@@ -80,6 +79,11 @@ typedef struct _Process
 static inline const char* ProcessGetName( const Process* p)
 {
     return p->base.obj.k_name;
+}
+
+static inline Process* ProcessGetParent( Process*p)
+{
+    return (Process*) p->base.obj._parent;
 }
 
 int ProcessListInit(void);

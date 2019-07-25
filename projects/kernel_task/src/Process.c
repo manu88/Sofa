@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-//#include <utils/list.h>
+
 #include "Process.h"
 #include "Bootstrap.h"
 #include "Utils.h"
@@ -91,7 +91,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     process->pid = pidCounter++;
     printf("[kernel_task] configure '%s' process -> pid %i\n" , procName , process->pid);
     assert(process->pid> 0);
-    process->parent = parent;
+    //process->parent = parent;
     sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, seL4_MaxPrio);
     
     error = sel4utils_configure_process_custom( &process->native , getVka() , getVspace(), config);
@@ -115,7 +115,11 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
                              getVka(),
                              &fault_ep);
     
-    ZF_LOGF_IFERR(error , "Failed to allocate thread fault endpoint");
+    if (error != 0)
+    {
+        printf("Failed to allocate thread fault endpoint\n");
+    }
+    
     assert(error == 0);
     /* create a badged fault endpoint for the thread */
     error = seL4_CNode_Mint(
@@ -128,7 +132,12 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
                             seL4_AllRights,
                             process->pid
                             );
-    ZF_LOGF_IF(error != 0, "Failed to mint badged fault endpoint for thread");
+    
+    if (error != 0)
+    {
+        printf("Failed to mint badged fault endpoint for thread\n");
+    }
+    
     assert(error == 0);
     
     config = process_config_fault_cptr(config, fault_ep);
@@ -266,17 +275,6 @@ Process* ProcessGetFirstChild(Process* fromProcess)
         return p;
     }
     return NULL;
-    /*
-    for (struct list_node *n = _processes.head; n != NULL; n = n->next)
-    {
-        Process* proc = n->data;
-        if( proc->parent == fromProcess)
-        {
-            return proc;
-        }
-    }
-    return NULL;
-     */
 }
 
 int ProcessCleanup( Process* process)
@@ -291,31 +289,23 @@ int ProcessKill( Process* process)
     assert(initProcess);
     int error = -1;
     
-
     TimerCancelID(process->timerID); // cancel any pending timer
     
-    assert(process->parent);
+    assert(ProcessGetParent(process));
     
-    if( ProcessGetChildrenCount(process))
+
+    KObject* el = NULL;
+    KObject*tmp = NULL;
+    //KSetForeach( (KSet*)process, el)
+    DL_FOREACH_SAFE((KSet*)process,el,tmp)
     {
-        KObject* el = NULL;
-        KSetForeach( (KSet*)process, el)
-        {
-            Process* proc = (Process*) el;
-            proc->parent = initProcess;
-        }
-        /*
-        for (struct list_node *n = _processes.head; n != NULL; n = n->next)
-        {
-            Process* proc = n->data;
-            if( proc->parent == process)
-            {
-                proc->parent = initProcess;
-            }
-        }
-         */
+        Process* proc = (Process*) el;
+        
+        KSetAppend( (KSet*)initProcess , proc);
+        //proc->parent = initProcess;
     }
-    int ret = ProcessSignalTerminaison(process , process->parent);
+
+    int ret = ProcessSignalTerminaison(process , ProcessGetParent(process) );
     
     NameServerRemoveAllFromProcess(process);
     RemoveProcessAsClient(process);
@@ -331,7 +321,6 @@ int ProcessKill( Process* process)
         }
         
         ProcessCleanup(process);
-        
     }
     else
     {
@@ -344,7 +333,6 @@ int ProcessKill( Process* process)
 
 void ProcessDump()
 {
-
     Process* proc = NULL;
     Process* temp = NULL;
 
@@ -354,7 +342,7 @@ void ProcessDump()
                proc->pid,
                ProcessGetName(proc) ,
                proc->status,
-               proc->parent?proc->parent->pid:0 ,
+               ProcessGetParent(proc)?ProcessGetParent(proc)->pid:0 ,
                proc->timerID,
                (void*)proc->reply,
                proc->replyState,
@@ -362,7 +350,6 @@ void ProcessDump()
                proc->stats.startedTime
                );
     }
-    
 }
 
     

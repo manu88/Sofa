@@ -15,30 +15,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdio.h>
+#include "KObject.h"
 
-#include <platsupport/local_time_manager.h>
-#include <sel4/types.h>
-
-
-#include <stdint.h>
-
-typedef struct _Thread Thread;
-
-int TimerInit(ps_io_ops_t *ops , seL4_CPtr notifCap);
-
-/*
-int TimerAllocAndRegister(time_manager_t *tm , uint64_t period_ns, uint64_t start, uint32_t id, timeout_cb_fn_t callback, uintptr_t token);
-
-int TimerAllocAndRegisterOneShot(time_manager_t *tm , uint64_t rel_ns, uint32_t id,  timeout_cb_fn_t callback, uintptr_t token);
-
-*/
-int TimerCancelID( uint32_t id);
-
-int TimerProcess(seL4_Word sender_badge);
-time_manager_t *getTM(void);
-
-
-uint64_t GetCurrentTime(void);
-
-
+int main(int argc, const char * argv[])
+{
+    KSet set1;
+    
+    KSetInit(&set1);
+    
+    
+    
+    return 0;
+}

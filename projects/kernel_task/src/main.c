@@ -72,7 +72,11 @@ static void earlyInit()
     assert(error == 0);
     
     error = seL4_TCB_BindNotification(seL4_CapInitThreadTCB, ntfn_object.cptr);
-    ZF_LOGF_IFERR(error, "Unable to BindNotification.\n");
+    if (error != 0)
+    {
+        printf("Unable to BindNotification.\n");
+        assert(0);
+    }
     assert(error == 0);
     
     cspacepath_t notification_path;

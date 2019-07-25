@@ -76,6 +76,7 @@ typedef struct
     seL4_CPtr endpoint;
 } ClientEnvir;
 
+#ifndef KERNEL_TASK
 
 int InitClient(const char* EPString );
 void StopClient(int retCode);
@@ -107,3 +108,5 @@ ServerEnvir* RegisterServerWithName(const char*name, int flags);
 
 ClientEnvir* ConnectToServer( const char*name);
 int ServerRecv(ServerEnvir* server);
+
+#endif

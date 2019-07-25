@@ -61,7 +61,7 @@ int TimerProcess(seL4_Word sender_badge)
     return tm_update(&_tm);
 }
 
-
+/*
 int TimerAllocAndRegisterOneShot(time_manager_t *tm , uint64_t rel_ns, uint32_t id,  timeout_cb_fn_t callback, uintptr_t token)
 {
 	int err = tm_alloc_id_at(tm , id);
@@ -81,7 +81,8 @@ int TimerAllocAndRegister(time_manager_t *tm , uint64_t period_ns, uint64_t star
                 return tm_register_periodic_cb(tm , period_ns ,start,id , callback, token);
         }
         return err;
-} 
+}
+ */
 
 int TimerCancelID( uint32_t id)
 {

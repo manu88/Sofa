@@ -66,10 +66,7 @@ int bootstapSystem()
 		return -1;
 	}
 
-/*    ZF_LOGF_IF(context->allocman == NULL, "Failed to initialize allocator.\n"
-               "\tMemory pool sufficiently sized?\n"
-               "\tMemory pool pointer valid?\n");
-*/
+
 
 	/* create a vka (interface for interacting with the underlying allocator) */
 	allocman_make_vka(&_ctx.vka, _ctx.allocman);
