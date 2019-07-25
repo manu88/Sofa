@@ -60,6 +60,7 @@
 		59F101CF22E9C5CA00582980 /* io.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
 		59F101D122E9C68600582980 /* list.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = list.h; sourceTree = "<group>"; };
 		59F101D222E9C9E600582980 /* mocks.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = mocks.c; sourceTree = "<group>"; };
+		59F101D522EA0AE800582980 /* Config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Config.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +112,7 @@
 		59F101A022E9C37900582980 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				59F101D522EA0AE800582980 /* Config.h */,
 				59F101A122E9C37900582980 /* Utils.h */,
 				59F101A922E9C37900582980 /* Utils.c */,
 				59F101A822E9C37900582980 /* Timer.h */,

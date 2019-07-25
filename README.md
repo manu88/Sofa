@@ -22,6 +22,7 @@ the rootserver in the SeL4 terminology, ie. the first userland program to run af
 * wait : wait for any child to terminate,
 * sleep : well... sleeps,
 * get wall time
+* get/set process priority
 * other debug syscalls, such as printing the scheduler state.
 
 

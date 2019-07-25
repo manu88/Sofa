@@ -127,7 +127,7 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
             break;
             
         case SysCall_SetPriority:
-            processGetPriority(sender,info , sender_badge);
+            processSetPriority(sender,info , sender_badge);
             break;
             
         case SysCall_RegisterServer:
@@ -172,14 +172,13 @@ static void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Wo
 {
     int pid = seL4_GetMR(1);
     
-    printf("[kernel_task] getpriority request for pid %i\n" , pid);
+    
     Process* proc = ProcessGetByPID(pid);
     int prio= -1;
     int err = -1;
     if( proc)
     {
-        
-        int err = ProcessGetPriority(proc , &prio);
+        err = ProcessGetPriority(proc , &prio);
     }
     
     seL4_SetMR(1 , err);

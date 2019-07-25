@@ -20,7 +20,7 @@
 #include "Utils.h"
 #include "Timer.h"
 #include "NameServer.h"
-
+#include "Config.h"
 
 static Process* _procList = NULL;
 //static list_t _processes = {0};
@@ -88,8 +88,12 @@ static int ProcessListRemove(Process* process)
 
 int ProcessSetPriority( Process* process , int prio)
 {
-    process->priority = prio;
-    return 0;
+    int ret = seL4_TCB_SetPriority(process->native.thread.tcb.cptr , simple_get_tcb(getSimple()) , prio);
+    if( ret == 0)
+    {
+        process->priority = prio;
+    }
+    return ret;
 }
 int ProcessGetPriority( Process* process , int *prio)
 {
@@ -113,7 +117,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
 
 #ifndef TEST_ONLY
     
-    process->priority = 100;
+    process->priority = SOFA_DEFAULT_PRIORITY;
     sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, process->priority/*seL4_MaxPrio*/);
     
     error = sel4utils_configure_process_custom( &process->native , getVka() , getVspace(), config);
