@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <Group
+      location = "container:"
+      name = "DriverKitD">
+      <Group
+         location = "group:projects/apps/driverkitd/src"
+         name = "src">
+         <FileRef
+            location = "group:main.c">
+         </FileRef>
+      </Group>
+   </Group>
+</Workspace>
