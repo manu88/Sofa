@@ -6,4 +6,4 @@ tools/
 projects/musllibc/
 projects/seL4_libs/
 projects/util_libs/
-projects/picotcp/
+projects/sel4runtime/
