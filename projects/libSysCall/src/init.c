@@ -193,7 +193,6 @@ long read(char*buf, unsigned long count)
 static void doDebugSysCall(SysCall_Debug_ID msgID)
 {
     assert(env);
-    
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     
     seL4_SetMR(0 , SysCall_Debug);
@@ -217,6 +216,40 @@ void listServers()
     doDebugSysCall(SysCall_Debug_ListServers);
 }
 
+
+
+int getPriority(int pid , int *retVal)
+{
+    assert(env);
+    
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0 , SysCall_GetPriority);
+    seL4_SetMR(1 , pid); // will contain error
+    // 2 : returnedprio
+    
+    
+    seL4_Call(endpoint, info);
+    
+    assert(seL4_GetMR(0) == SysCall_GetPriority);
+    
+    *retVal = seL4_GetMR(2);
+    return seL4_GetMR(1);
+}
+
+int setPriority(int pid , int prio)
+{
+    assert(env);
+    
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0 , SysCall_SetPriority);
+    seL4_SetMR(1 , pid); // will contain error
+    seL4_SetMR(2 , prio);
+    seL4_Call(endpoint, info);
+    
+    assert(seL4_GetMR(0) == SysCall_SetPriority);
+    
+    return seL4_GetMR(1);
+}
 
 ServerEnvir* RegisterServerWithName(const char*name, int flags)
 {

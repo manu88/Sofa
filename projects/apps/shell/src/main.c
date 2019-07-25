@@ -139,6 +139,36 @@ static int execCmd( const char* cmd)
         
         return sleepMS(ms);
     }
+    else if( startsWith("setprio ", cmd))
+    {
+        const char* arg = cmd + strlen("setprio ");
+        
+        int pid = 0;
+        int prio = 0;
+        
+        if( sscanf(arg , "%i %i" , &pid , &prio) == 2)
+        {
+            return setPriority(pid ,prio);
+        }
+    }
+    else if( startsWith("getprio ", cmd))
+    {
+        const char* arg = cmd + strlen("getprio ");
+        
+        int pid = 0;
+        
+        if( sscanf(arg , "%i" , &pid ) == 1)
+        {
+            int retPrio  = 0;
+            int ret =  getPriority(pid ,&retPrio);
+            
+            if( ret == 0)
+            {
+                print("Priority  : %i\n" , retPrio);
+            }
+            return ret;
+        }
+    }
     else if( strcmp("servers" , cmd) == 0)
     {
         listServers();

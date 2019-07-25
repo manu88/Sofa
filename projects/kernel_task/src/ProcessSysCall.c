@@ -32,6 +32,9 @@ static void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
 static void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 static void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 
+static void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
+static void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
+
 #define Reply(i) seL4_Reply(i)
 /*
 static inline void Reply(seL4_MessageInfo_t info)
@@ -118,6 +121,15 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
         case SysCall_Wait:
             processWait(sender,info , sender_badge);
             break;
+            
+        case SysCall_GetPriority:
+            processGetPriority(sender,info , sender_badge);
+            break;
+            
+        case SysCall_SetPriority:
+            processGetPriority(sender,info , sender_badge);
+            break;
+            
         case SysCall_RegisterServer:
             processRegisterServer(sender,info , sender_badge);
             break;
@@ -153,6 +165,48 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
     
     sender->stats.numSysCalls++;
     
+}
+
+
+static void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+{
+    int pid = seL4_GetMR(1);
+    
+    printf("[kernel_task] getpriority request for pid %i\n" , pid);
+    Process* proc = ProcessGetByPID(pid);
+    int prio= -1;
+    int err = -1;
+    if( proc)
+    {
+        
+        int err = ProcessGetPriority(proc , &prio);
+    }
+    
+    seL4_SetMR(1 , err);
+    seL4_SetMR(2 , prio);
+    
+    Reply( info);
+}
+
+static void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+{
+    int pid     = seL4_GetMR(1);
+    int newPrio = seL4_GetMR(2);
+    printf("[kernel_task] setpriority request for pid %i to %i\n" , pid , newPrio);
+    
+    int err = -1;
+    
+    Process* proc = ProcessGetByPID(pid);
+    
+    if( proc)
+    {
+        err = ProcessSetPriority(proc , newPrio);
+    }
+    
+    
+    seL4_SetMR(1 , err);
+    
+    Reply(info);
 }
 
 static void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)

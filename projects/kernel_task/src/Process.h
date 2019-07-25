@@ -62,6 +62,8 @@ typedef struct _Process
     
     Stats stats;
     
+    uint8_t priority;
+    
     int retCode;
     
     // global process list
@@ -99,5 +101,8 @@ Process* ProcessGetByPID( uint32_t pid);
 
 int ProcessStart(Process *process , const char* name , vka_object_t *fromEp, Process *parent);
 
+
+int ProcessSetPriority( Process* process , int prio);
+int ProcessGetPriority( Process* process , int *prio);
 
 void ProcessDump(void);

@@ -30,6 +30,9 @@ typedef enum
     SysCall_Exit,
     SysCall_GetTime,
     
+    SysCall_SetPriority,
+    SysCall_GetPriority,
+    
     SysCall_RegisterServer,
     SysCall_RegisterClient,
 } SysCallID;
@@ -99,6 +102,8 @@ long unsigned int getTime(void);
 void ps(void);
 void sched(void);
 
+int getPriority(int pid , int *retVal);
+int setPriority(int pid , int prio);
 
 
 // Server

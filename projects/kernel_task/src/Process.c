@@ -86,6 +86,17 @@ static int ProcessListRemove(Process* process)
 }
 
 
+int ProcessSetPriority( Process* process , int prio)
+{
+    process->priority = prio;
+    return 0;
+}
+int ProcessGetPriority( Process* process , int *prio)
+{
+    *prio = process->priority;
+    return 0;
+}
+
 int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp , Process *parent)
 {
     assert(process != parent);
@@ -95,8 +106,6 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
    
     int error = 0;
     
-    
-    
     process->pid = pidCounter++;
     printf("[kernel_task] configure '%s' process -> pid %i\n" , procName , process->pid);
     assert(process->pid> 0);
@@ -104,7 +113,8 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
 
 #ifndef TEST_ONLY
     
-    sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, 100/*seL4_MaxPrio*/);
+    process->priority = 100;
+    sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, process->priority/*seL4_MaxPrio*/);
     
     error = sel4utils_configure_process_custom( &process->native , getVka() , getVspace(), config);
     if( error != 0)

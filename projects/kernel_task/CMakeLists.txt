@@ -14,7 +14,7 @@ list(SORT deps)
 
 add_executable(kernel_task ${deps} archive.o)
 
-
+target_compile_definitions(kernel_task PRIVATE KERNEL_TASK=1)
 
 target_link_libraries(kernel_task 
 	sel4_autoconf
