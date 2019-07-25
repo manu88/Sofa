@@ -21,6 +21,8 @@
 #include <sel4utils/process.h>
 #include <SysCalls.h>
 #include "KObject/KObject.h"
+#include "KObject/uthash.h"
+
 typedef enum
 {
     ReplyState_None,
@@ -45,12 +47,12 @@ typedef struct
 #define MAX_PROCESS_NAME 128
 typedef struct _Process
 {
-    KObject base;
+    KSet base;
 	sel4utils_process_t native;
 	uint32_t pid;
     
     ProcessState status;
-    char name[MAX_PROCESS_NAME];
+    //char name[MAX_PROCESS_NAME];
 	
     ThreadEnvir* env; // This is shared with the process and defined in libSysCall
     void *vaddr; // This is the shared addr of env
@@ -66,15 +68,26 @@ typedef struct _Process
     
     
     int retCode;
+    
+    // global process list
+    struct _Process *prev,*next;
+    
+    // global process list
+    UT_hash_handle hh; /* makes this structure hashable */
+    
 } Process;
 
+static inline const char* ProcessGetName( const Process* p)
+{
+    return p->base.obj.k_name;
+}
 
 int ProcessListInit(void);
 void ProcessInit(Process*p);
-//Process** ProcessGetList(void);
-//int ProcessGetMaxCount(void);
 
-int ProcessGetChildrenCount(Process* process);
+size_t ProcessListGetCount(void);
+
+size_t ProcessGetChildrenCount(Process* process);
 
 Process* ProcessGetFirstChild(Process* fromProcess);
 

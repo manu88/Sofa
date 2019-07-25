@@ -58,7 +58,7 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
         }
         case SysCall_Write:
         {
-            printf("[%s] %s" ,sender->name, sender->env->buf);
+            printf("[%s] %s" ,ProcessGetName(sender), sender->env->buf);
             seL4_SetMR(1 , 0); // no err
             Reply( info);
             break;
@@ -216,7 +216,7 @@ static void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4
 {
     const char* serverName = sender->env->buf;
     
-    printf("[kernel_task] RegisterClient to server '%s' from process '%s' %i \n", sender->env->buf , sender->name , sender->pid );
+    printf("[kernel_task] RegisterClient to server '%s' from process '%s' %i \n", sender->env->buf , ProcessGetName(sender) , sender->pid );
     
     int err = -1;
     void* ptr = NULL;
@@ -277,7 +277,7 @@ static void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     // 3rd reg is for returned status;
     
     int childCount = ProcessGetChildrenCount(sender);
-    printf("[kernel_task] process %s wait on any child (%i child(ren))\n" , sender->name , childCount);
+    printf("[kernel_task] process %s wait on any child (%i child(ren))\n" , ProcessGetName(sender) , childCount);
     
     
     
@@ -339,7 +339,7 @@ static int OnTime(uintptr_t token)
     //seL4_CPtr reply = (seL4_CPtr) token;
     if( !sender->reply)
     {
-        printf("OnTime : no reply for %s %i\n" , sender->name , sender->pid);
+        printf("OnTime : no reply for %s %i\n" , ProcessGetName(sender) , sender->pid);
     }
     assert(sender->reply);
     assert(sender->replyState == ReplyState_Sleep);
@@ -376,7 +376,7 @@ static void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
     
     if( sender->reply != 0)
     {
-        printf("sender->reply not null for %s %i\n" , sender->name , sender->pid);
+        printf("sender->reply not null for %s %i\n" , ProcessGetName(sender) , sender->pid);
     }
     assert(sender->reply == 0);
     int err = -1;

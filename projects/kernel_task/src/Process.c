@@ -14,14 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <utils/list.h>
+//#include <utils/list.h>
 #include "Process.h"
 #include "Bootstrap.h"
 #include "Utils.h"
 #include "Timer.h"
 #include "NameServer.h"
 
-static list_t _processes = {0};
+
+static Process* _procList = NULL;
+//static list_t _processes = {0};
 //#define MAX_PROCESSES 10
 //static Process* procList[MAX_PROCESSES] = {0};
 
@@ -31,53 +33,30 @@ static Process *initProcess = NULL;
 
 int ProcessListInit()
 {
-    int ret = -1;
-    
-    ret = list_init(&_processes);
-    if( ret != 0)
-    {
-        return ret;
-    }
-    
-    return ret;
+    return 0;
 }
 
 void ProcessInit(Process*p)
 {
     memset(p , 0 , sizeof(Process));
     
+    KSetInit(&p->base);
     assert(p->reply == 0);
     assert(p->replyState  == ReplyState_None);
 }
 
 Process* ProcessGetByPID( uint32_t pid)
 {
+    Process *p = NULL;
     
-    for (struct list_node *n = _processes.head; n != NULL; n = n->next)
-    {
-        Process* p = n->data;
-        if( p->pid == pid)
-            return p;
-
-    }
-
-    return NULL;
+    HASH_FIND_INT( _procList, &pid, p );
+    
+    return p;
 }
 
-int ProcessGetChildrenCount(Process* process)
+size_t ProcessGetChildrenCount(Process* process)
 {
-    int a = 0;
-    
-    for (struct list_node *n = _processes.head; n != NULL; n = n->next)
-    {
-        Process* p = n->data;
-        if( p->parent == process)
-        {
-            a++;
-        }
-    }
-
-    return a;
+    return KSetCount( (const KSet*) process);
 }
 
 static int ProcessAdd(Process* process)
@@ -86,34 +65,15 @@ static int ProcessAdd(Process* process)
     {
         initProcess = process;
     }
-    return list_prepend(&_processes , process);
-    /*
-    for(int i=0;i<MAX_PROCESSES;i++)
-    {
-        if( procList[i] == NULL)
-        {
-            procList[i] = process;
-            return 0;
-        }
-    }
-    return -1;
-     */
-}
-static int ProcComp(void*a, void*b)
-{
-    Process* p1 = a;
-    Process* p2 = b;
     
-    if( p1->pid == p2->pid)
-    {
-        return 0; // if equals
-    }
-    return -1;
+    HASH_ADD_INT( _procList, pid, process );
+    return 0;
 }
 
 static int ProcessRemove(Process* process)
 {
-    return list_remove(&_processes , process ,ProcComp );
+    HASH_DEL(_procList, process);
+    return 0;
     
 }
 
@@ -126,9 +86,10 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
    
     int error = 0;
     
-    printf("[kernel_task] configure '%s' process\n" , procName);
+    
     
     process->pid = pidCounter++;
+    printf("[kernel_task] configure '%s' process -> pid %i\n" , procName , process->pid);
     assert(process->pid> 0);
     process->parent = parent;
     sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, seL4_MaxPrio);
@@ -140,7 +101,9 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         return error;
     }
     
-    strcpy(process->name , procName);
+    //strcpy(process->name , procName);
+    
+    process->base.obj.k_name = strdup(procName);
     /* END-fucking-POINTS Are HERE*/
     
     /* create a FAULT endpoint */
@@ -203,7 +166,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     
     // rule : the endpoint should be the last arg, and is gonna be removed from the arg list before main is called
     seL4_Word argc = 2;
-    char *argv[] = {process->name , endpoint_string};
+    char *argv[] = {procName , endpoint_string};
     
     printf("[kernel_task] Start process \n");
     
@@ -250,15 +213,29 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     assert(process->vaddr != 0);
     /*END Shared mem*/
 
-    return ProcessAdd(process);
+    
+    if( process->pid != 1) //
+    {
+        assert(parent);
+        int ret = KSetAppend( (KSet*) parent , (KObject*) process);
+        assert(ret == 0);
+    }
+    int r = ProcessAdd(process);
+    
+    assert(r==0);
+    return r;
 }
 
+size_t ProcessListGetCount()
+ {
+     return HASH_COUNT(_procList);
+ }
 
 static int ProcessSignalTerminaison( Process* process , Process* parent)
 {
     if( parent->replyState == ReplyState_Wait)
     {
-        printf("Parent %i %s is waiting for its child\n", parent->pid , parent->name);
+        printf("Parent %i %s is waiting for its child\n", parent->pid , ProcessGetName( parent));
         
         assert(parent->reply);
         seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
@@ -281,6 +258,15 @@ static int ProcessSignalTerminaison( Process* process , Process* parent)
 
 Process* ProcessGetFirstChild(Process* fromProcess)
 {
+    
+    KObject* el = NULL;
+    KSetForeach((KSet*) fromProcess, el)
+    {
+        Process* p = (Process*) el;
+        return p;
+    }
+    return NULL;
+    /*
     for (struct list_node *n = _processes.head; n != NULL; n = n->next)
     {
         Process* proc = n->data;
@@ -290,6 +276,7 @@ Process* ProcessGetFirstChild(Process* fromProcess)
         }
     }
     return NULL;
+     */
 }
 
 int ProcessCleanup( Process* process)
@@ -311,7 +298,13 @@ int ProcessKill( Process* process)
     
     if( ProcessGetChildrenCount(process))
     {
-   
+        KObject* el = NULL;
+        KSetForeach( (KSet*)process, el)
+        {
+            Process* proc = (Process*) el;
+            proc->parent = initProcess;
+        }
+        /*
         for (struct list_node *n = _processes.head; n != NULL; n = n->next)
         {
             Process* proc = n->data;
@@ -320,6 +313,7 @@ int ProcessKill( Process* process)
                 proc->parent = initProcess;
             }
         }
+         */
     }
     int ret = ProcessSignalTerminaison(process , process->parent);
     
@@ -350,13 +344,15 @@ int ProcessKill( Process* process)
 
 void ProcessDump()
 {
-    for (struct list_node *n = _processes.head; n != NULL; n = n->next)
+
+    Process* proc = NULL;
+    Process* temp = NULL;
+
+    HASH_ITER(hh, _procList, proc, temp)
     {
-        Process* proc = n->data;
-        
         printf("%i '%s' status %i Parent %i TimerID %x reply %p replyState %i #syscalls %ld started at %li\n" ,
                proc->pid,
-               proc->name ,
+               ProcessGetName(proc) ,
                proc->status,
                proc->parent?proc->parent->pid:0 ,
                proc->timerID,

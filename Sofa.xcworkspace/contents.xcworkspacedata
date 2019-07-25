@@ -2,13 +2,466 @@
 <Workspace
    version = "1.0">
    <Group
-      location = "container:"
-      name = "DriverKitD">
+      location = "group:projects/kernel_task"
+      name = "kernel_task">
+      <FileRef
+         location = "group:CMakeLists.txt">
+      </FileRef>
       <Group
-         location = "group:projects/apps/driverkitd/src"
+         location = "group:src"
          name = "src">
          <FileRef
+            location = "group:Utils.h">
+         </FileRef>
+         <FileRef
+            location = "group:Timer.c">
+         </FileRef>
+         <FileRef
+            location = "group:Sofa.h">
+         </FileRef>
+         <FileRef
+            location = "group:NameServer.c">
+         </FileRef>
+         <FileRef
+            location = "group:Bootstrap.h">
+         </FileRef>
+         <FileRef
+            location = "group:Timer.h">
+         </FileRef>
+         <FileRef
+            location = "group:Utils.c">
+         </FileRef>
+         <FileRef
             location = "group:main.c">
+         </FileRef>
+         <FileRef
+            location = "group:Process.c">
+         </FileRef>
+         <FileRef
+            location = "group:Process.h">
+         </FileRef>
+         <FileRef
+            location = "group:ProcessSysCall.h">
+         </FileRef>
+         <FileRef
+            location = "group:ProcessSysCall.c">
+         </FileRef>
+         <FileRef
+            location = "group:Bootstrap.c">
+         </FileRef>
+         <Group
+            location = "group:KObject"
+            name = "KObject">
+            <FileRef
+               location = "group:utlist.h">
+            </FileRef>
+            <FileRef
+               location = "group:KObject.h">
+            </FileRef>
+            <FileRef
+               location = "group:uthash.h">
+            </FileRef>
+            <FileRef
+               location = "group:KObject.c">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:NameServer.h">
+         </FileRef>
+      </Group>
+   </Group>
+   <Group
+      location = "group:projects/apps"
+      name = "apps">
+      <Group
+         location = "group:init"
+         name = "init">
+         <FileRef
+            location = "group:CMakeLists.txt">
+         </FileRef>
+         <Group
+            location = "group:src"
+            name = "src">
+            <FileRef
+               location = "group:main.c">
+            </FileRef>
+         </Group>
+      </Group>
+      <FileRef
+         location = "group:CMakeLists.txt">
+      </FileRef>
+      <Group
+         location = "group:test"
+         name = "test">
+         <FileRef
+            location = "group:CMakeLists.txt">
+         </FileRef>
+         <Group
+            location = "group:src"
+            name = "src">
+            <FileRef
+               location = "group:main.c">
+            </FileRef>
+         </Group>
+      </Group>
+      <Group
+         location = "group:shell"
+         name = "shell">
+         <FileRef
+            location = "group:CMakeLists.txt">
+         </FileRef>
+         <Group
+            location = "group:src"
+            name = "src">
+            <FileRef
+               location = "group:main.c">
+            </FileRef>
+         </Group>
+      </Group>
+      <Group
+         location = "group:driverkitd"
+         name = "driverkitd">
+         <FileRef
+            location = "group:CMakeLists.txt">
+         </FileRef>
+         <Group
+            location = "group:src"
+            name = "src">
+            <FileRef
+               location = "group:main.c">
+            </FileRef>
+         </Group>
+      </Group>
+   </Group>
+   <Group
+      location = "group:projects/libSysCall"
+      name = "libSysCall">
+      <FileRef
+         location = "group:CMakeLists.txt">
+      </FileRef>
+      <Group
+         location = "group:include"
+         name = "include">
+         <FileRef
+            location = "group:SysCalls.h">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:src"
+         name = "src">
+         <FileRef
+            location = "group:init.c">
+         </FileRef>
+      </Group>
+   </Group>
+   <Group
+      location = "group:projects/sel4rt"
+      name = "sel4rt">
+      <FileRef
+         location = "group:CMakeLists.txt">
+      </FileRef>
+      <Group
+         location = "group:include"
+         name = "include">
+         <Group
+            location = "group:mode"
+            name = "mode">
+            <Group
+               location = "group:32"
+               name = "32">
+               <Group
+                  location = "group:sel4runtime"
+                  name = "sel4runtime">
+                  <Group
+                     location = "group:mode"
+                     name = "mode">
+                     <FileRef
+                        location = "group:elf.h">
+                     </FileRef>
+                  </Group>
+               </Group>
+            </Group>
+            <Group
+               location = "group:64"
+               name = "64">
+               <Group
+                  location = "group:sel4runtime"
+                  name = "sel4runtime">
+                  <Group
+                     location = "group:mode"
+                     name = "mode">
+                     <FileRef
+                        location = "group:elf.h">
+                     </FileRef>
+                  </Group>
+               </Group>
+            </Group>
+         </Group>
+         <Group
+            location = "group:sel4_arch"
+            name = "sel4_arch">
+            <Group
+               location = "group:aarch32"
+               name = "aarch32">
+               <Group
+                  location = "group:sel4runtime"
+                  name = "sel4runtime">
+                  <FileRef
+                     location = "group:thread_arch.h">
+                  </FileRef>
+               </Group>
+            </Group>
+            <Group
+               location = "group:ia32"
+               name = "ia32">
+               <Group
+                  location = "group:sel4runtime"
+                  name = "sel4runtime">
+                  <FileRef
+                     location = "group:thread_arch.h">
+                  </FileRef>
+               </Group>
+            </Group>
+            <FileRef
+               location = "group:arm_hyp">
+            </FileRef>
+            <Group
+               location = "group:aarch64"
+               name = "aarch64">
+               <Group
+                  location = "group:sel4runtime"
+                  name = "sel4runtime">
+                  <FileRef
+                     location = "group:thread_arch.h">
+                  </FileRef>
+               </Group>
+            </Group>
+            <Group
+               location = "group:x86_64"
+               name = "x86_64">
+               <Group
+                  location = "group:sel4runtime"
+                  name = "sel4runtime">
+                  <FileRef
+                     location = "group:thread_arch.h">
+                  </FileRef>
+               </Group>
+            </Group>
+         </Group>
+         <Group
+            location = "group:arch"
+            name = "arch">
+            <Group
+               location = "group:riscv"
+               name = "riscv">
+               <Group
+                  location = "group:sel4runtime"
+                  name = "sel4runtime">
+                  <FileRef
+                     location = "group:thread_arch.h">
+                  </FileRef>
+               </Group>
+            </Group>
+         </Group>
+         <Group
+            location = "group:sel4runtime"
+            name = "sel4runtime">
+            <FileRef
+               location = "group:start.h">
+            </FileRef>
+            <FileRef
+               location = "group:auxv.h">
+            </FileRef>
+            <FileRef
+               location = "group:thread.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:sel4runtime.h">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:README.md">
+      </FileRef>
+      <Group
+         location = "group:crt"
+         name = "crt">
+         <Group
+            location = "group:sel4_arch"
+            name = "sel4_arch">
+            <Group
+               location = "group:riscv64"
+               name = "riscv64">
+               <FileRef
+                  location = "group:crti.S">
+               </FileRef>
+               <FileRef
+                  location = "group:crtn.S">
+               </FileRef>
+               <FileRef
+                  location = "group:Convention.md">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:aarch32"
+               name = "aarch32">
+               <FileRef
+                  location = "group:crti.S">
+               </FileRef>
+               <FileRef
+                  location = "group:sel4_crt0.S">
+               </FileRef>
+               <FileRef
+                  location = "group:crtn.S">
+               </FileRef>
+               <FileRef
+                  location = "group:Convention.md">
+               </FileRef>
+               <FileRef
+                  location = "group:crt0.S">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:riscv32"
+               name = "riscv32">
+               <FileRef
+                  location = "group:crti.S">
+               </FileRef>
+               <FileRef
+                  location = "group:crtn.S">
+               </FileRef>
+               <FileRef
+                  location = "group:Convention.md">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:ia32"
+               name = "ia32">
+               <FileRef
+                  location = "group:crti.S">
+               </FileRef>
+               <FileRef
+                  location = "group:sel4_crt0.S">
+               </FileRef>
+               <FileRef
+                  location = "group:crtn.S">
+               </FileRef>
+               <FileRef
+                  location = "group:Convention.md">
+               </FileRef>
+               <FileRef
+                  location = "group:crt0.S">
+               </FileRef>
+            </Group>
+            <FileRef
+               location = "group:arm_hyp">
+            </FileRef>
+            <Group
+               location = "group:aarch64"
+               name = "aarch64">
+               <FileRef
+                  location = "group:crti.S">
+               </FileRef>
+               <FileRef
+                  location = "group:sel4_crt0.S">
+               </FileRef>
+               <FileRef
+                  location = "group:crtn.S">
+               </FileRef>
+               <FileRef
+                  location = "group:Convention.md">
+               </FileRef>
+               <FileRef
+                  location = "group:crt0.S">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:x86_64"
+               name = "x86_64">
+               <FileRef
+                  location = "group:crti.S">
+               </FileRef>
+               <FileRef
+                  location = "group:sel4_crt0.S">
+               </FileRef>
+               <FileRef
+                  location = "group:crtn.S">
+               </FileRef>
+               <FileRef
+                  location = "group:Convention.md">
+               </FileRef>
+               <FileRef
+                  location = "group:crt0.S">
+               </FileRef>
+            </Group>
+         </Group>
+         <FileRef
+            location = "group:README.md">
+         </FileRef>
+         <Group
+            location = "group:arch"
+            name = "arch">
+            <Group
+               location = "group:riscv"
+               name = "riscv">
+               <FileRef
+                  location = "group:sel4_crt0.S">
+               </FileRef>
+               <FileRef
+                  location = "group:crt0.S">
+               </FileRef>
+            </Group>
+         </Group>
+      </Group>
+      <Group
+         location = "group:src"
+         name = "src">
+         <FileRef
+            location = "group:memcpy.c">
+         </FileRef>
+         <FileRef
+            location = "group:start_root.c">
+         </FileRef>
+         <FileRef
+            location = "group:init.c">
+         </FileRef>
+         <Group
+            location = "group:sel4_arch"
+            name = "sel4_arch">
+            <Group
+               location = "group:aarch32"
+               name = "aarch32">
+               <FileRef
+                  location = "group:__aeabi_read_tp_c.c">
+               </FileRef>
+               <FileRef
+                  location = "group:__aeabi_read_tp.s">
+               </FileRef>
+            </Group>
+            <FileRef
+               location = "group:arm_hyp">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:start.h">
+         </FileRef>
+         <FileRef
+            location = "group:env.c">
+         </FileRef>
+         <FileRef
+            location = "group:util.h">
+         </FileRef>
+         <FileRef
+            location = "group:crt1.c">
+         </FileRef>
+         <FileRef
+            location = "group:memset.c">
+         </FileRef>
+         <FileRef
+            location = "group:init.h">
+         </FileRef>
+         <FileRef
+            location = "group:start.c">
          </FileRef>
       </Group>
    </Group>
