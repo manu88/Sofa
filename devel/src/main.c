@@ -16,15 +16,50 @@
  */
 
 #include <stdio.h>
-#include "KObject.h"
+#include <stdlib.h>
+#include <Process.h>
 
 int main(int argc, const char * argv[])
 {
-    KSet set1;
+    ProcessListInit();
     
-    KSetInit(&set1);
+    Process *p1 = malloc(sizeof(Process));
+    ProcessInit(p1);
+    
+    vka_object_t fromEp;
+    fromEp.cptr = 1;
+    ProcessStart(p1, "init", &fromEp, NULL);
     
     
+    
+    Process *p2 = malloc(sizeof(Process));
+    ProcessInit(p2);
+    
+    ProcessStart(p2, "driverkitd", &fromEp, p1);
+    
+    Process *p3 = malloc(sizeof(Process));
+    ProcessInit( p3);
+    
+    ProcessStart(p3, "shell", &fromEp, p1);
+    
+    
+    
+    
+    Process *p4 = malloc(sizeof(Process));
+    ProcessInit(p4);
+    
+    ProcessStart(p4, "test", &fromEp, p3);
+    
+    
+    ProcessDump();
+    
+    printf("--> kill 4\n");
+    ProcessKill(p4);
+    ProcessCleanup(p4);
+    
+    ProcessDump();
+    
+    assert(ProcessGetByPID(4) == NULL);
     
     return 0;
 }

@@ -10,6 +10,7 @@
 		59F1019D22E9C36F00582980 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 59F1019C22E9C36F00582980 /* main.c */; };
 		59F101BB22E9C37900582980 /* KObject.c in Sources */ = {isa = PBXBuildFile; fileRef = 59F101B222E9C37900582980 /* KObject.c */; };
 		59F101D322E9C9E600582980 /* mocks.c in Sources */ = {isa = PBXBuildFile; fileRef = 59F101D222E9C9E600582980 /* mocks.c */; };
+		59F101D422E9CB9E00582980 /* Process.c in Sources */ = {isa = PBXBuildFile; fileRef = 59F101A322E9C37900582980 /* Process.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -282,6 +283,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				59F101BB22E9C37900582980 /* KObject.c in Sources */,
+				59F101D422E9CB9E00582980 /* Process.c in Sources */,
 				59F101D322E9C9E600582980 /* mocks.c in Sources */,
 				59F1019D22E9C36F00582980 /* main.c in Sources */,
 			);
@@ -405,7 +407,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				OTHER_CFLAGS = "-DKERNEL_TASK";
+				HEADER_SEARCH_PATHS = $PROJECT_DIR/../projects/kernel_task/src/;
+				OTHER_CFLAGS = (
+					"-DKERNEL_TASK",
+					"-DTEST_ONLY",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYSTEM_HEADER_SEARCH_PATHS = (
 					$PROJECT_DIR/stubs/,
@@ -418,7 +424,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				OTHER_CFLAGS = "-DKERNEL_TASK";
+				HEADER_SEARCH_PATHS = $PROJECT_DIR/../projects/kernel_task/src/;
+				OTHER_CFLAGS = (
+					"-DKERNEL_TASK",
+					"-DTEST_ONLY",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYSTEM_HEADER_SEARCH_PATHS = (
 					$PROJECT_DIR/stubs/,

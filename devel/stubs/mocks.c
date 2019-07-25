@@ -21,7 +21,8 @@ int RemoveProcessAsClient( Process* fromProcess)
     return 0;
 }
 
-void assert(int i)
+void TimerCancelID(uint32_t id)
 {
     
 }
+

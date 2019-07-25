@@ -72,7 +72,10 @@ static int ProcessAdd(Process* process)
 
 static int ProcessRemove(Process* process)
 {
+    KSetRemove((KSet*) ProcessGetParent(process) ,(KObject*) process);
+    
     HASH_DEL(_procList, process);
+
     return 0;
     
 }
@@ -80,6 +83,7 @@ static int ProcessRemove(Process* process)
 
 int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp , Process *parent)
 {
+    assert(process != parent);
     assert(strlen(procName) < MAX_PROCESS_NAME);
     
     assert(fromEp->cptr != 0);
@@ -91,7 +95,10 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     process->pid = pidCounter++;
     printf("[kernel_task] configure '%s' process -> pid %i\n" , procName , process->pid);
     assert(process->pid> 0);
-    //process->parent = parent;
+    process->base.obj.k_name = strdup(procName);
+
+#ifndef TEST_ONLY
+    
     sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, seL4_MaxPrio);
     
     error = sel4utils_configure_process_custom( &process->native , getVka() , getVspace(), config);
@@ -100,10 +107,8 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         printf("Error sel4utils_configure_process_custom %i\n" , error);
         return error;
     }
+
     
-    //strcpy(process->name , procName);
-    
-    process->base.obj.k_name = strdup(procName);
     /* END-fucking-POINTS Are HERE*/
     
     /* create a FAULT endpoint */
@@ -222,7 +227,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     assert(process->vaddr != 0);
     /*END Shared mem*/
 
-    
+#endif
     if( process->pid != 1) //
     {
         assert(parent);
@@ -245,8 +250,9 @@ static int ProcessSignalTerminaison( Process* process , Process* parent)
     if( parent->replyState == ReplyState_Wait)
     {
         printf("Parent %i %s is waiting for its child\n", parent->pid , ProcessGetName( parent));
-        
+
         assert(parent->reply);
+#ifndef TEST_ONLY
         seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
         seL4_SetMR(0, SysCall_Wait);
         seL4_SetMR(1, process->pid);
@@ -256,7 +262,9 @@ static int ProcessSignalTerminaison( Process* process , Process* parent)
         
         
         cnode_delete(getVka(),parent->reply);
+#endif
         parent->reply = 0;
+
         parent->replyState = ReplyState_None;
         
         return 0;
@@ -296,12 +304,12 @@ int ProcessKill( Process* process)
 
     KObject* el = NULL;
     KObject*tmp = NULL;
-    //KSetForeach( (KSet*)process, el)
-    DL_FOREACH_SAFE((KSet*)process,el,tmp)
+
+    KSetForeachSafe((KSet*)process,el,tmp)
     {
         Process* proc = (Process*) el;
         
-        KSetAppend( (KSet*)initProcess , proc);
+        KSetAppend( (KSet*)initProcess ,(KObject*) proc);
         //proc->parent = initProcess;
     }
 
@@ -309,14 +317,17 @@ int ProcessKill( Process* process)
     
     NameServerRemoveAllFromProcess(process);
     RemoveProcessAsClient(process);
-    
+#ifndef TEST_ONLY
     sel4utils_destroy_process(&process->native, getVka() );
+#endif
     
     if( ret == 0)
     {
         if( process->reply)
         {
+#ifndef TEST_ONLY
             cnode_delete(getVka(),process->reply);
+#endif
             process->reply = 0;
         }
         
@@ -338,13 +349,12 @@ void ProcessDump()
 
     HASH_ITER(hh, _procList, proc, temp)
     {
-        printf("%i '%s' status %i Parent %i TimerID %x reply %p replyState %i #syscalls %ld started at %li\n" ,
+        printf("%i '%s' status %i Parent %i (%li child)  replyState %i #syscalls %ld started at %li\n" ,
                proc->pid,
                ProcessGetName(proc) ,
                proc->status,
                ProcessGetParent(proc)?ProcessGetParent(proc)->pid:0 ,
-               proc->timerID,
-               (void*)proc->reply,
+               ProcessGetChildrenCount(proc),
                proc->replyState,
                proc->stats.numSysCalls,
                proc->stats.startedTime

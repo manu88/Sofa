@@ -196,6 +196,7 @@ size_t  KSetCount(const KSet* set) NO_NULL_POINTERS;
 KObject* KSetGetChildByName( const KSet* set , const char* name ) NO_NULL_POINTERS;
 
 #define KSetForeach( set, el) DL_FOREACH(((set)->_listHead), el)
+#define KSetForeachSafe( set, el ,tmp) DL_FOREACH_SAFE(((set)->_listHead), el, tmp)
 
 
 
