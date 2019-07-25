@@ -53,3 +53,16 @@ A Virtual File System server.
 
 ## Driver model
 DriverKit is an 'object oriented' drivers framework that allows the creation of userland drivers. These drivers are automatically started when a matching device is detected by the system. 'Platform expert' (eg. PCI) drivers can also be embedded inside DriverKitD.
+
+
+## build
+Fist call the update.sh script to fetch all the required components (seL4 kernel, libs, etc.)
+
+```
+sh update.sh
+mkdir build
+cd build
+../init.sh -DSIMULATION=ON
+ninja
+./simulate
+```
