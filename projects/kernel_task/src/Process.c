@@ -104,7 +104,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
 
 #ifndef TEST_ONLY
     
-    sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, seL4_MaxPrio);
+    sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, 100/*seL4_MaxPrio*/);
     
     error = sel4utils_configure_process_custom( &process->native , getVka() , getVspace(), config);
     if( error != 0)
@@ -280,12 +280,25 @@ static int ProcessSignalTerminaison( Process* process , Process* parent)
 
 Process* ProcessGetFirstChild(Process* fromProcess)
 {
-    
     KObject* el = NULL;
     KSetForeach((KSet*) fromProcess, el)
     {
         Process* p = (Process*) el;
         return p;
+    }
+    return NULL;
+}
+
+Process* ProcessGetFirstChildZombie(Process* fromProcess)
+{
+    KObject* el = NULL;
+    KSetForeach((KSet*) fromProcess, el)
+    {
+        Process* p = (Process*) el;
+        if( p->status == ProcessState_Zombie)
+        {
+            return p;
+        }
     }
     return NULL;
 }

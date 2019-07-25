@@ -293,10 +293,11 @@ static void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     }
     
     // does the process has any zombie children?
-    Process* chld =  ProcessGetFirstChild(sender);
+    Process* chld =  ProcessGetFirstChildZombie(sender);
     
-    if( chld && chld->status == ProcessState_Zombie)
+    if( chld )//&& chld->status == ProcessState_Zombie)
     {
+        assert(chld->status == ProcessState_Zombie);
         printf("[kernel_task]  got a zombie child %i\n" , chld->pid);
         seL4_SetMR(0, SysCall_Wait);
         seL4_SetMR(1, chld->pid);

@@ -67,6 +67,9 @@ typedef struct _Process
     // global process list
     UT_hash_handle hh; /* makes this structure hashable */
     
+    UT_hash_handle serversList; /* When the process is a server */
+    //UT_hash_handle clientsList; /* When the process is a client */
+    
 } Process;
 
 static inline const char* ProcessGetName( const Process* p)
@@ -87,6 +90,7 @@ size_t ProcessListGetCount(void);
 size_t ProcessGetChildrenCount(Process* process);
 
 Process* ProcessGetFirstChild(Process* fromProcess);
+Process* ProcessGetFirstChildZombie(Process* fromProcess);
 
 int ProcessKill( Process* process);
 

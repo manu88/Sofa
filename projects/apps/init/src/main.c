@@ -35,13 +35,19 @@ int main( int argc , char* argv[])
     print("spawn driverkitd pid %i\n"  , pidDriverKit);
     
     
-    
 
 	pidShell = spawn("shell",0 , NULL);
 
 	print("spawn shell pid %i\n"  , pidShell);
 
-
+    
+    
+    sleepS(2);
+    for(int i=0;i<10;i++)
+    {
+        spawn("test",0 , NULL);
+    }
+    
 	while(1)
 	{
         int wstatus = 0;
