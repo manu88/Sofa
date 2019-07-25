@@ -1,0 +1,25 @@
+/*
+ * Copyright 2019, Data61
+ * Commonwealth Scientific and Industrial Research Organisation (CSIRO)
+ * ABN 41 687 119 230.
+ *
+ * This software may be distributed and modified according to the terms of
+ * the BSD 2-Clause license. Note that NO WARRANTY is provided.
+ * See "LICENSE_BSD2.txt" for details.
+ *
+ * @TAG(DATA61_BSD)
+ */
+.syntax unified
+
+.section .text
+.global _start
+_start:
+	mov fp, 0
+	mov lr, 0
+
+	mov a1, sp
+	bl __sel4_start_c
+
+	/* should not return */
+1:
+	b 1b
