@@ -66,3 +66,7 @@ cd build
 ninja
 ./simulate
 ```
+
+
+## Devel & Unit tests
+Devel folder contains a XCode project for kernel_task and libSysCall. Its goal is to validate common code (ie. not seL4 related) and to write a serie of Unit Tests [In Progress].

@@ -36,11 +36,17 @@ int ProcessListInit()
     return 0;
 }
 
+static void ProcRelease(KObject *p)
+{
+    free(p);
+}
+
 void ProcessInit(Process*p)
 {
     memset(p , 0 , sizeof(Process));
     
     KSetInit(&p->base);
+    p->base.obj.methods.release = ProcRelease;
     assert(p->reply == 0);
     assert(p->replyState  == ReplyState_None);
 }
@@ -59,7 +65,7 @@ size_t ProcessGetChildrenCount(Process* process)
     return KSetCount( (const KSet*) process);
 }
 
-static int ProcessAdd(Process* process)
+static int ProcessListAdd(Process* process)
 {
     if( process->pid == 1) // we stach the init process
     {
@@ -67,15 +73,14 @@ static int ProcessAdd(Process* process)
     }
     
     HASH_ADD_INT( _procList, pid, process );
+    KObjectGet((KObject *)process);
     return 0;
 }
 
-static int ProcessRemove(Process* process)
+static int ProcessListRemove(Process* process)
 {
-    KSetRemove((KSet*) ProcessGetParent(process) ,(KObject*) process);
-    
     HASH_DEL(_procList, process);
-
+    KObjectPut((KObject *)process);
     return 0;
     
 }
@@ -234,7 +239,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         int ret = KSetAppend( (KSet*) parent , (KObject*) process);
         assert(ret == 0);
     }
-    int r = ProcessAdd(process);
+    int r = ProcessListAdd(process);
     
     assert(r==0);
     return r;
@@ -285,11 +290,15 @@ Process* ProcessGetFirstChild(Process* fromProcess)
     return NULL;
 }
 
+
+
 int ProcessCleanup( Process* process)
 {
-    int error = ProcessRemove(process);
+    KSetRemove((KSet*) ProcessGetParent(process) ,(KObject*) process);
     
-    free(process);
+    int error = ProcessListRemove(process);
+    
+    
     return error;
 }
 int ProcessKill( Process* process)

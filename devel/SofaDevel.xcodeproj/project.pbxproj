@@ -112,20 +112,20 @@
 			isa = PBXGroup;
 			children = (
 				59F101A122E9C37900582980 /* Utils.h */,
+				59F101A922E9C37900582980 /* Utils.c */,
+				59F101A822E9C37900582980 /* Timer.h */,
 				59F101A222E9C37900582980 /* Timer.c */,
-				59F101A322E9C37900582980 /* Process.c */,
 				59F101A422E9C37900582980 /* Sofa.h */,
-				59F101A522E9C37900582980 /* ProcessSysCall.c */,
+				59F101B322E9C37900582980 /* NameServer.h */,
 				59F101A622E9C37900582980 /* NameServer.c */,
 				59F101A722E9C37900582980 /* Bootstrap.h */,
-				59F101A822E9C37900582980 /* Timer.h */,
-				59F101A922E9C37900582980 /* Utils.c */,
+				59F101AD22E9C37900582980 /* Bootstrap.c */,
 				59F101AA22E9C37900582980 /* main.c */,
 				59F101AB22E9C37900582980 /* Process.h */,
+				59F101A322E9C37900582980 /* Process.c */,
 				59F101AC22E9C37900582980 /* ProcessSysCall.h */,
-				59F101AD22E9C37900582980 /* Bootstrap.c */,
+				59F101A522E9C37900582980 /* ProcessSysCall.c */,
 				59F101AE22E9C37900582980 /* KObject */,
-				59F101B322E9C37900582980 /* NameServer.h */,
 			);
 			path = src;
 			sourceTree = "<group>";

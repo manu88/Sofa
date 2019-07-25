@@ -35,7 +35,6 @@ typedef enum
     ProcessState_Stopped,
     ProcessState_Run,
     ProcessState_Zombie,
-//    ReplyState_Wait,
 } ProcessState;
 
 typedef struct
@@ -61,15 +60,9 @@ typedef struct _Process
     seL4_CPtr reply; // slot for async replies
     ReplyState replyState;
     
-//    struct _Process *parent;
-
     Stats stats;
     
-    
     int retCode;
-    
-    // global process list
-    struct _Process *prev,*next;
     
     // global process list
     UT_hash_handle hh; /* makes this structure hashable */

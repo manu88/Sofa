@@ -19,6 +19,9 @@
 #include <stdlib.h>
 #include <Process.h>
 
+
+
+
 int main(int argc, const char * argv[])
 {
     ProcessListInit();
@@ -29,27 +32,28 @@ int main(int argc, const char * argv[])
     vka_object_t fromEp;
     fromEp.cptr = 1;
     ProcessStart(p1, "init", &fromEp, NULL);
-    
+    KObjectPut((KObject *)p1);
     
     
     Process *p2 = malloc(sizeof(Process));
     ProcessInit(p2);
     
     ProcessStart(p2, "driverkitd", &fromEp, p1);
-    
+    KObjectPut((KObject *)p2);
     Process *p3 = malloc(sizeof(Process));
     ProcessInit( p3);
     
     ProcessStart(p3, "shell", &fromEp, p1);
-    
+    KObjectPut((KObject *)p3);
     
     
     
     Process *p4 = malloc(sizeof(Process));
     ProcessInit(p4);
+
     
     ProcessStart(p4, "test", &fromEp, p3);
-    
+    KObjectPut((KObject *)p4);
     
     ProcessDump();
     
@@ -60,6 +64,6 @@ int main(int argc, const char * argv[])
     ProcessDump();
     
     assert(ProcessGetByPID(4) == NULL);
-    
+        
     return 0;
 }
