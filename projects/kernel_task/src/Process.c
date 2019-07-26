@@ -528,6 +528,9 @@ int ProcessKill( Process* process , SofaSignal signal)
     assert(initProcess);
     int error = -1;
     
+    if( process->status == ProcessState_Zombie)
+        return error;
+    
     process->retSignal = signal;
     
     TimerCancelID(process->timerID); // cancel any pending timer
