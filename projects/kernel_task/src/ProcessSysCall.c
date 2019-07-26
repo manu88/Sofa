@@ -34,7 +34,7 @@ static void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word send
 
 static void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 static void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-
+static void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 #define Reply(i) seL4_Reply(i)
 /*
 static inline void Reply(seL4_MessageInfo_t info)
@@ -79,6 +79,9 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
             processKill(sender,info , sender_badge);
             break;
             
+        case SysCall_CapOp:
+            processCapOp(sender,info , sender_badge);
+            break;
         case SysCall_Sleep:
             processSleep(sender,info , sender_badge);
             break;
@@ -475,4 +478,28 @@ static void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
     sender->replyState = ReplyState_Sleep;
     err = tm_register_rel_cb( getTM() , ns , sender->timerID , OnTime ,(uintptr_t) sender);
 
+}
+
+static void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+{
+    CapOperation capOP = seL4_GetMR(1);
+    
+    SofaCapabilities caps = seL4_GetMR(2);
+    switch (capOP)
+    {
+        case CapOperation_Drop:
+            printf("[kernel_task] Drop cap request %i\n" , caps);
+            
+            seL4_SetMR(1, -1 );
+            Reply( info );
+            break;
+        
+            case CapOperation_Acquire:
+            printf("[kernel_task] Acquire cap request %i\n" , caps);
+            seL4_SetMR(1, -1 );
+            Reply( info );
+            break;
+        default:
+            break;
+    }
 }

@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 #include <SysCalls.h>
-
+#include <SysCaps.h>
 
 static int execCmd( const char* cmd);
 
@@ -193,6 +193,30 @@ static int execCmd( const char* cmd)
     else if( strcmp("servers" , cmd) == 0)
     {
         listServers();
+    }
+    else if( startsWith("setcap ", cmd))
+    {
+        const char* arg = cmd + strlen("setcap ");
+        
+        int cap = 0;
+        
+        if( sscanf(arg , "%i" , &cap ) == 1)
+        {
+            
+            return CapAcquire(cap);
+        }
+    }
+    else if( startsWith("dropcap ", cmd))
+    {
+        const char* arg = cmd + strlen("dropcap ");
+        
+        int cap = 0;
+        
+        if( sscanf(arg , "%i" , &cap ) == 1)
+        {
+            CapDrop(cap);
+            return 0;
+        }
     }
     else if( strcmp("fault" , cmd) == 0)
     {

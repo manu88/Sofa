@@ -20,10 +20,14 @@
 
 #include <sel4utils/process.h>
 #include <SysCalls.h>
+#include <SysCaps.h>
 #include "KObject/KObject.h"
 #include "KObject/uthash.h"
 
-
+typedef struct
+{
+    SofaCapabilities caps;
+} Capabilities;
 
 typedef enum
 {
@@ -54,6 +58,8 @@ typedef struct _Process
 	uint32_t pid;
     
     ProcessState status;
+    
+    Capabilities caps;
 	
     ThreadEnvir* bufEnv; // This is shared with the process and defined in libSysCall
     void *vaddr; // This is the shared addr of env

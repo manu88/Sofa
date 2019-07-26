@@ -16,6 +16,7 @@
  */
 
 #include "SysCalls.h"
+#include "SysCaps.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -333,3 +334,35 @@ long sel4_vsyscall(long sysnum, ...)
 /* Put a pointer to sel4_vsyscall in a special section so anyone loading us
  * knows how to configure our syscall table */
 //uintptr_t VISIBLE SECTION("__vsyscall") __vsyscall_ptr = (uintptr_t) sel4_vsyscall;
+
+
+
+/* **** **** **** **** **** **** **** */
+/* Sys caps*/
+
+
+static seL4_Word doCapSysCall(CapOperation capOP , seL4_Word data1)
+{
+    assert(env);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    
+    seL4_SetMR(0 , SysCall_CapOp);
+    seL4_SetMR(1 , capOP);
+    seL4_SetMR(2 , data1);
+    
+    seL4_Call(endpoint, info);
+    
+    assert(seL4_GetMR(0) == SysCall_CapOp);
+    
+    return seL4_GetMR(2);
+}
+
+void CapDrop( SofaCapabilities cap)
+{
+    doCapSysCall(CapOperation_Drop , cap);
+}
+
+int  CapAcquire( SofaCapabilities cap)
+{
+    doCapSysCall(CapOperation_Acquire , cap);
+}

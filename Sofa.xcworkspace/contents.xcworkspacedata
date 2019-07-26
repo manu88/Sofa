@@ -143,6 +143,9 @@
          location = "group:include"
          name = "include">
          <FileRef
+            location = "group:SysCaps.h">
+         </FileRef>
+         <FileRef
             location = "group:SysCalls.h">
          </FileRef>
       </Group>

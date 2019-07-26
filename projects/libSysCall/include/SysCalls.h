@@ -24,8 +24,10 @@ typedef enum
     SofaSignal_None = 0,  // no signal
     SofaSignal_Kill = 1,  // eq. to SIGKILL
     SofaSignal_VMFault,   // eq. to SIGSEGV
+    
 } SofaSignal;
 
+/* ---- Should be private ---- */
 typedef enum
 {
     SysCall_BootStrap = 1, // 1st msg sent to a process by kernel_task so it can retreive its environment.
@@ -42,10 +44,13 @@ typedef enum
     SysCall_SetPriority,
     SysCall_GetPriority,
     
+    SysCall_CapOp,
+    
     SysCall_RegisterServer,
     SysCall_RegisterClient,
 } SysCallID;
 
+/* ---- Should be private ---- */
 typedef enum
 {
     SysCall_Debug_PS =1,
@@ -53,6 +58,7 @@ typedef enum
     SysCall_Debug_ListServers,
 }SysCall_Debug_ID;
 
+/* ---- Should be private ---- */
 typedef enum
 {
     SleepUnit_NS,
@@ -60,6 +66,14 @@ typedef enum
     SleepUnit_S,
     
 } SleepUnit;
+
+/* ---- Should be private ---- */
+typedef enum
+{
+    CapOperation_Drop,
+    CapOperation_Acquire,
+    
+} CapOperation;
 
 #ifdef TEST_ONLY
 // this value is not relevant for Tests.
