@@ -20,6 +20,7 @@ target_link_libraries(kernel_task
 	sel4_autoconf
 	sel4runtime
 	muslc
+#	sel4vka
 	sel4muslcsys
 	sel4allocman
 	cpio

@@ -17,6 +17,8 @@
 
 #pragma once
 #include <sel4/sel4.h>
+#include <stdint.h>
+
 typedef enum
 {
     SysCall_BootStrap = 1, // 1st msg sent to a process by kernel_task so it can retreive its environment.
@@ -52,6 +54,101 @@ typedef enum
     
 } SleepUnit;
 
+#ifdef TEST_ONLY
+// this value is not relevant for Tests.
+#define CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS 10
+#endif
+
+/*
+ * Data structure representing a process' environment
+ * information. This information includes mostly useful
+ * capabilities to resources that are used by
+ * sel4osapi/applications.
+ *
+ * The capabilities are always relative to the root
+ * cnode of the process.
+ */
+typedef struct sel4osapi_process_env {
+    /*
+     * Name of the process.
+     */
+    //char name[SEL4OSAPI_USER_PROCESS_NAME_MAX_LEN];
+    /*
+     * Process id.
+     */
+    //unsigned int pid;
+    /*
+     * Page directory used by the process' VSpace
+     */
+    seL4_CPtr page_directory;
+    /*
+     * Root cnode of the process' CSpace.
+     */
+    seL4_CPtr root_cnode;
+    /*
+     * Size, in bits, of the process' CSpace
+     */
+    seL4_Word cspace_size_bits;
+    /*
+     * TCB of the process' initial thread.
+     */
+    seL4_CPtr tcb;
+    /*
+     * Range of free capabilities in the
+     * process' CSpace.
+     */
+    seL4_SlotRegion free_slots;
+    /*
+     * Range of capabilities to untyped
+     * objects assigned to the process.
+     */
+    seL4_SlotRegion untypeds;
+    /*
+     * Array of indices of the untyped objects
+     * that the root task assigned to the process.
+     */
+    uint8_t untyped_indices[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
+    /*
+     * Size, in bits, of each untyped object
+     * assigned to the process.
+     */
+    uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
+    /*
+     * Endpoint used as fault endpoint by the
+     * process' initial thread.
+     */
+    seL4_CPtr fault_endpoint;
+    /*
+     * Endpoint to the sysclock instance.
+     */
+    seL4_CPtr sysclock_server_ep;
+    /*
+     * Async Endpoint used to block the process'
+     * threads in idling mode.
+     */
+    seL4_CPtr idling_aep;
+    
+    /*
+     * Threads created by this process
+     */
+    //simple_pool_t *threads;
+    
+    /*
+     * Priority of the process.
+     */
+    //uint8_t priority;
+    
+    //sel4osapi_ipcclient_t ipcclient;
+    
+#ifdef CONFIG_LIB_OSAPI_NET
+    //sel4osapi_udp_interface_t udp_iface;
+#endif
+    
+#ifdef CONFIG_LIB_OSAPI_SERIAL
+    //sel4osapi_serialclient_t serial;
+#endif
+    
+} sel4osapi_process_env_t;
 
 #define IPC_BUF_SIZE 256
 typedef struct

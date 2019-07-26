@@ -19,3 +19,12 @@
 
 
 #define SOFA_DEFAULT_PRIORITY 100
+
+/*
+ * Amount of untyped memory to reserve for a user process
+ *
+ * Default: 64MB
+ *
+ */
+#define CONFIG_LIB_OSAPI_USER_UNTYPED_MEM_SIZE 67108864
+#define SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE CONFIG_LIB_OSAPI_USER_UNTYPED_MEM_SIZE

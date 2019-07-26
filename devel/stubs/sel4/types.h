@@ -14,6 +14,11 @@ typedef long seL4_Word;
 
 typedef int cspacepath_t;
 
+typedef struct
+{
+    seL4_CPtr start;
+    seL4_CPtr end;
+} seL4_SlotRegion;
 typedef struct{} seL4_MessageInfo_t;
 
 

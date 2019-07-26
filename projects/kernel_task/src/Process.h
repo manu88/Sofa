@@ -48,11 +48,12 @@ typedef struct _Process
 {
     KSet base;
 	sel4utils_process_t native;
+    sel4osapi_process_env_t *env;
 	uint32_t pid;
     
     ProcessState status;
 	
-    ThreadEnvir* env; // This is shared with the process and defined in libSysCall
+    ThreadEnvir* bufEnv; // This is shared with the process and defined in libSysCall
     void *vaddr; // This is the shared addr of env
 
     uint32_t timerID; // > 0 if allocated. Used to sleep

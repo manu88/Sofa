@@ -142,9 +142,9 @@ static int OnTime(uintptr_t token)
 
 static void lateInit()
 {
-    printf("######################\n");
-    printf("#     Sofa OS        #\n");
-    printf("######################\n");
+    printf("##########################################\n");
+    printf("#                 Sofa OS                #\n");
+    printf("##########################################\n");
     lsCPIO();
     
     int ret = ProcessListInit();
@@ -204,30 +204,31 @@ static void run()
         else
         {
             Process* sender = ProcessGetByPID(sender_badge);
-            assert(sender);
+            
             if( label == seL4_NoFault)
             {
+                assert(sender);
                 processSysCall(sender,message , sender_badge);
             }
             else if( label == seL4_CapFault)
             {
-                printf("seL4_CapFault\n");
+                printf("[kernel_task] seL4_CapFault from %i %s\n" , sender->pid,  ProcessGetName(sender));
             }
             else if (label == seL4_VMFault)
             {
-                printf("seL4_VMFault\n");
+                printf("[kernel_task] seL4_VMFault from %i %s\n" , sender->pid,  ProcessGetName(sender));
             }
             else if(label == seL4_UnknownSyscall)
             {
-                printf("seL4_UnknownSyscall\n");
+                printf("[kernel_task] seL4_UnknownSyscall from %i %s\n" , sender->pid,  ProcessGetName(sender));
             }
             else if(label == seL4_UserException)
             {
-                printf("seL4_UserException\n");
+                printf("[kernel_task] seL4_UserException from %i %s\n" , sender->pid,  ProcessGetName(sender));
             }
             else
             {
-                printf("Other msg label %lx\n" , label);
+                printf("[kernel_task] Other msg label %lx\n" , label);
             }
         }
         

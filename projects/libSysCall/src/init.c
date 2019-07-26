@@ -46,6 +46,8 @@ int InitClient(const char* EPString )
     assert(seL4_GetMR(0) == SysCall_BootStrap);
     env = (ThreadEnvir*)seL4_GetMR(1);
 
+    
+    
 	return 0;
 }
 
@@ -313,4 +315,14 @@ int ServerRecv(ServerEnvir* server)
 }
 
 
+/*
+long sel4_vsyscall(long sysnum, ...)
+{
+    assert(0);
+    return 0;
+}
+*/
 
+/* Put a pointer to sel4_vsyscall in a special section so anyone loading us
+ * knows how to configure our syscall table */
+//uintptr_t VISIBLE SECTION("__vsyscall") __vsyscall_ptr = (uintptr_t) sel4_vsyscall;

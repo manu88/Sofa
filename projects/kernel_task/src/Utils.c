@@ -61,3 +61,21 @@ int cnode_delete( vka_t *vka,seL4_CPtr slot)
     vka_cspace_make_path(vka, slot, &path);
     return vka_cnode_delete(&path);
 }
+
+
+
+unsigned int
+sel4osapi_util_allocate_untypeds(
+                                 vka_t *vka, vka_object_t *untypeds, size_t bytes, unsigned int max_untypeds)
+{
+    unsigned int num_untypeds = 0;
+    size_t allocated = 0;
+    uint8_t size_bits =  23;
+    while (num_untypeds < max_untypeds &&
+           allocated + BIT(size_bits) <= bytes &&
+           vka_alloc_untyped(vka, size_bits, &untypeds[num_untypeds]) == 0) {
+        allocated += BIT(size_bits);
+        num_untypeds++;
+    }
+    return num_untypeds;
+}

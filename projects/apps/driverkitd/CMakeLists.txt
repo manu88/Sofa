@@ -8,7 +8,7 @@ add_executable(driverkitd src/main.c)
 
 
 
-target_link_libraries(driverkitd sel4_autoconf muslc sel4  sel4rt libSysCall )
+target_link_libraries(driverkitd sel4_autoconf muslc sel4  sel4rt libSysCall libACPI )
 
 set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE:driverkitd>")
 

@@ -57,11 +57,12 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
             seL4_SetMR(0, SysCall_BootStrap);
             seL4_SetMR(1, (seL4_Word) sender->vaddr);
             
+            seL4_DebugDumpScheduler();
             Reply( info);
         }
         case SysCall_Write:
         {
-            printf("[%s] %s" ,ProcessGetName(sender), sender->env->buf);
+            printf("[%s] %s" ,ProcessGetName(sender), sender->bufEnv->buf);
             seL4_SetMR(1 , 0); // no err
             Reply( info);
             break;
@@ -108,8 +109,8 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
                 ps_cdev_putchar(&getKernelTaskContext()->comDev , c);
             }
             
-            sender->env->buf[0] = c;
-            sender->env->buf[1] = 0;
+            sender->bufEnv->buf[0] = c;
+            sender->bufEnv->buf[1] = 0;
             
             seL4_SetMR(0,SysCall_Read);
             seL4_SetMR(1, c >0? 1 : 0 );
@@ -240,7 +241,7 @@ static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word send
 }
 static void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
-    const char* serverName = sender->env->buf;
+    const char* serverName = sender->bufEnv->buf;
     
     int err = -1;
     
@@ -248,7 +249,7 @@ static void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4
     if( serverName)
     {
         int flags = (int)seL4_GetMR(1);
-        printf("[kernel_task] RegisterServer name '%s' with flags %i\n", sender->env->buf , flags );
+        printf("[kernel_task] RegisterServer name '%s' with flags %i\n", sender->bufEnv->buf , flags );
         
         Server *serv = NameServerRegister(sender,serverName , flags);
         if( serv)
@@ -267,9 +268,9 @@ static void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4
 
 static void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
-    const char* serverName = sender->env->buf;
+    const char* serverName = sender->bufEnv->buf;
     
-    printf("[kernel_task] RegisterClient to server '%s' from process '%s' %i \n", sender->env->buf , ProcessGetName(sender) , sender->pid );
+    printf("[kernel_task] RegisterClient to server '%s' from process '%s' %i \n", serverName , ProcessGetName(sender) , sender->pid );
     
     int err = -1;
     void* ptr = NULL;
@@ -302,7 +303,7 @@ static void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4
 
 static void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
-    printf("[kernel_task] spawn '%s'\n", sender->env->buf);
+    printf("[kernel_task] spawn '%s'\n", sender->bufEnv->buf);
     Process* newProc = malloc(sizeof(Process));
     
     int err = -1;
@@ -310,7 +311,7 @@ static void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
     if( newProc)
     {
         ProcessInit(newProc);
-        err = ProcessStart(newProc, sender->env->buf ,&getKernelTaskContext()->rootTaskEP , sender);
+        err = ProcessStart(newProc, sender->bufEnv->buf ,&getKernelTaskContext()->rootTaskEP , sender);
         
         if( err == 0)
         {
