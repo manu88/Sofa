@@ -113,23 +113,30 @@ int kill(int pid)
     return (int) seL4_GetMR(1);
 }
 
-long wait(int *wstatus)
+long wait(int *wstatus ,SofaSignal* sign)
 {
     if( wstatus == NULL)
+        return -1;
+    if( sign == NULL)
         return -1;
     
     assert(env);
     
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
     seL4_SetMR(0 , SysCall_Wait);
     // 2nd reg is for returned pid;
     // 3rd reg is for returned status;
-    
+    // 4th reg is for signal, -1 if invalid
     seL4_Call(endpoint, info);
     
     assert(seL4_GetMR(0) == SysCall_Wait);
     *wstatus = (int) seL4_GetMR(2);
     
+    int sigN = (int) seL4_GetMR(3);
+    if( sigN > -1 )
+    {
+        *sign = (SofaSignal) sigN;
+    }
     return (long) seL4_GetMR(1);
 }
 

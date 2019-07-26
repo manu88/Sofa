@@ -213,7 +213,8 @@ static void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word send
 {
     int retCode = seL4_GetMR(1);
     
-    sender->retCode = retCode;
+    sender->retCode  = retCode;
+    
     printf("[kernel_task] program exited with code %i \n" , retCode);
     
     ProcessKill(sender, SofaSignal_None);
@@ -342,6 +343,7 @@ static void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word send
         seL4_SetMR(0,SysCall_Wait);
         seL4_SetMR(1, -1 );
         seL4_SetMR(2, -1 );
+        seL4_SetMR(3, -1 );
         Reply( info );
         return;
     }
@@ -356,7 +358,7 @@ static void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word send
         seL4_SetMR(0, SysCall_Wait);
         seL4_SetMR(1, chld->pid);
         seL4_SetMR(2, chld->retCode);
-        
+        seL4_SetMR(3, chld->retSignal);
         ProcessCleanup(chld);
         Reply( info );
         

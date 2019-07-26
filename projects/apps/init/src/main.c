@@ -50,10 +50,11 @@ int main( int argc , char* argv[])
     */
 	while(1)
 	{
+        SofaSignal signal = 0;
         int wstatus = 0;
-        long retPID = wait(&wstatus);
+        long retPID = wait(&wstatus ,&signal);
         
-        print("PID %ld returned with status %i\n" , retPID  , wstatus);
+        print("PID %ld returned with status %i signal %i\n" , retPID  , wstatus , signal);
         
         if( retPID == pidShell)
         {

@@ -21,6 +21,13 @@
 
 typedef enum
 {
+    SofaSignal_None = 0,  // no signal
+    SofaSignal_Kill = 1,  // eq. to SIGKILL
+    SofaSignal_VMFault,   // eq. to SIGSEGV
+} SofaSignal;
+
+typedef enum
+{
     SysCall_BootStrap = 1, // 1st msg sent to a process by kernel_task so it can retreive its environment.
 	SysCall_Write,
     SysCall_Sleep,
@@ -192,7 +199,7 @@ int sleepS( unsigned long sec);
 int sleepMS( unsigned long ms);
 int kill(int pid);
 
-long wait(int *wstatus);
+long wait(int *wstatus ,SofaSignal* sign);
 
 long unsigned int getTime(void);
 

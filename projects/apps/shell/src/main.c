@@ -98,6 +98,26 @@ static int execCmd( const char* cmd)
         
         return spawn(arg ,0 , NULL);
     }
+    else if( startsWith("run " , cmd))
+    {
+        const char* arg = cmd + strlen("run ");
+        if( !arg || strlen(arg ) == 0)
+        {
+            return -1;
+        }
+        
+        int retPid = spawn(arg ,0 , NULL);
+        if( retPid <=  0)
+        {
+            return retPid;
+        }
+        
+        SofaSignal signal = 0;
+        int status = -1;
+        long pid = wait(&status ,&signal);
+        print("PID %li returned %i sig %i\n" , pid , status , signal);
+        return 0;
+    }
     else if( startsWith("kill ", cmd))
     {
         const char* arg = cmd + strlen("kill ");
@@ -112,9 +132,10 @@ static int execCmd( const char* cmd)
     }
     else if( strcmp("wait" , cmd) == 0)
     {
+        SofaSignal signal = 0;
         int status = -1;
-        long pid = wait(&status);
-        print("PID %li returned %i\n" , pid , status);
+        long pid = wait(&status ,&signal);
+        print("PID %li returned %i sig %i\n" , pid , status , signal);
         return 0;
     }
     else if( strcmp("time" , cmd) == 0)

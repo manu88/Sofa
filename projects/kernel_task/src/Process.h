@@ -24,12 +24,7 @@
 #include "KObject/uthash.h"
 
 
-typedef enum
-{
-    SofaSignal_None = 0,  // no signal
-    SofaSignal_Kill = 1,  // eq. to SIGKILL
-    SofaSignal_VMFault,   // eq. to SIGSEGV
-} SofaSignal;
+
 typedef enum
 {
     ReplyState_None,
@@ -73,6 +68,7 @@ typedef struct _Process
     uint8_t priority;
     
     int retCode;
+    SofaSignal retSignal;
     
     // global process list
     UT_hash_handle hh; /* makes this structure hashable */

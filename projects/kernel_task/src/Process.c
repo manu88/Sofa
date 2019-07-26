@@ -466,10 +466,11 @@ static int ProcessSignalTerminaison( Process* process , Process* parent)
 
         assert(parent->reply);
 #ifndef TEST_ONLY
-        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
+        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 4);
         seL4_SetMR(0, SysCall_Wait);
         seL4_SetMR(1, process->pid);
         seL4_SetMR(2, process->retCode);
+        seL4_SetMR(3, process->retSignal);
         
         seL4_Send(parent->reply , tag);
         
@@ -526,6 +527,8 @@ int ProcessKill( Process* process , SofaSignal signal)
 {
     assert(initProcess);
     int error = -1;
+    
+    process->retSignal = signal;
     
     TimerCancelID(process->timerID); // cancel any pending timer
     
