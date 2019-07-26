@@ -557,6 +557,8 @@ int ProcessKill( Process* process , SofaSignal signal)
     sel4utils_destroy_process(&process->native, getVka() );
 #endif
     
+    error = 0;
+    
     if( ret == 0)
     {
         if( process->reply)
@@ -571,7 +573,6 @@ int ProcessKill( Process* process , SofaSignal signal)
     }
     else
     {
-        error = 0;
         process->status = ProcessState_Zombie;
     }
     

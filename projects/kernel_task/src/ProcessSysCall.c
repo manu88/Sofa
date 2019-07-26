@@ -231,16 +231,19 @@ static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     printf("kill pid %i\n" , pidToKill);
     int err = -1;
     
-    if (ProcessHasCap(sender , SofaCap_Kill) )
+    if( pidToKill > 1) // can't kill init or kernel_task
     {
-        if( pidToKill > 1) // can't kill init or kernel_task
+        Process* procToKill = ProcessGetByPID(pidToKill);
+        
+        // do we have SofaCap_Kill to kill ALL processes, or is the process to kill a child of the sender
+        if (  (ProcessGetParent(procToKill) == sender ) || (ProcessHasCap(sender , SofaCap_Kill) ))
         {
-            Process* procToKill = ProcessGetByPID(pidToKill);
             if (procToKill)
             {
                 err = ProcessKill(procToKill ,SofaSignal_Kill);
             }
         }
+
     }
     seL4_SetMR(0 , SysCall_Kill);
     seL4_SetMR(1 ,err);
