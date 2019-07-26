@@ -117,3 +117,10 @@ int ProcessSetPriority( Process* process , int prio);
 int ProcessGetPriority( Process* process , int *prio);
 
 void ProcessDump(void);
+
+
+static inline int ProcessHasCap(Process* proc , SofaCapabilities cap)
+{
+    return (proc->caps.caps & cap) == cap;
+}
+void ProcessDumpCaps(Process *proc);

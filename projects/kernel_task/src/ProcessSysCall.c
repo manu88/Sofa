@@ -231,12 +231,15 @@ static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     printf("kill pid %i\n" , pidToKill);
     int err = -1;
     
-    if( pidToKill > 1) // can't kill init or kernel_task
+    if (ProcessHasCap(sender , SofaCap_Kill) )
     {
-        Process* procToKill = ProcessGetByPID(pidToKill);
-        if (procToKill)
+        if( pidToKill > 1) // can't kill init or kernel_task
         {
-            err = ProcessKill(procToKill ,SofaSignal_Kill);
+            Process* procToKill = ProcessGetByPID(pidToKill);
+            if (procToKill)
+            {
+                err = ProcessKill(procToKill ,SofaSignal_Kill);
+            }
         }
     }
     seL4_SetMR(0 , SysCall_Kill);
@@ -308,18 +311,21 @@ static void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4
 static void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     printf("[kernel_task] spawn '%s'\n", sender->bufEnv->buf);
-    Process* newProc = malloc(sizeof(Process));
     
     int err = -1;
     
-    if( newProc)
+    if (ProcessHasCap(sender , SofaCap_Spawn) )
     {
-        ProcessInit(newProc);
-        err = ProcessStart(newProc, sender->bufEnv->buf ,&getKernelTaskContext()->rootTaskEP , sender);
-        
-        if( err == 0)
+        Process* newProc = malloc(sizeof(Process));
+        if( newProc)
         {
-            err = newProc->pid;
+            ProcessInit(newProc);
+            err = ProcessStart(newProc, sender->bufEnv->buf ,&getKernelTaskContext()->rootTaskEP , sender);
+            
+            if( err == 0)
+            {
+                err = newProc->pid;
+            }
         }
     }
     
@@ -489,17 +495,22 @@ static void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
     {
         case CapOperation_Drop:
             printf("[kernel_task] Drop cap request %i\n" , caps);
-            
+            sender->caps.caps &= ~caps;
+            ProcessDumpCaps(sender);
             seL4_SetMR(1, -1 );
             Reply( info );
             break;
         
             case CapOperation_Acquire:
             printf("[kernel_task] Acquire cap request %i\n" , caps);
+            
+            sender->caps.caps |= caps;
+            ProcessDumpCaps(sender);
             seL4_SetMR(1, -1 );
             Reply( info );
             break;
         default:
+            assert(0);
             break;
     }
 }

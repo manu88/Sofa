@@ -158,6 +158,8 @@ static void lateInit()
     assert(getKernelTaskContext()->rootTaskEP.cptr != 0);
 
     ProcessInit(&initProcess);
+    // give init a few caps
+    initProcess.caps.caps = SofaCap_Spawn;
     
     if(ProcessStart(&initProcess , "init" ,&getKernelTaskContext()->rootTaskEP , NULL) != 0)
     {

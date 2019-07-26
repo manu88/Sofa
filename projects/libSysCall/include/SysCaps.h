@@ -19,13 +19,12 @@
 
 typedef enum
 {
-    SofaCap_None,  // The proc can't use system resources.
+    SofaCap_None         = 0,        // The proc can't use system resources.
     
-    SofaCap_Nice,  // can nice up itself
-    SofaCap_Kill,  // really kill ANY proc?
-    SofaCap_Spawn, // spawned procs can be killed, even is SofaCap_Kill is not present
-    
-    SofaCap_CreateServer,
+    SofaCap_Nice         = 1 << 0,  // can nice up itself
+    SofaCap_Kill         = 1 << 1,  // really kill ANY proc?
+    SofaCap_Spawn        = 1 << 2,  // spawned procs can be killed, even is SofaCap_Kill is not present
+    SofaCap_CreateServer = 1 << 3,
     
 
 } SofaCapabilities;
