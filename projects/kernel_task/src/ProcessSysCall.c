@@ -201,12 +201,18 @@ static void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Wo
     
     Process* proc = ProcessGetByPID(pid);
     
-    if( proc)
+    // has nice cap and proc is self or a children
+    if( ProcessHasCap(sender , SofaCap_Nice)
+       && ( proc == sender || ProcessGetParent(proc) == sender ))
     {
-        err = ProcessSetPriority(proc , newPrio);
+        
+        
+        if( proc)
+        {
+            err = ProcessSetPriority(proc , newPrio);
+        }
+    
     }
-    
-    
     seL4_SetMR(1 , err);
     
     Reply(info);

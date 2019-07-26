@@ -25,12 +25,8 @@
 
 int main( int argc , char* argv[])
 {
-
-
 	print("started has %i args\n" , argc);
 
-    
-    
     ClientEnvir* client =  ConnectToServer( "driverkit");
 
     if (client)
