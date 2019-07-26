@@ -216,7 +216,7 @@ static void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     sender->retCode = retCode;
     printf("[kernel_task] program exited with code %i \n" , retCode);
     
-    ProcessKill(sender);
+    ProcessKill(sender, SofaSignal_None);
     
     // nothing to return
 }
@@ -232,7 +232,7 @@ static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word send
         Process* procToKill = ProcessGetByPID(pidToKill);
         if (procToKill)
         {
-            err = ProcessKill(procToKill);
+            err = ProcessKill(procToKill ,SofaSignal_Kill);
         }
     }
     seL4_SetMR(0 , SysCall_Kill);

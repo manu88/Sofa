@@ -217,6 +217,7 @@ static void run()
             else if (label == seL4_VMFault)
             {
                 printf("[kernel_task] seL4_VMFault from %i %s\n" , sender->pid,  ProcessGetName(sender));
+                ProcessKill(sender , SofaSignal_VMFault);
             }
             else if(label == seL4_UnknownSyscall)
             {

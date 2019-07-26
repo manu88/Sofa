@@ -23,6 +23,13 @@
 #include "KObject/KObject.h"
 #include "KObject/uthash.h"
 
+
+typedef enum
+{
+    SofaSignal_None = 0,  // no signal
+    SofaSignal_Kill = 1,  // eq. to SIGKILL
+    SofaSignal_VMFault,   // eq. to SIGSEGV
+} SofaSignal;
 typedef enum
 {
     ReplyState_None,
@@ -95,7 +102,8 @@ size_t ProcessGetChildrenCount(Process* process);
 Process* ProcessGetFirstChild(Process* fromProcess);
 Process* ProcessGetFirstChildZombie(Process* fromProcess);
 
-int ProcessKill( Process* process);
+// signal can be 0
+int ProcessKill( Process* process , SofaSignal signal);
 
 int ProcessCleanup( Process* process);
 Process* ProcessGetByPID( uint32_t pid);

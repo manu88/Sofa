@@ -522,7 +522,7 @@ int ProcessCleanup( Process* process)
     
     return error;
 }
-int ProcessKill( Process* process)
+int ProcessKill( Process* process , SofaSignal signal)
 {
     assert(initProcess);
     int error = -1;
