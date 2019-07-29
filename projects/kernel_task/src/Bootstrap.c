@@ -26,15 +26,15 @@
 #include "system.h"
 #include "Utils.h"
 
-#define ALLOCATOR_STATIC_POOL_SIZE (BIT(seL4_PageBits) * 20)
-UNUSED static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
+//#define ALLOCATOR_STATIC_POOL_SIZE (BIT(seL4_PageBits) * 20)
+//UNUSED static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
 
 /* dimensions of virtual memory for the allocator to use */
-#define ALLOCATOR_VIRTUAL_POOL_SIZE (BIT(seL4_PageBits) * 100)
+//#define ALLOCATOR_VIRTUAL_POOL_SIZE (BIT(seL4_PageBits) * 100)
 
 
 /* static memory for virtual memory bootstrapping */
-UNUSED static sel4utils_alloc_data_t data;
+//UNUSED static sel4utils_alloc_data_t data;
 
 static uint8_t _bootstrap_mem_pool[SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE];
 
@@ -54,7 +54,6 @@ struct  _KernelTaskContext
     
     
 };
-
 
 static struct  _KernelTaskContext _ctx = {0};
 
