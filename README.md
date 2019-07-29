@@ -73,4 +73,8 @@ ninja
 Devel folder contains a XCode project for kernel_task and libSysCall. Its goal is to validate common code (ie. not seL4 related) and to write a serie of Unit Tests [In Progress].
 
 ## Some links
-https://github.com/rticommunity/libsel4osapi
+
+* [Advanced Operating Systems COMP9242 2018/S2 Course](http://www.cse.unsw.edu.au/~cs9242/)
+* [SeL4 API Reference](https://docs.sel4.systems/ApiDoc.html)
+* [Todo list](ToDo.md)
+* [libsel4osapi](https://github.com/rticommunity/libsel4osapi)
