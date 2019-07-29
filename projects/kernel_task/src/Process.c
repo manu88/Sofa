@@ -612,19 +612,19 @@ void ProcessDumpCaps(Process *proc)
     }
     else
     {
-        if (ProcessHasCap(proc , SofaCap_Nice))// (proc->caps.caps & SofaCap_Nice) == SofaCap_Nice)
+        if (ProcessHasCap(proc , SofaCap_Nice))
         {
             printf("CapNice\n");
         }
-        if (ProcessHasCap(proc , SofaCap_Kill))//((proc->caps.caps & SofaCap_Kill) == SofaCap_Kill)
+        if (ProcessHasCap(proc , SofaCap_Kill))
         {
             printf("CapKill\n");
         }
-        if (ProcessHasCap(proc , SofaCap_Spawn))//if ((proc->caps.caps & SofaCap_Spawn) == SofaCap_Spawn)
+        if (ProcessHasCap(proc , SofaCap_Spawn))
         {
             printf("CapSpawn\n");
         }
-        if (ProcessHasCap(proc , SofaCap_CreateServer))//if ((proc->caps.caps & SofaCap_CreateServer) == SofaCap_CreateServer)
+        if (ProcessHasCap(proc , SofaCap_CreateServer))
         {
             printf("CapCreateServer\n");
         }

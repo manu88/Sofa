@@ -19,4 +19,8 @@
 
 #include "Process.h"
 
+// The Syscall handler signature.
+typedef void (*SysCallHandler)(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
+
+
 void processSysCall(Process *sender, seL4_MessageInfo_t info , seL4_Word sender_badge);

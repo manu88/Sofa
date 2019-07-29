@@ -26,6 +26,8 @@
 
 
 #define PROCESS_DEFAULT_CAPS SofaCap_Spawn
+
+
 typedef struct
 {
     SofaCapabilities caps;

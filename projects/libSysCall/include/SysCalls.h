@@ -48,6 +48,9 @@ typedef enum
     
     SysCall_RegisterServer,
     SysCall_RegisterClient,
+    
+    
+    SysCall_Last, // MUST REMAINS LAST !
 } SysCallID;
 
 /* ---- Should be private ---- */
