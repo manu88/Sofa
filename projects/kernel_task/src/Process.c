@@ -240,6 +240,8 @@ void ProcessInit(Process*p)
     p->base.obj.methods.release = ProcRelease;
     assert(p->reply == 0);
     assert(p->replyState  == ReplyState_None);
+    
+    p->caps.caps = PROCESS_DEFAULT_CAPS;
 }
 
 Process* ProcessGetByPID( uint32_t pid)

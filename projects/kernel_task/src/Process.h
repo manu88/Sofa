@@ -24,6 +24,8 @@
 #include "KObject/KObject.h"
 #include "KObject/uthash.h"
 
+
+#define PROCESS_DEFAULT_CAPS SofaCap_Spawn
 typedef struct
 {
     SofaCapabilities caps;
