@@ -385,17 +385,14 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         
         return -1;
     }
-    
-    
-    
-    
+
     char endpoint_string[10] = "";
     
     snprintf(endpoint_string, 10, "%ld", (long) process_ep_cap);
     
     // rule : the endpoint should be the last arg, and is gonna be removed from the arg list before main is called
     seL4_Word argc = 2;
-    char *argv[] = {procName , endpoint_string};
+    char *argv[] = { (char*)procName , endpoint_string};
     
     printf("[kernel_task] Start process \n");
     

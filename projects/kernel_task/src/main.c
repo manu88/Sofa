@@ -56,10 +56,12 @@ static int initRootEndPoint()
 
 static void earlyInit()
 {
-	int error = bootstapSystem(); // This MUST be the first thing done!
+	int error = bootstrapSystem(); // This MUST be the first thing done!
 
     printf("[kernel_task] bootstrap returned %i\n" , error);
 
+    assert(bootstrapIO() == 0);
+    
     int ret = seL4_TCB_SetPriority(simple_get_tcb(getSimple()) , simple_get_tcb(getSimple()) , SOFA_DEFAULT_PRIORITY);
     
 	error = initRootEndPoint();

@@ -53,7 +53,7 @@ struct  _KernelTaskContext
 
 static struct  _KernelTaskContext _ctx = {0};
 
-int bootstapSystem()
+int bootstrapSystem()
 {
 	int err = 0;
     
@@ -93,7 +93,7 @@ int bootstapSystem()
                                      ALLOCATOR_VIRTUAL_POOL_SIZE, simple_get_pd(&_ctx.simple));
     
     
-    sel4platsupport_get_io_port_ops(&_ctx.opsIO.io_port_ops, &_ctx.simple , &_ctx.vka);
+    
 
 #if 0
     
@@ -122,6 +122,15 @@ int bootstapSystem()
     }
 #endif
 	return err;
+}
+
+int bootstrapIO()
+{
+    
+    int err = 0;
+    sel4platsupport_get_io_port_ops(&_ctx.opsIO.io_port_ops, &_ctx.simple , &_ctx.vka);
+    
+    return err;
 }
 
 simple_t* getSimple()

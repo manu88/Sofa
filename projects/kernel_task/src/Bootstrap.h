@@ -52,6 +52,8 @@ typedef struct
     uint8_t user_untypeds_size_bits[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
     
 } System;
+
+
 typedef struct
 {
     vka_object_t rootTaskEP;
@@ -60,7 +62,8 @@ typedef struct
     //System* system;
 } KernelTaskContext;
 
-int bootstapSystem(void);
+int bootstrapSystem(void);
+int bootstrapIO(void);
 
 
 simple_t* getSimple(void);

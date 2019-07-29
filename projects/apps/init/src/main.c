@@ -40,14 +40,6 @@ int main( int argc , char* argv[])
 
 	print("spawn shell pid %i\n"  , pidShell);
 
-    
-    /*
-    sleepS(2);
-    for(int i=0;i<10;i++)
-    {
-        spawn("test",0 , NULL);
-    }
-    */
 	while(1)
 	{
         SofaSignal signal = 0;

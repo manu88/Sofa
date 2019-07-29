@@ -311,12 +311,12 @@ static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     {
         Process* procToKill = ProcessGetByPID(pidToKill);
         
-        // do we have SofaCap_Kill to kill ALL processes, or is the process to kill a child of the sender
-        if (  (ProcessGetParent(procToKill) == sender ) || (ProcessHasCap(sender , SofaCap_Kill) ))
+        if (procToKill)
         {
-            if (procToKill)
+            // do we have SofaCap_Kill to kill ALL processes, or is the process to kill a child of the sender
+            if (  (ProcessGetParent(procToKill) == sender ) || (ProcessHasCap(sender , SofaCap_Kill) ))
             {
-                err = ProcessKill(procToKill ,SofaSignal_Kill);
+                    err = ProcessKill(procToKill ,SofaSignal_Kill);
             }
         }
 
