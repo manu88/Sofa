@@ -28,3 +28,37 @@
  */
 #define CONFIG_LIB_OSAPI_USER_UNTYPED_MEM_SIZE 67108864
 #define SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE CONFIG_LIB_OSAPI_USER_UNTYPED_MEM_SIZE
+
+
+/* Amount of untyped memory to reserve for the root_task
+*
+* Default: 64MB
+
+*/
+#define CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE 67108864
+#define SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE        CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE
+
+/*
+ * Minimum amount of memory required to bootstrap
+ * the root memory allocator.
+ *
+ * Default: 40K
+ */
+#define CONFIG_LIB_OSAPI_BOOTSTRAP_MEM_POOL_SIZE 40960
+#define SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE CONFIG_LIB_OSAPI_BOOTSTRAP_MEM_POOL_SIZE
+
+
+
+#define CONFIG_LIB_OSAPI_VKA_VMEM_SIZE 67108864
+#define SEL4OSAPI_VKA_VMEM_SIZE CONFIG_LIB_OSAPI_VKA_VMEM_SIZE
+
+
+/*
+ * Minimum amount of virtual memory memory required
+ * by the root memory allocator.
+ *
+ * Default: 64MB
+ *
+ */
+#define CONFIG_LIB_OSAPI_SYSTEM_VMEM_SIZE 67108864
+#define SEL4OSAPI_SYSTEM_VMEM_SIZE                  CONFIG_LIB_OSAPI_SYSTEM_VMEM_SIZE

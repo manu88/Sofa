@@ -11,13 +11,13 @@
          location = "group:src"
          name = "src">
          <FileRef
+            location = "group:Config.h">
+         </FileRef>
+         <FileRef
             location = "group:system.c">
          </FileRef>
          <FileRef
             location = "group:system.h">
-         </FileRef>
-         <FileRef
-            location = "group:Config.h">
          </FileRef>
          <FileRef
             location = "group:Utils.h">
