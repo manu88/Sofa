@@ -147,6 +147,7 @@ static void lateInit()
     printf("##########################################\n");
     printf("#                 Sofa OS                #\n");
     printf("##########################################\n");
+    printf("Version %2i.%2i.%2i\n" , SOFA_VERSION_MAJ , SOFA_VERSION_MIN , SOFA_VERSION_PATCH);
     lsCPIO();
     
     int ret = ProcessListInit();
