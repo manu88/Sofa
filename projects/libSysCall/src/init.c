@@ -227,6 +227,29 @@ void listServers()
 }
 
 
+static long doIDsSysCall(SysCallGetIDs_OP op)
+{
+    assert(env);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    
+    seL4_SetMR(0 , SysCall_GetIDs);
+    seL4_SetMR(1 , op);
+    
+    
+    
+    seL4_Call(endpoint, info);
+    
+    return seL4_GetMR(1);
+}
+
+int getPID()
+{
+    return (int) doIDsSysCall(SysCallGetIDs_GetPID);
+}
+int getParentPID()
+{
+    return (int) doIDsSysCall(SysCallGetIDs_GetPPID);
+}
 
 int getPriority(int pid , int *retVal)
 {
@@ -321,6 +344,8 @@ int ServerRecv(ServerEnvir* server)
     
     return (int)sender_badge;
 }
+
+
 
 
 /*

@@ -25,8 +25,12 @@
 int main( int argc , char* argv[])
 {
 
+    int myPID = getPID();
 
-	print("started\n");
+	print("started with pid %i\n" , myPID);
+    
+    if( myPID != 1)
+        return 10;
 
     int pidShell = -1;
     int pidDriverKit = -1;

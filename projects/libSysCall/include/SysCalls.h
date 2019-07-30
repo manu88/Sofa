@@ -31,6 +31,7 @@ typedef enum
 typedef enum
 {
     SysCall_BootStrap = 1, // 1st msg sent to a process by kernel_task so it can retreive its environment.
+    SysCall_GetIDs,
 	SysCall_Write,
     SysCall_Sleep,
 	SysCall_Read,
@@ -60,6 +61,13 @@ typedef enum
     SysCall_Debug_Sched,
     SysCall_Debug_ListServers,
 }SysCall_Debug_ID;
+
+
+typedef enum
+{
+    SysCallGetIDs_GetPID,
+    SysCallGetIDs_GetPPID,
+} SysCallGetIDs_OP;
 
 /* ---- Should be private ---- */
 typedef enum
@@ -226,6 +234,9 @@ void sched(void);
 int getPriority(int pid , int *retVal);
 int setPriority(int pid , int prio);
 
+
+int getPID(void);
+int getParentPID(void);
 
 // Server
 void listServers(void);

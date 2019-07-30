@@ -27,6 +27,7 @@
 
 
 static void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
+static void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 static void processWrite(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 static void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 static void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
@@ -57,6 +58,7 @@ static SysCallHandler _sysHandler[SysCall_Last] =
 {
     NULL, // 0 is UNUSED for now
     processBootstrap,
+    processGetIDs,
     processWrite,
     processSleep,
     processRead,
@@ -314,6 +316,7 @@ static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word send
         if (procToKill)
         {
             // do we have SofaCap_Kill to kill ALL processes, or is the process to kill a child of the sender
+            // XXX Allow to kill self?
             if (  (ProcessGetParent(procToKill) == sender ) || (ProcessHasCap(sender , SofaCap_Kill) ))
             {
                     err = ProcessKill(procToKill ,SofaSignal_Kill);
@@ -588,6 +591,31 @@ static void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
             seL4_SetMR(1, -1 );
             Reply( info );
             break;
+        default:
+            assert(0);
+            break;
+    }
+}
+
+
+static void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+{
+    SysCallGetIDs_OP op = seL4_GetMR(1);
+    
+    
+    switch (op)
+    {
+        case SysCallGetIDs_GetPID:
+            //printf("GetPID req from %i\n" , sender->pid);
+            seL4_SetMR(1, sender->pid );
+            Reply( info );
+            break;
+
+        case SysCallGetIDs_GetPPID:
+            seL4_SetMR(1, ProcessGetParent(sender)->pid );
+            Reply( info );
+            break;
+        
         default:
             assert(0);
             break;
