@@ -56,6 +56,9 @@
             location = "group:SysCalls"
             name = "SysCalls">
             <FileRef
+               location = "group:Proc.c">
+            </FileRef>
+            <FileRef
                location = "group:Servers.c">
             </FileRef>
             <FileRef
