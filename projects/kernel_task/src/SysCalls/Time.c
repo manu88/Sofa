@@ -18,7 +18,7 @@
 #include "../ProcessSysCall.h"
 #include "../Timer.h"
 #include "../Bootstrap.h"
-#include "../kUtils.h"
+#include "../Utils.h"
 
 void processGetTime(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {

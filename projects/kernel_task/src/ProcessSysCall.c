@@ -17,16 +17,12 @@
 
 #include "ProcessSysCall.h"
 
-#include <platsupport/chardev.h>
+
 
 #include "Timer.h"
 #include "Bootstrap.h"
 #include "Utils.h"
 #include "NameServer.h"
-
-
-
-
 
 
 // order MUST Match SysCallID
@@ -60,9 +56,6 @@ static inline void Reply(seL4_MessageInfo_t info)
 }
  */
 
-
-
-
 void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     assert(sender);
@@ -72,49 +65,6 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
     
     sender->stats.numSysCalls++;
 }
-
-
-
-
-
-
-void processWrite(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
-{
-    printf("[%s] %s" ,ProcessGetName(sender), sender->bufEnv->buf);
-    seL4_SetMR(1 , 0); // no err
-    Reply( info);
-}
-
-void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
-{
-    unsigned long sizeToRead = seL4_GetMR(1);
-    
-    
-    int c = ps_cdev_getchar(&getKernelTaskContext()->comDev);
-    /*
-     do
-     {
-     c = ps_cdev_getchar(&getKernelTaskContext()->comDev);
-     }
-     while (c<=0);
-     */
-    if( c == '\n' || c == '\r')
-    {
-        ps_cdev_putchar(&getKernelTaskContext()->comDev , '\n');
-    }
-    else if( c > 0)
-    {
-        ps_cdev_putchar(&getKernelTaskContext()->comDev , c);
-    }
-    
-    sender->bufEnv->buf[0] = c;
-    sender->bufEnv->buf[1] = 0;
-    
-    seL4_SetMR(0,SysCall_Read);
-    seL4_SetMR(1, c >0? 1 : 0 );
-    Reply( info );
-}
-
 
 
 void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
@@ -163,8 +113,6 @@ void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     Reply(info);
 }
 
-
-
 void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     CapOperation capOP = seL4_GetMR(1);
@@ -193,7 +141,6 @@ void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_bad
             break;
     }
 }
-
 
 void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {

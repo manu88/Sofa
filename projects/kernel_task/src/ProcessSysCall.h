@@ -52,7 +52,6 @@ void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_bad
 void processGetTime(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 
 // in SysCalls/Misc.c
-
 void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
