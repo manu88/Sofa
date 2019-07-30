@@ -52,6 +52,13 @@
          <FileRef
             location = "group:Process.h">
          </FileRef>
+         <Group
+            location = "group:SysCalls"
+            name = "SysCalls">
+            <FileRef
+               location = "group:Debug.c">
+            </FileRef>
+         </Group>
          <FileRef
             location = "group:ProcessSysCall.h">
          </FileRef>

@@ -26,30 +26,6 @@
 
 
 
-static void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processWrite(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processDebug(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processGetTime(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-
-static void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-static void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-
-
-
-
-
-
-
 
 
 
@@ -73,12 +49,9 @@ static SysCallHandler _sysHandler[SysCall_Last] =
     processCapOp,
     processRegisterServer,
     processRegisterClient,
-    
-    
-    
 };
 
-#define Reply(i) seL4_Reply(i)
+
 /*
 static inline void Reply(seL4_MessageInfo_t info)
 {
@@ -98,113 +71,25 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
     _sysHandler[sysCallID](sender,info ,sender_badge);
     
     sender->stats.numSysCalls++;
-    return;
-    
-/*
-    switch(sysCallID)
-    {
-        case SysCall_BootStrap:
-            processBootstrap(sender,info ,sender_badge);
-            break;
-            
-        case SysCall_Write:
-            processWrite(sender,info ,sender_badge);
-            break;
-
-        case SysCall_Exit:
-            processExit(sender,info ,sender_badge);
-            break;
-            
-        case SysCall_Spawn:
-            processSpawn(sender,info ,sender_badge);
-            break;
-            
-        case SysCall_Kill:
-            processKill(sender,info , sender_badge);
-            break;
-            
-        case SysCall_CapOp:
-            processCapOp(sender,info , sender_badge);
-            break;
-        case SysCall_Sleep:
-            processSleep(sender,info , sender_badge);
-            break;
-        
-        case SysCall_GetTime:
-            processGetTime(sender,info , sender_badge);
-            break;
-            
-        case SysCall_Read:
-            processRead(sender,info , sender_badge);
-            break;
-            
-        case SysCall_Wait:
-            processWait(sender,info , sender_badge);
-            break;
-            
-        case SysCall_GetPriority:
-            processGetPriority(sender,info , sender_badge);
-            break;
-            
-        case SysCall_SetPriority:
-            processSetPriority(sender,info , sender_badge);
-            break;
-            
-        case SysCall_RegisterServer:
-            processRegisterServer(sender,info , sender_badge);
-            break;
-        case SysCall_RegisterClient:
-            processRegisterClient(sender,info , sender_badge);
-            break;
-            
-        case SysCall_Debug:
-            processDebug(sender,info , sender_badge);
-            
-        default:
-            assert(0);
-    }
-    
-    
-    */
 }
 
 
-static void processGetTime(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processGetTime(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     seL4_SetMR(1 , GetCurrentTime());
     Reply( info);
 }
 
-static void processDebug(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
-{
-    const SysCall_Debug_ID debugID = seL4_GetMR(1);
-    
-    switch (debugID)
-    {
-        case SysCall_Debug_PS:
-            ProcessDump();
-            break;
-            
-        case SysCall_Debug_Sched:
-            seL4_DebugDumpScheduler();
-            break;
-        case SysCall_Debug_ListServers:
-            NameServerDump();
-            break;
-        default:
-            assert(0);
-            break;
-    }
-}
 
-static void processWrite(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+
+void processWrite(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     printf("[%s] %s" ,ProcessGetName(sender), sender->bufEnv->buf);
     seL4_SetMR(1 , 0); // no err
     Reply( info);
 }
 
-static void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     unsigned long sizeToRead = seL4_GetMR(1);
     
@@ -234,17 +119,16 @@ static void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     Reply( info );
 }
 
-static void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     assert(sender->stats.numSysCalls == 0);
     seL4_SetMR(0, SysCall_BootStrap);
     seL4_SetMR(1, (seL4_Word) sender->vaddr);
     
-    seL4_DebugDumpScheduler();
     Reply( info);
 }
 
-static void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     int pid = seL4_GetMR(1);
     
@@ -263,7 +147,7 @@ static void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Wo
     Reply( info);
 }
 
-static void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     int pid     = seL4_GetMR(1);
     int newPrio = seL4_GetMR(2);
@@ -290,7 +174,7 @@ static void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Wo
     Reply(info);
 }
 
-static void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     int retCode = seL4_GetMR(1);
     
@@ -303,7 +187,7 @@ static void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     // nothing to return
 }
 
-static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     int pidToKill = seL4_GetMR(1);
     printf("kill pid %i\n" , pidToKill);
@@ -328,7 +212,8 @@ static void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     seL4_SetMR(1 ,err);
     Reply( info);
 }
-static void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+
+void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     const char* serverName = sender->bufEnv->buf;
     
@@ -355,7 +240,7 @@ static void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4
     Reply( info );
 }
 
-static void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     const char* serverName = sender->bufEnv->buf;
     
@@ -390,7 +275,7 @@ static void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4
     Reply( info );
 }
 
-static void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     printf("[kernel_task] spawn '%s'\n", sender->bufEnv->buf);
     
@@ -417,7 +302,8 @@ static void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
     seL4_SetMR(1 ,err);
     Reply( info);
 }
-static void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+
+void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     // 2nd reg is for returned pid;
     // 3rd reg is for returned status;
@@ -481,7 +367,7 @@ static void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word send
 }
 
 
-static int OnTime(uintptr_t token)
+int OnTime(uintptr_t token)
 {
     Process* sender = (Process*) token;
     //seL4_CPtr reply = (seL4_CPtr) token;
@@ -507,7 +393,7 @@ static int OnTime(uintptr_t token)
     return 0;
 }
 
-static void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     if( sender->timerID == 0)
     {
@@ -568,7 +454,7 @@ static void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
 
 }
 
-static void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     CapOperation capOP = seL4_GetMR(1);
     
@@ -598,7 +484,7 @@ static void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sen
 }
 
 
-static void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     SysCallGetIDs_OP op = seL4_GetMR(1);
     

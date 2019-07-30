@@ -25,9 +25,6 @@
 #include <vka/capops.h>
 
 static Process* _procList = NULL;
-//static list_t _processes = {0};
-//#define MAX_PROCESSES 10
-//static Process* procList[MAX_PROCESSES] = {0};
 
 static uint32_t pidCounter = 1;
 
