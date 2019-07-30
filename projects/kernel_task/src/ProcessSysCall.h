@@ -29,25 +29,31 @@ typedef void (*SysCallHandler)(Process *sender,seL4_MessageInfo_t info , seL4_Wo
 void processSysCall(Process *sender, seL4_MessageInfo_t info , seL4_Word sender_badge);
 
 
+/* Handlers */
 
-void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
+
+
+// in SysCalls/IO.c
 void processWrite(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-
 void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 
 // in SysCalls/Debug.c
 void processDebug(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 
 // in SysCalls/Proc.c
+void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processExit(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 
+// in SysCalls/Time.c
 void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processGetTime(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 
+// in SysCalls/Misc.c
+
+void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);

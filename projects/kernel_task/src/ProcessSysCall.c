@@ -74,11 +74,7 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
 }
 
 
-void processGetTime(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
-{
-    seL4_SetMR(1 , GetCurrentTime());
-    Reply( info);
-}
+
 
 
 
@@ -119,14 +115,7 @@ void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badg
     Reply( info );
 }
 
-void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
-{
-    assert(sender->stats.numSysCalls == 0);
-    seL4_SetMR(0, SysCall_BootStrap);
-    seL4_SetMR(1, (seL4_Word) sender->vaddr);
-    
-    Reply( info);
-}
+
 
 void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
@@ -175,93 +164,6 @@ void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word send
 }
 
 
-
-int OnTime(uintptr_t token)
-{
-    Process* sender = (Process*) token;
-    //seL4_CPtr reply = (seL4_CPtr) token;
-    if( !sender->reply)
-    {
-        printf("OnTime : no reply for %s %i\n" , ProcessGetName(sender) , sender->pid);
-    }
-    assert(sender->reply);
-    assert(sender->replyState == ReplyState_Sleep);
-    
-    int err = tm_deregister_cb(getTM()  , sender->timerID);
-    assert(err == 0);
-    
-    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
-    seL4_SetMR(0, SysCall_Sleep);
-    seL4_SetMR(1, 0); // sucess
-    
-    seL4_Send(sender->reply , tag);
-    
-    cnode_delete(getVka(),sender->reply);
-    sender->reply = 0;
-    sender->replyState = ReplyState_None;
-    return 0;
-}
-
-void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
-{
-    if( sender->timerID == 0)
-    {
-        int err = tm_alloc_id(getTM() , &sender->timerID);
-        if( err != 0)
-        {
-            seL4_SetMR(0,SysCall_Sleep);
-            seL4_SetMR(1, -EPERM );
-            Reply( info );
-            
-        }
-    }
-    assert(sender->timerID);
-    
-    if( sender->reply != 0)
-    {
-        printf("sender->reply not null for %s %i\n" , ProcessGetName(sender) , sender->pid);
-    }
-    assert(sender->reply == 0);
-    int err = -1;
-    
-    uint64_t ns = seL4_GetMR(1);
-    SleepUnit unit = seL4_GetMR(2);
-    
-    
-    if( unit == SleepUnit_MS)
-    {
-        ns *= 1000000;
-    }
-    else if( unit == SleepUnit_S)
-    {
-        ns *= 1000000000;
-    }
-    sender->reply = get_free_slot(getVka());
-    
-    if( sender->reply == 0)
-    {
-        seL4_SetMR(0,SysCall_Sleep);
-        seL4_SetMR(1, -EINVAL );
-        Reply( info );
-        return;
-    }
-    
-    err = cnode_savecaller( getVka(), sender->reply );
-    if( err != 0)
-    {
-        cnode_delete(getVka() , sender->reply);
-        sender->reply = 0;
-        
-        seL4_SetMR(0,SysCall_Sleep);
-        seL4_SetMR(1, -EINVAL );
-        Reply( info );
-        return;
-    }
-    
-    sender->replyState = ReplyState_Sleep;
-    err = tm_register_rel_cb( getTM() , ns , sender->timerID , OnTime ,(uintptr_t) sender);
-
-}
 
 void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {

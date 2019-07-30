@@ -150,3 +150,12 @@ void processWait(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badg
     
     sender->replyState = ReplyState_Wait;
 }
+
+void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
+{
+    assert(sender->stats.numSysCalls == 0);
+    seL4_SetMR(0, SysCall_BootStrap);
+    seL4_SetMR(1, (seL4_Word) sender->vaddr);
+    
+    Reply( info);
+}
