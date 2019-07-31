@@ -48,8 +48,8 @@ static int initRootEndPoint()
 		return error;
 	}
     
-	cspacepath_t ep_cap_path;
-	vka_cspace_make_path( getVka(), getKernelTaskContext()->rootTaskEP.cptr, &ep_cap_path);
+	//cspacepath_t ep_cap_path;
+	//vka_cspace_make_path( getVka(), getKernelTaskContext()->rootTaskEP.cptr, &ep_cap_path);
 
 	return error;
 }

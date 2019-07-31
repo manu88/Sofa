@@ -46,6 +46,7 @@ typedef enum
     SysCall_GetPriority,
     
     SysCall_CapOp,
+    SysCall_ResourceReq,
     
     SysCall_RegisterServer,
     SysCall_RegisterClient,
@@ -100,15 +101,8 @@ typedef enum
  * The capabilities are always relative to the root
  * cnode of the process.
  */
-typedef struct sel4osapi_process_env {
-    /*
-     * Name of the process.
-     */
-    //char name[SEL4OSAPI_USER_PROCESS_NAME_MAX_LEN];
-    /*
-     * Process id.
-     */
-    //unsigned int pid;
+typedef struct sel4osapi_process_env
+{
     /*
      * Page directory used by the process' VSpace
      */
@@ -150,15 +144,22 @@ typedef struct sel4osapi_process_env {
      * process' initial thread.
      */
     seL4_CPtr fault_endpoint;
+    
+    /* the number of pages in the stack */
+    int stack_pages;
+    
+    /* address of the stack */
+    void *stack;
+    
     /*
      * Endpoint to the sysclock instance.
      */
-    seL4_CPtr sysclock_server_ep;
+    //seL4_CPtr sysclock_server_ep;
     /*
      * Async Endpoint used to block the process'
      * threads in idling mode.
      */
-    seL4_CPtr idling_aep;
+    //seL4_CPtr idling_aep;
     
     /*
      * Threads created by this process
@@ -224,6 +225,7 @@ int sleepS( unsigned long sec);
 int sleepMS( unsigned long ms);
 int kill(int pid);
 
+// returns -1 if no child to wait.
 long wait(int *wstatus ,SofaSignal* sign);
 
 long unsigned int getTime(void);

@@ -56,7 +56,7 @@ void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_ba
 void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processGetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
-
+void processResourceReq(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 // in SysCalls/Servers.c
 void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);
 void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge);

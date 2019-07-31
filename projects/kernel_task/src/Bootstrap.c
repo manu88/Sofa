@@ -170,3 +170,7 @@ KernelTaskContext* getKernelTaskContext()
 }
 
 
+sel4osapi_system_t* getSystem()
+{
+    return sel4osapi_system_get_instanceI();
+}

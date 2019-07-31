@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 #include <SysCalls.h>
-
+#include <SysCaps.h>
 
 int main( int argc , char* argv[])
 {
@@ -45,6 +45,17 @@ int main( int argc , char* argv[])
         return 1;
     }
     
+    
+    void* acpiAddr =  RequestResource( SofaResource_ACPI);
+    
+    if( acpiAddr)
+    {
+        print("RequestResource ACPI OK\n");
+    }
+    else
+    {
+        print("RequestResource ACPI error\n");
+    }
     
 	while(1)
 	{

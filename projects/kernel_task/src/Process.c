@@ -17,6 +17,7 @@
 
 #include "Process.h"
 #include "Bootstrap.h"
+#include "system.h"
 #include "Utils.h"
 #include "Timer.h"
 #include "NameServer.h"
@@ -66,13 +67,16 @@ sel4osapi_process_init_env(Process *process,
                            int user_untypeds_num,
                            uint8_t *user_untypeds_allocation,
                            uint8_t *user_untypeds_size_bits,
-                           vka_object_t *user_untypeds
+                           vka_object_t *user_untypeds,
+                           vka_object_t *fromEp
                            //seL4_CPtr sysclock_ep,
                            //seL4_CPtr udp_stack_ep
                            )
 {
     int error;
     
+    assert(process);
+    assert(process->env);
     {
         int i = 0;
         uint32_t untyped_size = 0;
@@ -85,21 +89,28 @@ sel4osapi_process_init_env(Process *process,
         
         /* set up caps about the process */
         process->env->page_directory = sel4osapi_process_copy_cap_into(process, parent_vka, process->native.pd.cptr, seL4_AllRights);
+        
+        process->env->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
+        process->env->stack = process->native.thread.stack_top - CONFIG_SEL4UTILS_STACK_SIZE;
+        
         process->env->root_cnode = SEL4UTILS_CNODE_SLOT;
         process->env->tcb = sel4osapi_process_copy_cap_into(process, parent_vka, process->native.thread.tcb.cptr, seL4_AllRights);
         /* setup data about untypeds */
-        for (i = 0; i < user_untypeds_num && untyped_size < SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE; i++) {
+        for (i = 0; i < user_untypeds_num && untyped_size < SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE; i++)
+        {
             seL4_CPtr proc_ut_cap = 0;
             
             if (user_untypeds_allocation[i] != 0)
             {
                 continue;
             }
+            //printf("Start user_untypeds at %i\n" , i);
             
             proc_ut_cap = sel4osapi_process_copy_cap_into(process, parent_vka, user_untypeds[i].cptr, seL4_AllRights);
             
             /* set up the cap range */
-            if (untyped_count == 0) {
+            if (untyped_count == 0)
+            {
                 process->env->untypeds.start = proc_ut_cap;
             }
             process->env->untypeds.end = proc_ut_cap;
@@ -112,116 +123,27 @@ sel4osapi_process_init_env(Process *process,
             
             untyped_size += 1 << user_untypeds_size_bits[i];
         }
+        
+        printf("untyped_count %u  untyped_size %u\n" , untyped_count,untyped_size );
         assert((process->env->untypeds.end - process->env->untypeds.start) + 1 <= user_untypeds_num);
-#ifdef CONFIG_LIB_OSAPI_SYSCLOCK
-        {
-            /* copy the sysclock's EP */
-            process->env->sysclock_server_ep = sel4osapi_process_copy_cap_into(process, parent_vka, sysclock_ep, seL4_AllRights);
-            assert(process->env->sysclock_server_ep != 0);
-        }
-#endif
-        {
-            /* allocate an AEP for the process' idling */
-            vka_object_t aep_obj = { 0 };
-            
-            error = vka_alloc_notification(parent_vka, &aep_obj);
-            assert(error == 0);
-            
-            //process->parent_idling_aep = aep_obj.cptr;
-            
-            //process->env->idling_aep = sel4osapi_process_copy_cap_into(process, parent_vka, process->parent_idling_aep, seL4_AllRights);
-            
-            assert(process->env->idling_aep != 0);
-        }
-#if 0
-        {
-            /* register process with ipc server */
-            seL4_CPtr rx_pages[SEL4OSAPI_PROCESS_RX_BUF_PAGES];
-            seL4_CPtr tx_pages[SEL4OSAPI_PROCESS_TX_BUF_PAGES];
-            seL4_CPtr rx_pages_mint[SEL4OSAPI_PROCESS_RX_BUF_PAGES];
-            seL4_CPtr tx_pages_mint[SEL4OSAPI_PROCESS_TX_BUF_PAGES];
-            cspacepath_t dest, src;
-            
-            process->env->ipcclient.id = process->ipcclient->id;
-            
-            for (i = 0; i < SEL4OSAPI_PROCESS_RX_BUF_PAGES; ++i) {
-                rx_pages[i] = vspace_get_cap(parent_vspace, process->ipcclient->rx_buf + i * PAGE_SIZE_4K);
-                assert(rx_pages[i] != seL4_CapNull);
-                vka_cspace_make_path(parent_vka, rx_pages[i], &src);
-                error = vka_cspace_alloc(parent_vka, &rx_pages_mint[i]);
-                assert(error == 0);
-                vka_cspace_make_path(parent_vka, rx_pages_mint[i], &dest);
-                error = vka_cnode_copy(&dest, &src, seL4_AllRights);
-                assert(error == 0);
-            }
-            
-            for (i = 0; i < SEL4OSAPI_PROCESS_TX_BUF_PAGES; ++i) {
-                tx_pages[i] = vspace_get_cap(parent_vspace, process->ipcclient->tx_buf + i * PAGE_SIZE_4K);
-                assert(tx_pages[i] != seL4_CapNull);
-                vka_cspace_make_path(parent_vka, tx_pages[i], &src);
-                error = vka_cspace_alloc(parent_vka, &tx_pages_mint[i]);
-                assert(error == 0);
-                vka_cspace_make_path(parent_vka, tx_pages_mint[i], &dest);
-                error = vka_cnode_copy(&dest, &src, seL4_AllRights);
-                assert(error == 0);
-            }
-            
-            process->env->ipcclient.rx_buf = vspace_map_pages(&process->native.vspace, rx_pages_mint, NULL, seL4_AllRights, SEL4OSAPI_PROCESS_RX_BUF_PAGES, PAGE_BITS_4K, 1);
-            assert(process->env->ipcclient.rx_buf != NULL);
-            process->env->ipcclient.rx_buf_size = SEL4OSAPI_PROCESS_RX_BUF_SIZE;
-            
-            process->env->ipcclient.tx_buf = vspace_map_pages(&process->native.vspace, tx_pages_mint, NULL, seL4_AllRights, SEL4OSAPI_PROCESS_RX_BUF_PAGES, PAGE_BITS_4K, 1);
-            assert(process->env->ipcclient.tx_buf != NULL);
-            process->env->ipcclient.tx_buf_size = SEL4OSAPI_PROCESS_TX_BUF_SIZE;
-        }
-#endif
-#ifdef CONFIG_LIB_OSAPI_NET
-        {
-            process->env->udp_iface.stack_op_ep = sel4osapi_process_copy_cap_into(process, parent_vka, udp_stack_ep, seL4_AllRights);
-            assert(process->env->udp_iface.stack_op_ep != seL4_CapNull);
-            
-        }
-#endif
-#ifdef CONFIG_LIB_OSAPI_SERIAL
-        {
-            /* register process with network driver */
-            seL4_CPtr buf_pages[SEL4OSAPI_SERIAL_BUF_PAGES];
-            seL4_CPtr buf_pages_mint[SEL4OSAPI_SERIAL_BUF_PAGES];
-            cspacepath_t dest, src;
-            
-            process->env->serial.id = process->serialclient->id;
-            
-            process->env->serial.server_ep = sel4osapi_process_copy_cap_into(process, parent_vka, process->serialclient->server_ep, seL4_AllRights);
-            assert(process->env->serial.server_ep != seL4_CapNull);
-            
-            for (i = 0; i < SEL4OSAPI_SERIAL_BUF_PAGES; ++i) {
-                buf_pages[i] = vspace_get_cap(parent_vspace, process->serialclient->buf + i * PAGE_SIZE_4K);
-                assert(buf_pages[i] != seL4_CapNull);
-                vka_cspace_make_path(parent_vka, buf_pages[i], &src);
-                error = vka_cspace_alloc(parent_vka, &buf_pages_mint[i]);
-                assert(error == 0);
-                vka_cspace_make_path(parent_vka, buf_pages_mint[i], &dest);
-                error = vka_cnode_copy(&dest, &src, seL4_AllRights);
-                assert(error == 0);
-            }
-            
-            process->env->serial.buf = vspace_map_pages(&process->native.vspace, buf_pages_mint, NULL, seL4_AllRights, SEL4OSAPI_SERIAL_BUF_PAGES, PAGE_BITS_4K, 1);
-            assert(process->env->serial.buf != NULL);
-            process->env->serial.buf_size = SEL4OSAPI_SERIAL_BUF_SIZE;
-            
-        }
-#endif
+
+
         /* copy the fault endpoint - we wait on the endpoint for a message
          * or a fault to see when the test finishes */
-        process->env->fault_endpoint = sel4osapi_process_copy_cap_into(process, parent_vka, process->native.fault_endpoint.cptr, seL4_AllRights);
+        process->env->fault_endpoint = sel4osapi_process_copy_cap_into(process, parent_vka, fromEp->cptr, seL4_AllRights);
         assert(process->env->fault_endpoint != 0);
         
         /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
          * AS THE SLOTS WILL BE CONSIDERED FREE AND OVERRIDDEN BY THE TEST PROCESS. */
         /* set up free slot range */
+        
         process->env->cspace_size_bits = CONFIG_SEL4UTILS_CSPACE_SIZE_BITS;
         process->env->free_slots.start = process->env->fault_endpoint + 1;
         process->env->free_slots.end = (1u << CONFIG_SEL4UTILS_CSPACE_SIZE_BITS);
+        
+        printf("[kernel_task]free_slots.start %lu\n", process->env->free_slots.start);
+        printf("[kernel_task]free_slots.end %lu\n", process->env->free_slots.end);
+        
         assert(process->env->free_slots.start < process->env->free_slots.end);
     }
     
@@ -320,8 +242,8 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     config = process_config_mcp(config, process->priority);
     
     
-    config.create_fault_endpoint = false;
-    /* badge the fault endpoint to use for messages such that we can distinguish them */
+    //config.create_fault_endpoint = false;
+    /* badge the fault endpoint to use for messages so that we can distinguish them */
     cspacepath_t badged_ep_path;
     error = vka_cspace_alloc_path(getVka(), &badged_ep_path);
     if( error != 0)
@@ -349,15 +271,17 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         return error;
     }
 
-/*
+    process->env = (sel4osapi_process_env_t*) vspace_new_pages(getVspace(), seL4_AllRights, 1, PAGE_BITS_4K);
+    memset(process->env, 0 , PAGE_BITS_4K);
     error = sel4osapi_process_init_env(process, getVka(), getVspace(),
                                        getSystem()->user_untypeds_num,
                                        getSystem()->user_untypeds_allocation,
                                        getSystem()->user_untypeds_size_bits,
-                                       getSystem()->user_untypeds);
+                                       getSystem()->user_untypeds,
+                                       fromEp);
  
     assert(error == 0);
- */
+ 
 /* END-fucking-POINTS Are HERE*/
 
 
@@ -435,6 +359,32 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     }
     assert(process->vaddr != 0);
     /*END Shared mem*/
+    
+    {
+        seL4_CPtr process_data_frame = vspace_get_cap(getVspace(), process->env);
+        if( process_data_frame == 0)
+        {
+            printf("vspace_get_cap failed\n");
+            return -1;
+        }
+        
+        seL4_CPtr process_data_frame_copy = 0;
+        sel4osapi_util_copy_cap(getVka(), process_data_frame, &process_data_frame_copy);
+        if( process_data_frame_copy == 0)
+        {
+            printf("sel4osapi_util_copy_cap failed\n");
+            return -1;
+        }
+        
+        
+        process->venv = vspace_map_pages(&process->native.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
+        if( process->venv == NULL)
+        {
+            printf("vspace_map_pages error \n");
+            return -1;
+        }
+        assert(process->venv != 0);
+    }
 
 #endif
     if( process->pid != 1) //

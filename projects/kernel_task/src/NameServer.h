@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <SysCalls.h>
 #include <utils/list.h>
+#include <vka/object.h>
 
 #define MAX_SERVER_NAME 128
 #define MAX_CLIENT_NAME 128
@@ -37,6 +38,8 @@ typedef struct _Server
     ServerEnvir* env;
     void *vaddr; // This is the shared addr of env
     
+    
+    vka_object_t srvTaskEP;
 } Server;
 
 typedef struct _Client

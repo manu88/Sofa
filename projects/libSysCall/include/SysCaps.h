@@ -29,13 +29,22 @@ typedef enum
 
 } SofaCapabilities;
 
+
+typedef enum
+{
+    SofaResource_ACPI = 1,
+} SofaResource;
+
 /*
  A process can't list its caps.
  A process can ALWAYS drops caps.
- A process can ALWAYS asks to gain a cap, but must be prepared to be refused. This is the only time a process can known it has a cap.
- A process can Silently loose a cap. Aside from a side effect like not be able to open a file for example, the process has no ways to know it.
+ A process can ALWAYS asks to gain a cap, but must be prepared to be refused. This is the only time a process can know it has a cap.
+ A process can Silently loose a cap. Aside from a side effect like not be able to open a file, the process has no ways to know it.
  */
 
 
 void CapDrop( SofaCapabilities cap);
 int  CapAcquire( SofaCapabilities cap);
+
+
+void* RequestResource( SofaResource res);

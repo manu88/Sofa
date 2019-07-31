@@ -29,6 +29,9 @@
             location = "group:Timer.c">
          </FileRef>
          <FileRef
+            location = "group:NameServer.h">
+         </FileRef>
+         <FileRef
             location = "group:NameServer.c">
          </FileRef>
          <FileRef
@@ -96,9 +99,6 @@
                location = "group:KObject.c">
             </FileRef>
          </Group>
-         <FileRef
-            location = "group:NameServer.h">
-         </FileRef>
       </Group>
    </Group>
    <Group

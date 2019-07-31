@@ -119,32 +119,6 @@ typedef struct sel4osapi_system
      */
     uint8_t user_untypeds_num;
 
-    /*
-     * CSpace path to Asyncronous Endpoint used to
-     * set threads to idle within the process.
-     */
-    //cspacepath_t idling_aep;
-
-#if defined(CONFIG_LIB_OSAPI_NET) || defined(CONFIG_LIB_OSAPI_SERIAL) || defined(CONFIG_LIB_OSAPI_SYSCLOCK)
-    ps_io_ops_t io_ops;
-#endif
-
-#ifdef CONFIG_LIB_OSAPI_SERIAL
-    sel4osapi_serialserver_t serial;
-#endif
-
-    //sel4osapi_ipcserver_t ipc;
-
-#ifdef CONFIG_LIB_OSAPI_NET
-    sel4osapi_netstack_t net;
-
-    sel4osapi_udpstack_t udp;
-#endif
-
-//    simple_pool_t *processes;
-
-
-
 } sel4osapi_system_t;
 
 

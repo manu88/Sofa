@@ -21,21 +21,125 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
-
+#include <sel4utils/vspace.h>
+#include <allocman/allocman.h>
+#include <allocman/bootstrap.h>
+#include <allocman/vka.h>
 #include <assert.h>
 #include <string.h>
 
+// from kernel_task's Config.h
+#define CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE 67108864
+#define SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE        CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE
 
+static uint8_t _bootstrap_mem_pool[40960/*SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE*/];
 
 static seL4_CPtr endpoint = 0;
 static ThreadEnvir* env = NULL;
+static sel4osapi_process_env_t* procEnv = NULL;
 
+
+static allocman_t *allocator = NULL;
+static vka_t vka;
+
+/*
+ * Process virtual memory address space.
+ */
+static vspace_t vspace;
+/*
+ * Vspace management data.
+ */
+static sel4utils_alloc_data_t vspace_alloc_data;
+
+static int BoostrapProcess(void)
+{
+    int error = 0;
+    assert(procEnv);
+    
+    print("procEnv->free_slots.start %lu\n",procEnv->free_slots.start);
+    print("procEnv->free_slots.end %lu\n",procEnv->free_slots.end);
+    allocator = bootstrap_use_current_1level(procEnv->root_cnode,
+                                             procEnv->cspace_size_bits,
+                                             procEnv->free_slots.start,
+                                             procEnv->free_slots.end,
+                                             SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE,
+                                             _bootstrap_mem_pool);
+    
+    assert(allocator);
+    
+    
+    allocman_make_vka(&vka, allocator);
+    assert(allocator);
+    
+    print("allocator ok\n");
+    int slot, size_bits_index;
+    
+    cspacepath_t path;
+    
+    for (slot = procEnv->untypeds.start, size_bits_index = 0;
+         slot <= procEnv->untypeds.end;
+         slot++, size_bits_index++)
+    {
+        //print("vka_cspace_make_path at slot %i\n" ,size_bits_index );
+        
+        vka_cspace_make_path(&vka, slot, &path);
+        /* allocman doesn't require the paddr unless we need to ask for phys addresses,
+         * which we don't. */
+        uint32_t fake_paddr = 0;
+        uint32_t size_bits = procEnv->untyped_size_bits_list[size_bits_index];
+        int error = allocman_utspace_add_uts(allocator, 1, &path, &size_bits, &fake_paddr, ALLOCMAN_UT_KERNEL);
+        
+        if( error)
+        {
+            print("allocman_utspace_add_uts error at slot %i\n" ,size_bits_index );
+        }
+        assert(!error);
+    }
+    
+    print("loop ok\n");
+    
+    /* create a vspace */
+    void *existing_frames[procEnv->stack_pages + 2];
+    existing_frames[0] = (void *) procEnv;
+    existing_frames[1] = seL4_GetIPCBuffer();
+    assert(procEnv->stack_pages > 0);
+    
+    for (int i = 0; i < procEnv->stack_pages; i++)
+    {
+        existing_frames[i + 2] = procEnv->stack + (i * PAGE_SIZE_4K);
+    }
+    
+    error = sel4utils_bootstrap_vspace(&vspace, &vspace_alloc_data, procEnv->page_directory, &vka,
+                                       NULL, NULL, existing_frames);
+    
+    assert(error == 0);
+    
+#if 0
+    void *existing_frames[] = { procEnv,seL4_GetIPCBuffer(), NULL};
+    error = sel4utils_bootstrap_vspace(&vspace, &vspace_alloc_data, procEnv->page_directory, &vka,
+                                       NULL, NULL, existing_frames);
+    
+#endif
+    
+    print("Try to alloc endpoint\n");
+    vka_object_t rootTaskEP;
+    error = vka_alloc_endpoint( &vka, &rootTaskEP);
+    /*
+    if( error != 0)
+    {
+        print("vka_alloc_endpoint for RootEndPoint failed %i\n" , error);
+        
+        return error;
+    }
+    */
+    return allocator != NULL;
+}
 int InitClient(const char* EPString )
 {
 	endpoint = (seL4_CPtr) atoi(EPString/*argv[argc-1]*/);
 
     seL4_Word badge;
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
     //seL4_Recv(endpoint, &badge);
     seL4_SetMR(0 , SysCall_BootStrap);
     
@@ -43,11 +147,12 @@ int InitClient(const char* EPString )
     seL4_Call(endpoint, info);
     
     assert(seL4_MessageInfo_get_label(info) == seL4_Fault_NullFault);
-    assert(seL4_MessageInfo_get_length(info) == 2);
+    assert(seL4_MessageInfo_get_length(info) == 3);
     assert(seL4_GetMR(0) == SysCall_BootStrap);
     env = (ThreadEnvir*)seL4_GetMR(1);
-
+    procEnv = (sel4osapi_process_env_t*) seL4_GetMR(2);
     
+    BoostrapProcess();
     
 	return 0;
 }
@@ -291,7 +396,7 @@ ServerEnvir* RegisterServerWithName(const char*name, int flags)
     
     assert(env);
     
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
     seL4_SetMR(0 , SysCall_RegisterServer);
     seL4_SetMR(1 , flags);
     // 2nd reg is for return value;
@@ -305,7 +410,17 @@ ServerEnvir* RegisterServerWithName(const char*name, int flags)
     
     if( seL4_GetMR(1) == 0)
     {
-        return (ServerEnvir*) seL4_GetMR(2);
+        
+        seL4_CPtr serverEP = seL4_GetMR(3);
+        ServerEnvir* ret = (ServerEnvir*) seL4_GetMR(2);
+        
+        /*
+        seL4_Word sender_badge = 0;
+        print("Server Wait for a message !\n");
+        seL4_MessageInfo_t message = seL4_Recv(serverEP, &sender_badge);
+        print("Got a message !\n");
+        */
+        return ret;
     }
     
     return NULL;
@@ -390,4 +505,19 @@ void CapDrop( SofaCapabilities cap)
 int  CapAcquire( SofaCapabilities cap)
 {
     doCapSysCall(CapOperation_Acquire , cap);
+}
+
+
+void* RequestResource( SofaResource res)
+{
+    assert(env);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    
+    seL4_SetMR(0 , SysCall_ResourceReq);
+    
+    seL4_Call(endpoint, info);
+    
+    assert(seL4_GetMR(0) == SysCall_ResourceReq);
+    
+    return (void*)seL4_GetMR(1);
 }

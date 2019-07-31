@@ -10,7 +10,12 @@ add_library(libSysCall EXCLUDE_FROM_ALL  ${deps})
 
 target_include_directories(libSysCall PUBLIC include) 
 
-target_link_libraries(libSysCall Configuration  sel4 muslc)
+target_link_libraries(libSysCall 
+		Configuration  
+		sel4 
+		muslc
+		sel4allocman
+)
 
 # warn about everything
 add_compile_options(-Wall -Werror -W -Wextra)

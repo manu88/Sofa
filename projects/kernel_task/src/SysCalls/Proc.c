@@ -156,6 +156,7 @@ void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender
     assert(sender->stats.numSysCalls == 0);
     seL4_SetMR(0, SysCall_BootStrap);
     seL4_SetMR(1, (seL4_Word) sender->vaddr);
+    seL4_SetMR(2, (seL4_Word) sender->venv);
     
     Reply( info);
 }

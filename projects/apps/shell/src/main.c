@@ -135,6 +135,12 @@ static int execCmd( const char* cmd)
         SofaSignal signal = 0;
         int status = -1;
         long pid = wait(&status ,&signal);
+        
+        if( pid == -1)
+        {
+            print("No child to wait on \n");
+            return -1;
+        }
         print("PID %li returned %i sig %i\n" , pid , status , signal);
         return 0;
     }

@@ -42,6 +42,9 @@ vka_t* getVka(void);
 vspace_t* getVspace(void);
 struct ps_io_ops* getIO_OPS(void);
 
+typedef struct sel4osapi_system sel4osapi_system_t; // forward
+
+sel4osapi_system_t* getSystem(void);
 
 KernelTaskContext* getKernelTaskContext(void);
 
