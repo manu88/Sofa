@@ -25,11 +25,6 @@
 
 int main( int argc , char* argv[])
 {
-
-    
-	print("started\n");
-    
-    //sleepS(1);
     
     ServerEnvir* server =  RegisterServerWithName("driverkit", 0);
 

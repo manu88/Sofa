@@ -350,18 +350,21 @@ sel4osapi_system_initialize(void *bootstrap_mem_pool)
 
         /* Fill out the size_bits list */
         printf("Initializing size bits list...\n");
-        for (i = 0; i < system->user_untypeds_num; i++) {
+        for (i = 0; i < system->user_untypeds_num; i++)
+        {
             system->user_untypeds_size_bits[i] = system->user_untypeds[i].size_bits;
         }
         /* Return reserve memory */
         printf("Release reserved memory...\n");
-        for (i = 0; i < reserve_num; i++) {
+        for (i = 0; i < reserve_num; i++)
+        {
             vka_free_object(&system->vka, &root_task_uts[i]);
         }
         assert(system->user_untypeds_num > 0);
         /* initialize untypeds allocation map */
         printf("Initializing allocation map...\n");
-        for (i = 0; i < system->user_untypeds_num; ++i) {
+        for (i = 0; i < system->user_untypeds_num; ++i)
+        {
             system->user_untypeds_allocation[i] = 0;
         }
         
@@ -371,7 +374,7 @@ sel4osapi_system_initialize(void *bootstrap_mem_pool)
     //system->processes = simple_pool_new(SEL4OSAPI_USER_PROCESS_MAX, sizeof(sel4osapi_process_t), NULL, NULL, NULL);
     //assert(system->processes != NULL);
     
-    printf("Initializing root task envornment...\n");
+    printf("Initializing root task environment...\n");
     sel4osapi_system_initialize_root_task_env(system);
 
     //syslog_trace("Initializing main thread...");

@@ -124,14 +124,14 @@ static int BoostrapProcess(void)
     print("Try to alloc endpoint\n");
     vka_object_t rootTaskEP;
     error = vka_alloc_endpoint( &vka, &rootTaskEP);
-    /*
+    
     if( error != 0)
     {
         print("vka_alloc_endpoint for RootEndPoint failed %i\n" , error);
-        
+     
         return error;
     }
-    */
+
     return allocator != NULL;
 }
 int InitClient(const char* EPString )
@@ -152,6 +152,7 @@ int InitClient(const char* EPString )
     env = (ThreadEnvir*)seL4_GetMR(1);
     procEnv = (sel4osapi_process_env_t*) seL4_GetMR(2);
     
+    print("InitClient start BoostrapProcess\n");
     BoostrapProcess();
     
 	return 0;
@@ -166,6 +167,13 @@ void StopClient(int retCode)
     seL4_Send(endpoint, info);
 }
 
+
+void doExit(int retCode)
+{
+    StopClient(retCode);
+    assert(0); // never returns
+    while(1){}
+}
 
 void print(const char *format, ...)
 {

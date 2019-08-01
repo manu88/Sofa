@@ -285,31 +285,10 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
 /* END-fucking-POINTS Are HERE*/
 
 
-    
-    /**/
-    // This needs to be done AFTER sel4utils_configure_process_custom so that process->_process is valid
-    
-    seL4_CPtr process_ep_cap = 0;
-    /// make a cspacepath for the new endpoint cap
-    cspacepath_t ep_cap_path;
-    
-    vka_cspace_make_path( getVka(), fromEp->cptr, &ep_cap_path);
-    
-    process_ep_cap = sel4utils_mint_cap_to_process(&process->native,
-                                                   ep_cap_path,
-                                                   seL4_AllRights,
-                                                   process->pid);
-    
-    if (process_ep_cap == 0)
-    {
-        printf("Failed to sel4utils_mint_cap_to_process ep_cap_path\n");
-        
-        return -1;
-    }
 
     char endpoint_string[10] = "";
     
-    snprintf(endpoint_string, 10, "%ld", (long) process_ep_cap);
+    snprintf(endpoint_string, 10, "%ld", (long) process->env->fault_endpoint);// process_ep_cap);
     
     // rule : the endpoint should be the last arg, and is gonna be removed from the arg list before main is called
     seL4_Word argc = 2;

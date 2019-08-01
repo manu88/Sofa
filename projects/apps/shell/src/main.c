@@ -130,6 +130,10 @@ static int execCmd( const char* cmd)
         
         return -1;
     }
+    else if( strcmp("exit" , cmd) == 0)
+    {
+        doExit(0);
+    }
     else if( strcmp("wait" , cmd) == 0)
     {
         SofaSignal signal = 0;

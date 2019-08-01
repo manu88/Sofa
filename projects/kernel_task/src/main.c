@@ -221,7 +221,20 @@ static void run()
             }
             else if (label == seL4_VMFault)
             {
-                printf("[kernel_task] seL4_VMFault from %i %s\n" , sender->pid,  ProcessGetName(sender));
+                printf("[kernel_task] seL4_VMFault from %i %s\n" ,
+                       sender->pid,
+                       ProcessGetName(sender)
+                       );
+                
+                const seL4_Word programCounter      = seL4_GetMR(seL4_VMFault_IP);
+                const seL4_Word faultAddr           = seL4_GetMR(seL4_VMFault_Addr);
+                const seL4_Word isPrefetch          = seL4_GetMR(seL4_VMFault_PrefetchFault);
+                const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
+                
+                printf("[kernel_task] programCounter      %lu\n",programCounter);
+                printf("[kernel_task] faultAddr           %lu\n",faultAddr);
+                printf("[kernel_task] isPrefetch          %lu\n",isPrefetch);
+                printf("[kernel_task] faultStatusRegister %lu\n",faultStatusRegister);
                 ProcessKill(sender , SofaSignal_VMFault);
             }
             else if(label == seL4_UnknownSyscall)

@@ -24,13 +24,11 @@
 
 int main( int argc , char* argv[])
 {
-
-    int myPID = getPID();
-
-	print("started with pid %i\n" , myPID);
-    
-    if( myPID != 1)
+    // only allow to run once, and as the first process.
+    if( getPID() != 1)
+    {
         return 10;
+    }
 
     int pidShell = -1;
     int pidDriverKit = -1;
@@ -38,8 +36,6 @@ int main( int argc , char* argv[])
     
     print("spawn driverkitd pid %i\n"  , pidDriverKit);
     
-    
-
 	pidShell = spawn("shell",0 , NULL);
 
 	print("spawn shell pid %i\n"  , pidShell);
@@ -58,7 +54,6 @@ int main( int argc , char* argv[])
             pidShell = spawn("shell",0 , NULL);
         }
 	}
-
-
+    
 	return 0;
 }

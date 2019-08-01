@@ -36,7 +36,7 @@
 #endif
 
 #define SOFA_VERSION_MAJ   0
-#define SOFA_VERSION_MIN   9
+#define SOFA_VERSION_MIN   10
 #define SOFA_VERSION_PATCH 0
 
 #define SOFA_DEPRECATED(version) __attribute((deprecated))

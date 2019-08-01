@@ -8,7 +8,7 @@ add_executable(init src/main.c)
 
 
 
-target_link_libraries(init sel4_autoconf muslc sel4  sel4rt libSysCall )
+target_link_libraries(init sel4_autoconf muslc sel4  sel4rt libSysCall)
 
 set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE:init>")
 

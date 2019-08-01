@@ -211,8 +211,11 @@ typedef struct
 
 #ifndef KERNEL_TASK
 
+// not public
 int InitClient(const char* EPString );
 void StopClient(int retCode);
+
+void doExit(int retCode);
 
 void print(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 
