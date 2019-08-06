@@ -47,7 +47,7 @@ Server* NameServerGetServerNamed(const char*name)
         
         Server* server = n->data;
         
-        if( strcmp(server->name , name) == 0)
+        if( strcmp(KObjectGetName( (const KObject*) server) , name) == 0)
         {
             return server;
         }
@@ -160,12 +160,19 @@ static seL4_CPtr initEndPoint(Process* fromProcess)
     return ep.cptr;
 }
 
-int NameServerInit(Server*s)
+static int NameServerInit(Server* s, const char*name)
 {
     memset(s, 0 , sizeof(Server));
+    
+    KSetInitWithName(&s->base , name);
  
     int ret = list_init(&s->clients);
     return ret;
+}
+
+static void ServerRelease(KObject* obj)
+{
+    
 }
 
 uint32_t NameServerGetNumClients(const Server* server)
@@ -188,12 +195,12 @@ Server* NameServerRegister(Process*fromProcess, const char*name , int flags)
         return NULL;
     }
     
-    if( NameServerInit(server) != 0)
+    if( NameServerInit(server ,name) != 0)
     {
         free(server);
         return NULL;
     }
-    strncpy(server->name , name,MAX_SERVER_NAME);
+    //strncpy(server->name , name,MAX_SERVER_NAME);
     
     
     /* Shared mem */
@@ -253,7 +260,7 @@ void NameServerDump()
     {
         Server* server = n->data;
         
-        printf("Server %s %i client(s)\n" , server->name , NameServerGetNumClients( server));
+        printf("Server %s %i client(s)\n" , KObjectGetName( (const KObject*) server) , NameServerGetNumClients( server));
     }
 }
 
@@ -261,6 +268,7 @@ int ClientInit(Client *client)
 {
     memset(client , 0 , sizeof(Client));
     
+    KObjectInit(&client->base);
     return 0;
 }
 

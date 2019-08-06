@@ -25,7 +25,7 @@
 
 void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
-    const char* serverName = sender->bufEnv->buf;
+    const char* serverName = ProcessGetIPCBuffer(sender);
     
     int err = -1;
     
@@ -34,7 +34,7 @@ void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4_Word s
     if( serverName)
     {
         int flags = (int)seL4_GetMR(1);
-        printf("[kernel_task] RegisterServer name '%s' with flags %i\n", sender->bufEnv->buf , flags );
+        printf("[kernel_task] RegisterServer name '%s' with flags %i\n", ProcessGetIPCBuffer(sender) , flags );
         
         Server *serv = NameServerRegister(sender,serverName , flags);
         if( serv)
@@ -86,7 +86,7 @@ void processRegisterServer(Process *sender,seL4_MessageInfo_t info , seL4_Word s
 
 void processRegisterClient(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
-    const char* serverName = sender->bufEnv->buf;
+    const char* serverName = ProcessGetIPCBuffer(sender);
     
     printf("[kernel_task] RegisterClient to server '%s' from process '%s' %i \n", serverName , ProcessGetName(sender) , sender->pid );
     

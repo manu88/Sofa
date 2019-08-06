@@ -32,28 +32,50 @@
 #define CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE 67108864
 #define SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE        CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE
 
+#define CONFIG_LIB_OSAPI_USER_UNTYPED_MEM_SIZE 64*1024*1024
+#define SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE CONFIG_LIB_OSAPI_USER_UNTYPED_MEM_SIZE
+
+
+/* dimensions of virtual memory for the allocator to use */
+#define ALLOCATOR_VIRTUAL_POOL_SIZE ((1 << seL4_PageBits) * 4000)
+
 static uint8_t _bootstrap_mem_pool[40960/*SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE*/];
 
 static seL4_CPtr endpoint = 0;
 static ThreadEnvir* env = NULL;
+
+
+/* --------- System struct */
 static sel4osapi_process_env_t* procEnv = NULL;
 
-
 static allocman_t *allocator = NULL;
+
 static vka_t vka;
 
-/*
- * Process virtual memory address space.
- */
+static reservation_t vmem_reservation;
+
+void *vmem_addr = NULL;
+
 static vspace_t vspace;
-/*
- * Vspace management data.
- */
+
 static sel4utils_alloc_data_t vspace_alloc_data;
+
+
+/* --------- END OF System struct */
+vka_t* getVka()
+{
+    return &vka;
+}
+vspace_t* getVspace()
+{
+    return &vspace;
+}
 
 static int BoostrapProcess(void)
 {
+    
     int error = 0;
+    
     assert(procEnv);
     
     print("procEnv->free_slots.start %lu\n",procEnv->free_slots.start);
@@ -61,8 +83,8 @@ static int BoostrapProcess(void)
     allocator = bootstrap_use_current_1level(procEnv->root_cnode,
                                              procEnv->cspace_size_bits,
                                              procEnv->free_slots.start,
-                                             procEnv->free_slots.end,
-                                             SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE,
+                                             procEnv->free_slots.end,SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE,
+                                             //SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE,
                                              _bootstrap_mem_pool);
     
     assert(allocator);
@@ -85,8 +107,8 @@ static int BoostrapProcess(void)
         vka_cspace_make_path(&vka, slot, &path);
         /* allocman doesn't require the paddr unless we need to ask for phys addresses,
          * which we don't. */
-        uint32_t fake_paddr = 0;
-        uint32_t size_bits = procEnv->untyped_size_bits_list[size_bits_index];
+        uintptr_t fake_paddr = 0;
+        size_t size_bits = procEnv->untyped_size_bits_list[size_bits_index];
         int error = allocman_utspace_add_uts(allocator, 1, &path, &size_bits, &fake_paddr, ALLOCMAN_UT_KERNEL);
         
         if( error)
@@ -99,6 +121,9 @@ static int BoostrapProcess(void)
     print("loop ok\n");
     
     /* create a vspace */
+    
+#if 0 /*sel4test's version */
+    
     void *existing_frames[procEnv->stack_pages + 2];
     existing_frames[0] = (void *) procEnv;
     existing_frames[1] = seL4_GetIPCBuffer();
@@ -112,15 +137,23 @@ static int BoostrapProcess(void)
     error = sel4utils_bootstrap_vspace(&vspace, &vspace_alloc_data, procEnv->page_directory, &vka,
                                        NULL, NULL, existing_frames);
     
-    assert(error == 0);
     
-#if 0
-    void *existing_frames[] = { procEnv,seL4_GetIPCBuffer(), NULL};
+#else
+    void *existing_frames[] = { procEnv,seL4_GetIPCBuffer()};// , NULL};
     error = sel4utils_bootstrap_vspace(&vspace, &vspace_alloc_data, procEnv->page_directory, &vka,
                                        NULL, NULL, existing_frames);
     
-#endif
+#endif /*sel4osapi's version */
     
+    
+    assert(error == 0);
+    print("vspace ok\n");
+    
+    return error;
+    vmem_reservation = vspace_reserve_range(&vspace, SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4, seL4_AllRights, 1, &vmem_addr);
+    assert(vmem_reservation.res);
+    print("vspace_reserve_range ok\n");
+    /*
     print("Try to alloc endpoint\n");
     vka_object_t rootTaskEP;
     error = vka_alloc_endpoint( &vka, &rootTaskEP);
@@ -132,14 +165,15 @@ static int BoostrapProcess(void)
         return error;
     }
 
-    return allocator != NULL;
+     */
+    return error;//allocator != NULL;
 }
 int InitClient(const char* EPString )
 {
 	endpoint = (seL4_CPtr) atoi(EPString/*argv[argc-1]*/);
 
     seL4_Word badge;
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     //seL4_Recv(endpoint, &badge);
     seL4_SetMR(0 , SysCall_BootStrap);
     
@@ -147,11 +181,15 @@ int InitClient(const char* EPString )
     seL4_Call(endpoint, info);
     
     assert(seL4_MessageInfo_get_label(info) == seL4_Fault_NullFault);
-    assert(seL4_MessageInfo_get_length(info) == 3);
+    assert(seL4_MessageInfo_get_length(info) == 2);
     assert(seL4_GetMR(0) == SysCall_BootStrap);
-    env = (ThreadEnvir*)seL4_GetMR(1);
-    procEnv = (sel4osapi_process_env_t*) seL4_GetMR(2);
     
+    //env = (ThreadEnvir*)seL4_GetMR(1);
+    procEnv = (sel4osapi_process_env_t*) seL4_GetMR(1);
+    assert(procEnv);
+    env = &procEnv->mainThreadEnv;
+    
+    assert(env);
     print("InitClient start BoostrapProcess\n");
     BoostrapProcess();
     

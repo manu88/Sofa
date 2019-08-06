@@ -62,7 +62,7 @@ void processKill(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badg
 
 void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
-    printf("[kernel_task] spawn '%s'\n", sender->bufEnv->buf);
+    printf("[kernel_task] spawn '%s'\n", ProcessGetIPCBuffer(sender));
     
     int err = -1;
     
@@ -72,7 +72,7 @@ void processSpawn(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_bad
         if( newProc)
         {
             ProcessInit(newProc);
-            err = ProcessStart(newProc, sender->bufEnv->buf ,&getKernelTaskContext()->rootTaskEP , sender);
+            err = ProcessStart(newProc, ProcessGetIPCBuffer(sender) ,&getKernelTaskContext()->rootTaskEP , sender);
             
             if( err == 0)
             {
@@ -155,8 +155,8 @@ void processBootstrap(Process *sender,seL4_MessageInfo_t info , seL4_Word sender
 {
     assert(sender->stats.numSysCalls == 0);
     seL4_SetMR(0, SysCall_BootStrap);
-    seL4_SetMR(1, (seL4_Word) sender->vaddr);
-    seL4_SetMR(2, (seL4_Word) sender->venv);
+    //seL4_SetMR(1, (seL4_Word) sender->vaddr);
+    seL4_SetMR(1, (seL4_Word) sender->venv);
     
     Reply( info);
 }

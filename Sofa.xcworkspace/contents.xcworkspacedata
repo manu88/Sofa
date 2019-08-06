@@ -17,6 +17,12 @@
             location = "group:Sofa.h">
          </FileRef>
          <FileRef
+            location = "group:Bootstrap.h">
+         </FileRef>
+         <FileRef
+            location = "group:Bootstrap.c">
+         </FileRef>
+         <FileRef
             location = "group:system.c">
          </FileRef>
          <FileRef
@@ -33,12 +39,6 @@
          </FileRef>
          <FileRef
             location = "group:NameServer.c">
-         </FileRef>
-         <FileRef
-            location = "group:Bootstrap.h">
-         </FileRef>
-         <FileRef
-            location = "group:Bootstrap.c">
          </FileRef>
          <FileRef
             location = "group:Timer.h">

@@ -15,6 +15,7 @@ target_link_libraries(libSysCall
 		sel4 
 		muslc
 		sel4allocman
+#		sel4muslcsys
 )
 
 # warn about everything

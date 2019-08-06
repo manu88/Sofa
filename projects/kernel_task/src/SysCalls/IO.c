@@ -21,7 +21,7 @@
 
 void processWrite(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
-    printf("[%s] %s" ,ProcessGetName(sender), sender->bufEnv->buf);
+    printf("[%s] %s" ,ProcessGetName(sender), ProcessGetIPCBuffer(sender));
     seL4_SetMR(1 , 0); // no err
     Reply( info);
 }
@@ -48,8 +48,8 @@ void processRead(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badg
         ps_cdev_putchar(&getKernelTaskContext()->comDev , c);
     }
     
-    sender->bufEnv->buf[0] = c;
-    sender->bufEnv->buf[1] = 0;
+    ProcessGetIPCBuffer(sender)[0] = c;
+    ProcessGetIPCBuffer(sender)[1] = 0;
     
     seL4_SetMR(0,SysCall_Read);
     seL4_SetMR(1, c >0? 1 : 0 );

@@ -19,6 +19,7 @@
 
 
 #include <sel4utils/process.h>
+#include "Sofa.h"
 #include <SysCalls.h>
 #include <SysCaps.h>
 #include "KObject/KObject.h"
@@ -66,9 +67,6 @@ typedef struct _Process
     
     Capabilities caps;
 	
-    ThreadEnvir* bufEnv; // This is shared with the process and defined in libSysCall
-    void *vaddr; // This is the shared addr of bufEnv
-
     uint32_t timerID; // > 0 if allocated. Used to sleep
     
     seL4_CPtr reply; // slot for async replies
@@ -88,6 +86,11 @@ typedef struct _Process
     //UT_hash_handle clientsList; /* When the process is a client */
     
 } Process;
+
+static inline char* ProcessGetIPCBuffer( Process *p)
+{
+    return p->env->mainThreadEnv.buf;
+}
 
 static inline const char* ProcessGetName( const Process* p)
 {

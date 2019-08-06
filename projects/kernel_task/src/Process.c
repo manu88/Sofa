@@ -90,8 +90,8 @@ sel4osapi_process_init_env(Process *process,
         /* set up caps about the process */
         process->env->page_directory = sel4osapi_process_copy_cap_into(process, parent_vka, process->native.pd.cptr, seL4_AllRights);
         
-        process->env->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
-        process->env->stack = process->native.thread.stack_top - CONFIG_SEL4UTILS_STACK_SIZE;
+        //process->env->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
+        //process->env->stack = process->native.thread.stack_top - CONFIG_SEL4UTILS_STACK_SIZE;
         
         process->env->root_cnode = SEL4UTILS_CNODE_SLOT;
         process->env->tcb = sel4osapi_process_copy_cap_into(process, parent_vka, process->native.thread.tcb.cptr, seL4_AllRights);
@@ -104,7 +104,7 @@ sel4osapi_process_init_env(Process *process,
             {
                 continue;
             }
-            //printf("Start user_untypeds at %i\n" , i);
+            printf("[kernel_task] Start user_untypeds for %s at %i\n",ProcessGetName(process) , i);
             
             proc_ut_cap = sel4osapi_process_copy_cap_into(process, parent_vka, user_untypeds[i].cptr, seL4_AllRights);
             
@@ -230,8 +230,6 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     printf("[kernel_task] configure '%s' process -> pid %i\n" , procName , process->pid);
     assert(process->pid> 0);
     process->base.obj.k_name = strdup(procName);
-
-#ifndef TEST_ONLY
     
     process->priority = SOFA_DEFAULT_PRIORITY;
     //sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, process->priority/*seL4_MaxPrio*/);
@@ -259,7 +257,6 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         printf( "Failed to badge ep");
     }
     
-    
     config = process_config_fault_cptr(config ,badged_ep_path.capPtr );
     
     
@@ -270,9 +267,9 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         printf("Error sel4utils_configure_process_custom %i\n" , error);
         return error;
     }
-
+    
     process->env = (sel4osapi_process_env_t*) vspace_new_pages(getVspace(), seL4_AllRights, 1, PAGE_BITS_4K);
-    memset(process->env, 0 , PAGE_BITS_4K);
+    
     error = sel4osapi_process_init_env(process, getVka(), getVspace(),
                                        getSystem()->user_untypeds_num,
                                        getSystem()->user_untypeds_allocation,
@@ -284,13 +281,13 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
  
 /* END-fucking-POINTS Are HERE*/
 
-
-
     char endpoint_string[10] = "";
     
     snprintf(endpoint_string, 10, "%ld", (long) process->env->fault_endpoint);// process_ep_cap);
     
-    // rule : the endpoint should be the last arg, and is gonna be removed from the arg list before main is called
+    // rule : the endpoint should be the last arg,
+    // and is gonna be removed from the arg list before main is called
+    // in sel4rt' start.c `__sel4runtime_start_main`
     seL4_Word argc = 2;
     char *argv[] = { (char*)procName , endpoint_string};
     
@@ -305,16 +302,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         return error;
     }
     
-    /* Shared mem */
-    size_t numPages = 1;
-    process->bufEnv = vspace_new_pages(getVspace(),seL4_AllRights , numPages , PAGE_BITS_4K);
-    if( process->bufEnv == NULL)
-    {
-        printf("Error vspace_new_pages\n");
-        return -1;
-    }
-    
-    seL4_CPtr process_data_frame = vspace_get_cap(getVspace(), process->bufEnv);
+    seL4_CPtr process_data_frame = vspace_get_cap(getVspace(), process->env);
     if( process_data_frame == 0)
     {
         printf("vspace_get_cap failed\n");
@@ -329,43 +317,17 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
         return -1;
     }
     
+    size_t numPages = 1;
+    process->venv = vspace_map_pages(&process->native.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
     
-    process->vaddr = vspace_map_pages(&process->native.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
-    if( process->vaddr == NULL)
+    if( process->venv == NULL)
     {
         printf("vspace_map_pages error \n");
         return -1;
     }
-    assert(process->vaddr != 0);
-    /*END Shared mem*/
-    
-    {
-        seL4_CPtr process_data_frame = vspace_get_cap(getVspace(), process->env);
-        if( process_data_frame == 0)
-        {
-            printf("vspace_get_cap failed\n");
-            return -1;
-        }
-        
-        seL4_CPtr process_data_frame_copy = 0;
-        sel4osapi_util_copy_cap(getVka(), process_data_frame, &process_data_frame_copy);
-        if( process_data_frame_copy == 0)
-        {
-            printf("sel4osapi_util_copy_cap failed\n");
-            return -1;
-        }
-        
-        
-        process->venv = vspace_map_pages(&process->native.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
-        if( process->venv == NULL)
-        {
-            printf("vspace_map_pages error \n");
-            return -1;
-        }
-        assert(process->venv != 0);
-    }
+    assert(process->venv != 0);
 
-#endif
+
     if( process->pid != 1) //
     {
         assert(parent);
@@ -390,7 +352,7 @@ static int ProcessSignalTerminaison( Process* process , Process* parent)
         printf("Parent %i %s is waiting for its child\n", parent->pid , ProcessGetName( parent));
 
         assert(parent->reply);
-#ifndef TEST_ONLY
+
         seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 4);
         seL4_SetMR(0, SysCall_Wait);
         seL4_SetMR(1, process->pid);
@@ -401,7 +363,7 @@ static int ProcessSignalTerminaison( Process* process , Process* parent)
         
         
         cnode_delete(getVka(),parent->reply);
-#endif
+
         parent->reply = 0;
 
         parent->replyState = ReplyState_None;
@@ -445,8 +407,38 @@ int ProcessCleanup( Process* process)
     
     int error = ProcessListRemove(process);
     
-    
     return error;
+}
+
+
+static int ProcessCleanMemory(Process *process)
+{
+    
+    /* unmap the env.init data frame */
+    vspace_unmap_pages(&process->native.vspace, process->venv, 1, PAGE_BITS_4K, NULL);
+    
+    // the num of slots to remove
+    int assigned_untypeds = (process->env->untypeds.end - process->env->untypeds.start)+1;
+    
+    
+    printf("Start Cleaning process memory for  %i slots\n",assigned_untypeds);
+    // reset all the untypeds that were assigned to the process
+    for (int i = 0; i < assigned_untypeds; i++)
+    {
+        cspacepath_t path;
+        vka_cspace_make_path(getVka(), process->env->untypeds.start + i, &path);
+        vka_cnode_revoke(&path);
+        
+        printf("Clean at %i\n" , process->env->untyped_indices[i] );
+        getSystem()->user_untypeds_allocation[process->env->untyped_indices[i]] = 0;
+    }
+    printf("End Cleaning process memory\n");
+    
+    //sel4utils_destroy_process(&process->native, getVka() );
+    
+    printf("End sel4utils_destroy_process\n");
+    
+    return 0;
 }
 int ProcessKill( Process* process , SofaSignal signal)
 {
@@ -478,19 +470,14 @@ int ProcessKill( Process* process , SofaSignal signal)
     
     NameServerRemoveAllFromProcess(process);
     RemoveProcessAsClient(process);
-#ifndef TEST_ONLY
-    sel4utils_destroy_process(&process->native, getVka() );
-#endif
     
-    error = 0;
     
+
     if( ret == 0)
     {
         if( process->reply)
         {
-#ifndef TEST_ONLY
             cnode_delete(getVka(),process->reply);
-#endif
             process->reply = 0;
         }
         
@@ -500,6 +487,8 @@ int ProcessKill( Process* process , SofaSignal signal)
     {
         process->status = ProcessState_Zombie;
     }
+    
+    error = ProcessCleanMemory(process);
     
     return error;
 }

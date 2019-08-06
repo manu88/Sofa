@@ -26,6 +26,11 @@
 int main( int argc , char* argv[])
 {
     
+    /*
+    ps_io_mapper_t io_mapper;
+    error =  sel4platsupport_new_io_mapper(context.vspace, context.vka, &io_mapper);
+    assert(error == 0);
+    */
     ServerEnvir* server =  RegisterServerWithName("driverkit", 0);
 
     if( server)

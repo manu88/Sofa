@@ -91,7 +91,7 @@ static void earlyInit()
     assert(error == 0);
     
     // we reserve the timer ID 0 for us
-    // so that threads always have a timerID > 0 so that we can distinguish unallocated ids(0)
+    // so that threads always have a timerID > 0 and we can distinguish unallocated ids(0)
     assert(tm_alloc_id_at( getTM() , 0) == 0);
     
     

@@ -17,7 +17,9 @@
 
 #pragma once
 #include <sel4/sel4.h>
+#include <allocman/vka.h> // for PAGE_SIZE_4K definitions. Maybe an other header should be more suitable but I can't find where PAGE_SIZE_4K is defined...
 #include <stdint.h>
+
 
 typedef enum
 {
@@ -92,6 +94,16 @@ typedef enum
 #define CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS 10
 #endif
 
+
+#define IPC_BUF_SIZE 256
+
+typedef struct
+{
+    char buf[IPC_BUF_SIZE];
+    unsigned long bufSize;
+    
+} ThreadEnvir;
+
 /*
  * Data structure representing a process' environment
  * information. This information includes mostly useful
@@ -145,11 +157,13 @@ typedef struct sel4osapi_process_env
      */
     seL4_CPtr fault_endpoint;
     
+    ThreadEnvir mainThreadEnv;
+    
     /* the number of pages in the stack */
-    int stack_pages;
+    //int stack_pages;
     
     /* address of the stack */
-    void *stack;
+    //void *stack;
     
     /*
      * Endpoint to the sysclock instance.
@@ -183,13 +197,11 @@ typedef struct sel4osapi_process_env
     
 } sel4osapi_process_env_t;
 
-#define IPC_BUF_SIZE 256
-typedef struct
-{
-	char buf[IPC_BUF_SIZE];
-	unsigned long bufSize;
 
-} ThreadEnvir;
+
+
+
+
 
 
 
@@ -208,6 +220,16 @@ typedef struct
     
     seL4_CPtr endpoint;
 } ClientEnvir;
+
+#ifdef KERNEL_TASK
+// an instance of sel4osapi_process_env_t MUST fit in a single page
+STATIC_ASSERT(sizeof(sel4osapi_process_env_t) < PAGE_SIZE_4K,sel4osapi_process_env_t);
+
+// dito for other structs
+STATIC_ASSERT(sizeof(ThreadEnvir) < PAGE_SIZE_4K,ThreadEnvir);
+STATIC_ASSERT(sizeof(ServerEnvir) < PAGE_SIZE_4K,ServerEnvir);
+STATIC_ASSERT(sizeof(ClientEnvir) < PAGE_SIZE_4K,ClientEnvir);
+#endif
 
 #ifndef KERNEL_TASK
 
@@ -251,4 +273,8 @@ ServerEnvir* RegisterServerWithName(const char*name, int flags);
 ClientEnvir* ConnectToServer( const char*name);
 int ServerRecv(ServerEnvir* server);
 
+
+
+//vka_t* getVka(void);
+//vspace_t* getVspace(void);
 #endif

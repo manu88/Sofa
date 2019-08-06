@@ -28,6 +28,7 @@
 typedef struct
 {
     vka_object_t rootTaskEP;
+    
     ps_chardevice_t comDev;
     
     //System* system;

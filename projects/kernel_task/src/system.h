@@ -16,6 +16,8 @@
 #include <simple/simple.h>
 #include <allocman/vka.h>
 #include <sel4utils/vspace.h>
+
+#include "Sofa.h"
 #include <SysCalls.h>
 
 /**

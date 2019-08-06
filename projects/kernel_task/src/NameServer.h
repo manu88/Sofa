@@ -18,9 +18,11 @@
 #pragma once
 
 #include <stdint.h>
+#include "Sofa.h"
 #include <SysCalls.h>
 #include <utils/list.h>
 #include <vka/object.h>
+#include "KObject/KObject.h"
 
 #define MAX_SERVER_NAME 128
 #define MAX_CLIENT_NAME 128
@@ -29,8 +31,8 @@ typedef struct _Process Process; // forward
 
 typedef struct _Server
 {
-    char name[MAX_SERVER_NAME];
-    
+    KSet base;
+    //char name[MAX_SERVER_NAME];
     
     list_t clients;
     Process* owner;
@@ -44,14 +46,13 @@ typedef struct _Server
 
 typedef struct _Client
 {
-    char name[MAX_CLIENT_NAME];
+    KObject base;
+    //char name[MAX_CLIENT_NAME];
     
     Process* owner;
     ClientEnvir* env;
     void *vaddr; // This is the shared addr of env
 } Client;
-
-
 
 
 int NameServerInitSystem(void);

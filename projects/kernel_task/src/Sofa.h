@@ -64,12 +64,6 @@
 // Mark methods with no Sel4 dependencies that can be tested on other platforms
 #define SOFA_UNIT_TESTABLE
 
-
-
-#ifndef MAX_PATH_LOOKUP
-#define MAX_PATH_LOOKUP 128
-#endif
-
 #define ALWAYS_ASSERT(x) assert(x)
 
 #define kprintf(args, ...) printf(args, ##__VA_ARGS__)
@@ -96,3 +90,8 @@ typedef enum
 
 #define __packed     __attribute__((packed))
 
+#define STATIC_ASSERT(predicate, file) _impl_CASSERT_LINE(predicate,__LINE__,file)
+
+#define _impl_PASTE(a,b) a##b
+#define _impl_CASSERT_LINE(predicate, line, file) \
+typedef char _impl_PASTE(assertion_failed_##file##_,line)[2*!!(predicate)-1];

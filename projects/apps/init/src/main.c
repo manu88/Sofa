@@ -48,7 +48,7 @@ int main( int argc , char* argv[])
         
         print("PID %ld returned with status %i signal %i\n" , retPID  , wstatus , signal);
         
-        if( retPID == pidShell)
+        if( retPID != -1 && retPID == pidShell)
         {
             print("Restart Shell\n");
             pidShell = spawn("shell",0 , NULL);

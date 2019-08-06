@@ -124,7 +124,7 @@ typedef struct
  */
 typedef struct _KObject
 {
-    const char                    *k_name;
+    const char                   *k_name;
     struct kref                  kref;
 
     struct _KObject          *_parent;
@@ -180,6 +180,8 @@ typedef struct _KSet
 
 void KSetInit(KSet* set) NO_NULL_POINTERS;
 void KSetInitWithName(KSet*set , const char* name) NO_NULL_POINTERS;
+
+
 
 // Will take ownership, ie retain the KObject
 int KSetAppend(KSet*set , KObject* obj) NO_NULL_POINTERS;
