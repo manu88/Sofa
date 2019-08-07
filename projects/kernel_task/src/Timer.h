@@ -38,7 +38,7 @@ int TimerCancelID( uint32_t id);
 int TimerProcess(seL4_Word sender_badge);
 time_manager_t *getTM(void);
 
-
+// Get the current time in nanoseconds.
 uint64_t GetCurrentTime(void);
 
 

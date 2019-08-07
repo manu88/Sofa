@@ -54,7 +54,6 @@ typedef struct
     uint64_t startedTime;
 } Stats;
 
-#define MAX_PROCESS_NAME 128
 typedef struct _Process
 {
     KSet base;
@@ -87,42 +86,42 @@ typedef struct _Process
     
 } Process;
 
-static inline char* ProcessGetIPCBuffer( Process *p)
+static inline NO_NULL_POINTERS char* ProcessGetIPCBuffer( Process *p)
 {
     return p->env->mainThreadEnv.buf;
 }
 
-static inline const char* ProcessGetName( const Process* p)
+static inline NO_NULL_POINTERS const char* ProcessGetName( const Process* p)
 {
     return p->base.obj.k_name;
 }
 
-static inline Process* ProcessGetParent( Process*p)
+static inline NO_NULL_POINTERS Process* ProcessGetParent( Process*p)
 {
     return (Process*) p->base.obj._parent;
 }
 
 int ProcessListInit(void);
-void ProcessInit(Process*p);
+void ProcessInit(Process*p) NO_NULL_POINTERS;
 
 size_t ProcessListGetCount(void);
 
-size_t ProcessGetChildrenCount(Process* process);
+size_t ProcessGetChildrenCount(Process* process) NO_NULL_POINTERS;
 
-Process* ProcessGetFirstChild(Process* fromProcess);
-Process* ProcessGetFirstChildZombie(Process* fromProcess);
+Process* ProcessGetFirstChild(Process* fromProcess) NO_NULL_POINTERS;
+Process* ProcessGetFirstChildZombie(Process* fromProcess) NO_NULL_POINTERS;
 
-// signal can be 0
+// signal can be 0, ie no signal
 int ProcessKill( Process* process , SofaSignal signal);
 
-int ProcessCleanup( Process* process);
+int ProcessCleanup( Process* process) NO_NULL_POINTERS;
 Process* ProcessGetByPID( uint32_t pid);
 
 int ProcessStart(Process *process , const char* name , vka_object_t *fromEp, Process *parent);
 
 
 int ProcessSetPriority( Process* process , int prio);
-int ProcessGetPriority( Process* process , int *prio);
+int ProcessGetPriority( Process* process , int *prio) NO_NULL_POINTERS;
 
 void ProcessDump(void);
 
@@ -131,4 +130,4 @@ static inline int ProcessHasCap(Process* proc , SofaCapabilities cap)
 {
     return (proc->caps.caps & cap) == cap;
 }
-void ProcessDumpCaps(Process *proc);
+void ProcessDumpCaps(Process *proc) NO_NULL_POINTERS;

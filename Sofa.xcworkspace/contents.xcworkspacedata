@@ -32,9 +32,6 @@
             location = "group:Utils.h">
          </FileRef>
          <FileRef
-            location = "group:Timer.c">
-         </FileRef>
-         <FileRef
             location = "group:NameServer.h">
          </FileRef>
          <FileRef
@@ -42,6 +39,9 @@
          </FileRef>
          <FileRef
             location = "group:Timer.h">
+         </FileRef>
+         <FileRef
+            location = "group:Timer.c">
          </FileRef>
          <FileRef
             location = "group:Utils.c">

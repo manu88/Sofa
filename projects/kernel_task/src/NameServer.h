@@ -57,15 +57,15 @@ typedef struct _Client
 
 int NameServerInitSystem(void);
 
-Server* NameServerGetServerNamed(const char*name);
+Server* NameServerGetServerNamed(const char*name) NO_NULL_POINTERS;
 
 Server* NameServerRegister(Process*fromProcess, const char*name , int flags);
 
-Client* NameServerCreateClient(Process*fromProcess , Server* toServer);
+Client* NameServerCreateClient(Process*fromProcess , Server* toServer) NO_NULL_POINTERS;
 
-void NameServerRemoveAllFromProcess(Process*fromProcess);
-int RemoveProcessAsClient( Process* fromProcess);
+void NameServerRemoveAllFromProcess(Process*fromProcess) NO_NULL_POINTERS;
+int RemoveProcessAsClient( Process* fromProcess) NO_NULL_POINTERS;
 
-uint32_t NameServerGetNumClients(const Server* server);
+uint32_t NameServerGetNumClients(const Server* server) NO_NULL_POINTERS;
 
 void NameServerDump(void);

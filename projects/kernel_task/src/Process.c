@@ -220,8 +220,7 @@ int ProcessGetPriority( Process* process , int *prio)
 int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp , Process *parent)
 {
     assert(process != parent);
-    assert(strlen(procName) < MAX_PROCESS_NAME);
-    
+
     assert(fromEp->cptr != 0);
    
     int error = 0;
@@ -500,7 +499,15 @@ void ProcessDump()
 
     HASH_ITER(hh, _procList, proc, temp)
     {
-        printf("%i '%s' status %i Parent %i (%li child)  replyState %i #syscalls %ld started at %li\n" ,
+        
+        uint64_t timeNS =  proc->stats.startedTime;
+        
+        uint64_t secs = timeNS / 1000000000;
+        uint64_t remainsNS = timeNS - (secs * 1000000000);
+        uint64_t ms = remainsNS / 1000000;
+        
+        
+        printf("%i '%s' status %i Parent %i (%li child)  replyState %i #syscalls %ld started at %li:%li\n" ,
                proc->pid,
                ProcessGetName(proc) ,
                proc->status,
@@ -508,7 +515,8 @@ void ProcessDump()
                ProcessGetChildrenCount(proc),
                proc->replyState,
                proc->stats.numSysCalls,
-               proc->stats.startedTime
+               secs,
+               ms
                );
     }
 }

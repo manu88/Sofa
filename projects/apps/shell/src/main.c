@@ -150,7 +150,14 @@ static int execCmd( const char* cmd)
     }
     else if( strcmp("time" , cmd) == 0)
     {
-        print("Time %li\n" , getTime() );
+        uint64_t timeNS =  getTime();
+
+        uint64_t secs = timeNS / 1000000000;
+        uint64_t remainsNS = timeNS - (secs * 1000000000);
+        uint64_t ms = remainsNS / 1000000;
+
+        print("Time %li:%li ms\n" , secs , ms );
+
         return 0;
     }
     else if( startsWith("sleep ", cmd))
