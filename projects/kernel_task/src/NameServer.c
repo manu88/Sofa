@@ -164,7 +164,7 @@ static int NameServerInit(Server* s, const char*name)
 {
     memset(s, 0 , sizeof(Server));
     
-    KSetInitWithName(&s->base , name);
+    KSetInitWithName(&s->base ,strdup( name));
  
     int ret = list_init(&s->clients);
     return ret;

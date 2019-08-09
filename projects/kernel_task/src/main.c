@@ -57,15 +57,16 @@ static int initRootEndPoint()
 static void earlyInit()
 {
 	int error = bootstrapSystem(); // This MUST be the first thing done!
-
-    printf("[kernel_task] bootstrap returned %i\n" , error);
+    assert(error == 0);
+    
 
     assert(bootstrapIO() == 0);
     
     int ret = seL4_TCB_SetPriority(simple_get_tcb(getSimple()) , simple_get_tcb(getSimple()) , SOFA_DEFAULT_PRIORITY);
     
 	error = initRootEndPoint();
-	printf("[kernel_task] root EndPoint returned %i\n" , error);
+    assert(error == 0);
+	
     
     
 /* io ops */
@@ -144,15 +145,15 @@ static int OnTime(uintptr_t token)
 
 static void lateInit()
 {
-    printf("##########################################\n");
-    printf("#                 Sofa OS                #\n");
-    printf("##########################################\n");
-    printf("Version %2i.%2i.%2i\n" , SOFA_VERSION_MAJ , SOFA_VERSION_MIN , SOFA_VERSION_PATCH);
+    klog("##########################################\n");
+    klog("#                 Sofa OS                #\n");
+    klog("##########################################\n");
+    klog("Version %.2i.%.2i.%.2i\n" , SOFA_VERSION_MAJ , SOFA_VERSION_MIN , SOFA_VERSION_PATCH);
     lsCPIO();
     
     int ret = ProcessListInit();
     assert(ret == 0);
-    printf("[kernel_task] init name server\n");
+    klog("[kernel_task] init name server\n");
     ret = NameServerInitSystem();
     assert(ret == 0);
     
@@ -167,6 +168,7 @@ static void lateInit()
     if(ProcessStart(&initProcess , "init" ,&getKernelTaskContext()->rootTaskEP , NULL) != 0)
     {
         printf("[kernel_task] error starting init process\n");
+        assert(0);
     }
     assert(initProcess.pid == 1); // MUST BE 1
  
@@ -186,7 +188,6 @@ static void lateInit()
 
 static void run()
 {
-	printf("[kernel_task] start runloop\n");
 	while(1)
 	{
 
@@ -217,11 +218,11 @@ static void run()
             }
             else if( label == seL4_CapFault)
             {
-                printf("[kernel_task] seL4_CapFault from %i %s\n" , sender->pid,  ProcessGetName(sender));
+                klog("[kernel_task] seL4_CapFault from %i %s\n" , sender->pid,  ProcessGetName(sender));
             }
             else if (label == seL4_VMFault)
             {
-                printf("[kernel_task] seL4_VMFault from %i %s\n" ,
+                klog("[kernel_task] seL4_VMFault from %i %s\n" ,
                        sender->pid,
                        ProcessGetName(sender)
                        );
@@ -231,10 +232,10 @@ static void run()
                 const seL4_Word isPrefetch          = seL4_GetMR(seL4_VMFault_PrefetchFault);
                 const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
                 
-                printf("[kernel_task] programCounter      %lu\n",programCounter);
-                printf("[kernel_task] faultAddr           %lu\n",faultAddr);
-                printf("[kernel_task] isPrefetch          %lu\n",isPrefetch);
-                printf("[kernel_task] faultStatusRegister %lu\n",faultStatusRegister);
+                klog("[kernel_task] programCounter      %lu\n",programCounter);
+                klog("[kernel_task] faultAddr           %lu\n",faultAddr);
+                klog("[kernel_task] isPrefetch          %lu\n",isPrefetch);
+                klog("[kernel_task] faultStatusRegister %lu\n",faultStatusRegister);
                 ProcessKill(sender , SofaSignal_VMFault);
             }
             else if(label == seL4_UnknownSyscall)
@@ -257,9 +258,12 @@ static void run()
 }
 
 
+
+
+
 int main()
 {
-	printf("[kernel_task] started\n");
+	klog("[kernel_task] started\n");
 
 	earlyInit();
 	lateInit();

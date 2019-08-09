@@ -303,7 +303,7 @@ long unsigned int getTime()
     
     assert(seL4_GetMR(0) == SysCall_GetTime);
     
-    return  seL4_GetMR(1);
+    return seL4_GetMR(1);
 }
 
 static int _Sleep( unsigned long l , SleepUnit unit)
@@ -552,7 +552,6 @@ int  CapAcquire( SofaCapabilities cap)
 {
     doCapSysCall(CapOperation_Acquire , cap);
 }
-
 
 void* RequestResource( SofaResource res)
 {

@@ -45,7 +45,7 @@ int main( int argc , char* argv[])
         return 1;
     }
     
-    
+    /*
     void* acpiAddr =  RequestResource( SofaResource_ACPI);
     
     if( acpiAddr)
@@ -56,7 +56,7 @@ int main( int argc , char* argv[])
     {
         print("RequestResource ACPI error\n");
     }
-    
+    */
 	while(1)
 	{
         int sender =  ServerRecv(server);

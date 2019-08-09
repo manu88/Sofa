@@ -25,6 +25,10 @@
 
 #include <vka/capops.h>
 
+
+static void ProcRelease(KObject *p);
+
+
 static Process* _procList = NULL;
 
 static uint32_t pidCounter = 1;
@@ -36,10 +40,7 @@ int ProcessListInit()
     return 0;
 }
 
-static void ProcRelease(KObject *p)
-{
-    free(p);
-}
+
 
 seL4_CPtr
 sel4osapi_process_copy_cap_into(Process *process, vka_t *parent_vka, seL4_CPtr cap, seL4_CapRights_t rights)
@@ -104,7 +105,7 @@ sel4osapi_process_init_env(Process *process,
             {
                 continue;
             }
-            printf("[kernel_task] Start user_untypeds for %s at %i\n",ProcessGetName(process) , i);
+            //printf("[kernel_task] Start user_untypeds for %s at %i\n",ProcessGetName(process) , i);
             
             proc_ut_cap = sel4osapi_process_copy_cap_into(process, parent_vka, user_untypeds[i].cptr, seL4_AllRights);
             
@@ -124,7 +125,7 @@ sel4osapi_process_init_env(Process *process,
             untyped_size += 1 << user_untypeds_size_bits[i];
         }
         
-        printf("untyped_count %u  untyped_size %u\n" , untyped_count,untyped_size );
+        //printf("untyped_count %u  untyped_size %u\n" , untyped_count,untyped_size );
         assert((process->env->untypeds.end - process->env->untypeds.start) + 1 <= user_untypeds_num);
 
 
@@ -141,8 +142,8 @@ sel4osapi_process_init_env(Process *process,
         process->env->free_slots.start = process->env->fault_endpoint + 1;
         process->env->free_slots.end = (1u << CONFIG_SEL4UTILS_CSPACE_SIZE_BITS);
         
-        printf("[kernel_task]free_slots.start %lu\n", process->env->free_slots.start);
-        printf("[kernel_task]free_slots.end %lu\n", process->env->free_slots.end);
+        //printf("[kernel_task]free_slots.start %lu\n", process->env->free_slots.start);
+        //printf("[kernel_task]free_slots.end %lu\n", process->env->free_slots.end);
         
         assert(process->env->free_slots.start < process->env->free_slots.end);
     }
@@ -217,12 +218,25 @@ int ProcessGetPriority( Process* process , int *prio)
     return 0;
 }
 
+inline static void PrintCspacepath_t(const cspacepath_t* src)
+{
+    (void)(src);
+    printf("capPtr:     %lx\n", src->capPtr);
+    printf("capDepth:   %lx\n", src->capDepth);
+    printf("root:       %lx\n", src->root);
+    printf("dest:       %lx\n", src->dest);
+    printf("destDepth:  %lx\n", src->destDepth);
+    printf("offset:     %lx\n", src->offset);
+    printf("window:     %lx\n", src->window);
+}
+
 int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp , Process *parent)
 {
+    assert(fromEp);
     assert(process != parent);
 
     assert(fromEp->cptr != 0);
-   
+    
     int error = 0;
     
     process->pid = pidCounter++;
@@ -233,6 +247,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     process->priority = SOFA_DEFAULT_PRIORITY;
     //sel4utils_process_config_t config = process_config_default_simple( getSimple(), procName, process->priority/*seL4_MaxPrio*/);
     
+    
     sel4utils_process_config_t config = process_config_default(procName, seL4_CapInitThreadASIDPool);
     config = process_config_auth(config, simple_get_tcb(getSimple() ) );
     config = process_config_priority(config, process->priority);
@@ -241,25 +256,35 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     
     //config.create_fault_endpoint = false;
     /* badge the fault endpoint to use for messages so that we can distinguish them */
+    
     cspacepath_t badged_ep_path;
     error = vka_cspace_alloc_path(getVka(), &badged_ep_path);
     if( error != 0)
     {
-        printf( "Failed to allocate path");
+        printf( "Failed to allocate path\n");
     }
-    cspacepath_t ep_path;
-    vka_cspace_make_path(getVka(), fromEp->cptr, &ep_path);
-    error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, process->pid);
     
+    
+    cspacepath_t ep_path = {0};
+    
+    vka_cspace_make_path(getVka(), fromEp->cptr, &ep_path);
+    //printf("Print before \n");
+    //PrintCspacepath_t(&ep_path);
+    
+    error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, process->pid);
+    //printf("Print after \n");
+    //PrintCspacepath_t(&ep_path);
     if( error != 0)
     {
-        printf( "Failed to badge ep");
+        printf( "Failed to badge ep err %i\n" , error);
+        return error;
     }
     
     config = process_config_fault_cptr(config ,badged_ep_path.capPtr );
     
     
     assert(config.create_fault_endpoint == false);
+    printf("Probe 2\n");
     error = sel4utils_configure_process_custom( &process->native , getVka() , getVspace(), config);
     if( error != 0)
     {
@@ -331,7 +356,9 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     {
         assert(parent);
         int ret = KSetAppend( (KSet*) parent , (KObject*) process);
+        
         assert(ret == 0);
+        
     }
     int r = ProcessListAdd(process);
     
@@ -398,14 +425,20 @@ Process* ProcessGetFirstChildZombie(Process* fromProcess)
     return NULL;
 }
 
-
+static void ProcRelease(KObject *p)
+{
+    free(p->k_name);
+    free(p);
+}
 
 int ProcessCleanup( Process* process)
 {
+
     KSetRemove((KSet*) ProcessGetParent(process) ,(KObject*) process);
     
     int error = ProcessListRemove(process);
     
+    printf("ProcessCleanup for %s ref count %i\n" , ProcessGetName(process) , process->base.obj.kref.refcount);
     return error;
 }
 
@@ -420,22 +453,24 @@ static int ProcessCleanMemory(Process *process)
     int assigned_untypeds = (process->env->untypeds.end - process->env->untypeds.start)+1;
     
     
-    printf("Start Cleaning process memory for  %i slots\n",assigned_untypeds);
+    //printf("Start Cleaning process memory for  %i slots\n",assigned_untypeds);
     // reset all the untypeds that were assigned to the process
     for (int i = 0; i < assigned_untypeds; i++)
     {
+        /*
         cspacepath_t path;
         vka_cspace_make_path(getVka(), process->env->untypeds.start + i, &path);
         vka_cnode_revoke(&path);
+        */
         
-        printf("Clean at %i\n" , process->env->untyped_indices[i] );
+        //printf("Clean at %i\n" , process->env->untyped_indices[i] );
         getSystem()->user_untypeds_allocation[process->env->untyped_indices[i]] = 0;
     }
-    printf("End Cleaning process memory\n");
+    //printf("End Cleaning process memory\n");
     
-    //sel4utils_destroy_process(&process->native, getVka() );
+    sel4utils_destroy_process(&process->native, getVka() );
     
-    printf("End sel4utils_destroy_process\n");
+    //printf("End sel4utils_destroy_process\n");
     
     return 0;
 }
@@ -465,14 +500,12 @@ int ProcessKill( Process* process , SofaSignal signal)
         //proc->parent = initProcess;
     }
 
-    int ret = ProcessSignalTerminaison(process , ProcessGetParent(process) );
-    
     NameServerRemoveAllFromProcess(process);
     RemoveProcessAsClient(process);
     
-    
+    int ret = ProcessSignalTerminaison(process , ProcessGetParent(process) );
 
-    if( ret == 0)
+    if( ret == 0) // parent was waiting for a child so the signal has been sent, we can clean up everything
     {
         if( process->reply)
         {
@@ -480,14 +513,21 @@ int ProcessKill( Process* process , SofaSignal signal)
             process->reply = 0;
         }
         
+        error = ProcessCleanMemory(process);
+        
         ProcessCleanup(process);
+        
+        KObjectPut((KObject*) process); //
     }
-    else
+    else // The process has to stay in memory for a while, until wait is called on him
     {
         process->status = ProcessState_Zombie;
+        error = ProcessCleanMemory(process);
     }
     
-    error = ProcessCleanMemory(process);
+    
+    
+    
     
     return error;
 }

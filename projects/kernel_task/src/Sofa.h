@@ -36,7 +36,7 @@
 #endif
 
 #define SOFA_VERSION_MAJ   0
-#define SOFA_VERSION_MIN   10
+#define SOFA_VERSION_MIN   11
 #define SOFA_VERSION_PATCH 0
 
 #define SOFA_DEPRECATED(version) __attribute((deprecated))
@@ -67,6 +67,7 @@
 #define ALWAYS_ASSERT(x) assert(x)
 
 #define kprintf(args, ...) printf(args, ##__VA_ARGS__)
+#define klog(args, ...) printf(args, ##__VA_ARGS__)
 /*
 typedef enum
 {

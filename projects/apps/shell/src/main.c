@@ -32,6 +32,7 @@ int main( int argc , char* argv[])
 
 
 	print("started\n");
+    
 
     char cmd[128] = "";
     int cmdPos = 0;

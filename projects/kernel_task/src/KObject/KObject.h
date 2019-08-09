@@ -124,13 +124,12 @@ typedef struct
  */
 typedef struct _KObject
 {
-    const char                   *k_name;
-    struct kref                  kref;
+    char              *k_name;
+    struct kref       kref;
 
-    struct _KObject          *_parent;
+    struct _KObject   *_parent;
 
     KObjectMethods methods;
-    
     
     uint8_t isSet:1;
     const KClass * _class;
