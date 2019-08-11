@@ -91,8 +91,8 @@ sel4osapi_process_init_env(Process *process,
         /* set up caps about the process */
         process->env->page_directory = sel4osapi_process_copy_cap_into(process, parent_vka, process->native.pd.cptr, seL4_AllRights);
         
-        //process->env->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
-        //process->env->stack = process->native.thread.stack_top - CONFIG_SEL4UTILS_STACK_SIZE;
+        process->env->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
+        process->env->stack = process->native.thread.stack_top - CONFIG_SEL4UTILS_STACK_SIZE;
         
         process->env->root_cnode = SEL4UTILS_CNODE_SLOT;
         process->env->tcb = sel4osapi_process_copy_cap_into(process, parent_vka, process->native.thread.tcb.cptr, seL4_AllRights);
@@ -284,7 +284,7 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     
     
     assert(config.create_fault_endpoint == false);
-    printf("Probe 2\n");
+
     error = sel4utils_configure_process_custom( &process->native , getVka() , getVspace(), config);
     if( error != 0)
     {

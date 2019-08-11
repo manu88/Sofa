@@ -28,9 +28,12 @@
 #include <assert.h>
 #include <string.h>
 
+#include <sel4utils/thread.h>
+#include <sel4utils/thread_config.h>
+
 // from kernel_task's Config.h
-#define CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE 67108864
-#define SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE        CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE
+//#define CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE 67108864
+//#define SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE        CONFIG_LIB_OSAPI_ROOT_UNTYPED_MEM_SIZE
 
 #define CONFIG_LIB_OSAPI_USER_UNTYPED_MEM_SIZE 64*1024*1024
 #define SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE CONFIG_LIB_OSAPI_USER_UNTYPED_MEM_SIZE
@@ -44,6 +47,8 @@ static uint8_t _bootstrap_mem_pool[40960/*SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE*/];
 static seL4_CPtr endpoint = 0;
 static ThreadEnvir* env = NULL;
 
+
+static sel4utils_thread_t testThread;
 
 /* --------- System struct */
 static sel4osapi_process_env_t* procEnv = NULL;
@@ -71,6 +76,16 @@ vspace_t* getVspace()
     return &vspace;
 }
 
+
+void threadStart(void *arg0, void *arg1, void *ipc_buf)
+{
+    while(1)
+    {
+        
+    }
+    
+}
+
 static int BoostrapProcess(void)
 {
     
@@ -83,7 +98,8 @@ static int BoostrapProcess(void)
     allocator = bootstrap_use_current_1level(procEnv->root_cnode,
                                              procEnv->cspace_size_bits,
                                              procEnv->free_slots.start,
-                                             procEnv->free_slots.end,SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE,
+                                             procEnv->free_slots.end,
+                                             SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE,
                                              //SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE,
                                              _bootstrap_mem_pool);
     
@@ -122,7 +138,7 @@ static int BoostrapProcess(void)
     
     /* create a vspace */
     
-#if 0 /*sel4test's version */
+#if 1 /*sel4test's version */
     
     void *existing_frames[procEnv->stack_pages + 2];
     existing_frames[0] = (void *) procEnv;
@@ -149,11 +165,18 @@ static int BoostrapProcess(void)
     assert(error == 0);
     print("vspace ok\n");
     
-    return error;
-    vmem_reservation = vspace_reserve_range(&vspace, SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4, seL4_AllRights, 1, &vmem_addr);
+    //return error;
+    
+    
+    vmem_reservation = vspace_reserve_range(&vspace,
+                                            SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4,
+                                            seL4_AllRights,
+                                            1, &vmem_addr);
     assert(vmem_reservation.res);
     print("vspace_reserve_range ok\n");
-    /*
+
+    
+/*
     print("Try to alloc endpoint\n");
     vka_object_t rootTaskEP;
     error = vka_alloc_endpoint( &vka, &rootTaskEP);
@@ -164,8 +187,43 @@ static int BoostrapProcess(void)
      
         return error;
     }
+*/
+    
+    
 
-     */
+/* TEST THREAD */
+    sel4utils_thread_config_t config = {0};
+    
+    config = thread_config_fault_endpoint(config, procEnv->fault_endpoint);
+    
+    seL4_Word data = seL4_CNode_CapData_new(0, seL4_WordBits - procEnv->cspace_size_bits).words[0];
+ 
+    print("Thread Test 1\n");
+    config = thread_config_cspace(config, procEnv->root_cnode, data);
+    print("Thread Test 2\n");
+    config = thread_config_auth(config, procEnv->tcb);
+    
+    
+    int priority = 20;
+    print("Thread Test 3\n");
+    config = thread_config_mcp(config, (uint8_t)priority);
+    print("Thread Test 4\n");
+    config = thread_config_priority(config, (uint8_t)priority);
+    print("Thread Test 5\n");
+    
+    config = thread_config_create_reply(config);
+    
+    error = sel4utils_configure_thread_config(&vka, &vspace, &vspace, config, &testThread);
+    if( error != 0)
+        print("Error %i\n", error);
+    
+    assert(error == 0);
+    print("Thread Test 6\n");
+    error = sel4utils_start_thread(&testThread, threadStart, &testThread, NULL, 1);
+    assert(error == 0);
+    
+    print("Thread started\n");
+/* END TEST THREAD */
     return error;//allocator != NULL;
 }
 int InitClient(const char* EPString )
@@ -190,7 +248,7 @@ int InitClient(const char* EPString )
     env = &procEnv->mainThreadEnv;
     
     assert(env);
-    print("InitClient start BoostrapProcess\n");
+    
     BoostrapProcess();
     
 	return 0;

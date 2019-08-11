@@ -160,10 +160,10 @@ typedef struct sel4osapi_process_env
     ThreadEnvir mainThreadEnv;
     
     /* the number of pages in the stack */
-    //int stack_pages;
+    int stack_pages;
     
     /* address of the stack */
-    //void *stack;
+    void *stack;
     
     /*
      * Endpoint to the sysclock instance.

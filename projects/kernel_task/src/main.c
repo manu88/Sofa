@@ -99,44 +99,6 @@ static void earlyInit()
     ps_cdev_init(PC99_SERIAL_COM1 , getIO_OPS() ,&getKernelTaskContext()->comDev);
 }
 
-
-
-static void lsCPIO()
-{
-	struct cpio_info info;
-	unsigned long len = _cpio_archive_end - _cpio_archive;
-
-	if(cpio_info(_cpio_archive, len , &info) != 0)
-    	{
-	        printf("Error gettings CPIO archive\n");
-		return;
-	}
-
-	printf("----- CPIO Content (%i files) --- \n" , info.file_count);
-    
-    return ;
-	char **buf = malloc( info.file_count);
-	
-	for(int i=0;i<info.file_count;i++)
-    	{
-        	buf[i] = malloc(info.max_path_sz );
-        	memset(buf[i] , 0 , info.max_path_sz);
-	}
-
-	cpio_ls(_cpio_archive ,len, buf, info.file_count);
-    
-    
-	for(int i=0;i<info.file_count;i++)
-    	{
-        	printf("'%s'\n" , buf[i]);
-        	free(buf[i]);
-    	}
-    
-	free(buf);
-
-	printf("----- END CPIO Content --- \n");
-}
-
 static int OnTime(uintptr_t token)
 {
     //printf("On time\n");
@@ -149,7 +111,7 @@ static void lateInit()
     klog("#                 Sofa OS                #\n");
     klog("##########################################\n");
     klog("Version %.2i.%.2i.%.2i\n" , SOFA_VERSION_MAJ , SOFA_VERSION_MIN , SOFA_VERSION_PATCH);
-    lsCPIO();
+
     
     int ret = ProcessListInit();
     assert(ret == 0);
