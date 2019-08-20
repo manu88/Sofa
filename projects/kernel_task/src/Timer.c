@@ -36,17 +36,20 @@ int TimerInit(ps_io_ops_t *ops , seL4_CPtr notifCap)
 {
 	int err = 0;
     
-    err = sel4platsupport_new_io_ops(*getVspace(), *getVka(), ops);
+    printf("[Timer] sel4platsupport_new_io_ops \n");
+    err = sel4platsupport_new_io_ops( getVspace(), getVka(), getSimple(),ops);
     assert(err == 0);
 
-
+    printf("[Timer] sel4platsupport_new_arch_ops \n");
     err = sel4platsupport_new_arch_ops( ops, getSimple(), getVka());
     assert(err == 0);
 
+    printf("[Timer] sel4platsupport_init_default_timer_ops \n");
     err = sel4platsupport_init_default_timer_ops( getVka(), getVspace(), getSimple(), *ops, notifCap, &timer);
 
     assert(err == 0);
 
+    printf("[Timer] tm_init \n");
 	err = tm_init(&_tm ,&timer.ltimer ,ops , MAX_TIMERS);
     assert(err == 0);
 	
@@ -61,28 +64,15 @@ int TimerProcess(seL4_Word sender_badge)
     return tm_update(&_tm);
 }
 
-/*
-int TimerAllocAndRegisterOneShot(time_manager_t *tm , uint64_t rel_ns, uint32_t id,  timeout_cb_fn_t callback, uintptr_t token)
+int TimerAllocIDAt( unsigned int id)
 {
-	int err = tm_alloc_id_at(tm , id);
-	if (!err)
-	{
-		return tm_register_rel_cb( tm , rel_ns , id , callback , token);
-	}
-	return err;
+    return tm_alloc_id_at(&_tm , id);
 }
 
-
-int TimerAllocAndRegister(time_manager_t *tm , uint64_t period_ns, uint64_t start, uint32_t id, timeout_cb_fn_t callback, uintptr_t token)
+int TimerAllocID( unsigned int *id)
 {
-        int err = tm_alloc_id_at(tm , id);
-        if( !err)
-        {
-                return tm_register_periodic_cb(tm , period_ns ,start,id , callback, token);
-        }
-        return err;
+    return tm_alloc_id(&_tm , id);
 }
- */
 
 int TimerCancelID( uint32_t id)
 {

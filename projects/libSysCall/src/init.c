@@ -165,7 +165,6 @@ static int BoostrapProcess(void)
     assert(error == 0);
     print("vspace ok\n");
     
-    //return error;
     
     
     vmem_reservation = vspace_reserve_range(&vspace,

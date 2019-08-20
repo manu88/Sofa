@@ -35,6 +35,7 @@ extern char _cpio_archive_end[];
 //static vka_object_t rootTaskEP = {0};
 static vka_object_t ntfn_object;
 //static ps_chardevice_t comDev;
+static ps_io_ops_t ops;
 
 static Process initProcess = {0};
 
@@ -43,7 +44,7 @@ static int initRootEndPoint()
 	int error = vka_alloc_endpoint( getVka(), &getKernelTaskContext()->rootTaskEP);
 	if( error != 0)
 	{
-		printf("vka_alloc_endpoint for RootEndPoint failed %i\n" , error);
+		klog("vka_alloc_endpoint for RootEndPoint failed %i\n" , error);
 
 		return error;
 	}
@@ -59,18 +60,17 @@ static void earlyInit()
 	int error = bootstrapSystem(); // This MUST be the first thing done!
     assert(error == 0);
     
-
-    assert(bootstrapIO() == 0);
-    
     int ret = seL4_TCB_SetPriority(simple_get_tcb(getSimple()) , simple_get_tcb(getSimple()) , SOFA_DEFAULT_PRIORITY);
+    
+    klog("[kernel_task] init platform I/O ops\n");
+    assert(bootstrapIO() == 0);
     
 	error = initRootEndPoint();
     assert(error == 0);
 	
     
     
-/* io ops */
-    ps_io_ops_t ops;
+
     
 /* timer notifications */
     error = vka_alloc_notification( getVka(), &ntfn_object);
@@ -79,30 +79,27 @@ static void earlyInit()
     error = seL4_TCB_BindNotification(seL4_CapInitThreadTCB, ntfn_object.cptr);
     if (error != 0)
     {
-        printf("Unable to BindNotification.\n");
+        klog("Unable to BindNotification.\n");
         assert(0);
     }
     assert(error == 0);
     
     cspacepath_t notification_path;
     vka_cspace_make_path( getVka(), ntfn_object.cptr, &notification_path);
+
+/* io ops */
     
-    
+
+    klog("[kernel_task] init Timer\n");
     error = TimerInit(&ops,notification_path.capPtr);
     assert(error == 0);
     
     // we reserve the timer ID 0 for us
     // so that threads always have a timerID > 0 and we can distinguish unallocated ids(0)
-    assert(tm_alloc_id_at( getTM() , 0) == 0);
+    assert(TimerAllocIDAt( 0)  == 0);
     
-    
+    klog("[kernel_task] init COM1\n");
     ps_cdev_init(PC99_SERIAL_COM1 , getIO_OPS() ,&getKernelTaskContext()->comDev);
-}
-
-static int OnTime(uintptr_t token)
-{
-    //printf("On time\n");
-    //seL4_DebugDumpScheduler();
 }
 
 static void lateInit()
@@ -129,14 +126,11 @@ static void lateInit()
     
     if(ProcessStart(&initProcess , "init" ,&getKernelTaskContext()->rootTaskEP , NULL) != 0)
     {
-        printf("[kernel_task] error starting init process\n");
+        klog("[kernel_task] error starting init process\n");
         assert(0);
     }
     assert(initProcess.pid == 1); // MUST BE 1
  
-    
-    //ret = tm_register_periodic_cb( getTM() , 10000000000 ,0, 0 , OnTime ,(uintptr_t) 0);
-    //assert(ret == 0);
 }
 
 
@@ -202,15 +196,15 @@ static void run()
             }
             else if(label == seL4_UnknownSyscall)
             {
-                printf("[kernel_task] seL4_UnknownSyscall from %i %s\n" , sender->pid,  ProcessGetName(sender));
+                klog("[kernel_task] seL4_UnknownSyscall from %i %s\n" , sender->pid,  ProcessGetName(sender));
             }
             else if(label == seL4_UserException)
             {
-                printf("[kernel_task] seL4_UserException from %i %s\n" , sender->pid,  ProcessGetName(sender));
+                klog("[kernel_task] seL4_UserException from %i %s\n" , sender->pid,  ProcessGetName(sender));
             }
             else
             {
-                printf("[kernel_task] Other msg label %lx\n" , label);
+                klog("[kernel_task] Other msg label %lx\n" , label);
             }
         }
         
@@ -218,10 +212,6 @@ static void run()
 
 
 }
-
-
-
-
 
 int main()
 {

@@ -79,3 +79,4 @@ Devel folder contains a XCode project for kernel_task and libSysCall. Its goal i
 * [SeL4 API Reference](https://docs.sel4.systems/ApiDoc.html)
 * [Todo list](ToDo.md)
 * [libsel4osapi](https://github.com/rticommunity/libsel4osapi)
+* [lecture about seL4](https://www.cse.unsw.edu.au/~cs9242/17/lectures/01-intro.pdf)

@@ -266,7 +266,6 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
     
     
     cspacepath_t ep_path = {0};
-    
     vka_cspace_make_path(getVka(), fromEp->cptr, &ep_path);
     //printf("Print before \n");
     //PrintCspacepath_t(&ep_path);

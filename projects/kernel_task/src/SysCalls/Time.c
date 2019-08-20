@@ -56,7 +56,7 @@ void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_bad
 {
     if( sender->timerID == 0)
     {
-        int err = tm_alloc_id(getTM() , &sender->timerID);
+        int err = TimerAllocID( &sender->timerID);
         if( err != 0)
         {
             seL4_SetMR(0,SysCall_Sleep);

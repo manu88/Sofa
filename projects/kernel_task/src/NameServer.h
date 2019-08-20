@@ -32,7 +32,6 @@ typedef struct _Process Process; // forward
 typedef struct _Server
 {
     KSet base;
-    //char name[MAX_SERVER_NAME];
     
     list_t clients;
     Process* owner;

@@ -33,6 +33,10 @@ int TimerAllocAndRegister(time_manager_t *tm , uint64_t period_ns, uint64_t star
 int TimerAllocAndRegisterOneShot(time_manager_t *tm , uint64_t rel_ns, uint32_t id,  timeout_cb_fn_t callback, uintptr_t token);
 
 */
+
+int TimerAllocIDAt( unsigned int id);
+int TimerAllocID( unsigned int *id);
+
 int TimerCancelID( uint32_t id);
 
 int TimerProcess(seL4_Word sender_badge);
