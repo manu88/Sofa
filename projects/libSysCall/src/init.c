@@ -109,7 +109,8 @@ static int BoostrapProcess(void)
     allocman_make_vka(&vka, allocator);
     assert(allocator);
     
-    print("allocator ok\n");
+    size_t testSize = ((1 << seL4_PageBits) * 4000);
+    print("allocator ok test size %zi\n" , testSize);
     int slot, size_bits_index;
     
     cspacepath_t path;
@@ -165,7 +166,7 @@ static int BoostrapProcess(void)
     assert(error == 0);
     print("vspace ok\n");
     
-    return error;
+    
     
     vmem_reservation = vspace_reserve_range(&vspace,
                                             SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4,
@@ -175,7 +176,7 @@ static int BoostrapProcess(void)
     print("vspace_reserve_range ok\n");
 
     
-    
+    return error;   
 /*
     print("Try to alloc endpoint\n");
     vka_object_t rootTaskEP;

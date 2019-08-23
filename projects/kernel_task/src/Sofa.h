@@ -36,7 +36,7 @@
 #endif
 
 #define SOFA_VERSION_MAJ   0
-#define SOFA_VERSION_MIN   11
+#define SOFA_VERSION_MIN   12
 #define SOFA_VERSION_PATCH 0
 
 #define SOFA_DEPRECATED(version) __attribute((deprecated))
@@ -59,6 +59,11 @@
 
 #ifndef UNUSED_PARAMETER
 #define UNUSED_PARAMETER(x) (void)(x)
+#endif
+
+
+#ifndef NO_RETURN
+#define NO_RETURN __attribute__((noreturn))
 #endif
 
 // Mark methods with no Sel4 dependencies that can be tested on other platforms
@@ -96,3 +101,6 @@ typedef enum
 #define _impl_PASTE(a,b) a##b
 #define _impl_CASSERT_LINE(predicate, line, file) \
 typedef char _impl_PASTE(assertion_failed_##file##_,line)[2*!!(predicate)-1];
+
+
+void Panic( const char* message) NO_RETURN;

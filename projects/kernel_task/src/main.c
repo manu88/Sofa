@@ -174,7 +174,7 @@ static void run()
             }
             else if (label == seL4_VMFault)
             {
-                klog("[kernel_task] seL4_VMFault from %i %s\n" ,
+                klog("[kernel_task] seL4_VMFault from pid%i '%s'\n" ,
                        sender->pid,
                        ProcessGetName(sender)
                        );
@@ -188,6 +188,18 @@ static void run()
                 klog("[kernel_task] faultAddr           %lu\n",faultAddr);
                 klog("[kernel_task] isPrefetch          %lu\n",isPrefetch);
                 klog("[kernel_task] faultStatusRegister %lu\n",faultStatusRegister);
+                
+                // TODO : handle vm error
+                
+                // kernel_task or init : we're screwed
+                if(sender->pid < 2 )
+                {
+                    Panic("init returned");
+                    
+                    // no return
+                    assert(0);
+                }
+                
                 ProcessKill(sender , SofaSignal_VMFault);
             }
             else if(label == seL4_UnknownSyscall)

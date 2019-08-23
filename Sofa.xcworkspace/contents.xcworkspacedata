@@ -17,6 +17,9 @@
             location = "group:Sofa.h">
          </FileRef>
          <FileRef
+            location = "group:Panic.c">
+         </FileRef>
+         <FileRef
             location = "group:Bootstrap.h">
          </FileRef>
          <FileRef
