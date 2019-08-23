@@ -383,10 +383,6 @@ sel4osapi_system_initialize(void *bootstrap_mem_pool)
     //syslog_trace("Initializing logger...");
     //sel4osapi_log_initialize();
 
-
-
-
-
     printf("sel4osapi_system_initialize completed successfully\n");
     return seL4_NoError;
 }

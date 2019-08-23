@@ -52,6 +52,14 @@ static int OnTime(uintptr_t token)
     return 0;
 }
 
+
+static void ReplyError(seL4_MessageInfo_t info,seL4_Word sysCallID , int errnum)
+{
+    seL4_SetMR(0,sysCallID);
+    seL4_SetMR(1, -errnum );
+    Reply( info );
+}
+
 void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
     if( sender->timerID == 0)
@@ -59,12 +67,11 @@ void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_bad
         int err = TimerAllocID( &sender->timerID);
         if( err != 0)
         {
-            seL4_SetMR(0,SysCall_Sleep);
-            seL4_SetMR(1, -EPERM );
-            Reply( info );
-            
+            ReplyError(info, SysCall_Sleep, EPERM);
+            return ;
         }
     }
+    
     assert(sender->timerID);
     
     if( sender->reply != 0)
@@ -90,9 +97,7 @@ void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_bad
     
     if( sender->reply == 0)
     {
-        seL4_SetMR(0,SysCall_Sleep);
-        seL4_SetMR(1, -EINVAL );
-        Reply( info );
+        ReplyError(info, SysCall_Sleep, EINVAL);
         return;
     }
     
@@ -102,9 +107,7 @@ void processSleep(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_bad
         cnode_delete(getVka() , sender->reply);
         sender->reply = 0;
         
-        seL4_SetMR(0,SysCall_Sleep);
-        seL4_SetMR(1, -EINVAL );
-        Reply( info );
+        ReplyError(info, SysCall_Sleep, EINVAL);
         return;
     }
     

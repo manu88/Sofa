@@ -35,7 +35,7 @@ extern char _cpio_archive_end[];
 //static vka_object_t rootTaskEP = {0};
 static vka_object_t ntfn_object;
 //static ps_chardevice_t comDev;
-static ps_io_ops_t ops;
+static ps_io_ops_t ops = {{0}};
 
 static Process initProcess = {0};
 
@@ -67,11 +67,7 @@ static void earlyInit()
     
 	error = initRootEndPoint();
     assert(error == 0);
-	
-    
-    
 
-    
 /* timer notifications */
     error = vka_alloc_notification( getVka(), &ntfn_object);
     assert(error == 0);
@@ -88,16 +84,16 @@ static void earlyInit()
     vka_cspace_make_path( getVka(), ntfn_object.cptr, &notification_path);
 
 /* io ops */
-    
-
+/*
     klog("[kernel_task] init Timer\n");
     error = TimerInit(&ops,notification_path.capPtr);
     assert(error == 0);
-    
+    klog("[kernel_task] init Timer OK \n");
     // we reserve the timer ID 0 for us
     // so that threads always have a timerID > 0 and we can distinguish unallocated ids(0)
     assert(TimerAllocIDAt( 0)  == 0);
-    
+ 
+ */
     klog("[kernel_task] init COM1\n");
     ps_cdev_init(PC99_SERIAL_COM1 , getIO_OPS() ,&getKernelTaskContext()->comDev);
 }

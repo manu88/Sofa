@@ -95,6 +95,7 @@ static int BoostrapProcess(void)
     
     print("procEnv->free_slots.start %lu\n",procEnv->free_slots.start);
     print("procEnv->free_slots.end %lu\n",procEnv->free_slots.end);
+    
     allocator = bootstrap_use_current_1level(procEnv->root_cnode,
                                              procEnv->cspace_size_bits,
                                              procEnv->free_slots.start,
@@ -104,7 +105,6 @@ static int BoostrapProcess(void)
                                              _bootstrap_mem_pool);
     
     assert(allocator);
-    
     
     allocman_make_vka(&vka, allocator);
     assert(allocator);
@@ -165,7 +165,7 @@ static int BoostrapProcess(void)
     assert(error == 0);
     print("vspace ok\n");
     
-    
+    return error;
     
     vmem_reservation = vspace_reserve_range(&vspace,
                                             SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4,
@@ -174,6 +174,7 @@ static int BoostrapProcess(void)
     assert(vmem_reservation.res);
     print("vspace_reserve_range ok\n");
 
+    
     
 /*
     print("Try to alloc endpoint\n");
@@ -227,7 +228,7 @@ static int BoostrapProcess(void)
 }
 int InitClient(const char* EPString )
 {
-	endpoint = (seL4_CPtr) atoi(EPString/*argv[argc-1]*/);
+	endpoint = (seL4_CPtr) atoi(EPString );
 
     seL4_Word badge;
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
@@ -378,10 +379,12 @@ static int _Sleep( unsigned long l , SleepUnit unit)
     
     return (int) seL4_GetMR(1);
 }
+
 int sleepS( unsigned long sec)
 {
     return _Sleep(sec , SleepUnit_S);
 }
+
 int sleep( unsigned long ns)
 {
     return _Sleep(ns , SleepUnit_NS);
@@ -399,7 +402,6 @@ long read(char*buf, unsigned long count)
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     seL4_SetMR(0 , SysCall_Read);
     seL4_SetMR(1 , count);
-    
     
     seL4_Call(endpoint, info);
 
@@ -434,7 +436,6 @@ void listServers()
     doDebugSysCall(SysCall_Debug_ListServers);
 }
 
-
 static long doIDsSysCall(SysCallGetIDs_OP op)
 {
     assert(env);
@@ -442,8 +443,6 @@ static long doIDsSysCall(SysCallGetIDs_OP op)
     
     seL4_SetMR(0 , SysCall_GetIDs);
     seL4_SetMR(1 , op);
-    
-    
     
     seL4_Call(endpoint, info);
     
@@ -454,6 +453,7 @@ int getPID()
 {
     return (int) doIDsSysCall(SysCallGetIDs_GetPID);
 }
+
 int getParentPID()
 {
     return (int) doIDsSysCall(SysCallGetIDs_GetPPID);

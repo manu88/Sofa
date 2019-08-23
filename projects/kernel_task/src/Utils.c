@@ -65,8 +65,7 @@ int cnode_delete( vka_t *vka,seL4_CPtr slot)
 
 
 unsigned int
-sel4osapi_util_allocate_untypeds(
-                                 vka_t *vka, vka_object_t *untypeds, size_t bytes, unsigned int max_untypeds)
+sel4osapi_util_allocate_untypeds(vka_t *vka, vka_object_t *untypeds, size_t bytes, unsigned int max_untypeds)
 {
     unsigned int num_untypeds = 0;
     size_t allocated = 0;

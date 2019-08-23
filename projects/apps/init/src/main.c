@@ -32,11 +32,11 @@ int main( int argc , char* argv[])
 
     int pidShell = -1;
     int pidDriverKit = -1;
-
+/*
     pidDriverKit = spawn("driverkitd",0 , NULL);
     
     print("spawn driverkitd pid %i\n"  , pidDriverKit);
-
+*/
 	pidShell = spawn("shell",0 , NULL);
 
 	print("spawn shell pid %i\n"  , pidShell);
