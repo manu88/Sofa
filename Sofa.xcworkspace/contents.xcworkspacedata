@@ -69,6 +69,9 @@
             location = "group:SysCalls"
             name = "SysCalls">
             <FileRef
+               location = "group:Caps.c">
+            </FileRef>
+            <FileRef
                location = "group:Misc.c">
             </FileRef>
             <FileRef

@@ -18,8 +18,9 @@
 
 #include "../ProcessSysCall.h"
 
-
-
+/*
+ X86 exception handler
+ */
 typedef enum
 {
     ExceptionCode_DivByZero = 0,

@@ -26,9 +26,6 @@
 int main( int argc , char* argv[])
 {
 	print("started has %i args\n" , argc);
-
-    int f = 10 / 0;
-    print("Result is %i\n" , f);
     
     ClientEnvir* client =  ConnectToServer( "driverkit");
 

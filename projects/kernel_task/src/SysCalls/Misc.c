@@ -63,34 +63,7 @@ void processSetPriority(Process *sender,seL4_MessageInfo_t info , seL4_Word send
     Reply(info);
 }
 
-void processCapOp(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
-{
-    CapOperation capOP = seL4_GetMR(1);
-    
-    SofaCapabilities caps = seL4_GetMR(2);
-    switch (capOP)
-    {
-        case CapOperation_Drop:
-            printf("[kernel_task] Drop cap request %i\n" , caps);
-            sender->caps.caps &= ~caps;
-            ProcessDumpCaps(sender);
-            seL4_SetMR(1, -1 );
-            Reply( info );
-            break;
-            
-        case CapOperation_Acquire:
-            printf("[kernel_task] Acquire cap request %i\n" , caps);
-            
-            sender->caps.caps |= caps;
-            ProcessDumpCaps(sender);
-            seL4_SetMR(1, -1 );
-            Reply( info );
-            break;
-        default:
-            assert(0);
-            break;
-    }
-}
+
 
 void processGetIDs(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {

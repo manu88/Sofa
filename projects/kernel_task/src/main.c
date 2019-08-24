@@ -171,6 +171,17 @@ static void run()
             else if( label == seL4_CapFault)
             {
                 klog("[kernel_task] seL4_CapFault from %i %s\n" , sender->pid,  ProcessGetName(sender));
+                
+                const seL4_Word addr            = seL4_GetMR(seL4_CapFault_IP); // Addr to restart
+                const seL4_Word capAddr         = seL4_GetMR(seL4_CapFault_Addr); // Capability address
+                const seL4_Word isInReceivPhase = seL4_GetMR(seL4_CapFault_InRecvPhase); // In receive phase (1 if the fault happened during a receive system call, 0 otherwise)
+                const seL4_Word lookupFailureDesc = seL4_GetMR(seL4_CapFault_LookupFailureType);
+                
+                klog("[kernel_task] addr               %lu\n",addr);
+                klog("[kernel_task] capAddr            %lu\n",capAddr);
+                klog("[kernel_task] isInReceivPhase    %lu\n",isInReceivPhase);
+                klog("[kernel_task] lookupFailureDesc  %lu\n",lookupFailureDesc);
+                
             }
             else if (label == seL4_VMFault)
             {
