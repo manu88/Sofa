@@ -10,6 +10,13 @@
       <Group
          location = "group:src"
          name = "src">
+         <Group
+            location = "group:arch"
+            name = "arch">
+            <FileRef
+               location = "group:UserException.c">
+            </FileRef>
+         </Group>
          <FileRef
             location = "group:Config.h">
          </FileRef>

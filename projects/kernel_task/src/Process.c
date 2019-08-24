@@ -97,6 +97,8 @@ sel4osapi_process_init_env(Process *process,
         process->env->root_cnode = SEL4UTILS_CNODE_SLOT;
         process->env->tcb = sel4osapi_process_copy_cap_into(process, parent_vka, process->native.thread.tcb.cptr, seL4_AllRights);
         /* setup data about untypeds */
+        
+        int once = 0;
         for (i = 0; i < user_untypeds_num && untyped_size < SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE; i++)
         {
             seL4_CPtr proc_ut_cap = 0;
@@ -105,7 +107,11 @@ sel4osapi_process_init_env(Process *process,
             {
                 continue;
             }
-            //printf("[kernel_task] Start user_untypeds for %s at %i\n",ProcessGetName(process) , i);
+            if (!once)
+            {
+                printf("[kernel_task] === Start user_untypeds for %s at %i\n",ProcessGetName(process) , i);
+                once = 1;
+            }
             
             proc_ut_cap = sel4osapi_process_copy_cap_into(process, parent_vka, user_untypeds[i].cptr, seL4_AllRights);
             
@@ -125,7 +131,7 @@ sel4osapi_process_init_env(Process *process,
             untyped_size += 1 << user_untypeds_size_bits[i];
         }
         
-        //printf("untyped_count %u  untyped_size %u\n" , untyped_count,untyped_size );
+        printf("[kernel_task] === End untyped_count %u  untyped_size %u\n" , untyped_count,untyped_size );
         assert((process->env->untypeds.end - process->env->untypeds.start) + 1 <= user_untypeds_num);
 
 

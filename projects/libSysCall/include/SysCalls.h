@@ -23,9 +23,10 @@
 
 typedef enum
 {
-    SofaSignal_None = 0,  // no signal
-    SofaSignal_Kill = 1,  // eq. to SIGKILL
-    SofaSignal_VMFault,   // eq. to SIGSEGV
+    SofaSignal_None = 0,        // no signal
+    SofaSignal_Kill = 1,        // eq. to SIGKILL
+    SofaSignal_VMFault,         // eq. to SIGSEGV
+    SofaSignal_ArithmeticError, // eq. to SIGFPE
     
 } SofaSignal;
 

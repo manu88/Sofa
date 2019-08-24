@@ -136,10 +136,11 @@ typedef struct _KObject
     
     // when in a set
     struct _KObject *prev, *next;
+    
 } KObject;
 
 void KObjectInit(KObject* object) NO_NULL_POINTERS;
-void KObjectInitWithName(KObject* object, const char*name) NO_NULL_POINTERS;
+void KObjectInitWithName(KObject* object, char*name) NO_NULL_POINTERS;
 
 KObject *KObjectGet(KObject *ko) NO_NULL_POINTERS;
 void KObjectPut(KObject *ko) NO_NULL_POINTERS;
@@ -178,7 +179,7 @@ typedef struct _KSet
 
 
 void KSetInit(KSet* set) NO_NULL_POINTERS;
-void KSetInitWithName(KSet*set , const char* name) NO_NULL_POINTERS;
+void KSetInitWithName(KSet*set , char* name) NO_NULL_POINTERS;
 
 
 

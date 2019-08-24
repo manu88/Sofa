@@ -195,7 +195,6 @@ static void run()
                 if(sender->pid < 2 )
                 {
                     Panic("init returned");
-                    
                     // no return
                     assert(0);
                 }
@@ -208,7 +207,7 @@ static void run()
             }
             else if(label == seL4_UserException)
             {
-                klog("[kernel_task] seL4_UserException from %i %s\n" , sender->pid,  ProcessGetName(sender));
+                processUserException(sender, message , sender_badge);
             }
             else
             {

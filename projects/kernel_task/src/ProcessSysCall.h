@@ -29,6 +29,10 @@ typedef void (*SysCallHandler)(Process *sender,seL4_MessageInfo_t info , seL4_Wo
 void processSysCall(Process *sender, seL4_MessageInfo_t info , seL4_Word sender_badge);
 
 
+// defined in arch/*/UserException.c
+
+void processUserException(Process *sender, seL4_MessageInfo_t info , seL4_Word sender_badge);
+
 /* Handlers */
 
 

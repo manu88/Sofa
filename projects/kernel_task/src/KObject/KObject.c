@@ -75,7 +75,7 @@ void KObjectInit(KObject* object)
     object->methods = _defaultOBJMethods;
 }
 
-void KObjectInitWithName(KObject* object, const char*name)
+void KObjectInitWithName(KObject* object, char*name)
 {
     KObjectInit(object);
     object->k_name = name;
@@ -115,7 +115,6 @@ static void KSETgetInfos(const KObject *obj , char outDesc[MAX_DESC_SIZE] )
     snprintf(outDesc, MAX_DESC_SIZE, "%zi children ",   KSetCount(self)  );
 }
 
-
 void KSetInit(KSet* set)
 {
     KObjectInit(&set->obj);
@@ -124,7 +123,7 @@ void KSetInit(KSet* set)
     set->_listHead = NULL;
 }
 
-void KSetInitWithName(KSet* set , const char* name)
+void KSetInitWithName(KSet* set , char* name)
 {
     KSetInit(set);
     set->obj.k_name = name;

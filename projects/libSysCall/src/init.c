@@ -166,12 +166,18 @@ static int BoostrapProcess(void)
     assert(error == 0);
     print("vspace ok\n");
     
+    /*
+    error = sel4utils_reserve_range_no_alloc(&vspace , reservation_to_res(vmem_reservation) , SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4,
+                                             seL4_AllRights,
+                                             1, &vmem_addr);
+    */
     
-    
+    return error;
     vmem_reservation = vspace_reserve_range(&vspace,
                                             SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4,
                                             seL4_AllRights,
                                             1, &vmem_addr);
+    
     assert(vmem_reservation.res);
     print("vspace_reserve_range ok\n");
 
