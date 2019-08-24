@@ -41,8 +41,8 @@
 
 /* dimensions of virtual memory for the allocator to use */
 #define ALLOCATOR_VIRTUAL_POOL_SIZE ((1 << seL4_PageBits) * 4000)
-
-static uint8_t _bootstrap_mem_pool[40960/*SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE*/];
+#define ALLOCATOR_STATIC_POOL_SIZE ((1 << seL4_PageBits) * 20)
+static uint8_t _bootstrap_mem_pool[ALLOCATOR_STATIC_POOL_SIZE/*SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE*/];
 
 static seL4_CPtr endpoint = 0;
 static ThreadEnvir* env = NULL;
@@ -100,17 +100,16 @@ static int BoostrapProcess(void)
                                              procEnv->cspace_size_bits,
                                              procEnv->free_slots.start,
                                              procEnv->free_slots.end,
-                                             SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE,
+                                             ALLOCATOR_STATIC_POOL_SIZE,
                                              //SEL4OSAPI_ROOT_TASK_UNTYPED_MEM_SIZE,
                                              _bootstrap_mem_pool);
     
     assert(allocator);
     
     allocman_make_vka(&vka, allocator);
-    assert(allocator);
     
-    size_t testSize = ((1 << seL4_PageBits) * 4000);
-    print("allocator ok test size %zi\n" , testSize);
+    
+    print("allocator ok\n");
     int slot, size_bits_index;
     
     cspacepath_t path;
@@ -172,17 +171,17 @@ static int BoostrapProcess(void)
                                              1, &vmem_addr);
     */
     
-    return error;
+    
     vmem_reservation = vspace_reserve_range(&vspace,
-                                            SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4,
+                                            ALLOCATOR_VIRTUAL_POOL_SIZE/*SEL4OSAPI_USER_PROCESS_UNTYPED_MEM_SIZE / 4*/,
                                             seL4_AllRights,
                                             1, &vmem_addr);
     
     assert(vmem_reservation.res);
     print("vspace_reserve_range ok\n");
 
+
     
-    return error;   
 /*
     print("Try to alloc endpoint\n");
     vka_object_t rootTaskEP;

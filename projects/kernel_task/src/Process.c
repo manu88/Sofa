@@ -308,8 +308,6 @@ int ProcessStart(Process *process , const char* procName, vka_object_t *fromEp ,
  
     assert(error == 0);
  
-/* END-fucking-POINTS Are HERE*/
-
     char endpoint_string[10] = "";
     
     snprintf(endpoint_string, 10, "%ld", (long) process->env->fault_endpoint);// process_ep_cap);
