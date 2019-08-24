@@ -15,6 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if 0
 #include "NameServer.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -334,3 +335,6 @@ Client* NameServerCreateClient(Process*fromProcess , Server* toServer)
     printf("Error adding client to server\n");
     return NULL;
 }
+
+
+#endif

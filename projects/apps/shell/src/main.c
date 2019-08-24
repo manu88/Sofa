@@ -208,10 +208,6 @@ static int execCmd( const char* cmd)
             return ret;
         }
     }
-    else if( strcmp("servers" , cmd) == 0)
-    {
-        listServers();
-    }
     else if( startsWith("setcap ", cmd))
     {
         const char* arg = cmd + strlen("setcap ");

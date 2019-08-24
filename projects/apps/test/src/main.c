@@ -27,23 +27,12 @@ int main( int argc , char* argv[])
 {
 	print("started has %i args\n" , argc);
     
-    ClientEnvir* client =  ConnectToServer( "driverkit");
-
-    if (client)
-    {
-        print("Got client '%s'\n", client->buf);
+    
         
-        while (1)
-        {
-
-        }
-    }
-    else
+    while (1)
     {
-        print("Error client\n");
-    }
 
-	
+    }
 
 	return 10;
 }

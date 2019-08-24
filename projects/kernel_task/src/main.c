@@ -26,7 +26,7 @@
 #include "Bootstrap.h"
 #include "Timer.h"
 #include "ProcessSysCall.h"
-#include "NameServer.h"
+
 #include "Config.h"
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
@@ -108,12 +108,7 @@ static void lateInit()
     
     int ret = ProcessListInit();
     assert(ret == 0);
-    klog("[kernel_task] init name server\n");
-    ret = NameServerInitSystem();
-    assert(ret == 0);
-    
-    
-    
+
     assert(getKernelTaskContext()->rootTaskEP.cptr != 0);
 
     ProcessInit(&initProcess);

@@ -49,11 +49,7 @@ typedef enum
     SysCall_GetPriority,
     
     SysCall_CapOp,
-    SysCall_ResourceReq,
-    
-    SysCall_RegisterServer,
-    SysCall_RegisterClient,
-    
+
     
     SysCall_Last, // MUST REMAINS LAST !
 } SysCallID;
@@ -63,7 +59,6 @@ typedef enum
 {
     SysCall_Debug_PS =1,
     SysCall_Debug_Sched,
-    SysCall_Debug_ListServers,
 }SysCall_Debug_ID;
 
 
@@ -198,38 +193,13 @@ typedef struct sel4osapi_process_env
     
 } sel4osapi_process_env_t;
 
-
-
-
-
-
-
-
-
-typedef struct
-{
-    char buf[IPC_BUF_SIZE];
-    unsigned long bufSize;
-    
-    seL4_CPtr endpoint;
-} ServerEnvir;
-
-typedef struct
-{
-    char buf[IPC_BUF_SIZE];
-    unsigned long bufSize;
-    
-    seL4_CPtr endpoint;
-} ClientEnvir;
-
 #ifdef KERNEL_TASK
 // an instance of sel4osapi_process_env_t MUST fit in a single page
 STATIC_ASSERT(sizeof(sel4osapi_process_env_t) < PAGE_SIZE_4K,sel4osapi_process_env_t);
 
 // dito for other structs
 STATIC_ASSERT(sizeof(ThreadEnvir) < PAGE_SIZE_4K,ThreadEnvir);
-STATIC_ASSERT(sizeof(ServerEnvir) < PAGE_SIZE_4K,ServerEnvir);
-STATIC_ASSERT(sizeof(ClientEnvir) < PAGE_SIZE_4K,ClientEnvir);
+
 #endif
 
 #ifndef KERNEL_TASK
@@ -266,16 +236,9 @@ int setPriority(int pid , int prio);
 int getPID(void);
 int getParentPID(void);
 
-// Server
-void listServers(void);
-ServerEnvir* RegisterServerWithName(const char*name, int flags);
-
-
-ClientEnvir* ConnectToServer( const char*name);
-int ServerRecv(ServerEnvir* server);
 
 
 
-//vka_t* getVka(void);
-//vspace_t* getVspace(void);
+
+
 #endif

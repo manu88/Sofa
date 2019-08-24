@@ -17,6 +17,8 @@
 
 #pragma once
 
+
+#if 0
 #include <stdint.h>
 #include "Sofa.h"
 #include <SysCalls.h>
@@ -68,3 +70,4 @@ int RemoveProcessAsClient( Process* fromProcess) NO_NULL_POINTERS;
 uint32_t NameServerGetNumClients(const Server* server) NO_NULL_POINTERS;
 
 void NameServerDump(void);
+#endif

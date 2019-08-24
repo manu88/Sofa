@@ -17,12 +17,7 @@
 
 #include "ProcessSysCall.h"
 
-/*
-#include "Timer.h"
-#include "Bootstrap.h"
-#include "Utils.h"
-#include "NameServer.h"
-*/
+
 
 // order MUST Match SysCallID
 static SysCallHandler _sysHandler[SysCall_Last] =
@@ -42,9 +37,9 @@ static SysCallHandler _sysHandler[SysCall_Last] =
     processSetPriority,
     processGetPriority,
     processCapOp,
-    processResourceReq,
-    processRegisterServer,
-    processRegisterClient,
+    //processResourceReq,
+    //processRegisterServer,
+    //processRegisterClient,
 };
 
 
@@ -66,15 +61,3 @@ void processSysCall(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_b
     sender->stats.numSysCalls++;
 }
 
-
-void processResourceReq(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
-{
-    SofaResource resourceRequested = seL4_GetMR(1);
-    
-    
-    printf("[kernel_task] ressource request for %i from %i\n",resourceRequested, sender->pid);
-    
-    //seL4_SetMR(0,SysCall_Read);
-    seL4_SetMR(1, 0 );
-    Reply( info );
-}

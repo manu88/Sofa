@@ -26,40 +26,10 @@
 int main( int argc , char* argv[])
 {
     
-    /*
-    ps_io_mapper_t io_mapper;
-    error =  sel4platsupport_new_io_mapper(context.vspace, context.vka, &io_mapper);
-    assert(error == 0);
-    */
-    ServerEnvir* server =  RegisterServerWithName("driverkit", 0);
-
-    if( server)
-    {
-        print("RegisterServerWithName OK\n");
-        
-        strcpy(server->buf , "Test Test 1-2");
-    }
-    else
-    {
-        print("RegisterServerWithName Error \n");
-        return 1;
-    }
     
-    /*
-    void* acpiAddr =  RequestResource( SofaResource_ACPI);
-    
-    if( acpiAddr)
-    {
-        print("RequestResource ACPI OK\n");
-    }
-    else
-    {
-        print("RequestResource ACPI error\n");
-    }
-    */
 	while(1)
 	{
-        int sender =  ServerRecv(server);
+       
 	}
 
 

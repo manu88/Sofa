@@ -20,7 +20,7 @@
 #include "system.h"
 #include "Utils.h"
 #include "Timer.h"
-#include "NameServer.h"
+
 #include "Config.h"
 
 #include <vka/capops.h>
@@ -503,9 +503,7 @@ int ProcessKill( Process* process , SofaSignal signal)
         //proc->parent = initProcess;
     }
 
-    NameServerRemoveAllFromProcess(process);
-    RemoveProcessAsClient(process);
-    
+
     int ret = ProcessSignalTerminaison(process , ProcessGetParent(process) );
 
     if( ret == 0) // parent was waiting for a child so the signal has been sent, we can clean up everything

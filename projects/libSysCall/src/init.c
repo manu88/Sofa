@@ -437,10 +437,7 @@ void sched()
     doDebugSysCall(SysCall_Debug_Sched);
 }
 
-void listServers()
-{
-    doDebugSysCall(SysCall_Debug_ListServers);
-}
+
 
 static long doIDsSysCall(SysCallGetIDs_OP op)
 {
@@ -498,76 +495,8 @@ int setPriority(int pid , int prio)
     return seL4_GetMR(1);
 }
 
-ServerEnvir* RegisterServerWithName(const char*name, int flags)
-{
-    if( !name )
-        return NULL;
-    
-    assert(env);
-    
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
-    seL4_SetMR(0 , SysCall_RegisterServer);
-    seL4_SetMR(1 , flags);
-    // 2nd reg is for return value;
-    // 3rd will get the ServerEnv pointer
-    
-    snprintf( env->buf, IPC_BUF_SIZE, "%s" , name);
-    
-    seL4_Call(endpoint, info);
-    
-    assert(seL4_GetMR(0) == SysCall_RegisterServer);
-    
-    if( seL4_GetMR(1) == 0)
-    {
-        
-        seL4_CPtr serverEP = seL4_GetMR(3);
-        ServerEnvir* ret = (ServerEnvir*) seL4_GetMR(2);
-        
-        /*
-        seL4_Word sender_badge = 0;
-        print("Server Wait for a message !\n");
-        seL4_MessageInfo_t message = seL4_Recv(serverEP, &sender_badge);
-        print("Got a message !\n");
-        */
-        return ret;
-    }
-    
-    return NULL;
-}
 
-ClientEnvir* ConnectToServer( const char*name)
-{
-    if( !name )
-        return NULL;
-    
-    assert(env);
-    
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
-    seL4_SetMR(0 , SysCall_RegisterClient);
-    // 2nd reg is for return value;
-    // 3rd will get the ServerEnv pointer
-    
-    snprintf( env->buf, IPC_BUF_SIZE, "%s" , name);
-    
-    seL4_Call(endpoint, info);
-    
-    assert(seL4_GetMR(0) == SysCall_RegisterClient);
-    
-    if( seL4_GetMR(1) == 0)
-    {
-        return (ClientEnvir*) seL4_GetMR(2);
-    }
-    
-    return NULL;
-}
 
-int ServerRecv(ServerEnvir* server)
-{
-    seL4_Word sender_badge = 0;
-    seL4_MessageInfo_t message = seL4_Recv(server->endpoint, &sender_badge);
-    
-    return (int)sender_badge;
-}
 
 
 
@@ -616,16 +545,4 @@ int  CapAcquire( SofaCapabilities cap)
     doCapSysCall(CapOperation_Acquire , cap);
 }
 
-void* RequestResource( SofaResource res)
-{
-    assert(env);
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-    
-    seL4_SetMR(0 , SysCall_ResourceReq);
-    
-    seL4_Call(endpoint, info);
-    
-    assert(seL4_GetMR(0) == SysCall_ResourceReq);
-    
-    return (void*)seL4_GetMR(1);
-}
+

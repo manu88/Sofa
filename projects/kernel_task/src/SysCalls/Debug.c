@@ -16,7 +16,7 @@
  */
 
 #include "../ProcessSysCall.h"
-#include "../NameServer.h"
+
 
 void processDebug(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_badge)
 {
@@ -31,9 +31,7 @@ void processDebug(Process *sender,seL4_MessageInfo_t info , seL4_Word sender_bad
         case SysCall_Debug_Sched:
             seL4_DebugDumpScheduler();
             break;
-        case SysCall_Debug_ListServers:
-            NameServerDump();
-            break;
+
         default:
             assert(0);
             break;

@@ -47,4 +47,4 @@ void CapDrop( SofaCapabilities cap);
 int  CapAcquire( SofaCapabilities cap);
 
 
-void* RequestResource( SofaResource res);
+
