@@ -5,4 +5,4 @@ tools/
 projects/musllibc/
 projects/seL4_libs/
 projects/util_libs/
-
+projects/sel4runtime/
