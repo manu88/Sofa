@@ -35,6 +35,14 @@ static ProcessContext* sendInit()
     return ctx;
 }
 
+void dump_ProcessContext()
+{
+    printf("ProcessContext.test %i\n", _ctx->test);
+    printf("ProcessContext.page_directory %p\n", _ctx->page_directory);
+    printf("ProcessContext.root_cnode %p\n", _ctx->root_cnode);
+    printf("ProcessContext.tcb %p\n", _ctx->tcb);
+
+}
 int ProcessInit(void* endpoint)
 {
     _endpoint = endpoint;
@@ -43,6 +51,7 @@ int ProcessInit(void* endpoint)
 
     printf("Send init RPC call\n");
     _ctx = sendInit();
-    printf("Test %i\n", _ctx->test);
+    dump_ProcessContext();
+
     return 0;
 }

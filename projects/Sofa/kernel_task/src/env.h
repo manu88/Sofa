@@ -37,7 +37,13 @@ typedef struct
 
     /* time server for managing timeouts */
     time_manager_t tm;
+
+
+    int num_untypeds;
+    vka_object_t *untypeds;
 } Environ;
 
 
 void Environ_init(Environ* env);
+
+unsigned int Environ_populate_untypeds(Environ* env, vka_object_t *untypeds,  uint8_t* untyped_size_bits_list);

@@ -15,11 +15,17 @@
 #include "env.h"
 #include "timer.h"
 #include "utils.h"
+#include "Process.h"
 
+
+/* list of untypeds to give out to processes */
+static vka_object_t untypeds[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
+/* list of sizes (in bits) corresponding to untyped */
+static uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
 
 static Environ _envir;
 
-static sel4utils_process_t testProcess;
+static Process testProcess;
 
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
@@ -93,7 +99,7 @@ void listCPIOFiles()
 
 
 
-void spawnApp(sel4utils_process_t* process, const char* appName, seL4_Word badge)
+void spawnApp(Process* process, const char* appName, seL4_Word badge)
 {
     int error;
 
@@ -113,27 +119,70 @@ void spawnApp(sel4utils_process_t* process, const char* appName, seL4_Word badge
 
     config = process_config_fault_cptr(config ,badged_ep_path.capPtr );
 
-    error = sel4utils_configure_process_custom( process , &_envir.vka , &_envir.vspace, config);
+    error = sel4utils_configure_process_custom(&process->_process , &_envir.vka , &_envir.vspace, config);
     ZF_LOGF_IFERR(error, "Failed to configure a new process.\n");
 
-    seL4_CPtr endpoint_proc = process_copy_cap_into(process, badge, &_envir.vka, _envir.rootTaskEP.cptr, seL4_AllRights);
+    process->endpoint = process_copy_cap_into(&process->_process, badge, &_envir.vka, _envir.rootTaskEP.cptr, seL4_AllRights);
     char endpoint_string[16] = "";
-    snprintf(endpoint_string, 16, "%ld", (long) endpoint_proc);// process_ep_cap);
+    snprintf(endpoint_string, 16, "%ld", (long) process->endpoint);// process_ep_cap);
 
     seL4_Word argc = 2;
     char *argv[] = { (char*)appName, endpoint_string};
 
-    error = sel4utils_spawn_process_v(process , &_envir.vka , &_envir.vspace , argc, argv , 1);
+    error = sel4utils_spawn_process_v(&process->_process , &_envir.vka , &_envir.vspace , argc, argv , 1);
     ZF_LOGF_IFERR(error, "Failed to spawn and start the new thread.\n");
 
     printf("Started app '%s'\n", appName);
+}
+
+void ProcessContext_init(ProcessContext* ctx)
+{
+    memset(ctx, 0, sizeof(ProcessContext));
+    ctx->root_cnode = SEL4UTILS_CNODE_SLOT;
+    ctx->cspace_size_bits = SOFA_PROCESS_CSPACE_SIZE_BITS;
+}
 
 
+void on_initCall(Process* process, seL4_MessageInfo_t message)
+{
+    ProcessContext* ctx = (ProcessContext *) vspace_new_pages(&_envir.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    assert(ctx != NULL);
+    ProcessContext_init(ctx);
+    ctx->test = 42;
+
+    seL4_CPtr process_data_frame = vspace_get_cap(&_envir.vspace, ctx);
+    seL4_CPtr process_data_frame_copy = 0;
+    util_copy_cap(&_envir.vka, process_data_frame, &process_data_frame_copy);
+
+    size_t numPages = 1;
+    void* venv = vspace_map_pages(&process->_process.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
+
+    memcpy(ctx->untyped_size_bits_list, untyped_size_bits_list, sizeof(uint8_t) * _envir.num_untypeds);
+
+    ctx->page_directory = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.pd.cptr);
+    ctx->tcb = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.thread.tcb.cptr);
+
+
+    /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
+     * AS THE SLOTS WILL BE CONSIDERED FREE AND OVERRIDDEN BY THE TEST PROCESS. */
+    /* set up free slot range */
+
+    ctx->free_slots.start =  process->endpoint + 1;
+    ctx->free_slots.end = (1u << SOFA_PROCESS_CSPACE_SIZE_BITS);
+    assert(ctx->free_slots.start < ctx->free_slots.end);
+
+    seL4_SetMR(1, venv);
+    seL4_Reply(message);
 }
 
 void *main_continued(void *arg UNUSED)
 {
     printf("\n------Sofa------\n");
+
+    /* allocate lots of untyped memory for tests to use */
+    _envir.num_untypeds = Environ_populate_untypeds(&_envir, untypeds, untyped_size_bits_list);
+    printf("Allocated %li untypeds \n", _envir.num_untypeds);
+    _envir.untypeds = untypeds;
 
     listCPIOFiles();
     spawnApp(&testProcess, "app", 1);
@@ -158,20 +207,7 @@ void *main_continued(void *arg UNUSED)
             else if (rpcID == SofaSysCall_InitProc)
             {
                 printf("Received init call from %lu\n", sender);
-
-                ProcessContext* ctx = (ProcessContext *) vspace_new_pages(&_envir.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-                assert(ctx != NULL);
-                ctx->test = 42;
-
-                seL4_CPtr process_data_frame = vspace_get_cap(&_envir.vspace, ctx);
-                seL4_CPtr process_data_frame_copy = 0;
-                util_copy_cap(&_envir.vka, process_data_frame, &process_data_frame_copy);
-
-                size_t numPages = 1;
-                void* venv = vspace_map_pages(&testProcess.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
-
-                seL4_SetMR(1, venv);
-                seL4_Reply(message);
+                on_initCall(&testProcess, message);
 
             }
             else
