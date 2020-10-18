@@ -140,15 +140,34 @@ void ProcessContext_init(ProcessContext* ctx)
     memset(ctx, 0, sizeof(ProcessContext));
     ctx->root_cnode = SEL4UTILS_CNODE_SLOT;
     ctx->cspace_size_bits = SOFA_PROCESS_CSPACE_SIZE_BITS;
+    ctx->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
 }
 
+
+static seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int num_untypeds,
+                                                Environ* env)
+{
+    seL4_SlotRegion range = {0};
+
+    for (int i = 0; i < num_untypeds; i++) {
+        seL4_CPtr slot = sel4utils_copy_cap_to_process(process, &env->vka, untypeds[i].cptr);
+
+        /* set up the cap range */
+        if (i == 0) {
+            range.start = slot;
+        }
+        range.end = slot;
+    }
+    assert((range.end - range.start) + 1 == num_untypeds);
+    return range;
+}
 
 void on_initCall(Process* process, seL4_MessageInfo_t message)
 {
     ProcessContext* ctx = (ProcessContext *) vspace_new_pages(&_envir.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(ctx != NULL);
     ProcessContext_init(ctx);
-    ctx->test = 42;
+
 
     seL4_CPtr process_data_frame = vspace_get_cap(&_envir.vspace, ctx);
     seL4_CPtr process_data_frame_copy = 0;
@@ -162,12 +181,13 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
     ctx->page_directory = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.pd.cptr);
     ctx->tcb = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.thread.tcb.cptr);
 
-
+    /* setup data about untypeds */
+    ctx->untypeds = copy_untypeds_to_process(&process->_process, _envir.untypeds, _envir.num_untypeds, &_envir);
     /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
      * AS THE SLOTS WILL BE CONSIDERED FREE AND OVERRIDDEN BY THE TEST PROCESS. */
     /* set up free slot range */
 
-    ctx->free_slots.start =  process->endpoint + 1;
+    ctx->free_slots.start =  ctx->untypeds.end + 1;
     ctx->free_slots.end = (1u << SOFA_PROCESS_CSPACE_SIZE_BITS);
     assert(ctx->free_slots.start < ctx->free_slots.end);
 

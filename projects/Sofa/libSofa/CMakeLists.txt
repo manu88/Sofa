@@ -16,6 +16,7 @@ target_link_libraries(sofa
 		sel4
         muslc
         sel4muslcsys
+        sel4allocman
 )
 
 # warn about everything
