@@ -7,6 +7,16 @@
 #include <allocman/vka.h>
 #include <allocman/bootstrap.h>
 #include <sel4utils/vspace.h>
+#include <sel4utils/process.h>
+
+#include <sel4utils/thread.h>
+#include <sel4utils/thread_config.h>
+
+
+/* dummy global for libsel4muslcsys */
+char _cpio_archive[1];
+char _cpio_archive_end[1];
+
 
 /* allocator static pool */
 #define ALLOCATOR_STATIC_POOL_SIZE ((1 << seL4_PageBits) * 20)
@@ -19,13 +29,13 @@ static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
 static sel4utils_alloc_data_t alloc_data;
 
 
-
 static seL4_CPtr _endpoint = 0;
 static ProcessContext* _ctx = NULL;
 
 
 
 static void init_allocator(ProcessContext* context);
+static void init_simple(ProcessContext* context);
 
 static size_t write_buf(void *data, size_t count)
 {
@@ -33,14 +43,17 @@ static size_t write_buf(void *data, size_t count)
     {
         return 0;
     }
-    for (int i=0;i<count ; i++)
-    {
-        struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
-        seL4_SetMR(0, SofaSysCall_PutChar);
-        seL4_SetMR(1, ((char*)data)[i]);
-        seL4_Send(_endpoint, msg);
-    }
-    return count;
+
+    const size_t dataSize = count < IPC_BUF_LEN ? count : IPC_BUF_LEN;
+    //snprintf(_ctx->ipcBuffer, dataSize, (const char*) data);
+    strncpy(_ctx->ipcBuffer, data, dataSize);
+
+    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
+    seL4_SetMR(0, SofaSysCall_Write);
+    seL4_SetMR(1, dataSize);
+    seL4_Send(_endpoint, msg);
+
+    return dataSize;
 }
 
 static ProcessContext* sendInit()
@@ -49,7 +62,7 @@ static ProcessContext* sendInit()
     seL4_SetMR(0, SofaSysCall_InitProc);
     seL4_Call(_endpoint, msg);
 
-    ProcessContext* ctx = seL4_GetMR(1);
+    ProcessContext* ctx = (ProcessContext*) seL4_GetMR(1);
     return ctx;
 }
 
@@ -58,25 +71,108 @@ void dump_ProcessContext()
     printf("ProcessContext.page_directory %ld\n",  _ctx->page_directory);
     printf("ProcessContext.root_cnode %ld\n", _ctx->root_cnode);
     printf("ProcessContext.tcb %ld\n", _ctx->tcb);
-    printf("ProcessContext.stack %ld\n", _ctx->stack);
+    printf("ProcessContext.stack %p\n", _ctx->stack);
 
 }
+
+
+static void printDebug()
+{
+    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+    seL4_SetMR(0, SofaSysCall_Debug);
+    seL4_Send(_endpoint, msg);
+}
+
+void threadStart(void *arg0, void *arg1, void *ipc_buf)
+{
+
+    //printf("Thread is running !\n");
+
+    while(1)
+    {
+	
+    }
+
+}
+
+static void test_thread()
+{
+    sel4utils_thread_config_t threadConf = thread_config_new(&_ctx->simple);
+
+
+
+    int error = sel4utils_configure_thread_config(&_ctx->vka , &_ctx->vspace , &_ctx->vspace , threadConf , &_ctx->testThread);
+
+    if (error != 0)
+    {
+        printf("error for sel4utils_configure_thread_config %i\n", error);
+    }
+
+    error = seL4_TCB_SetPriority(_ctx->testThread.tcb.cptr, _ctx->tcb,  254);
+    if (error != 0)
+    {
+        printf("error for seL4_TCB_SetPriority %i\n", error);
+    }
+
+    error = sel4utils_start_thread(&_ctx->testThread , threadStart , NULL , NULL , 1);
+
+
+    if (error != 0)
+    {
+        printf("error for sel4utils_start_thread %i\n", error);
+    }
+
+
+
+    printDebug();
+}
+
 int ProcessInit(void* endpoint)
 {
-    _endpoint = endpoint;
+    _endpoint = (seL4_CPtr) endpoint;
 
-    sel4muslcsys_register_stdio_write_fn(write_buf);
-
-    printf("Send init RPC call\n");
     _ctx = sendInit();
-
+    sel4muslcsys_register_stdio_write_fn(write_buf);
     init_allocator(_ctx);
     printf("Allocator ok\n");
+    printf("Init simple\n");
+    init_simple(_ctx);
     dump_ProcessContext();
+
+    printf("Test thread\n");
+    test_thread();
 
     return 0;
 }
 
+static uint8_t cnode_size_bits(void *data)
+{
+    ProcessContext *init = (ProcessContext *) data;
+    return init->cspace_size_bits;
+}
+
+static seL4_CPtr sched_ctrl(void *data, int core)
+{
+    return ((ProcessContext *) data)->sched_ctrl + core;
+}
+
+static int core_count(void *data)
+{
+    return ((ProcessContext *) data)->cores;
+}
+
+static void init_simple(ProcessContext* context)
+{
+    /* minimal simple implementation */
+    context->simple.data = (void *) context;
+    context->simple.arch_simple.data = (void *) context;
+    context->simple.init_cap = sel4utils_process_init_cap;
+    context->simple.cnode_size = cnode_size_bits;
+    context->simple.sched_ctrl = sched_ctrl;
+    context->simple.core_count = core_count;
+
+    //arch_init_simple(env, &env->simple);
+}
 
 
 static void init_allocator(ProcessContext* context)

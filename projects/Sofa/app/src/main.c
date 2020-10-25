@@ -11,8 +11,7 @@ int main(int argc, char *argv[])
     assert(ret == 0);
 
     printf("Hello world\n");
-
-
+    
     while (1)
     {
         /* code */

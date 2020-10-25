@@ -5,19 +5,31 @@
 #include <sel4/sel4.h>
 #include <vka/vka.h>
 #include <vspace/vspace.h>
+#include <simple/simple.h>
+
+#include <sel4utils/thread.h>
 
 #define SOFA_PROCESS_CSPACE_SIZE_BITS 17
 
+#define IPC_BUF_LEN 64
+// shared between kernel_task and processes
 typedef struct
 {
     /* An initialised vka. Setup by the process itself */
     vka_t vka;
     /* virtual memory management interface */
     vspace_t vspace;
+    /* abstract interface over application init */
+    simple_t simple;
     /* page directory of the process */
     seL4_CPtr page_directory;
     /* root cnode of the process */
     seL4_CPtr root_cnode;
+
+    /* number of available cores */
+    seL4_Word cores;
+    /* sched control cap */
+    seL4_CPtr sched_ctrl;
 
     /* size of the  process cspace */
     seL4_Word cspace_size_bits;
@@ -38,6 +50,10 @@ typedef struct
 
     /* address of the stack */
     void *stack;
+
+    sel4utils_thread_t testThread;
+
+    uint8_t ipcBuffer[IPC_BUF_LEN];
 } ProcessContext;
 
 

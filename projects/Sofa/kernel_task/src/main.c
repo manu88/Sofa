@@ -18,6 +18,8 @@
 #include "Process.h"
 
 
+
+
 /* list of untypeds to give out to processes */
 static vka_object_t untypeds[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
 /* list of sizes (in bits) corresponding to untyped */
@@ -141,6 +143,7 @@ void ProcessContext_init(ProcessContext* ctx)
     ctx->root_cnode = SEL4UTILS_CNODE_SLOT;
     ctx->cspace_size_bits = SOFA_PROCESS_CSPACE_SIZE_BITS;
     ctx->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
+    ctx->cores = simple_get_core_count(&_envir.simple);
 }
 
 
@@ -166,6 +169,7 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
 {
     ProcessContext* ctx = (ProcessContext *) vspace_new_pages(&_envir.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(ctx != NULL);
+    process->ctx = ctx;
     ProcessContext_init(ctx);
 
 
@@ -181,6 +185,12 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
     ctx->page_directory = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.pd.cptr);
     ctx->tcb = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.thread.tcb.cptr);
 
+    seL4_Error err =  seL4_TCB_SetMCPriority(process->_process.thread.tcb.cptr, seL4_CapInitThreadTCB, 254);
+    if(err != seL4_NoError)
+    {
+        printf("seL4_TCB_SetMCPriority (1) err %i\n", err);
+    }
+
     /* setup data about untypeds */
     ctx->untypeds = copy_untypeds_to_process(&process->_process, _envir.untypeds, _envir.num_untypeds, &_envir);
     /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
@@ -191,17 +201,25 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
     ctx->free_slots.end = (1u << SOFA_PROCESS_CSPACE_SIZE_BITS);
     assert(ctx->free_slots.start < ctx->free_slots.end);
 
-    seL4_SetMR(1, venv);
+    seL4_SetMR(1, (seL4_Word) venv);
     seL4_Reply(message);
+}
+
+
+static void printSpecs()
+{
+    printf("Kernel Build %s MCS\n", config_set(CONFIG_KERNEL_MCS)? "with": "without");    
 }
 
 void *main_continued(void *arg UNUSED)
 {
     printf("\n------Sofa------\n");
 
+    printSpecs();
+
     /* allocate lots of untyped memory for tests to use */
     _envir.num_untypeds = Environ_populate_untypeds(&_envir, untypeds, untyped_size_bits_list);
-    printf("Allocated %li untypeds \n", _envir.num_untypeds);
+    printf("Allocated %i untypeds \n", _envir.num_untypeds);
     _envir.untypeds = untypeds;
 
     listCPIOFiles();
@@ -218,17 +236,24 @@ void *main_continued(void *arg UNUSED)
         //printf("Received something from %lu\n", sender);
         if(label == seL4_NoFault)
         {
-            //printf("RPC sys call\n");
             seL4_Word rpcID = seL4_GetMR(0);
-            if (rpcID == SofaSysCall_PutChar)
+            if (rpcID == SofaSysCall_Write)
             {
-                putchar(seL4_GetMR(1));
+                const size_t dataSize = (size_t) seL4_GetMR(1);
+                for(size_t i =0; i< dataSize;i++)
+                {
+                    putchar(testProcess.ctx->ipcBuffer[i]);
+                }
             }
             else if (rpcID == SofaSysCall_InitProc)
             {
                 printf("Received init call from %lu\n", sender);
                 on_initCall(&testProcess, message);
 
+            }
+            else if (rpcID == SofaSysCall_Debug)
+            {
+                seL4_DebugDumpScheduler();
             }
             else
             {
