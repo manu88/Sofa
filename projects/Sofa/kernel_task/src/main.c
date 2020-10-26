@@ -79,6 +79,7 @@ static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, i
     /* Pair the notification and the handler */
     error = seL4_IRQHandler_SetNotification(_envir.timer_irqs[num_timer_irqs].handler_path.capPtr,
                                             _envir.badged_timer_notifications[num_timer_irqs].capPtr);
+
     ZF_LOGF_IF(error, "Failed to pair the notification and handler together");
 
     /* Ack the handler so interrupts can come in */
@@ -162,7 +163,7 @@ void listCPIOFiles()
 
 
 
-void spawnApp(Process* process, const char* appName, seL4_Word badge)
+void spawnApp(Process* process, const char* appName)
 {
     int error;
 
@@ -177,15 +178,15 @@ void spawnApp(Process* process, const char* appName, seL4_Word badge)
     cspacepath_t ep_path = {0};
     vka_cspace_make_path(&_envir.vka, _envir.rootTaskEP.cptr, &ep_path);
 
-    
-    error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, 1);
+    process->pid = Process_GetNextPID();
+    error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, process->pid);
 
     config = process_config_fault_cptr(config ,badged_ep_path.capPtr );
 
     error = sel4utils_configure_process_custom(&process->_process , &_envir.vka , &_envir.vspace, config);
     ZF_LOGF_IFERR(error, "Failed to configure a new process.\n");
 
-    process->endpoint = process_copy_cap_into(&process->_process, badge, &_envir.vka, _envir.rootTaskEP.cptr, seL4_AllRights);
+    process->endpoint = process_copy_cap_into(&process->_process, process->pid, &_envir.vka, _envir.rootTaskEP.cptr, seL4_AllRights);
     char endpoint_string[16] = "";
     snprintf(endpoint_string, 16, "%ld", (long) process->endpoint);// process_ep_cap);
 
@@ -228,6 +229,7 @@ static seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vk
 
 void on_initCall(Process* process, seL4_MessageInfo_t message)
 {
+    assert(process->ctx == NULL);
     ProcessContext* ctx = (ProcessContext *) vspace_new_pages(&_envir.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(ctx != NULL);
     process->ctx = ctx;
@@ -296,24 +298,30 @@ void *main_continued(void *arg UNUSED)
     _envir.untypeds = untypeds;
 
     listCPIOFiles();
-    //spawnApp(&testProcess, "app", 1);
+
+    ProcessInit(&testProcess);
+    spawnApp(&testProcess, "app");
+    printf("Add process with pid %i\n", testProcess.pid);
+    Process_Add(&testProcess);
 
     seL4_DebugDumpScheduler();
 
 
 // timer test
+#if 0
     unsigned int timerID = 0;
     int err = tm_alloc_id(&_envir.tm, &timerID);
     assert(err == 0);
     printf("Timer ID is %u\n", timerID);
-    tm_register_rel_cb(&_envir.tm, 10*NS_IN_S, timerID, on_time, 1);
+    tm_register_rel_cb(&_envir.tm, 5*NS_IN_S, timerID, on_time, 1);
+#endif
 // timer test
 
     printf("-> start kernel_task run loop\n");
     while (1)
     {
         seL4_Word sender;
-        seL4_MessageInfo_t message = seL4_Recv(_envir.badged_timer_notifications[0].capPtr, &sender);//.rootTaskEP.cptr, &sender);
+        seL4_MessageInfo_t message = seL4_Recv(_envir.rootTaskEP.cptr, &sender);
         seL4_Word label = seL4_MessageInfo_get_label(message);
 
         if(sender & IRQ_EP_BADGE)
@@ -326,18 +334,25 @@ void *main_continued(void *arg UNUSED)
         else if(label == seL4_NoFault)
         {
             seL4_Word rpcID = seL4_GetMR(0);
+            Process* callingProcess = Process_GetByPID(sender);
+            if(callingProcess == NULL)
+            {
+                printf("Process not found for %lu\n", sender);
+            }
+            assert(callingProcess);
+
             if (rpcID == SofaSysCall_Write)
             {
                 const size_t dataSize = (size_t) seL4_GetMR(1);
                 for(size_t i =0; i< dataSize;i++)
                 {
-                    putchar(testProcess.ctx->ipcBuffer[i]);
+                    putchar(callingProcess->ctx->ipcBuffer[i]);
                 }
             }
             else if (rpcID == SofaSysCall_InitProc)
             {
                 printf("Received init call from %lu\n", sender);
-                on_initCall(&testProcess, message);
+                on_initCall(callingProcess, message);
 
             }
             else if (rpcID == SofaSysCall_Debug)

@@ -11,7 +11,7 @@ include(cpio)
 MakeCPIO(archive.o "${cpio_apps}")
 
 
-add_executable(kernel_task src/main.c src/env.c src/timer.c src/utils.c archive.o)
+add_executable(kernel_task src/main.c src/env.c src/timer.c src/utils.c src/Process.c archive.o)
 
 target_link_libraries(
     kernel_task
@@ -24,6 +24,7 @@ target_link_libraries(
         cpio
         sel4vka
         sofa
+        utils
 )
 
 # Set this image as the rootserver

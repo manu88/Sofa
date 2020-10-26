@@ -11,9 +11,6 @@ void Timer_init(Environ* env)
     error = ltimer_default_init(&env->ltimer, env->ops, NULL, NULL);
     ZF_LOGF_IF(error, "Failed to setup the timers");
 
-    error = vka_alloc_notification(&env->vka, &env->timer_notify_test);
-    ZF_LOGF_IF(error, "Failed to allocate notification object for tests");
-
     /* Allocate the root notification if we haven't already done so */
     error = vka_alloc_notification(&env->vka, &env->timer_notification);
     ZF_LOGF_IF(error, "Failed to allocate notification object");

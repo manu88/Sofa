@@ -42,23 +42,26 @@ static seL4_Word get_free_slot(ProcessContext* context);
 static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep);
 
 
-static size_t write_buf(void *data, size_t count)
+static size_t _do_write_buf(seL4_CPtr endpoint, void *data, size_t count)
 {
-    if(_endpoint == 0)
-    {
-        return 0;
-    }
-
     const size_t dataSize = count < IPC_BUF_LEN ? count : IPC_BUF_LEN;
     strncpy(_ctx->ipcBuffer, data, dataSize);
 
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
     seL4_SetMR(0, SofaSysCall_Write);
     seL4_SetMR(1, dataSize);
-    seL4_Send(_endpoint, msg);
+    seL4_Send(endpoint, msg);
 
     return dataSize;
 }
+
+static size_t write_buf(void *data, size_t count)
+{
+    return _do_write_buf(_endpoint, data, count);
+}
+
+
+
 
 static ProcessContext* sendInit()
 {
@@ -89,14 +92,13 @@ static void printDebug()
 
 void threadStart(void *arg0, void *arg1, void *ipc_buf)
 {
-    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
-    seL4_SetMR(0, 42);
-    seL4_Call((seL4_CPtr) arg0, msg);
-    //printf("Thread is running !\n");
+    const char str[] = "Hello Thread\n";
+    const size_t strSize = strlen(str);
 
+    _do_write_buf((seL4_CPtr) arg0, str, strSize);
     while(1)
     {
-	
+
     }
 
 }
@@ -111,12 +113,7 @@ static void test_thread()
     threadConf = thread_config_auth(threadConf, _ctx->tcb);
 
 
-
-
-
-
     sel4utils_thread_t testThread;
-
 
 
     error = sel4utils_configure_thread_config(&_ctx->vka , &_ctx->vspace , &_ctx->vspace , threadConf , &testThread);
