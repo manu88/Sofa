@@ -12,6 +12,7 @@
 #include <sel4utils/thread.h>
 #include <sel4utils/thread_config.h>
 
+#include <vka/capops.h>
 
 /* dummy global for libsel4muslcsys */
 char _cpio_archive[1];
@@ -37,6 +38,10 @@ static ProcessContext* _ctx = NULL;
 static void init_allocator(ProcessContext* context);
 static void init_simple(ProcessContext* context);
 
+static seL4_Word get_free_slot(ProcessContext* context);
+static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep);
+
+
 static size_t write_buf(void *data, size_t count)
 {
     if(_endpoint == 0)
@@ -45,7 +50,6 @@ static size_t write_buf(void *data, size_t count)
     }
 
     const size_t dataSize = count < IPC_BUF_LEN ? count : IPC_BUF_LEN;
-    //snprintf(_ctx->ipcBuffer, dataSize, (const char*) data);
     strncpy(_ctx->ipcBuffer, data, dataSize);
 
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
@@ -85,7 +89,9 @@ static void printDebug()
 
 void threadStart(void *arg0, void *arg1, void *ipc_buf)
 {
-
+    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+    seL4_SetMR(0, 42);
+    seL4_Call((seL4_CPtr) arg0, msg);
     //printf("Thread is running !\n");
 
     while(1)
@@ -97,24 +103,55 @@ void threadStart(void *arg0, void *arg1, void *ipc_buf)
 
 static void test_thread()
 {
+    int error;
     sel4utils_thread_config_t threadConf = thread_config_new(&_ctx->simple);
 
+    //threadConf = thread_config_fault_endpoint(threadConf, _endpoint);
+
+    threadConf = thread_config_auth(threadConf, _ctx->tcb);
 
 
-    int error = sel4utils_configure_thread_config(&_ctx->vka , &_ctx->vspace , &_ctx->vspace , threadConf , &_ctx->testThread);
+
+
+
+
+    sel4utils_thread_t testThread;
+
+
+
+    error = sel4utils_configure_thread_config(&_ctx->vka , &_ctx->vspace , &_ctx->vspace , threadConf , &testThread);
 
     if (error != 0)
     {
         printf("error for sel4utils_configure_thread_config %i\n", error);
     }
 
-    error = seL4_TCB_SetPriority(_ctx->testThread.tcb.cptr, _ctx->tcb,  254);
+    error = seL4_TCB_SetPriority(testThread.tcb.cptr, _ctx->tcb,  254);
     if (error != 0)
     {
         printf("error for seL4_TCB_SetPriority %i\n", error);
     }
 
-    error = sel4utils_start_thread(&_ctx->testThread , threadStart , NULL , NULL , 1);
+
+    vka_object_t local_endpoint;
+    error = vka_alloc_endpoint(&_ctx->vka, &local_endpoint);
+    assert(error == 0);
+
+    error = api_tcb_set_space(testThread.tcb.cptr,
+                      local_endpoint.cptr,
+                      _ctx->root_cnode,
+                      api_make_guard_skip_word(seL4_WordBits - _ctx->cspace_size_bits),
+                      _ctx->page_directory, seL4_NilData);
+
+    if (error != 0)
+    {
+        printf("Failed to set fault EP for helper thread. err %i\n", error);
+        assert(0);
+    }
+
+    seL4_DebugNameThread(testThread.tcb.cptr, "thread");
+
+    error = sel4utils_start_thread(&testThread , threadStart , local_endpoint.cptr , NULL , 1);
 
 
     if (error != 0)
@@ -241,4 +278,30 @@ static void init_allocator(ProcessContext* context)
     bootstrap_configure_virtual_pool(allocator, vaddr, ALLOCATOR_VIRTUAL_POOL_SIZE,
                                      context->page_directory);
 
+}
+
+
+int cnode_mint(ProcessContext* context, seL4_CPtr src, seL4_CPtr dest, seL4_CapRights_t rights, seL4_Word badge)
+{
+    cspacepath_t src_path, dest_path;
+
+    vka_cspace_make_path(&context->vka, src, &src_path);
+    vka_cspace_make_path(&context->vka, dest, &dest_path);
+    return vka_cnode_mint(&dest_path, &src_path, rights, badge);
+}
+
+static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep)
+{
+    seL4_CPtr slot = get_free_slot(context);
+    int error = cnode_mint(context, ep, slot, seL4_AllRights, badge);
+    assert(error == seL4_NoError);
+    return slot;
+}
+
+static seL4_Word get_free_slot(ProcessContext* context)
+{
+    seL4_CPtr slot;
+    UNUSED int error = vka_cspace_alloc(&context->vka, &slot);
+    assert(!error);
+    return slot;
 }

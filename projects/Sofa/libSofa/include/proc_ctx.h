@@ -31,6 +31,7 @@ typedef struct
     /* sched control cap */
     seL4_CPtr sched_ctrl;
 
+
     /* size of the  process cspace */
     seL4_Word cspace_size_bits;
 
@@ -51,7 +52,6 @@ typedef struct
     /* address of the stack */
     void *stack;
 
-    sel4utils_thread_t testThread;
 
     uint8_t ipcBuffer[IPC_BUF_LEN];
 } ProcessContext;

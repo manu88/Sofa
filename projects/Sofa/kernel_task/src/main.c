@@ -185,11 +185,17 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
     ctx->page_directory = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.pd.cptr);
     ctx->tcb = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.thread.tcb.cptr);
 
+// set priority for process other threads
+
     seL4_Error err =  seL4_TCB_SetMCPriority(process->_process.thread.tcb.cptr, seL4_CapInitThreadTCB, 254);
     if(err != seL4_NoError)
     {
         printf("seL4_TCB_SetMCPriority (1) err %i\n", err);
     }
+
+    
+
+// end set priority for process other threads
 
     /* setup data about untypeds */
     ctx->untypeds = copy_untypeds_to_process(&process->_process, _envir.untypeds, _envir.num_untypeds, &_envir);
@@ -257,7 +263,7 @@ void *main_continued(void *arg UNUSED)
             }
             else
             {
-                printf("Received unkown RPC id %lu\n", rpcID);
+                printf("Received unkown RPC id %lu from sender %lu\n", rpcID, sender);
             }
             
         }
