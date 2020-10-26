@@ -13,4 +13,5 @@ for now I'm trying to understand more the [sel4test](https://github.com/seL4/sel
 
 ### Process API
 * printf
+* sleep
 

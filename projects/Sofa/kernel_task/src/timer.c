@@ -14,7 +14,7 @@ void Timer_init(Environ* env)
     error = vka_alloc_notification(&env->vka, &env->timer_notify_test);
     ZF_LOGF_IF(error, "Failed to allocate notification object for tests");
 
-    /* Allocate the root notifitcation if we haven't already done so */
+    /* Allocate the root notification if we haven't already done so */
     error = vka_alloc_notification(&env->vka, &env->timer_notification);
     ZF_LOGF_IF(error, "Failed to allocate notification object");
 
@@ -23,5 +23,6 @@ void Timer_init(Environ* env)
     ZF_LOGF_IF(error, "Failed to bind timer notification to sel4test-driver\n");
 
     /* set up the timer manager */
-    tm_init(&env->tm, &env->ltimer, &env->ops, 1);
+    error = tm_init(&env->tm, &env->ltimer, &env->ops, 1);
+    ZF_LOGF_IF(error, "Failed to create Time manager\n");
 }

@@ -8,6 +8,8 @@
 #include <platsupport/ltimer.h>
 #include <platsupport/time_manager.h>
 
+#define MAX_TIMER_IRQS 4
+
 typedef struct
 {
     /* An initialised vka that may be used by the test. */
@@ -37,6 +39,14 @@ typedef struct
 
     /* time server for managing timeouts */
     time_manager_t tm;
+
+    int num_timer_irqs;
+
+    /* timer IRQ handler caps */
+    sel4ps_irq_t timer_irqs[MAX_TIMER_IRQS];
+
+    /* The badged notifications that are paired with the timer IRQ handlers */
+    cspacepath_t badged_timer_notifications[MAX_TIMER_IRQS];
 
 
     int num_untypeds;

@@ -17,6 +17,7 @@ target_link_libraries(
     kernel_task
     PUBLIC
         muslc
+        sel4platsupport
         sel4allocman
         sel4runtime
         sel4muslcsys

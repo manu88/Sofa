@@ -9,6 +9,8 @@
 #include <vka/capops.h>
 #include <cpio/cpio.h>
 
+//#include <sel4platsupport/arch/io.h>
+#include <sel4platsupport/device.h>
 #include <sys_calls.h>
 #include <proc_ctx.h>
 
@@ -17,7 +19,7 @@
 #include "utils.h"
 #include "Process.h"
 
-
+#define IRQ_EP_BADGE       BIT(seL4_BadgeBits - 1)
 
 
 /* list of untypeds to give out to processes */
@@ -32,8 +34,63 @@ static Process testProcess;
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
+static ps_irq_register_fn_t irq_register_fn_copy;
 
 void *main_continued(void *arg UNUSED);
+
+
+
+
+static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, irq_callback_fn_t callback,
+                                            void *callback_data)
+{
+    printf("--> sel4test_timer_irq_register called \n");
+    static int num_timer_irqs = 0;
+
+    int error;
+
+    ZF_LOGF_IF(!callback, "Passed in a NULL callback");
+
+    ZF_LOGF_IF(num_timer_irqs >= MAX_TIMER_IRQS, "Trying to register too many timer IRQs");
+
+    /* Allocate the IRQ */
+    error = sel4platsupport_copy_irq_cap(&_envir.vka, &_envir.simple, &irq,
+                                         &_envir.timer_irqs[num_timer_irqs].handler_path);
+    ZF_LOGF_IF(error, "Failed to allocate IRQ handler");
+
+    /* Allocate the root notifitcation if we haven't already done so */
+    if (_envir.timer_notification.cptr == seL4_CapNull) {
+        error = vka_alloc_notification(&_envir.vka, &_envir.timer_notification);
+        ZF_LOGF_IF(error, "Failed to allocate notification object");
+    }
+    assert(_envir.timer_notification.cptr != seL4_CapNull);
+
+    /* Mint a notification for the IRQ handler to pair with */
+    error = vka_cspace_alloc_path(&_envir.vka, &_envir.badged_timer_notifications[num_timer_irqs]);
+    ZF_LOGF_IF(error, "Failed to allocate path for the badged notification");
+    cspacepath_t root_notification_path = {0};
+    vka_cspace_make_path(&_envir.vka, _envir.timer_notification.cptr, &root_notification_path);
+    error = vka_cnode_mint(&_envir.badged_timer_notifications[num_timer_irqs],
+                           &root_notification_path,
+                           seL4_AllRights, IRQ_EP_BADGE);//BIT(num_timer_irqs));
+
+    ZF_LOGF_IF(error, "Failed to mint notification for timer");
+
+    /* Pair the notification and the handler */
+    error = seL4_IRQHandler_SetNotification(_envir.timer_irqs[num_timer_irqs].handler_path.capPtr,
+                                            _envir.badged_timer_notifications[num_timer_irqs].capPtr);
+    ZF_LOGF_IF(error, "Failed to pair the notification and handler together");
+
+    /* Ack the handler so interrupts can come in */
+    error = seL4_IRQHandler_Ack(_envir.timer_irqs[num_timer_irqs].handler_path.capPtr);
+    ZF_LOGF_IF(error, "Failed to ack the IRQ handler");
+
+    /* Fill out information about the callbacks */
+    //_envir.timer_cbs[num_timer_irqs].callback = callback;
+    //_envir.timer_cbs[num_timer_irqs].callback_data = callback_data;
+
+    return num_timer_irqs++;
+}
 
 int main(void)
 {
@@ -50,12 +107,16 @@ int main(void)
     ZF_LOGF_IF(error, "Failed to alloc kernel_task endpoint");
 
     printf("-> Init timer\n");
+
+    irq_register_fn_copy = _envir.ops.irq_ops.irq_register_fn;
+    _envir.ops.irq_ops.irq_register_fn = sel4test_timer_irq_register;
     Timer_init(&_envir);
+    _envir.ops.irq_ops.irq_register_fn = irq_register_fn_copy;
+
 
     fflush(stdout);
     void *res;
 
-    /* Run sel4test-test related tests */
     error = sel4utils_run_on_stack(&_envir.vspace, main_continued, NULL, &res);
     assert(error == 0);
     assert(res == 0);
@@ -217,6 +278,12 @@ static void printSpecs()
     printf("Kernel Build %s MCS\n", config_set(CONFIG_KERNEL_MCS)? "with": "without");    
 }
 
+static int on_time(uintptr_t token)
+{
+    printf("ON TIME\n");
+}
+
+
 void *main_continued(void *arg UNUSED)
 {
     printf("\n------Sofa------\n");
@@ -229,18 +296,34 @@ void *main_continued(void *arg UNUSED)
     _envir.untypeds = untypeds;
 
     listCPIOFiles();
-    spawnApp(&testProcess, "app", 1);
+    //spawnApp(&testProcess, "app", 1);
 
     seL4_DebugDumpScheduler();
+
+
+// timer test
+    unsigned int timerID = 0;
+    int err = tm_alloc_id(&_envir.tm, &timerID);
+    assert(err == 0);
+    printf("Timer ID is %u\n", timerID);
+    tm_register_rel_cb(&_envir.tm, 10*NS_IN_S, timerID, on_time, 1);
+// timer test
 
     printf("-> start kernel_task run loop\n");
     while (1)
     {
         seL4_Word sender;
-        seL4_MessageInfo_t message = seL4_Recv(_envir.rootTaskEP.cptr, &sender);
+        seL4_MessageInfo_t message = seL4_Recv(_envir.badged_timer_notifications[0].capPtr, &sender);//.rootTaskEP.cptr, &sender);
         seL4_Word label = seL4_MessageInfo_get_label(message);
-        //printf("Received something from %lu\n", sender);
-        if(label == seL4_NoFault)
+
+        if(sender & IRQ_EP_BADGE)
+        {           
+            int error = seL4_IRQHandler_Ack(_envir.timer_irqs[0].handler_path.capPtr);
+            ZF_LOGF_IF(error, "Failed to acknowledge timer IRQ handler");
+
+            tm_update(&_envir.tm);
+        }
+        else if(label == seL4_NoFault)
         {
             seL4_Word rpcID = seL4_GetMR(0);
             if (rpcID == SofaSysCall_Write)
