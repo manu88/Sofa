@@ -7,7 +7,7 @@ typedef enum
     SofaSysCall_InitProc = 1,
     SofaSysCall_Exit     = 2,    
     SofaSysCall_Write    = 3,
-    SofaSysCall_Sleep    = 4,
+    SofaSysCall_Spawn    = 4,
 
     SofaSysCall_Debug
 } SofaSysCall;

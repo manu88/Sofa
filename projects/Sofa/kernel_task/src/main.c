@@ -29,7 +29,7 @@ static uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
 
 static Environ _envir;
 
-static Process app;
+static Process initProcess;
 static Process timeServer;
 
 extern char _cpio_archive[];
@@ -291,6 +291,33 @@ static void printSpecs()
     printf("Kernel Build %s MCS\n", config_set(CONFIG_KERNEL_MCS)? "with": "without");    
 }
 
+int process_spawn(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    const size_t filePathLen = (size_t) seL4_GetMR(1);
+    printf("Spawn request from %i: '%s' \n", callingProcess->pid, callingProcess->ctx->ipcBuffer);
+    const char* filePath = (const char*) callingProcess->ctx->ipcBuffer;
+
+    Process* p = malloc(sizeof(Process));
+    if(p == NULL)
+    {
+        return -ENOMEM;
+    }
+    ProcessInit(p);
+    spawnApp(p, filePath);
+    Process_Add(p);
+
+    return p->pid;
+
+/*
+    ProcessInit(&timeServer);
+    spawnApp(&timeServer, "TimeServer");
+    printf("Add process with pid %i\n", timeServer.pid);
+    Process_Add(&timeServer);
+*/
+
+    return 0;
+}
+
 void *main_continued(void *arg UNUSED)
 {
     printf("\n------Sofa------\n");
@@ -305,15 +332,10 @@ void *main_continued(void *arg UNUSED)
 
     listCPIOFiles();
 
-    ProcessInit(&app);
-    spawnApp(&app, "app");
-    printf("Add process with pid %i\n", app.pid);
-    Process_Add(&app);
-
-    ProcessInit(&timeServer);
-    spawnApp(&timeServer, "TimeServer");
-    printf("Add process with pid %i\n", timeServer.pid);
-    Process_Add(&timeServer);
+    ProcessInit(&initProcess);
+    spawnApp(&initProcess, "init");
+    printf("Add process with pid %i\n", initProcess.pid);
+    Process_Add(&initProcess);
 
     seL4_DebugDumpScheduler();
 
@@ -374,6 +396,13 @@ void *main_continued(void *arg UNUSED)
                 {
                     putchar(callingProcess->ctx->ipcBuffer[i]);
                 }
+            }
+            else if (rpcID == SofaSysCall_Spawn)
+            {
+                int ret = process_spawn(callingProcess, message);
+
+                seL4_SetMR(1, ret);
+                seL4_Reply(message);
             }
 
             else

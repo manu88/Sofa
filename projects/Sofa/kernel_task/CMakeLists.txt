@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.7.2)
 project(kernel_task C) # create a new C project called 'init' 
 
 
-
-
 #list of apps to include in the cpio archive
 get_property(cpio_apps GLOBAL PROPERTY apps_property)
 include(cpio)
