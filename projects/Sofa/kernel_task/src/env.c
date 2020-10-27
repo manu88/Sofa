@@ -97,14 +97,17 @@ static unsigned int allocate_untypeds(Environ* env, vka_object_t *untypeds, size
 
 
 /* extract a large number of untypeds from the allocator */
-unsigned int Environ_populate_untypeds(Environ* env, vka_object_t *untypeds, uint8_t* untyped_size_bits_list)
+unsigned int Environ_populate_untypeds(Environ* env, vka_object_t *untypeds, uint8_t* untyped_size_bits_list, unsigned int maxUntypeds)
 {
     /* First reserve some memory for the driver */
     vka_object_t reserve[KERN_TASK_NUM_UNTYPEDS];
     unsigned int reserve_num = allocate_untypeds(env, reserve, KERN_TASK_UNTYPED_MEMORY, KERN_TASK_NUM_UNTYPEDS);
-
     /* Now allocate everything else for the tests */
-    unsigned int num_untypeds = allocate_untypeds(env, untypeds, UINT_MAX, ARRAY_SIZE(untyped_size_bits_list));
+
+
+    unsigned int num_untypeds = allocate_untypeds(env, untypeds, UINT_MAX, maxUntypeds);
+
+
     /* Fill out the size_bits list */
     for (unsigned int i = 0; i < num_untypeds; i++) {
         untyped_size_bits_list[i] = untypeds[i].size_bits;

@@ -30,9 +30,9 @@ static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
 static sel4utils_alloc_data_t alloc_data;
 
 
-static seL4_CPtr _endpoint = 0;
 static ProcessContext* _ctx = NULL;
 
+static TLSContext _mainThreadTLS = {0};
 
 
 static void init_allocator(ProcessContext* context);
@@ -41,6 +41,14 @@ static void init_simple(ProcessContext* context);
 static seL4_Word get_free_slot(ProcessContext* context);
 static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep);
 
+
+static void Thread_init_tls(void *thread)
+{
+
+    //thread->info.ipc_word = seL4_GetUserData();
+    //assert(seL4_GetUserData() != 0);
+    seL4_SetUserData((seL4_Word)thread);
+}
 
 static size_t _do_write_buf(seL4_CPtr endpoint, void *data, size_t count)
 {
@@ -57,17 +65,17 @@ static size_t _do_write_buf(seL4_CPtr endpoint, void *data, size_t count)
 
 static size_t write_buf(void *data, size_t count)
 {
-    return _do_write_buf(_endpoint, data, count);
+    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    assert(ctx);
+    return _do_write_buf(ctx->endpoint, data, count);
 }
-
-
 
 
 static ProcessContext* sendInit()
 {
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
     seL4_SetMR(0, SofaSysCall_InitProc);
-    seL4_Call(_endpoint, msg);
+    seL4_Call(_mainThreadTLS.endpoint, msg);
 
     ProcessContext* ctx = (ProcessContext*) seL4_GetMR(1);
     return ctx;
@@ -87,28 +95,35 @@ static void printDebug()
 {
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
     seL4_SetMR(0, SofaSysCall_Debug);
-    seL4_Send(_endpoint, msg);
+    seL4_Send(_mainThreadTLS.endpoint, msg);
 }
 
-void threadStart(void *arg0, void *arg1, void *ipc_buf)
+void realThreadStart()
 {
-    const char str[] = "Hello Thread\n";
-    const size_t strSize = strlen(str);
+    printf("Hello from Thread %i\n", _ctx->pid);
 
-    _do_write_buf((seL4_CPtr) arg0, str, strSize);
     while(1)
     {
 
     }
-
 }
+
+void threadStart(void *arg0, void *arg1, void *ipc_buf)
+{
+    TLSContext threadCtx;
+    threadCtx.endpoint = (seL4_CPtr) arg0;
+    Thread_init_tls(&threadCtx);
+    realThreadStart();
+    Thread_init_tls(NULL);
+}
+
+
 
 static void test_thread()
 {
     int error;
     sel4utils_thread_config_t threadConf = thread_config_new(&_ctx->simple);
 
-    //threadConf = thread_config_fault_endpoint(threadConf, _endpoint);
 
     threadConf = thread_config_auth(threadConf, _ctx->tcb);
 
@@ -146,7 +161,9 @@ static void test_thread()
         assert(0);
     }
 
-    seL4_DebugNameThread(testThread.tcb.cptr, "thread");
+    char name[16] = "";
+    snprintf(name, 16, "thread-%i", _ctx->pid);
+    seL4_DebugNameThread(testThread.tcb.cptr, name);
 
     error = sel4utils_start_thread(&testThread , threadStart , local_endpoint.cptr , NULL , 1);
 
@@ -161,12 +178,24 @@ static void test_thread()
     printDebug();
 }
 
+static void process_exit(int code)
+{
+    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
+    seL4_SetMR(0, SofaSysCall_Exit);
+    seL4_SetMR(1, code);
+    seL4_Call(_mainThreadTLS.endpoint, msg);
+    assert(0);
+}
+
 int ProcessInit(void* endpoint)
 {
-    _endpoint = (seL4_CPtr) endpoint;
+    _mainThreadTLS.endpoint = (seL4_CPtr) endpoint;
 
     _ctx = sendInit();
+    Thread_init_tls(&_mainThreadTLS);
+
     sel4muslcsys_register_stdio_write_fn(write_buf);
+    sel4runtime_set_exit(process_exit);
     init_allocator(_ctx);
     printf("Allocator ok\n");
     printf("Init simple\n");

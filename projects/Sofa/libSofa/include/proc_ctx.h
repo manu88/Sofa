@@ -52,9 +52,20 @@ typedef struct
     /* address of the stack */
     void *stack;
 
+    // the process' PID
+    int pid;
 
     uint8_t ipcBuffer[IPC_BUF_LEN];
 } ProcessContext;
 
 
 compile_time_assert(ProcessContext_fits_in_ipc_buffer, sizeof(ProcessContext) < PAGE_SIZE_4K);
+
+
+/*
+Structure stored in TLS, that will hold all per-thread relevant data
+*/
+typedef struct
+{
+    seL4_CPtr endpoint;
+} TLSContext;

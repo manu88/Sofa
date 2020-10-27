@@ -21,4 +21,5 @@ void ProcessInit(Process*p);
 size_t Process_GetNextPID(void);
 
 void Process_Add(Process* p);
+void Process_Remove(Process* p);
 Process* Process_GetByPID(int pid);

@@ -42,7 +42,7 @@ typedef struct
     /* The badged notifications that are paired with the timer IRQ handlers */
     cspacepath_t badged_timer_notifications[MAX_TIMER_IRQS];
 
-
+    int index_in_untyped;
     int num_untypeds;
     vka_object_t *untypeds;
 } Environ;
@@ -50,4 +50,4 @@ typedef struct
 
 void Environ_init(Environ* env);
 
-unsigned int Environ_populate_untypeds(Environ* env, vka_object_t *untypeds,  uint8_t* untyped_size_bits_list);
+unsigned int Environ_populate_untypeds(Environ* env, vka_object_t *untypeds,  uint8_t* untyped_size_bits_list, unsigned int maxUntypeds);

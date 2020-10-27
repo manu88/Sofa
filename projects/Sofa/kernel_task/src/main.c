@@ -29,7 +29,8 @@ static uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
 
 static Environ _envir;
 
-static Process testProcess;
+static Process app;
+static Process timeServer;
 
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
@@ -37,8 +38,6 @@ extern char _cpio_archive_end[];
 static ps_irq_register_fn_t irq_register_fn_copy;
 
 void *main_continued(void *arg UNUSED);
-
-
 
 
 static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, irq_callback_fn_t callback,
@@ -161,8 +160,6 @@ void listCPIOFiles()
     free(fileNames);
 }
 
-
-
 void spawnApp(Process* process, const char* appName)
 {
     int error;
@@ -235,6 +232,7 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
     process->ctx = ctx;
     ProcessContext_init(ctx);
 
+    ctx->pid = process->pid;
 
     seL4_CPtr process_data_frame = vspace_get_cap(&_envir.vspace, ctx);
     seL4_CPtr process_data_frame_copy = 0;
@@ -243,25 +241,29 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
     size_t numPages = 1;
     void* venv = vspace_map_pages(&process->_process.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
 
-    memcpy(ctx->untyped_size_bits_list, untyped_size_bits_list, sizeof(uint8_t) * _envir.num_untypeds);
+    const size_t numUntypedsPerProcess = _envir.num_untypeds / 8;
+    printf("Allocate %lu untypeds for process %i\n", numUntypedsPerProcess, process->pid);
+    printf("Index is %i\n", _envir.index_in_untyped);
+    memcpy(ctx->untyped_size_bits_list,
+           untyped_size_bits_list + _envir.index_in_untyped,
+           sizeof(uint8_t) * numUntypedsPerProcess);
 
     ctx->page_directory = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.pd.cptr);
     ctx->tcb = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.thread.tcb.cptr);
 
 // set priority for process other threads
-
     seL4_Error err =  seL4_TCB_SetMCPriority(process->_process.thread.tcb.cptr, seL4_CapInitThreadTCB, 254);
     if(err != seL4_NoError)
     {
         printf("seL4_TCB_SetMCPriority (1) err %i\n", err);
     }
-
-    
-
 // end set priority for process other threads
 
     /* setup data about untypeds */
-    ctx->untypeds = copy_untypeds_to_process(&process->_process, _envir.untypeds, _envir.num_untypeds, &_envir);
+    ctx->untypeds = copy_untypeds_to_process(&process->_process,
+                                             _envir.untypeds + _envir.index_in_untyped,
+                                             numUntypedsPerProcess,
+                                             &_envir);
     /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
      * AS THE SLOTS WILL BE CONSIDERED FREE AND OVERRIDDEN BY THE TEST PROCESS. */
     /* set up free slot range */
@@ -272,19 +274,20 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
 
     seL4_SetMR(1, (seL4_Word) venv);
     seL4_Reply(message);
+
+    _envir.index_in_untyped += numUntypedsPerProcess;
 }
 
+void cleanup_process(Process* proc)
+{
+    vspace_unmap_pages(&_envir.vspace, proc->ctx, 1, PAGE_BITS_4K, NULL);
+    sel4utils_destroy_process(&proc->_process, &_envir.vka);
+}
 
 static void printSpecs()
 {
     printf("Kernel Build %s MCS\n", config_set(CONFIG_KERNEL_MCS)? "with": "without");    
 }
-
-static int on_time(uintptr_t token)
-{
-    printf("ON TIME\n");
-}
-
 
 void *main_continued(void *arg UNUSED)
 {
@@ -293,19 +296,24 @@ void *main_continued(void *arg UNUSED)
     printSpecs();
 
     /* allocate lots of untyped memory for tests to use */
-    _envir.num_untypeds = Environ_populate_untypeds(&_envir, untypeds, untyped_size_bits_list);
-    printf("Allocated %i untypeds \n", _envir.num_untypeds);
+
+    _envir.num_untypeds = Environ_populate_untypeds(&_envir, untypeds, untyped_size_bits_list, ARRAY_SIZE(untyped_size_bits_list));
+    printf("Allocated %i untypeds  %i \n", _envir.num_untypeds, simple_get_untyped_count(&_envir.simple));
     _envir.untypeds = untypeds;
 
     listCPIOFiles();
 
-    ProcessInit(&testProcess);
-    spawnApp(&testProcess, "app");
-    printf("Add process with pid %i\n", testProcess.pid);
-    Process_Add(&testProcess);
+    ProcessInit(&app);
+    spawnApp(&app, "app");
+    printf("Add process with pid %i\n", app.pid);
+    Process_Add(&app);
+
+    ProcessInit(&timeServer);
+    spawnApp(&timeServer, "TimeServer");
+    printf("Add process with pid %i\n", timeServer.pid);
+    Process_Add(&timeServer);
 
     seL4_DebugDumpScheduler();
-
 
 // timer test
 #if 0
@@ -340,8 +348,24 @@ void *main_continued(void *arg UNUSED)
                 printf("Process not found for %lu\n", sender);
             }
             assert(callingProcess);
+            if (rpcID == SofaSysCall_InitProc)
+            {
+                printf("Received init call from %lu\n", sender);
+                on_initCall(callingProcess, message);
 
-            if (rpcID == SofaSysCall_Write)
+            }
+            else if (rpcID == SofaSysCall_Exit)
+            {
+                printf("exit from %i\n", callingProcess->pid);
+                Process_Remove(callingProcess);
+                cleanup_process(callingProcess);
+                seL4_DebugDumpScheduler();
+            }
+            else if (rpcID == SofaSysCall_Debug)
+            {
+                seL4_DebugDumpScheduler();
+            }
+            else if (rpcID == SofaSysCall_Write)
             {
                 const size_t dataSize = (size_t) seL4_GetMR(1);
                 for(size_t i =0; i< dataSize;i++)
@@ -349,25 +373,17 @@ void *main_continued(void *arg UNUSED)
                     putchar(callingProcess->ctx->ipcBuffer[i]);
                 }
             }
-            else if (rpcID == SofaSysCall_InitProc)
-            {
-                printf("Received init call from %lu\n", sender);
-                on_initCall(callingProcess, message);
 
-            }
-            else if (rpcID == SofaSysCall_Debug)
-            {
-                seL4_DebugDumpScheduler();
-            }
             else
             {
-                printf("Received unkown RPC id %lu from sender %lu\n", rpcID, sender);
+                printf("Received unknown RPC id %lu from sender %lu\n", rpcID, sender);
             }
             
         }
         else if( label == seL4_CapFault)
         {
-            printf("Got cap fault\n");
+            Process* callingProcess = Process_GetByPID(sender);
+            printf("Got cap fault from %i\n", callingProcess->pid);
         }
         else if (label == seL4_VMFault)
         {

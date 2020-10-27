@@ -10,12 +10,12 @@ int main(int argc, char *argv[])
     int ret = ProcessInit((void*) atoi(argv[1]));
     assert(ret == 0);
 
-    printf("App: Hello world\n");
-
+    printf("TimeServer: Hello world\n");
     while (1)
     {
 
     }
+     
     
     return 0;
 }

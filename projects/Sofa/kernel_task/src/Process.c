@@ -26,3 +26,8 @@ void Process_Add(Process* p)
 {
     HASH_ADD_INT(_processes, pid, p);
 }
+
+void Process_Remove(Process* p)
+{
+    HASH_DEL(_processes, p);
+}

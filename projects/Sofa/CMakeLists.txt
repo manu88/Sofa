@@ -47,6 +47,7 @@ sel4_libs_import_libraries()
 
 add_subdirectory(libSofa)
 add_subdirectory(app)
+add_subdirectory(TimeServer)
 add_subdirectory(kernel_task)
 
 
