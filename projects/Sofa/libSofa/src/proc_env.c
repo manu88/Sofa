@@ -30,7 +30,7 @@ static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
 static sel4utils_alloc_data_t alloc_data;
 
 
-static ProcessContext* _ctx = NULL;
+ProcessContext* _ctx = NULL;
 
 static TLSContext _mainThreadTLS = {0};
 
@@ -42,11 +42,8 @@ static seL4_Word get_free_slot(ProcessContext* context);
 static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep);
 
 
-static void Thread_init_tls(void *thread)
+void Thread_init_tls(void *thread)
 {
-
-    //thread->info.ipc_word = seL4_GetUserData();
-    //assert(seL4_GetUserData() != 0);
     seL4_SetUserData((seL4_Word)thread);
 }
 
@@ -81,103 +78,6 @@ static ProcessContext* sendInit()
     return ctx;
 }
 
-void dump_ProcessContext()
-{
-    printf("ProcessContext.page_directory %ld\n",  _ctx->page_directory);
-    printf("ProcessContext.root_cnode %ld\n", _ctx->root_cnode);
-    printf("ProcessContext.tcb %ld\n", _ctx->tcb);
-    printf("ProcessContext.stack %p\n", _ctx->stack);
-
-}
-
-
-static void printDebug()
-{
-    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
-    seL4_SetMR(0, SofaSysCall_Debug);
-    seL4_Send(_mainThreadTLS.endpoint, msg);
-}
-
-void realThreadStart()
-{
-    printf("Hello from Thread %i\n", _ctx->pid);
-
-    while(1)
-    {
-
-    }
-}
-
-void threadStart(void *arg0, void *arg1, void *ipc_buf)
-{
-    TLSContext threadCtx;
-    threadCtx.endpoint = (seL4_CPtr) arg0;
-    Thread_init_tls(&threadCtx);
-    realThreadStart();
-    Thread_init_tls(NULL);
-}
-
-
-
-static void test_thread()
-{
-    int error;
-    sel4utils_thread_config_t threadConf = thread_config_new(&_ctx->simple);
-
-
-    threadConf = thread_config_auth(threadConf, _ctx->tcb);
-
-
-    sel4utils_thread_t testThread;
-
-
-    error = sel4utils_configure_thread_config(&_ctx->vka , &_ctx->vspace , &_ctx->vspace , threadConf , &testThread);
-
-    if (error != 0)
-    {
-        printf("error for sel4utils_configure_thread_config %i\n", error);
-    }
-
-    error = seL4_TCB_SetPriority(testThread.tcb.cptr, _ctx->tcb,  254);
-    if (error != 0)
-    {
-        printf("error for seL4_TCB_SetPriority %i\n", error);
-    }
-
-
-    vka_object_t local_endpoint;
-    error = vka_alloc_endpoint(&_ctx->vka, &local_endpoint);
-    assert(error == 0);
-
-    error = api_tcb_set_space(testThread.tcb.cptr,
-                      local_endpoint.cptr,
-                      _ctx->root_cnode,
-                      api_make_guard_skip_word(seL4_WordBits - _ctx->cspace_size_bits),
-                      _ctx->page_directory, seL4_NilData);
-
-    if (error != 0)
-    {
-        printf("Failed to set fault EP for helper thread. err %i\n", error);
-        assert(0);
-    }
-
-    char name[16] = "";
-    snprintf(name, 16, "thread-%i", _ctx->pid);
-    seL4_DebugNameThread(testThread.tcb.cptr, name);
-
-    error = sel4utils_start_thread(&testThread , threadStart , local_endpoint.cptr , NULL , 1);
-
-
-    if (error != 0)
-    {
-        printf("error for sel4utils_start_thread %i\n", error);
-    }
-
-
-
-    printDebug();
-}
-
 static void process_exit(int code)
 {
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
@@ -200,10 +100,8 @@ int ProcessInit(void* endpoint)
     printf("Allocator ok\n");
     printf("Init simple\n");
     init_simple(_ctx);
-    dump_ProcessContext();
-
-    printf("Test thread\n");
-    test_thread();
+    //printf("Test thread\n");
+    //test_thread();
 
     return 0;
 }

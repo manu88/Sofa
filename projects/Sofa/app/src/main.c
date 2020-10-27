@@ -3,7 +3,18 @@
 #include <assert.h>
 #include <sel4/sel4.h>
 #include <Sofa.h>
+#include <Thread.h>
 
+
+void* thread1(void* arg)
+{
+    printf("Hello thread!\n");
+    while (1)
+    {
+        /* code */
+    }
+    
+}
 
 int main(int argc, char *argv[])
 {
@@ -11,6 +22,10 @@ int main(int argc, char *argv[])
     assert(ret == 0);
 
     printf("App: Hello world\n");
+
+    pthread_t thread;
+
+    pthread_create(&thread, NULL, thread1, NULL);
 
     while (1)
     {

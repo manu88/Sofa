@@ -170,18 +170,20 @@ void spawnApp(Process* process, const char* appName)
     cspacepath_t badged_ep_path;
     error = vka_cspace_alloc_path(&_envir.vka, &badged_ep_path);
     ZF_LOGF_IFERR(error, "Failed to allocate path\n");
-    
+    assert(error == 0);
 
     cspacepath_t ep_path = {0};
     vka_cspace_make_path(&_envir.vka, _envir.rootTaskEP.cptr, &ep_path);
 
     process->pid = Process_GetNextPID();
     error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, process->pid);
+    assert(error == 0);
 
     config = process_config_fault_cptr(config ,badged_ep_path.capPtr );
 
     error = sel4utils_configure_process_custom(&process->_process , &_envir.vka , &_envir.vspace, config);
     ZF_LOGF_IFERR(error, "Failed to configure a new process.\n");
+    assert(error == 0);
 
     process->endpoint = process_copy_cap_into(&process->_process, process->pid, &_envir.vka, _envir.rootTaskEP.cptr, seL4_AllRights);
     char endpoint_string[16] = "";
@@ -241,7 +243,7 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
     size_t numPages = 1;
     void* venv = vspace_map_pages(&process->_process.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
 
-    const size_t numUntypedsPerProcess = _envir.num_untypeds / 8;
+    const size_t numUntypedsPerProcess = 4;//_envir.num_untypeds / 8;
     printf("Allocate %lu untypeds for process %i\n", numUntypedsPerProcess, process->pid);
     printf("Index is %i\n", _envir.index_in_untyped);
     memcpy(ctx->untyped_size_bits_list,
@@ -387,7 +389,8 @@ void *main_continued(void *arg UNUSED)
         }
         else if (label == seL4_VMFault)
         {
-            printf("Got VM fault\n");
+            Process* callingProcess = Process_GetByPID(sender);
+            printf("Got VM fault from %i\n", callingProcess->pid);
             const seL4_Word programCounter      = seL4_GetMR(seL4_VMFault_IP);
             const seL4_Word faultAddr           = seL4_GetMR(seL4_VMFault_Addr);
             const seL4_Word isPrefetch          = seL4_GetMR(seL4_VMFault_PrefetchFault);

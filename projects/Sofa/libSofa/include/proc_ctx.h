@@ -69,3 +69,6 @@ typedef struct
 {
     seL4_CPtr endpoint;
 } TLSContext;
+
+// FIXME: This is not a public API
+void Thread_init_tls(void *thread);
