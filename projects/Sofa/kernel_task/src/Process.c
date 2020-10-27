@@ -31,3 +31,15 @@ void Process_Remove(Process* p)
 {
     HASH_DEL(_processes, p);
 }
+
+void Process_AddChild(Process* parent, Process* child)
+{
+    HASH_ADD(hchld, parent->children, pid, sizeof(int), child);
+    child->parent = parent;
+}
+
+size_t Process_CountChildren( const Process* p)
+{
+    return HASH_CNT(hchld, p->children);
+    //return HASH_COUNT(p->children);
+}

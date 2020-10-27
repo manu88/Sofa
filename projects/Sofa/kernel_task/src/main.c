@@ -320,6 +320,10 @@ int process_spawn(Process* callingProcess, seL4_MessageInfo_t message)
         return error;
     }
     Process_Add(p);
+    Process_AddChild(callingProcess, p);
+    assert(p->parent == callingProcess);
+    size_t c = Process_CountChildren(callingProcess);
+    printf("Process %i has %i children\n", callingProcess->pid, c);
 
     return p->pid;
 }
@@ -394,6 +398,17 @@ void *main_continued(void *arg UNUSED)
             else if (rpcID == SofaSysCall_Debug)
             {
                 seL4_DebugDumpScheduler();
+            }
+            else if (rpcID == SofaSysCall_PPID)
+            {
+                if(callingProcess->parent == NULL)
+                {
+                    // sanity check :)
+                    assert(callingProcess == &initProcess);
+                }
+                seL4_Word ppid = callingProcess->parent? callingProcess->parent->pid: 0;
+                seL4_SetMR(1, ppid);
+                seL4_Reply(message);
             }
             else if (rpcID == SofaSysCall_Write)
             {

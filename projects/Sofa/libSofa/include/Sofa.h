@@ -13,4 +13,4 @@ int ProcessInit(void* endpoint);
 
 
 pid_t getpid(void);
-//pid_t getppid(void);
+pid_t getppid(void);

@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     int ret = ProcessInit((void*) atoi(argv[1]));
     assert(ret == 0);
 
-    printf("TimeServer: Hello\n");
+    printf("TimeServer started pid is %i ppid is %i\n", getpid(), getppid());
     while (1)
     {
 

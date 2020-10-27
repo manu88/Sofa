@@ -4,7 +4,7 @@
 #include <sel4utils/process.h>
 #include <proc_ctx.h>
 
-typedef struct
+struct _Process
 {
     int pid;
     sel4utils_process_t _process;
@@ -12,9 +12,19 @@ typedef struct
 
     ProcessContext* ctx;
 
+    // Hash handle for Global Proc table
     UT_hash_handle hh;
-} Process;
 
+    // Hash handle for child processes
+    UT_hash_handle hchld;
+
+    struct _Process *parent;
+
+    
+    struct _Process* children;
+};
+
+typedef struct _Process Process;
 
 void ProcessInit(Process*p);
 
@@ -23,3 +33,8 @@ size_t Process_GetNextPID(void);
 void Process_Add(Process* p);
 void Process_Remove(Process* p);
 Process* Process_GetByPID(int pid);
+
+
+
+void Process_AddChild(Process* parent, Process* child);
+size_t Process_CountChildren( const Process* p);

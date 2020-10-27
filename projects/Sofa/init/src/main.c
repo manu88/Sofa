@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     }
 
 
-    printf("Init started\n");
+    printf("Init started parent pid is %i\n", getppid());
 
     pid_t timeServerPID = 0;
     ret = posix_spawnp(&timeServerPID, "TimeServer", NULL, NULL, NULL, NULL);
