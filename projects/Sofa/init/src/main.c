@@ -9,6 +9,14 @@ int main(int argc, char *argv[])
 {
     int ret = ProcessInit((void*) atoi(argv[1]));
     assert(ret == 0);
+    
+    
+    if(getpid() != 1)
+    {
+        printf("Init is not PID 1, will stop!\n");
+        return 0;
+    }
+
 
     printf("Init started\n");
 

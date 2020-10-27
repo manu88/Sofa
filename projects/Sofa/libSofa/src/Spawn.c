@@ -25,11 +25,11 @@ int posix_spawnp(pid_t *pid, const char *file,
     seL4_Call(ctx->endpoint, msg);
 
     seL4_Word ret = seL4_GetMR(1);
-    if(ret > 0)
+    if(ret == 0)
     {
-        *pid = (pid_t) ret;
+        *pid = (pid_t) seL4_GetMR(2);
         return 0;
     }
 
-    return (int) ret;
+    return (int) -ret;
 }

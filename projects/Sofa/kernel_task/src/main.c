@@ -160,8 +160,16 @@ void listCPIOFiles()
     free(fileNames);
 }
 
-void spawnApp(Process* process, const char* appName)
+int spawnApp(Process* process, const char* appName)
 {
+    unsigned long fileSize = 0;
+    void* filePos = cpio_get_file(_cpio_archive, _cpio_archive_end - _cpio_archive, appName, &fileSize);
+
+    if(filePos == NULL)
+    {
+        printf("file '%s' not found\n",appName);
+        return -ENOENT;
+    }
     int error;
 
     sel4utils_process_config_t config = process_config_default_simple( &_envir.simple, appName, seL4_MaxPrio-1);
@@ -196,6 +204,7 @@ void spawnApp(Process* process, const char* appName)
     ZF_LOGF_IFERR(error, "Failed to spawn and start the new thread.\n");
 
     printf("Started app '%s'\n", appName);
+    return 0;
 }
 
 void ProcessContext_init(ProcessContext* ctx)
@@ -303,19 +312,16 @@ int process_spawn(Process* callingProcess, seL4_MessageInfo_t message)
         return -ENOMEM;
     }
     ProcessInit(p);
-    spawnApp(p, filePath);
+    int error = spawnApp(p, filePath);
+
+    if (error != 0)
+    {
+        free(p);
+        return error;
+    }
     Process_Add(p);
 
     return p->pid;
-
-/*
-    ProcessInit(&timeServer);
-    spawnApp(&timeServer, "TimeServer");
-    printf("Add process with pid %i\n", timeServer.pid);
-    Process_Add(&timeServer);
-*/
-
-    return 0;
 }
 
 void *main_continued(void *arg UNUSED)
@@ -400,8 +406,19 @@ void *main_continued(void *arg UNUSED)
             else if (rpcID == SofaSysCall_Spawn)
             {
                 int ret = process_spawn(callingProcess, message);
-
+                int pid = 0;
+                if(ret > 0)
+                {
+                    pid = ret;
+                    ret = 0;
+                }
+                else
+                {
+                    ret = - ret;
+                }
+                
                 seL4_SetMR(1, ret);
+                seL4_SetMR(2, pid);
                 seL4_Reply(message);
             }
 
