@@ -11,11 +11,6 @@ int main(int argc, char *argv[])
     assert(ret == 0);
 
     printf("TimeServer started pid is %i ppid is %i\n", getpid(), getppid());
-    while (1)
-    {
-
-    }
-     
     
     return 0;
 }

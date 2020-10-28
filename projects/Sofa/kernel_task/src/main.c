@@ -410,6 +410,23 @@ void *main_continued(void *arg UNUSED)
                 seL4_SetMR(1, ppid);
                 seL4_Reply(message);
             }
+            else if (rpcID == SofaSysCall_Wait)
+            {
+                pid_t pidToWait = seL4_GetMR(1);
+                int options = seL4_GetMR(2);
+
+                printf("Process %i wait on pid %i\n", callingProcess->pid, pidToWait);
+            //    int retPid = seL4_GetMR(1);
+            //    int status = seL4_GetMR(2);
+                if (Process_CountChildren(callingProcess) == 0)
+                {
+                    seL4_SetMR(0, -1);
+                    seL4_SetMR(1, -1);
+                    seL4_Reply(message);
+                }
+
+
+            }
             else if (rpcID == SofaSysCall_Write)
             {
                 const size_t dataSize = (size_t) seL4_GetMR(1);

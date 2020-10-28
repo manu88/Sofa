@@ -11,6 +11,8 @@ int ProcessInit(void* endpoint);
 
 /* PUBLIC API*/
 
+pid_t waitpid(pid_t pid, int *wstatus, int options);
+pid_t wait(int *wstatus);
 
 pid_t getpid(void);
 pid_t getppid(void);

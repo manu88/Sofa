@@ -4,6 +4,16 @@
 #include <sel4utils/process.h>
 #include <proc_ctx.h>
 
+
+typedef enum
+{
+    ProcessState_Stopped,
+    ProcessState_Run,
+    ProcessState_Zombie
+
+} ProcessState;
+
+
 struct _Process
 {
     int pid;
@@ -20,8 +30,10 @@ struct _Process
 
     struct _Process *parent;
 
-    
+    // This is a Hash map
     struct _Process* children;
+
+    ProcessState state;
 };
 
 typedef struct _Process Process;
