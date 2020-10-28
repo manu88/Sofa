@@ -184,7 +184,9 @@ int spawnApp(Process* process, const char* appName)
     vka_cspace_make_path(&_envir.vka, _envir.rootTaskEP.cptr, &ep_path);
 
     process->pid = Process_GetNextPID();
-    error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, process->pid);
+    seL4_Word badge =(seL4_Word) process;//->pid;
+
+    error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, badge);
     assert(error == 0);
 
     config = process_config_fault_cptr(config ,badged_ep_path.capPtr );
@@ -193,9 +195,11 @@ int spawnApp(Process* process, const char* appName)
     ZF_LOGF_IFERR(error, "Failed to configure a new process.\n");
     assert(error == 0);
 
-    process->endpoint = process_copy_cap_into(&process->_process, process->pid, &_envir.vka, _envir.rootTaskEP.cptr, seL4_AllRights);
+    process->main.endpoint = process_copy_cap_into(&process->_process, badge, &_envir.vka, _envir.rootTaskEP.cptr, seL4_AllRights);
+
+
     char endpoint_string[16] = "";
-    snprintf(endpoint_string, 16, "%ld", (long) process->endpoint);// process_ep_cap);
+    snprintf(endpoint_string, 16, "%ld", (long) process->main.endpoint);// process_ep_cap);
 
     seL4_Word argc = 2;
     char *argv[] = { (char*)appName, endpoint_string};
@@ -323,7 +327,7 @@ int process_spawn(Process* callingProcess, seL4_MessageInfo_t message)
     Process_AddChild(callingProcess, p);
     assert(p->parent == callingProcess);
     size_t c = Process_CountChildren(callingProcess);
-    printf("Process %i has %i children\n", callingProcess->pid, c);
+    printf("Process %i has %li children\n", callingProcess->pid, c);
 
     return p->pid;
 }
@@ -365,6 +369,7 @@ void *main_continued(void *arg UNUSED)
         seL4_Word sender;
         seL4_MessageInfo_t message = seL4_Recv(_envir.rootTaskEP.cptr, &sender);
         seL4_Word label = seL4_MessageInfo_get_label(message);
+        Process* callingProcess = (Process*) sender;
 
         if(sender & IRQ_EP_BADGE)
         {           
@@ -376,7 +381,7 @@ void *main_continued(void *arg UNUSED)
         else if(label == seL4_NoFault)
         {
             seL4_Word rpcID = seL4_GetMR(0);
-            Process* callingProcess = Process_GetByPID(sender);
+
             if(callingProcess == NULL)
             {
                 printf("Process not found for %lu\n", sender);
@@ -384,13 +389,28 @@ void *main_continued(void *arg UNUSED)
             assert(callingProcess);
             if (rpcID == SofaSysCall_InitProc)
             {
-                printf("Received init call from %lu\n", sender);
                 on_initCall(callingProcess, message);
 
             }
             else if (rpcID == SofaSysCall_Exit)
             {
-                printf("exit from %i\n", callingProcess->pid);
+                int exitCode = seL4_GetMR(1);
+                printf("exit from %i with status %i\n", callingProcess->pid, exitCode);
+                
+                if(Process_IsWaiting(callingProcess->parent))
+                {
+                    printf("Parent is waiting!\n");
+                    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
+                    seL4_SetMR(0, SofaSysCall_Wait);
+                    seL4_SetMR(1, callingProcess->pid);
+                    seL4_SetMR(2, 0);
+//                    seL4_SetMR(3, process->retSignal);
+                    
+                    seL4_Send(callingProcess->parent->main.reply , tag);
+                    cnode_delete(&_envir.vka, callingProcess->parent->main.reply);
+                    callingProcess->parent->main.reply = 0;
+                    Process_RemoveChild(callingProcess->parent, callingProcess);
+                }
                 Process_Remove(callingProcess);
                 cleanup_process(callingProcess);
                 seL4_DebugDumpScheduler();
@@ -415,15 +435,32 @@ void *main_continued(void *arg UNUSED)
                 pid_t pidToWait = seL4_GetMR(1);
                 int options = seL4_GetMR(2);
 
-                printf("Process %i wait on pid %i\n", callingProcess->pid, pidToWait);
+                printf("Process %i wait on pid %i (has %li child)\n", callingProcess->pid, pidToWait, Process_CountChildren(callingProcess));
             //    int retPid = seL4_GetMR(1);
             //    int status = seL4_GetMR(2);
                 if (Process_CountChildren(callingProcess) == 0)
                 {
-                    seL4_SetMR(0, -1);
                     seL4_SetMR(1, -1);
+                    seL4_SetMR(2, -1);
+                    seL4_Reply(message);
+                    continue;
+                }
+
+                assert(callingProcess->main.reply == 0);
+                callingProcess->main.reply = get_free_slot(&_envir.vka);
+                int err = cnode_savecaller(&_envir.vka, callingProcess->main.reply );
+                if (err != 0)
+                {
+                    printf("kernel_task: unable to save caller for wait on %i\n", callingProcess->pid);
+                    seL4_SetMR(1, -1);
+                    seL4_SetMR(2, -1);
                     seL4_Reply(message);
                 }
+                else
+                {
+                    callingProcess->_isWaiting = 1;
+                }
+                
 
 
             }
@@ -446,28 +483,25 @@ void *main_continued(void *arg UNUSED)
                 }
                 else
                 {
-                    ret = - ret;
+                    ret = -ret;
                 }
                 
                 seL4_SetMR(1, ret);
                 seL4_SetMR(2, pid);
                 seL4_Reply(message);
             }
-
             else
             {
                 printf("Received unknown RPC id %lu from sender %lu\n", rpcID, sender);
+                assert(0);
             }
-            
         }
         else if( label == seL4_CapFault)
         {
-            Process* callingProcess = Process_GetByPID(sender);
             printf("Got cap fault from %i\n", callingProcess->pid);
         }
         else if (label == seL4_VMFault)
         {
-            Process* callingProcess = Process_GetByPID(sender);
             printf("Got VM fault from %i\n", callingProcess->pid);
             const seL4_Word programCounter      = seL4_GetMR(seL4_VMFault_IP);
             const seL4_Word faultAddr           = seL4_GetMR(seL4_VMFault_Addr);

@@ -97,8 +97,6 @@ int ProcessInit(void* endpoint)
     sel4muslcsys_register_stdio_write_fn(write_buf);
     sel4runtime_set_exit(process_exit);
     init_allocator(_ctx);
-    printf("Allocator ok\n");
-    printf("Init simple\n");
     init_simple(_ctx);
     //printf("Test thread\n");
     //test_thread();
@@ -151,7 +149,6 @@ static void init_allocator(ProcessContext* context)
     }
     allocman_make_vka(&context->vka, allocator);
 
-    printf("fill the allocator with untypeds\n");
     /* fill the allocator with untypeds */
     seL4_CPtr slot;
     unsigned int size_bits_index;
@@ -176,7 +173,6 @@ static void init_allocator(ProcessContext* context)
     // empty on X86_64
     //arch_init_allocator(env, init_data);
 
-    printf("create vspace\n");
     /* create a vspace */
     void *existing_frames[context->stack_pages + 2];
     existing_frames[0] = (void *) context;
@@ -186,7 +182,6 @@ static void init_allocator(ProcessContext* context)
         existing_frames[i + 2] = context->stack + (i * PAGE_SIZE_4K);
     }
 
-    printf("boostrap vspace\n");
     error = sel4utils_bootstrap_vspace(&context->vspace, &alloc_data, context->page_directory, &context->vka,
                                        NULL, NULL, existing_frames);
 
@@ -198,7 +193,6 @@ static void init_allocator(ProcessContext* context)
         ZF_LOGF("Failed to switch allocator to virtual memory pool");
     }
 
-    printf("configure virtual pool\n");
     bootstrap_configure_virtual_pool(allocator, vaddr, ALLOCATOR_VIRTUAL_POOL_SIZE,
                                      context->page_directory);
 

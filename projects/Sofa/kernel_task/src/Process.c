@@ -38,8 +38,19 @@ void Process_AddChild(Process* parent, Process* child)
     child->parent = parent;
 }
 
+void Process_RemoveChild(Process* parent, Process* child)
+{
+    HASH_DELETE(hchld, parent->children, child);
+    child->parent = NULL;
+}
+
 size_t Process_CountChildren( const Process* p)
 {
     return HASH_CNT(hchld, p->children);
     //return HASH_COUNT(p->children);
+}
+
+int Process_IsWaiting(const Process* p)
+{
+    return p->_isWaiting;
 }

@@ -8,8 +8,11 @@ get_property(cpio_apps GLOBAL PROPERTY apps_property)
 include(cpio)
 MakeCPIO(archive.o "${cpio_apps}")
 
+file(GLOB deps src/*.c)
+list(SORT deps)
 
-add_executable(kernel_task src/main.c src/env.c src/timer.c src/utils.c src/Process.c archive.o)
+add_executable(kernel_task ${deps} archive.o)
+
 
 target_link_libraries(
     kernel_task

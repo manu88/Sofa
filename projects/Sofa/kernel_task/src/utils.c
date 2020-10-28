@@ -27,3 +27,27 @@ void util_copy_cap(vka_t *vka, seL4_CPtr src, seL4_CPtr *dest_out)
     error = vka_cnode_copy(&copy_dest, &copy_src, seL4_AllRights);
     assert(error == 0);
 }
+
+
+
+seL4_Word get_free_slot( vka_t *vka)
+{
+    seL4_CPtr slot;
+    int error = vka_cspace_alloc(vka, &slot);
+    //    assert(!error);
+    return error == 0?slot : 0;
+}
+
+int cnode_savecaller( vka_t *vka, seL4_CPtr cap)
+{
+    cspacepath_t path;
+    vka_cspace_make_path( vka, cap, &path);
+    return vka_cnode_saveCaller(&path);
+}
+
+int cnode_delete( vka_t *vka, seL4_CPtr slot)
+{
+    cspacepath_t path;
+    vka_cspace_make_path(vka, slot, &path);
+    return vka_cnode_delete(&path);
+}
