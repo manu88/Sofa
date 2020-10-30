@@ -7,10 +7,15 @@
 
 int main(int argc, char *argv[])
 {
-    int ret = ProcessInit((void*) atoi(argv[1]));
+    int ret = ProcessInit(atoi(argv[1]));
     assert(ret == 0);
 
     printf("TimeServer started pid is %i ppid is %i\n", getpid(), getppid());
+    
+
+    test_cap();
+    while (1)
+    {}
     
     return 0;
 }

@@ -12,5 +12,7 @@ typedef enum
     SofaSysCall_PPID,
     SofaSysCall_Wait,
 
-    SofaSysCall_Debug
+    SofaSysCall_Debug,
+    SofaSysCall_TestCap
+
 } SofaSysCall;

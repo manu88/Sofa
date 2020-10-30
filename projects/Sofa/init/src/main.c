@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[])
 {
-    int ret = ProcessInit((void*) atoi(argv[1]));
+    int ret = ProcessInit(atoi(argv[1]));
     assert(ret == 0);
     
     
@@ -16,7 +16,6 @@ int main(int argc, char *argv[])
         printf("Init is not PID 1, will stop!\n");
         return 0;
     }
-
 
     printf("Init started parent pid is %i\n", getppid());
 

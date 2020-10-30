@@ -11,7 +11,7 @@
 
 #include <sel4utils/thread.h>
 #include <sel4utils/thread_config.h>
-
+#include <vka/ipcbuffer.h>
 #include <vka/capops.h>
 
 /* dummy global for libsel4muslcsys */
@@ -80,16 +80,18 @@ static ProcessContext* sendInit()
 
 static void process_exit(int code)
 {
+    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
     seL4_SetMR(0, SofaSysCall_Exit);
     seL4_SetMR(1, code);
-    seL4_Call(_mainThreadTLS.endpoint, msg);
+    seL4_Call(ctx->endpoint, msg);
     assert(0);
 }
 
-int ProcessInit(void* endpoint)
+int ProcessInit(seL4_CPtr endpoint)
 {
-    _mainThreadTLS.endpoint = (seL4_CPtr) endpoint;
+    _mainThreadTLS.endpoint = endpoint;
 
     _ctx = sendInit();
     Thread_init_tls(&_mainThreadTLS);
@@ -222,4 +224,64 @@ static seL4_Word get_free_slot(ProcessContext* context)
     UNUSED int error = vka_cspace_alloc(&context->vka, &slot);
     assert(!error);
     return slot;
+}
+
+
+static void set_cap_receive_path(ProcessContext* context, seL4_CPtr slot)
+{
+    cspacepath_t path;
+    vka_cspace_make_path(&context->vka, slot, &path);
+    return vka_set_cap_receive_path(&path);
+}
+
+int cnode_move(ProcessContext* context, seL4_CPtr src, seL4_CPtr dest)
+{
+    cspacepath_t src_path, dest_path;
+
+    vka_cspace_make_path(&context->vka, src, &src_path);
+    vka_cspace_make_path(&context->vka, dest, &dest_path);
+    return vka_cnode_move(&dest_path, &src_path);
+}
+
+int is_slot_empty(ProcessContext* context, seL4_Word slot)
+{
+    int error;
+
+    error = cnode_move(context, slot, slot);
+
+    /* cnode_move first check if the destination is empty and raise
+     * seL4_DeleteFirst is it is not
+     * The is check if the source is empty and raise seL4_FailedLookup if it is
+     */
+    assert(error == seL4_DeleteFirst || error == seL4_FailedLookup);
+    return (error == seL4_FailedLookup);
+}
+
+
+int test_cap()
+{
+    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    printf("Test cap transfert\n");
+
+    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                                                        0,  // capsUnwrapped
+                                                        1,  // extraCaps
+                                                        1);
+
+    seL4_CPtr recvSlot = get_free_slot(_ctx);
+    
+    assert(is_slot_empty(_ctx, recvSlot));    
+    set_cap_receive_path(_ctx, recvSlot);
+    seL4_SetMR(0, SofaSysCall_TestCap);
+    seL4_Call(ctx->endpoint, msg);
+
+    struct seL4_MessageInfo msg2 =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                                                        0,  // capsUnwrapped
+                                                        0,  // extraCaps
+                                                        0);
+
+    assert(is_slot_empty(_ctx, recvSlot) == 0);
+    //printf("User sends msg\n");
+    seL4_Call(recvSlot, msg2);
+    printf("User Got response\n");
 }

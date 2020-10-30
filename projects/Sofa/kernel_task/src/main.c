@@ -7,6 +7,7 @@
 
 #include <sel4utils/process.h>
 #include <vka/capops.h>
+#include <vka/ipcbuffer.h>
 #include <cpio/cpio.h>
 
 //#include <sel4platsupport/arch/io.h>
@@ -174,7 +175,6 @@ int spawnApp(Process* process, const char* appName)
 
     sel4utils_process_config_t config = process_config_default_simple( &_envir.simple, appName, seL4_MaxPrio-1);
 
-
     cspacepath_t badged_ep_path;
     error = vka_cspace_alloc_path(&_envir.vka, &badged_ep_path);
     ZF_LOGF_IFERR(error, "Failed to allocate path\n");
@@ -239,7 +239,7 @@ static seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vk
     return range;
 }
 
-void on_initCall(Process* process, seL4_MessageInfo_t message)
+void Syscall_Init(Process* process, seL4_MessageInfo_t message)
 {
     assert(process->ctx == NULL);
     ProcessContext* ctx = (ProcessContext *) vspace_new_pages(&_envir.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
@@ -293,11 +293,91 @@ void on_initCall(Process* process, seL4_MessageInfo_t message)
     _envir.index_in_untyped += numUntypedsPerProcess;
 }
 
-void cleanup_process(Process* proc)
+static void cleanup_process(Process* proc)
 {
     vspace_unmap_pages(&_envir.vspace, proc->ctx, 1, PAGE_BITS_4K, NULL);
     sel4utils_destroy_process(&proc->_process, &_envir.vka);
 }
+
+
+void Syscall_Exit(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    int exitCode = seL4_GetMR(1);
+    printf("exit from %i with status %i\n", callingProcess->pid, exitCode);
+    
+    if(Process_IsWaiting(callingProcess->parent))
+    {
+        printf("Parent is waiting!\n");
+        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
+        seL4_SetMR(0, SofaSysCall_Wait);
+        seL4_SetMR(1, callingProcess->pid);
+        seL4_SetMR(2, 0);
+//                    seL4_SetMR(3, process->retSignal);
+        
+        seL4_Send(callingProcess->parent->main.reply , tag);
+        cnode_delete(&_envir.vka, callingProcess->parent->main.reply);
+        callingProcess->parent->main.reply = 0;
+        Process_RemoveChild(callingProcess->parent, callingProcess);
+    }
+    Process_Remove(callingProcess);
+    cleanup_process(callingProcess);
+    seL4_DebugDumpScheduler();
+}
+
+void Syscall_GetPPID(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    if(callingProcess->parent == NULL)
+    {
+        // sanity check :)
+        assert(callingProcess == &initProcess);
+    }
+    seL4_Word ppid = callingProcess->parent? callingProcess->parent->pid: 0;
+    seL4_SetMR(1, ppid);
+    seL4_Reply(message);
+}
+
+void Syscall_Wait(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    pid_t pidToWait = seL4_GetMR(1);
+    int options = seL4_GetMR(2);
+
+    printf("Process %i wait on pid %i (has %li child)\n", callingProcess->pid, pidToWait, Process_CountChildren(callingProcess));
+//    int retPid = seL4_GetMR(1);
+//    int status = seL4_GetMR(2);
+    if (Process_CountChildren(callingProcess) == 0)
+    {
+        seL4_SetMR(1, -1);
+        seL4_SetMR(2, -1);
+        seL4_Reply(message);
+        return;
+    }
+
+    assert(callingProcess->main.reply == 0);
+    callingProcess->main.reply = get_free_slot(&_envir.vka);
+    // FIXME: leak if cnode_savecaller
+    int err = cnode_savecaller(&_envir.vka, callingProcess->main.reply );
+    if (err != 0)
+    {
+        printf("kernel_task: unable to save caller for wait on %i\n", callingProcess->pid);
+        seL4_SetMR(1, -1);
+        seL4_SetMR(2, -1);
+        seL4_Reply(message);
+    }
+    else
+    {
+        callingProcess->_isWaiting = 1;
+    }
+}
+
+void Syscall_Write(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    const size_t dataSize = (size_t) seL4_GetMR(1);
+    for(size_t i =0; i< dataSize;i++)
+    {
+        putchar(callingProcess->ctx->ipcBuffer[i]);
+    }
+}
+
 
 static void printSpecs()
 {
@@ -330,6 +410,25 @@ int process_spawn(Process* callingProcess, seL4_MessageInfo_t message)
     printf("Process %i has %li children\n", callingProcess->pid, c);
 
     return p->pid;
+}
+
+void Syscall_Spawn(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    int ret = process_spawn(callingProcess, message);
+    int pid = 0;
+    if(ret > 0)
+    {
+        pid = ret;
+        ret = 0;
+    }
+    else
+    {
+        ret = -ret;
+    }
+    
+    seL4_SetMR(1, ret);
+    seL4_SetMR(2, pid);
+    seL4_Reply(message);
 }
 
 void *main_continued(void *arg UNUSED)
@@ -387,112 +486,64 @@ void *main_continued(void *arg UNUSED)
                 printf("Process not found for %lu\n", sender);
             }
             assert(callingProcess);
-            if (rpcID == SofaSysCall_InitProc)
-            {
-                on_initCall(callingProcess, message);
 
-            }
-            else if (rpcID == SofaSysCall_Exit)
+            if(rpcID == SofaSysCall_InitProc)
             {
-                int exitCode = seL4_GetMR(1);
-                printf("exit from %i with status %i\n", callingProcess->pid, exitCode);
-                
-                if(Process_IsWaiting(callingProcess->parent))
-                {
-                    printf("Parent is waiting!\n");
-                    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
-                    seL4_SetMR(0, SofaSysCall_Wait);
-                    seL4_SetMR(1, callingProcess->pid);
-                    seL4_SetMR(2, 0);
-//                    seL4_SetMR(3, process->retSignal);
-                    
-                    seL4_Send(callingProcess->parent->main.reply , tag);
-                    cnode_delete(&_envir.vka, callingProcess->parent->main.reply);
-                    callingProcess->parent->main.reply = 0;
-                    Process_RemoveChild(callingProcess->parent, callingProcess);
-                }
-                Process_Remove(callingProcess);
-                cleanup_process(callingProcess);
-                seL4_DebugDumpScheduler();
+                Syscall_Init(callingProcess, message);
             }
-            else if (rpcID == SofaSysCall_Debug)
+            else if(rpcID == SofaSysCall_Exit)
+            {
+                Syscall_Exit(callingProcess, message);
+            }
+            else if(rpcID == SofaSysCall_Debug)
             {
                 seL4_DebugDumpScheduler();
             }
-            else if (rpcID == SofaSysCall_PPID)
+            else if(rpcID == SofaSysCall_PPID)
             {
-                if(callingProcess->parent == NULL)
-                {
-                    // sanity check :)
-                    assert(callingProcess == &initProcess);
-                }
-                seL4_Word ppid = callingProcess->parent? callingProcess->parent->pid: 0;
-                seL4_SetMR(1, ppid);
-                seL4_Reply(message);
+                Syscall_GetPPID(callingProcess, message);
             }
-            else if (rpcID == SofaSysCall_Wait)
+            else if(rpcID == SofaSysCall_Wait)
             {
-                pid_t pidToWait = seL4_GetMR(1);
-                int options = seL4_GetMR(2);
-
-                printf("Process %i wait on pid %i (has %li child)\n", callingProcess->pid, pidToWait, Process_CountChildren(callingProcess));
-            //    int retPid = seL4_GetMR(1);
-            //    int status = seL4_GetMR(2);
-                if (Process_CountChildren(callingProcess) == 0)
-                {
-                    seL4_SetMR(1, -1);
-                    seL4_SetMR(2, -1);
-                    seL4_Reply(message);
-                    continue;
-                }
-
-                assert(callingProcess->main.reply == 0);
-                callingProcess->main.reply = get_free_slot(&_envir.vka);
-                int err = cnode_savecaller(&_envir.vka, callingProcess->main.reply );
-                if (err != 0)
-                {
-                    printf("kernel_task: unable to save caller for wait on %i\n", callingProcess->pid);
-                    seL4_SetMR(1, -1);
-                    seL4_SetMR(2, -1);
-                    seL4_Reply(message);
-                }
-                else
-                {
-                    callingProcess->_isWaiting = 1;
-                }
-                
-
-
+                Syscall_Wait(callingProcess, message);
             }
-            else if (rpcID == SofaSysCall_Write)
+            else if(rpcID == SofaSysCall_Write)
             {
-                const size_t dataSize = (size_t) seL4_GetMR(1);
-                for(size_t i =0; i< dataSize;i++)
-                {
-                    putchar(callingProcess->ctx->ipcBuffer[i]);
-                }
+                Syscall_Write(callingProcess, message);
             }
-            else if (rpcID == SofaSysCall_Spawn)
+            else if(rpcID == SofaSysCall_Spawn)
             {
-                int ret = process_spawn(callingProcess, message);
-                int pid = 0;
-                if(ret > 0)
-                {
-                    pid = ret;
-                    ret = 0;
-                }
-                else
-                {
-                    ret = -ret;
-                }
-                
-                seL4_SetMR(1, ret);
-                seL4_SetMR(2, pid);
-                seL4_Reply(message);
+                Syscall_Spawn(callingProcess, message);
+            }
+            else if(rpcID == SofaSysCall_TestCap)
+            {
+                printf("[kernel_task] cap transfert test from pid=%i\n", callingProcess->pid);
+
+                vka_object_t testEP;
+                vka_alloc_endpoint(&_envir.vka, &testEP);
+
+                struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                                                    0,  // capsUnwrapped
+                                                    1,  // extraCaps
+                                                    1);
+
+                seL4_SetCap(0, testEP.cptr);
+                printf("[kernel_task] reply\n");
+
+
+                seL4_Reply(msgRet);
+
+                seL4_Word s;
+                seL4_MessageInfo_t messageRet2 = seL4_Recv(testEP.cptr, &s);
+
+                printf("[root] Got message\n");
+
+                seL4_Reply(messageRet2);
+                printf("[root] Did respond2\n");
             }
             else
             {
-                printf("Received unknown RPC id %lu from sender %lu\n", rpcID, sender);
+                printf("Received unknown RPC id %lu from sender %i\n", rpcID, callingProcess->pid);
                 assert(0);
             }
         }
