@@ -13,6 +13,7 @@ typedef enum
     SofaSysCall_Wait,
 
     SofaSysCall_Debug,
-    SofaSysCall_TestCap
+    SofaSysCall_TestCap,
+    SofaSysCall_TestCap2
 
 } SofaSysCall;

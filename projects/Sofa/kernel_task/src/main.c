@@ -452,6 +452,8 @@ void *main_continued(void *arg UNUSED)
 
     seL4_DebugDumpScheduler();
 
+    printf("IRQ_EP_BADGE = %lu\n", IRQ_EP_BADGE);
+
 // timer test
 #if 0
     unsigned int timerID = 0;
@@ -469,15 +471,17 @@ void *main_continued(void *arg UNUSED)
         seL4_MessageInfo_t message = seL4_Recv(_envir.rootTaskEP.cptr, &sender);
         seL4_Word label = seL4_MessageInfo_get_label(message);
         Process* callingProcess = (Process*) sender;
-
+/*
         if(sender & IRQ_EP_BADGE)
-        {           
+        {   
+            printf("IRQ\n");
             int error = seL4_IRQHandler_Ack(_envir.timer_irqs[0].handler_path.capPtr);
             ZF_LOGF_IF(error, "Failed to acknowledge timer IRQ handler");
 
             tm_update(&_envir.tm);
         }
-        else if(label == seL4_NoFault)
+*/        
+        if(label == seL4_NoFault)
         {
             seL4_Word rpcID = seL4_GetMR(0);
 
@@ -517,7 +521,7 @@ void *main_continued(void *arg UNUSED)
             }
             else if(rpcID == SofaSysCall_TestCap)
             {
-                printf("[kernel_task] cap transfert test from pid=%i\n", callingProcess->pid);
+                printf("[kernel_task] cap transfert test from pid=%i cap #=%li\n", callingProcess->pid, seL4_GetMR(1));
 
                 vka_object_t testEP;
                 vka_alloc_endpoint(&_envir.vka, &testEP);
@@ -527,19 +531,19 @@ void *main_continued(void *arg UNUSED)
                                                     1,  // extraCaps
                                                     1);
 
-                seL4_SetCap(0, testEP.cptr);
+                if(seL4_GetMR(1) == 0)
+                    seL4_SetCap(0, _envir.badged_timer_notifications[0].capPtr);
+                else
+                {
+                    seL4_SetCap(0, _envir.timer_irqs[0].handler_path.capPtr);
+                }
+                
+
                 printf("[kernel_task] reply\n");
 
 
                 seL4_Reply(msgRet);
 
-                seL4_Word s;
-                seL4_MessageInfo_t messageRet2 = seL4_Recv(testEP.cptr, &s);
-
-                printf("[root] Got message\n");
-
-                seL4_Reply(messageRet2);
-                printf("[root] Did respond2\n");
             }
             else
             {

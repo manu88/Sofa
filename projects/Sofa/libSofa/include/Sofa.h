@@ -2,13 +2,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sel4/sel4.h>
-
+#include <proc_ctx.h>
 /* API that should go at some point in the runtime in order to be called before/after main()*/
 
 int ProcessInit(seL4_CPtr endpoint);
 
 
-
+seL4_CPtr RequestCap(int index);
+ProcessContext* getProcessContext(void);
 
 /* PUBLIC API*/
 

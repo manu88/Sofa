@@ -8,7 +8,7 @@ void Timer_init(Environ* env)
     int error;
 
     /* setup the timers and have our wrapper around simple capture the IRQ caps */
-    error = ltimer_default_init(&env->ltimer, env->ops, NULL, NULL);
+    error = ltimer_default_init(&env-> ltimer, env->ops, NULL, NULL);
     ZF_LOGF_IF(error, "Failed to setup the timers");
 
     /* Allocate the root notification if we haven't already done so */

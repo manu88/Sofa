@@ -41,6 +41,10 @@ static void init_simple(ProcessContext* context);
 static seL4_Word get_free_slot(ProcessContext* context);
 static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep);
 
+ProcessContext* getProcessContext()
+{
+    return _ctx;
+}
 
 void Thread_init_tls(void *thread)
 {
@@ -258,30 +262,27 @@ int is_slot_empty(ProcessContext* context, seL4_Word slot)
 }
 
 
-int test_cap()
+
+
+
+seL4_CPtr RequestCap(int index)
 {
     TLSContext* ctx = (TLSContext*)seL4_GetUserData();
-    printf("Test cap transfert\n");
 
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                                                         0,  // capsUnwrapped
-                                                        1,  // extraCaps
-                                                        1);
+                                                        0,  // extraCaps
+                                                        2);
 
-    seL4_CPtr recvSlot = get_free_slot(_ctx);
-    
-    assert(is_slot_empty(_ctx, recvSlot));    
-    set_cap_receive_path(_ctx, recvSlot);
+    seL4_CPtr capDest = get_free_slot(_ctx);
+    assert(is_slot_empty(_ctx, capDest));
+
+    set_cap_receive_path(_ctx, capDest);
     seL4_SetMR(0, SofaSysCall_TestCap);
+    seL4_SetMR(1, index);    
     seL4_Call(ctx->endpoint, msg);
 
-    struct seL4_MessageInfo msg2 =  seL4_MessageInfo_new(seL4_Fault_NullFault,
-                                                        0,  // capsUnwrapped
-                                                        0,  // extraCaps
-                                                        0);
+    assert(is_slot_empty(_ctx, capDest) == 0);
 
-    assert(is_slot_empty(_ctx, recvSlot) == 0);
-    //printf("User sends msg\n");
-    seL4_Call(recvSlot, msg2);
-    printf("User Got response\n");
+    return capDest;
 }
