@@ -18,7 +18,6 @@ int main(int argc, char *argv[])
     while (cap ==  0)
     {
         cap = getIPCService("TimeServer.main");
-        printf("Cap %lu\n", cap);
     }
     
     printf("[App] received cap\n");

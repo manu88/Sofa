@@ -351,7 +351,6 @@ seL4_CPtr getIPCService(const char* name)
 
     if(seL4_GetMR(1) == 0)
     {
-        printf("Get cap: not present\n");
         return 0; // cap not yet present
     }
 

@@ -32,4 +32,9 @@ for now I'm trying to understand more the [sel4test](https://github.com/seL4/sel
 * posix_spawn
 * sleep
 * wait/waitpid
+* register/connect IPC service
+
+## Applications
+* init
+* shell
 

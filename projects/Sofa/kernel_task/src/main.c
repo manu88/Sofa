@@ -552,21 +552,18 @@ void *main_continued(void *arg UNUSED)
             else if(rpcID == SofaSysCall_GetService)
             {
                 const char* nameService = callingProcess->ctx->ipcBuffer;
-                printf("[kernel_task]GetService for '%s'\n", nameService);
 
                 IPCService* service = NameServer_FindService(nameService);
 
                 assert(seL4_GetMR(1) <= 1);
                 if(seL4_GetMR(1) == 1) // status check request
                 {
-                    printf("Request only\n");
                     seL4_SetMR(1, service? 1:0);
                     seL4_Reply(message);
                     continue;
                 }
                 assert(service);
 
-                printf("Complete request\n");
                 struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                                     0,  // capsUnwrapped
                                     1,  // extraCaps

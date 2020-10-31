@@ -28,6 +28,10 @@ int main(int argc, char *argv[])
     ret = posix_spawnp(&appPID, "app", NULL, NULL, NULL, NULL);
     printf("[Init] Spawn returned %i, App pid is %i\n", ret, appPID);
 
+    pid_t shellPID = 0;
+    ret = posix_spawnp(&shellPID, "shell", NULL, NULL, NULL, NULL);
+    printf("[Init] Spawn returned %i, Shell pid is %i\n", ret, shellPID);
+
     while (1)
     {
         int status = 0;
