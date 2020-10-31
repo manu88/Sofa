@@ -545,6 +545,8 @@ void *main_continued(void *arg UNUSED)
                 int err = cnode_move(&_envir.vka, capDest, service->endpoint);
                 assert(err == 0);
 
+                service->rights.words[0] = seL4_GetMR(2);
+
                 NameServer_AddService(service);
             }     
             else if(rpcID == SofaSysCall_GetService)
