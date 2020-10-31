@@ -15,10 +15,12 @@
 #include <sys_calls.h>
 #include <proc_ctx.h>
 
+
 #include "env.h"
 #include "timer.h"
 #include "utils.h"
 #include "Process.h"
+#include "Nameserver.h"
 
 #define IRQ_EP_BADGE       BIT(seL4_BadgeBits - 1)
 
@@ -471,7 +473,6 @@ void *main_continued(void *arg UNUSED)
     printf("-> start kernel_task run loop\n");
 
     seL4_CPtr capDest = get_free_slot(&_envir.vka);
-    uint8_t capSet = 0;
     assert(is_slot_empty(&_envir.vka, capDest));
     set_cap_receive_path(&_envir.vka, capDest);
 
@@ -529,35 +530,51 @@ void *main_continued(void *arg UNUSED)
             {
                 Syscall_Spawn(callingProcess, message);
             }
-            else if(rpcID == SofaSysCall_SetCap)
+            else if(rpcID == SofaSysCall_RegisterService)
             {
-                printf("Test SofaSysCall_SetCap msg1\n");
+                char* serviceName = strdup(callingProcess->ctx->ipcBuffer);
+
+                printf("[Kernel_task] register endpoint for '%s'\n", serviceName);
+                IPCService* service = malloc(sizeof(IPCService));
+                memset(service, 0, sizeof(IPCService));
+                assert(service);
+                service->name = serviceName;
 
                 assert(is_slot_empty(&_envir.vka, capDest) == 0);
-                capSet = 1;
+                service->endpoint = get_free_slot(&_envir.vka);
+                int err = cnode_move(&_envir.vka, capDest, service->endpoint);
+                assert(err == 0);
 
+                NameServer_AddService(service);
             }     
-            else if(rpcID == SofaSysCall_GetCap)
+            else if(rpcID == SofaSysCall_GetService)
             {
-                printf("Test SofaSysCall_GetCap\n");
+                const char* nameService = callingProcess->ctx->ipcBuffer;
+                printf("[kernel_task]GetService for '%s'\n", nameService);
 
+                IPCService* service = NameServer_FindService(nameService);
+
+                assert(seL4_GetMR(1) <= 1);
                 if(seL4_GetMR(1) == 1) // status check request
                 {
-                    seL4_SetMR(1,capSet);
+                    printf("Request only\n");
+                    seL4_SetMR(1, service? 1:0);
                     seL4_Reply(message);
                     continue;
                 }
+                assert(service);
 
+                printf("Complete request\n");
                 struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                                     0,  // capsUnwrapped
                                     1,  // extraCaps
                                     2);
 
-                seL4_SetMR(1,capSet);
+                seL4_SetMR(1, 1);
 
                 seL4_CPtr capMint = get_free_slot(&_envir.vka);
 
-                cnode_mint(&_envir.vka, capDest, capMint, seL4_AllRights, callingProcess->pid);
+                cnode_mint(&_envir.vka, service->endpoint, capMint, seL4_AllRights, callingProcess->pid);
                 seL4_SetCap(0, capMint);
 
                 seL4_Reply(msgRet);

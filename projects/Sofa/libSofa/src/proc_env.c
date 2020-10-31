@@ -287,18 +287,31 @@ seL4_CPtr RequestCap(int index)
     return capDest;
 }
 
-
-seL4_CPtr test_SetCap()
+seL4_CPtr registerIPCService(const char* name, seL4_CapRights_t rights)
 {
-    printf("test_SetCap\n");
+    const size_t nameLen = strlen(name);
+    if(nameLen == 0)
+    {
+        return 0;
+    }
+    if(nameLen >= IPC_BUF_LEN)
+    {
+        return 0;
+    }
     TLSContext* ctx = (TLSContext*)seL4_GetUserData();
 
     struct seL4_MessageInfo msg1 =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                                 0,  // capsUnwrapped
                                 1,  // extraCaps
-                                1);
+                                3);
 
-    seL4_SetMR(0, SofaSysCall_SetCap);
+    seL4_SetMR(0, SofaSysCall_RegisterService);
+    seL4_SetMR(1, nameLen);
+    seL4_SetMR(2, rights.words[0]); 
+
+
+    strncpy(_ctx->ipcBuffer, name, nameLen);
+    _ctx->ipcBuffer[nameLen] = 0;
 
     vka_object_t testEP;
     vka_alloc_endpoint(&_ctx->vka, &testEP);
@@ -309,19 +322,30 @@ seL4_CPtr test_SetCap()
     return testEP.cptr;
 }
 
-seL4_CPtr test_GetCap()
+seL4_CPtr getIPCService(const char* name)
 {
+    const size_t nameLen = strlen(name);
+    if(nameLen == 0)
+    {
+        return 0;
+    }
+    if(nameLen >= IPC_BUF_LEN)
+    {
+        return 0;
+    }
 
-    printf("test_GetCap\n");
+    strncpy(_ctx->ipcBuffer, name, nameLen);
+    _ctx->ipcBuffer[nameLen] = 0;
 
     TLSContext* ctx = (TLSContext*)seL4_GetUserData();
     struct seL4_MessageInfo msg1 =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                             0,  // capsUnwrapped
                             0,  // extraCaps
-                            2);
+                            3);
 
-    seL4_SetMR(0, SofaSysCall_GetCap);
+    seL4_SetMR(0, SofaSysCall_GetService);
     seL4_SetMR(1, 1); // status check
+    seL4_SetMR(2, nameLen);
 
     seL4_Call(ctx->endpoint, msg1);
 
@@ -334,14 +358,16 @@ seL4_CPtr test_GetCap()
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                             0,  // capsUnwrapped
                             1,  // extraCaps
-                            2);
+                            3);
 
 
     seL4_CPtr capDest = get_free_slot(_ctx);
     assert(is_slot_empty(_ctx, capDest));
 
     set_cap_receive_path(_ctx, capDest);
-    seL4_SetMR(0, SofaSysCall_GetCap);
+    seL4_SetMR(0, SofaSysCall_GetService);
+    seL4_SetMR(1, 0); // status check    
+    seL4_SetMR(2, nameLen);
     seL4_Call(ctx->endpoint, msg);
 
     if (seL4_GetMR(1) == 0)

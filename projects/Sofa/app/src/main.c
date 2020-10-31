@@ -17,16 +17,17 @@ int main(int argc, char *argv[])
     seL4_CPtr cap = 0;
     while (cap ==  0)
     {
-        cap = test_GetCap();
+        cap = getIPCService("TimeServer.main");
         printf("Cap %lu\n", cap);
     }
     
     printf("[App] received cap\n");
 
-
     seL4_MessageInfo_t msg = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
     seL4_SetMR(0, 1);
-    seL4_Call(cap, msg);
+    printf("[App] test send\n");
+    seL4_MessageInfo_t m =seL4_Call(cap, msg);
+    printf("[App] got reply %lu\n", seL4_GetMR(0));
     while (1)
     {
 

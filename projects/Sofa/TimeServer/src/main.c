@@ -12,13 +12,15 @@ int main(int argc, char *argv[])
 
     printf("TimeServer started pid is %i ppid is %i\n", getpid(), getppid());
 
-
-    seL4_CPtr ep = test_SetCap();
+    seL4_CPtr ep = registerIPCService("TimeServer.main", seL4_AllRights);
     printf("TimeServer: Sent cap\n");
 
     seL4_Word sender;
-    seL4_Recv(ep, &sender);
+    seL4_MessageInfo_t m = seL4_Recv(ep, &sender);
     printf("TimeServer: got msg from %lu!\n", sender);
+    seL4_SetMR(0, 42);
+    seL4_Reply(m);
+
     while (1)
     {  }
 
