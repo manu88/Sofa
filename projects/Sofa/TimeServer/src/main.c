@@ -12,6 +12,16 @@ int main(int argc, char *argv[])
 
     printf("TimeServer started pid is %i ppid is %i\n", getpid(), getppid());
 
+
+    seL4_CPtr ep = test_SetCap();
+    printf("TimeServer: Sent cap\n");
+
+    seL4_Word sender;
+    seL4_Recv(ep, &sender);
+    printf("TimeServer: got msg from %lu!\n", sender);
+    while (1)
+    {  }
+
     seL4_CPtr timer_notif_cap = RequestCap(0);
     seL4_CPtr timer_irq_handler = RequestCap(1);
     assert(timer_notif_cap);

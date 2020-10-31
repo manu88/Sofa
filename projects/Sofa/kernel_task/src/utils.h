@@ -10,6 +10,11 @@ void sel4osapi_util_copy_cap(vka_t *vka, seL4_CPtr src, seL4_CPtr *dest_out);
 void util_copy_cap(vka_t *vka, seL4_CPtr src, seL4_CPtr *dest_out);
 
 seL4_Word get_free_slot( vka_t *vka);
+void set_cap_receive_path(vka_t *vka, seL4_CPtr slot);
 
+
+int cnode_move(vka_t *vka, seL4_CPtr src, seL4_CPtr dest);
 int cnode_savecaller( vka_t *vka, seL4_CPtr cap);
 int cnode_delete( vka_t *vka, seL4_CPtr slot);
+int cnode_mint(vka_t *vka, seL4_CPtr src, seL4_CPtr dest, seL4_CapRights_t rights, seL4_Word badge);
+int is_slot_empty(vka_t *vka, seL4_Word slot);

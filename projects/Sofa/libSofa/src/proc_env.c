@@ -235,7 +235,7 @@ static void set_cap_receive_path(ProcessContext* context, seL4_CPtr slot)
 {
     cspacepath_t path;
     vka_cspace_make_path(&context->vka, slot, &path);
-    return vka_set_cap_receive_path(&path);
+    vka_set_cap_receive_path(&path);
 }
 
 int cnode_move(ProcessContext* context, seL4_CPtr src, seL4_CPtr dest)
@@ -282,6 +282,72 @@ seL4_CPtr RequestCap(int index)
     seL4_SetMR(1, index);    
     seL4_Call(ctx->endpoint, msg);
 
+    assert(is_slot_empty(_ctx, capDest) == 0);
+
+    return capDest;
+}
+
+
+seL4_CPtr test_SetCap()
+{
+    printf("test_SetCap\n");
+    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+
+    struct seL4_MessageInfo msg1 =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                                0,  // capsUnwrapped
+                                1,  // extraCaps
+                                1);
+
+    seL4_SetMR(0, SofaSysCall_SetCap);
+
+    vka_object_t testEP;
+    vka_alloc_endpoint(&_ctx->vka, &testEP);
+
+    seL4_SetCap(0, testEP.cptr);
+    seL4_Send(ctx->endpoint, msg1);
+
+    return testEP.cptr;
+}
+
+seL4_CPtr test_GetCap()
+{
+
+    printf("test_GetCap\n");
+
+    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    struct seL4_MessageInfo msg1 =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                            0,  // capsUnwrapped
+                            0,  // extraCaps
+                            2);
+
+    seL4_SetMR(0, SofaSysCall_GetCap);
+    seL4_SetMR(1, 1); // status check
+
+    seL4_Call(ctx->endpoint, msg1);
+
+    if(seL4_GetMR(1) == 0)
+    {
+        printf("Get cap: not present\n");
+        return 0; // cap not yet present
+    }
+
+    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                            0,  // capsUnwrapped
+                            1,  // extraCaps
+                            2);
+
+
+    seL4_CPtr capDest = get_free_slot(_ctx);
+    assert(is_slot_empty(_ctx, capDest));
+
+    set_cap_receive_path(_ctx, capDest);
+    seL4_SetMR(0, SofaSysCall_GetCap);
+    seL4_Call(ctx->endpoint, msg);
+
+    if (seL4_GetMR(1) == 0)
+    {
+        return 0;
+    }
     assert(is_slot_empty(_ctx, capDest) == 0);
 
     return capDest;

@@ -151,13 +151,16 @@ void listCPIOFiles()
     {
         printf("\tfile : '%s'\n", fileNames[i]);
     }
-
+    // FIXME : bug in cpio cleanup
+    printf("[kernel_task] Warning, leaking memory in 'listCPIOFiles'\n");
+    return;
     // cleanup
-        for(int i=0;i<cpioInfos.file_count; i++)
+    for(int i=0;i<cpioInfos.file_count; i++)
     {
+        printf("Clean at %i\n",i);
         free(fileNames[i]);
     }
-
+    printf("Clean All\n");
     free(fileNames);
 }
 
@@ -445,6 +448,7 @@ void *main_continued(void *arg UNUSED)
 
     listCPIOFiles();
 
+    printf("-> start process init\n");
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init");
     printf("Add process with pid %i\n", initProcess.pid);
@@ -465,6 +469,12 @@ void *main_continued(void *arg UNUSED)
 // timer test
 
     printf("-> start kernel_task run loop\n");
+
+    seL4_CPtr capDest = get_free_slot(&_envir.vka);
+    uint8_t capSet = 0;
+    assert(is_slot_empty(&_envir.vka, capDest));
+    set_cap_receive_path(&_envir.vka, capDest);
+
     while (1)
     {
         seL4_Word sender;
@@ -519,6 +529,39 @@ void *main_continued(void *arg UNUSED)
             {
                 Syscall_Spawn(callingProcess, message);
             }
+            else if(rpcID == SofaSysCall_SetCap)
+            {
+                printf("Test SofaSysCall_SetCap msg1\n");
+
+                assert(is_slot_empty(&_envir.vka, capDest) == 0);
+                capSet = 1;
+
+            }     
+            else if(rpcID == SofaSysCall_GetCap)
+            {
+                printf("Test SofaSysCall_GetCap\n");
+
+                if(seL4_GetMR(1) == 1) // status check request
+                {
+                    seL4_SetMR(1,capSet);
+                    seL4_Reply(message);
+                    continue;
+                }
+
+                struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                                    0,  // capsUnwrapped
+                                    1,  // extraCaps
+                                    2);
+
+                seL4_SetMR(1,capSet);
+
+                seL4_CPtr capMint = get_free_slot(&_envir.vka);
+
+                cnode_mint(&_envir.vka, capDest, capMint, seL4_AllRights, callingProcess->pid);
+                seL4_SetCap(0, capMint);
+
+                seL4_Reply(msgRet);
+            }          
             else if(rpcID == SofaSysCall_TestCap)
             {
                 printf("[kernel_task] cap transfert test from pid=%i cap #=%li\n", callingProcess->pid, seL4_GetMR(1));
@@ -537,7 +580,6 @@ void *main_continued(void *arg UNUSED)
                 {
                     seL4_SetCap(0, _envir.timer_irqs[0].handler_path.capPtr);
                 }
-                
 
                 printf("[kernel_task] reply\n");
 

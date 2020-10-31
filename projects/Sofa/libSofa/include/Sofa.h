@@ -11,6 +11,9 @@ int ProcessInit(seL4_CPtr endpoint);
 seL4_CPtr RequestCap(int index);
 ProcessContext* getProcessContext(void);
 
+seL4_CPtr test_SetCap(void);
+seL4_CPtr test_GetCap(void);
+
 /* PUBLIC API*/
 
 pid_t waitpid(pid_t pid, int *wstatus, int options);

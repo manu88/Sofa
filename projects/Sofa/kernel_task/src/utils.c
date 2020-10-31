@@ -1,6 +1,6 @@
 #include "utils.h"
 #include <vka/capops.h>
-
+#include <vka/ipcbuffer.h>
 
 seL4_CPtr process_copy_cap_into(sel4utils_process_t *process, seL4_Word cap_badge, vka_t *parent_vka, seL4_CPtr cap, seL4_CapRights_t rights)
 {
@@ -29,8 +29,14 @@ void util_copy_cap(vka_t *vka, seL4_CPtr src, seL4_CPtr *dest_out)
 }
 
 
+void set_cap_receive_path(vka_t *vka, seL4_CPtr slot)
+{
+    cspacepath_t path;
+    vka_cspace_make_path(vka, slot, &path);
+    vka_set_cap_receive_path(&path);
+}
 
-seL4_Word get_free_slot( vka_t *vka)
+seL4_Word get_free_slot(vka_t *vka)
 {
     seL4_CPtr slot;
     int error = vka_cspace_alloc(vka, &slot);
@@ -38,16 +44,48 @@ seL4_Word get_free_slot( vka_t *vka)
     return error == 0?slot : 0;
 }
 
-int cnode_savecaller( vka_t *vka, seL4_CPtr cap)
+int cnode_mint(vka_t *vka, seL4_CPtr src, seL4_CPtr dest, seL4_CapRights_t rights, seL4_Word badge)
+{
+    cspacepath_t src_path, dest_path;
+
+    vka_cspace_make_path(vka, src, &src_path);
+    vka_cspace_make_path(vka, dest, &dest_path);
+    return vka_cnode_mint(&dest_path, &src_path, rights, badge);
+}
+
+int cnode_savecaller(vka_t *vka, seL4_CPtr cap)
 {
     cspacepath_t path;
     vka_cspace_make_path( vka, cap, &path);
     return vka_cnode_saveCaller(&path);
 }
 
-int cnode_delete( vka_t *vka, seL4_CPtr slot)
+int cnode_delete(vka_t *vka, seL4_CPtr slot)
 {
     cspacepath_t path;
     vka_cspace_make_path(vka, slot, &path);
     return vka_cnode_delete(&path);
+}
+
+int cnode_move(vka_t *vka, seL4_CPtr src, seL4_CPtr dest)
+{
+    cspacepath_t src_path, dest_path;
+
+    vka_cspace_make_path(vka, src, &src_path);
+    vka_cspace_make_path(vka, dest, &dest_path);
+    return vka_cnode_move(&dest_path, &src_path);
+}
+
+int is_slot_empty(vka_t *vka, seL4_Word slot)
+{
+    int error;
+
+    error = cnode_move(vka, slot, slot);
+
+    /* cnode_move first check if the destination is empty and raise
+     * seL4_DeleteFirst is it is not
+     * The is check if the source is empty and raise seL4_FailedLookup if it is
+     */
+    assert(error == seL4_DeleteFirst || error == seL4_FailedLookup);
+    return (error == seL4_FailedLookup);
 }

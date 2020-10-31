@@ -14,6 +14,7 @@ typedef enum
 
     SofaSysCall_Debug,
     SofaSysCall_TestCap,
-    SofaSysCall_TestCap2
+    SofaSysCall_SetCap,
+    SofaSysCall_GetCap
 
 } SofaSysCall;
