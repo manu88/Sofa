@@ -21,3 +21,11 @@ typedef enum
     SofaSysCall_TestCap
 
 } SofaSysCall;
+
+
+typedef enum
+{
+    DebugCode_DumpScheduler,
+    DebugCode_ListProcesses,
+    DebugCode_ListIPCServers
+} DebugCode;

@@ -15,6 +15,10 @@ typedef struct
 } IPCService;
 
 
+IPCService* NameServer_GetServices(void);
+
+#define NameServerListIter(service, tmp) HASH_ITER(hh, NameServer_GetServices(), service, tmp)
+
 int NameServer_AddService(IPCService* service);
 int NameServer_RemoveService(IPCService* service);
 

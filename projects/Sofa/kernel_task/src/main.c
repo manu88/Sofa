@@ -168,6 +168,8 @@ void listCPIOFiles()
 
 int spawnApp(Process* process, const char* appName)
 {
+    process->name = strdup(appName);
+    assert(process->name);
     unsigned long fileSize = 0;
     void* filePos = cpio_get_file(_cpio_archive, _cpio_archive_end - _cpio_archive, appName, &fileSize);
 
@@ -400,7 +402,10 @@ int process_spawn(Process* callingProcess, seL4_MessageInfo_t message)
     {
         return -ENOMEM;
     }
+
     ProcessInit(p);
+
+
     int error = spawnApp(p, filePath);
 
     if (error != 0)
@@ -436,11 +441,105 @@ void Syscall_Spawn(Process* callingProcess, seL4_MessageInfo_t message)
     seL4_Reply(message);
 }
 
+void Syscall_RegisterService(Process* callingProcess, seL4_MessageInfo_t message, seL4_Word capDest)
+{
+    char* serviceName = strdup(callingProcess->ctx->ipcBuffer);
+
+    printf("[Kernel_task] register endpoint for '%s'\n", serviceName);
+    IPCService* service = malloc(sizeof(IPCService));
+    memset(service, 0, sizeof(IPCService));
+    assert(service);
+    service->name = serviceName;
+
+    assert(is_slot_empty(&_envir.vka, capDest) == 0);
+    service->endpoint = get_free_slot(&_envir.vka);
+    int err = cnode_move(&_envir.vka, capDest, service->endpoint);
+    assert(err == 0);
+
+    service->rights.words[0] = seL4_GetMR(2);
+
+    NameServer_AddService(service);
+}
+
+void Syscall_GetService(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    const char* nameService = callingProcess->ctx->ipcBuffer;
+
+    IPCService* service = NameServer_FindService(nameService);
+
+    assert(seL4_GetMR(1) <= 1);
+    if(seL4_GetMR(1) == 1) // status check request
+    {
+        seL4_SetMR(1, service? 1:0);
+        seL4_Reply(message);
+        return;
+    }
+    assert(service);
+
+    struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                        0,  // capsUnwrapped
+                        1,  // extraCaps
+                        2);
+
+    seL4_SetMR(1, 1);
+
+    seL4_CPtr capMint = get_free_slot(&_envir.vka);
+
+    cnode_mint(&_envir.vka, service->endpoint, capMint, seL4_AllRights, callingProcess->pid);
+    seL4_SetCap(0, capMint);
+
+    seL4_Reply(msgRet);
+
+}
+
+void Syscall_Debug(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    DebugCode code = seL4_GetMR(1);
+
+    switch (code)
+    {
+    case DebugCode_DumpScheduler:
+        seL4_DebugDumpScheduler();
+        break;
+    case DebugCode_ListProcesses:
+    {
+        Process *proc, *temp = NULL;
+        printf("--- Proc List ---\n");
+        
+        ProcessListIter(proc, temp)
+        {
+            printf("'%s' pid=%i\n", proc->name, proc->pid);
+        }
+        printf("-----------------\n");
+        break;
+    }
+    case DebugCode_ListIPCServers:
+    {
+        IPCService *s, *temp = NULL;
+
+        printf("--- IPC Services List ---\n");
+        NameServerListIter(s, temp)
+        {
+            printf("'%s'\n", s->name);
+            
+        }
+        printf("-------------------------\n");  
+        break;
+    }
+    default:
+        assert(0);
+        break;
+    }
+
+}
+
 void *main_continued(void *arg UNUSED)
 {
     printf("\n------Sofa------\n");
 
     printSpecs();
+
+    printf("-> Init com device\n");
 
     /* allocate lots of untyped memory for tests to use */
 
@@ -512,7 +611,7 @@ void *main_continued(void *arg UNUSED)
             }
             else if(rpcID == SofaSysCall_Debug)
             {
-                seL4_DebugDumpScheduler();
+                Syscall_Debug(callingProcess, message);
             }
             else if(rpcID == SofaSysCall_PPID)
             {
@@ -532,51 +631,11 @@ void *main_continued(void *arg UNUSED)
             }
             else if(rpcID == SofaSysCall_RegisterService)
             {
-                char* serviceName = strdup(callingProcess->ctx->ipcBuffer);
-
-                printf("[Kernel_task] register endpoint for '%s'\n", serviceName);
-                IPCService* service = malloc(sizeof(IPCService));
-                memset(service, 0, sizeof(IPCService));
-                assert(service);
-                service->name = serviceName;
-
-                assert(is_slot_empty(&_envir.vka, capDest) == 0);
-                service->endpoint = get_free_slot(&_envir.vka);
-                int err = cnode_move(&_envir.vka, capDest, service->endpoint);
-                assert(err == 0);
-
-                service->rights.words[0] = seL4_GetMR(2);
-
-                NameServer_AddService(service);
+                Syscall_RegisterService(callingProcess, message, capDest);
             }     
             else if(rpcID == SofaSysCall_GetService)
             {
-                const char* nameService = callingProcess->ctx->ipcBuffer;
-
-                IPCService* service = NameServer_FindService(nameService);
-
-                assert(seL4_GetMR(1) <= 1);
-                if(seL4_GetMR(1) == 1) // status check request
-                {
-                    seL4_SetMR(1, service? 1:0);
-                    seL4_Reply(message);
-                    continue;
-                }
-                assert(service);
-
-                struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
-                                    0,  // capsUnwrapped
-                                    1,  // extraCaps
-                                    2);
-
-                seL4_SetMR(1, 1);
-
-                seL4_CPtr capMint = get_free_slot(&_envir.vka);
-
-                cnode_mint(&_envir.vka, service->endpoint, capMint, seL4_AllRights, callingProcess->pid);
-                seL4_SetCap(0, capMint);
-
-                seL4_Reply(msgRet);
+                Syscall_GetService(callingProcess, message);
             }          
             else if(rpcID == SofaSysCall_TestCap)
             {

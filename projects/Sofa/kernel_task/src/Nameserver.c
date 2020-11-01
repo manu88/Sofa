@@ -3,6 +3,11 @@
 
 static IPCService* _services = NULL;
 
+IPCService* NameServer_GetServices()
+{
+    return _services;
+}
+
 int NameServer_AddService(IPCService* s)
 {
     HASH_ADD_KEYPTR(hh, _services, s->name, strlen(s->name), s);

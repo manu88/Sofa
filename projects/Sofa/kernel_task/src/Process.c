@@ -5,6 +5,13 @@ static size_t _pid = 1;
 
 static Process *_processes = NULL;
 
+
+Process* ProcessGetList()
+{
+    return _processes;
+}
+
+
 void ProcessInit(Process*p)
 {
     memset(p, 0, sizeof(Process));

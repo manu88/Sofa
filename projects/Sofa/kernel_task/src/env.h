@@ -7,6 +7,8 @@
 #include <sel4platsupport/io.h>
 #include <platsupport/ltimer.h>
 #include <platsupport/time_manager.h>
+#include <platsupport/chardev.h>
+
 
 #define MAX_TIMER_IRQS 4
 
@@ -45,6 +47,9 @@ typedef struct
     int index_in_untyped;
     int num_untypeds;
     vka_object_t *untypeds;
+
+
+    ps_chardevice_t comDev;
 } Environ;
 
 

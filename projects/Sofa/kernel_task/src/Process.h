@@ -17,6 +17,7 @@ typedef enum
 
 struct _Process
 {
+    char* name;
     int pid;
     sel4utils_process_t _process;
 //    seL4_CPtr endpoint;
@@ -41,6 +42,10 @@ struct _Process
 };
 
 typedef struct _Process Process;
+
+Process* ProcessGetList(void);
+
+#define ProcessListIter(p, tmp) HASH_ITER(hh, ProcessGetList(), p, tmp)
 
 void ProcessInit(Process*p);
 

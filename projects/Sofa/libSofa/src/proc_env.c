@@ -377,3 +377,16 @@ seL4_CPtr getIPCService(const char* name)
 
     return capDest;
 }
+
+void DoDebug(int code)
+{
+    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                            0,  // capsUnwrapped
+                            0,  // extraCaps
+                            2);
+    seL4_SetMR(0, SofaSysCall_Debug);
+    seL4_SetMR(1, code);
+
+    seL4_Send(ctx->endpoint, msg);
+}

@@ -14,6 +14,8 @@ ProcessContext* getProcessContext(void);
 seL4_CPtr registerIPCService(const char* name, seL4_CapRights_t rights);
 seL4_CPtr getIPCService(const char* name);
 
+void DoDebug(int code);
+
 
 /* PUBLIC API*/
 
