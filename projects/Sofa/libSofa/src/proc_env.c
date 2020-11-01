@@ -41,6 +41,12 @@ static void init_simple(ProcessContext* context);
 static seL4_Word get_free_slot(ProcessContext* context);
 static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep);
 
+
+TLSContext* getTLSContext()
+{
+    return (TLSContext*)seL4_GetUserData();
+}
+
 ProcessContext* getProcessContext()
 {
     return _ctx;
@@ -66,7 +72,7 @@ static size_t _do_write_buf(seL4_CPtr endpoint, void *data, size_t count)
 
 static size_t write_buf(void *data, size_t count)
 {
-    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    TLSContext* ctx = getTLSContext();
     assert(ctx);
     return _do_write_buf(ctx->endpoint, data, count);
 }
@@ -84,7 +90,7 @@ static ProcessContext* sendInit()
 
 static void process_exit(int code)
 {
-    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    TLSContext* ctx = getTLSContext();
 
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0,2);
     seL4_SetMR(0, SofaSysCall_Exit);
@@ -267,7 +273,7 @@ int is_slot_empty(ProcessContext* context, seL4_Word slot)
 
 seL4_CPtr RequestCap(int index)
 {
-    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    TLSContext* ctx = getTLSContext();
 
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                                                         0,  // capsUnwrapped
@@ -298,7 +304,7 @@ seL4_CPtr registerIPCService(const char* name, seL4_CapRights_t rights)
     {
         return 0;
     }
-    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    TLSContext* ctx = getTLSContext();
 
     struct seL4_MessageInfo msg1 =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                                 0,  // capsUnwrapped
@@ -337,7 +343,7 @@ seL4_CPtr getIPCService(const char* name)
     strncpy(_ctx->ipcBuffer, name, nameLen);
     _ctx->ipcBuffer[nameLen] = 0;
 
-    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    TLSContext* ctx = getTLSContext();
     struct seL4_MessageInfo msg1 =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                             0,  // capsUnwrapped
                             0,  // extraCaps
@@ -380,7 +386,7 @@ seL4_CPtr getIPCService(const char* name)
 
 void DoDebug(int code)
 {
-    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    TLSContext* ctx = getTLSContext();
     struct seL4_MessageInfo msg =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                             0,  // capsUnwrapped
                             0,  // extraCaps

@@ -1,5 +1,6 @@
 #pragma once
 
+/* kernel_task related syscalls */
 
 typedef enum
 {
@@ -29,3 +30,20 @@ typedef enum
     DebugCode_ListProcesses,
     DebugCode_ListIPCServers
 } DebugCode;
+
+
+
+/* TimeServer syscalls */
+
+typedef enum
+{
+    TimeServerSysCall_Unknown = 0,
+    TimeServerSysCall_GetTime,
+    TimeServerSysCall_Sleep
+} TimeServerSysCall;
+
+
+
+/* Builtin Servers*/
+
+#define TIME_SERVER_NAME "TimeServer.main"
