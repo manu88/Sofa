@@ -6,18 +6,55 @@
 #include <sys_calls.h>
 
 
+static seL4_CPtr timer_notif_cap = 0;
+static seL4_CPtr timer_irq_handler = 0;
+
+static void* inter_thread(void*arg)
+{
+    printf("[TimerServer] thread is running\n");
+    timer_notif_cap = RequestCap(0);
+
+
+    while (1)
+    {
+        /* code */
+    }
+
+    
+    timer_irq_handler = RequestCap(1);
+    assert(timer_notif_cap);
+    assert(timer_irq_handler);
+
+    while(1)
+    {
+        seL4_Word sender;
+        seL4_MessageInfo_t message = seL4_Recv(timer_notif_cap, &sender);
+        printf("User Got response from %lu\n", sender);
+
+        int ret = seL4_IRQHandler_Ack(timer_irq_handler);
+        assert(ret == 0);
+    }
+
+    
+}
 int main(int argc, char *argv[])
 {
     int ret = ProcessInit(atoi(argv[1]));
     assert(ret == 0);
 
-    printf("TimeServer started pid is %i ppid is %i\n", getpid(), getppid());
+    printf("[TimeServer] started pid is %i ppid is %i\n", getpid(), getppid());
+    pthread_t th;
+    ret =  pthread_create(&th, NULL, inter_thread, NULL);
 
+    while (1)
+    {
+    }
+    
     seL4_CPtr ep = registerIPCService(TIME_SERVER_NAME, seL4_AllRights);
-    printf("TimeServer: Sent cap\n");
+    //printf("[TimeServer] Sent cap\n");
+
 
     
-
     seL4_Word sender;
     while (1)
     {  
@@ -38,20 +75,7 @@ int main(int argc, char *argv[])
 
     }
 
-    seL4_CPtr timer_notif_cap = RequestCap(0);
-    seL4_CPtr timer_irq_handler = RequestCap(1);
-    assert(timer_notif_cap);
-    assert(timer_irq_handler);
 
-    while(1)
-    {
-        seL4_Word sender;
-        seL4_MessageInfo_t message = seL4_Recv(timer_notif_cap, &sender);
-        printf("User Got response from %lu\n", sender);
-
-        ret = seL4_IRQHandler_Ack(timer_irq_handler);
-        assert(ret == 0);
-    }
     
     return 0;
 }

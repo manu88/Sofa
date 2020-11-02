@@ -2,10 +2,12 @@
 
 #include <utils/uthash.h>
 #include <sel4/sel4.h>
+#include "Process.h"
 
 typedef struct
 {
     const char* name;
+    Process* owner;
 
     seL4_CPtr endpoint;
     seL4_CapRights_t rights;

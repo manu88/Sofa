@@ -22,25 +22,21 @@ int pthread_create(pthread_t *restrict thread,
     return create_thread(thread, start_routine, arg);
 }
 
-
-
-
-
-void threadStart(void *arg0, void *arg1, void *ipc_buf)
+static void _threadStart(void *arg0, void *arg1, void *ipc_buf)
 {
     _ThreadArgs* args = (_ThreadArgs*) arg1;
     assert(args);
+// Create & setup TLS context    
     TLSContext threadCtx;
     threadCtx.endpoint = (seL4_CPtr) arg0;
-
     Thread_init_tls(&threadCtx);
 
+// run user code
     args->start_routine(args->arg);
+// Cleanup TLS context
     Thread_init_tls(NULL);
     free(args);
 }
-
-
 
 static int create_thread(pthread_t *restrict thread, void *(*start_routine)(void*), void *restrict arg)
 {
@@ -70,7 +66,7 @@ static int create_thread(pthread_t *restrict thread, void *(*start_routine)(void
     vka_object_t local_endpoint;
     error = vka_alloc_endpoint(&_ctx->vka, &local_endpoint);
     assert(error == 0);
-
+/*
     error = api_tcb_set_space(thread->_thread.tcb.cptr,
                       local_endpoint.cptr,
                       _ctx->root_cnode,
@@ -82,7 +78,7 @@ static int create_thread(pthread_t *restrict thread, void *(*start_routine)(void
         printf("Failed to set fault EP for helper thread. err %i\n", error);
         return error;
     }
-
+*/
     char name[16] = "";
     snprintf(name, 16, "thread-%i", _ctx->pid);
     seL4_DebugNameThread(thread->_thread.tcb.cptr, name);
@@ -91,7 +87,7 @@ static int create_thread(pthread_t *restrict thread, void *(*start_routine)(void
     assert(args);
     args->start_routine = start_routine;
     args->arg = arg;
-    error = sel4utils_start_thread(&thread->_thread , threadStart , local_endpoint.cptr , args , 1);
+    error = sel4utils_start_thread(&thread->_thread, _threadStart, (void*) local_endpoint.cptr, args, 1);
 
 
     if (error != 0)

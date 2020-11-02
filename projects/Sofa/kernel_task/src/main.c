@@ -449,6 +449,7 @@ void Syscall_RegisterService(Process* callingProcess, seL4_MessageInfo_t message
     IPCService* service = malloc(sizeof(IPCService));
     memset(service, 0, sizeof(IPCService));
     assert(service);
+    service->owner = callingProcess;
     service->name = serviceName;
 
     assert(is_slot_empty(&_envir.vka, capDest) == 0);
@@ -520,7 +521,7 @@ void Syscall_Debug(Process* callingProcess, seL4_MessageInfo_t message)
         printf("--- IPC Services List ---\n");
         NameServerListIter(s, temp)
         {
-            printf("'%s'\n", s->name);
+            printf("'%s': owner '%s' %i\n", s->name, s->owner->name, s->owner->pid);
             
         }
         printf("-------------------------\n");  
@@ -657,7 +658,6 @@ void *main_continued(void *arg UNUSED)
                 }
 
                 printf("[kernel_task] reply\n");
-
 
                 seL4_Reply(msgRet);
 

@@ -38,7 +38,6 @@ static TLSContext _mainThreadTLS = {0};
 static void init_allocator(ProcessContext* context);
 static void init_simple(ProcessContext* context);
 
-static seL4_Word get_free_slot(ProcessContext* context);
 static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep);
 
 
@@ -110,9 +109,6 @@ int ProcessInit(seL4_CPtr endpoint)
     sel4runtime_set_exit(process_exit);
     init_allocator(_ctx);
     init_simple(_ctx);
-    //printf("Test thread\n");
-    //test_thread();
-
     return 0;
 }
 
@@ -211,28 +207,12 @@ static void init_allocator(ProcessContext* context)
 }
 
 
-int cnode_mint(ProcessContext* context, seL4_CPtr src, seL4_CPtr dest, seL4_CapRights_t rights, seL4_Word badge)
-{
-    cspacepath_t src_path, dest_path;
-
-    vka_cspace_make_path(&context->vka, src, &src_path);
-    vka_cspace_make_path(&context->vka, dest, &dest_path);
-    return vka_cnode_mint(&dest_path, &src_path, rights, badge);
-}
 
 static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_CPtr ep)
 {
     seL4_CPtr slot = get_free_slot(context);
     int error = cnode_mint(context, ep, slot, seL4_AllRights, badge);
     assert(error == seL4_NoError);
-    return slot;
-}
-
-static seL4_Word get_free_slot(ProcessContext* context)
-{
-    seL4_CPtr slot;
-    UNUSED int error = vka_cspace_alloc(&context->vka, &slot);
-    assert(!error);
     return slot;
 }
 
@@ -243,32 +223,6 @@ static void set_cap_receive_path(ProcessContext* context, seL4_CPtr slot)
     vka_cspace_make_path(&context->vka, slot, &path);
     vka_set_cap_receive_path(&path);
 }
-
-int cnode_move(ProcessContext* context, seL4_CPtr src, seL4_CPtr dest)
-{
-    cspacepath_t src_path, dest_path;
-
-    vka_cspace_make_path(&context->vka, src, &src_path);
-    vka_cspace_make_path(&context->vka, dest, &dest_path);
-    return vka_cnode_move(&dest_path, &src_path);
-}
-
-int is_slot_empty(ProcessContext* context, seL4_Word slot)
-{
-    int error;
-
-    error = cnode_move(context, slot, slot);
-
-    /* cnode_move first check if the destination is empty and raise
-     * seL4_DeleteFirst is it is not
-     * The is check if the source is empty and raise seL4_FailedLookup if it is
-     */
-    assert(error == seL4_DeleteFirst || error == seL4_FailedLookup);
-    return (error == seL4_FailedLookup);
-}
-
-
-
 
 
 seL4_CPtr RequestCap(int index)
