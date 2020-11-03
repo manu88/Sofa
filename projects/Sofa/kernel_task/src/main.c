@@ -24,6 +24,7 @@
 
 #define IRQ_EP_BADGE       BIT(seL4_BadgeBits - 1)
 
+#define NUM_UNTYPED_PER_PROCESS (size_t) 4
 
 /* list of untypeds to give out to processes */
 static vka_object_t untypeds[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
@@ -248,6 +249,21 @@ static seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vk
 
 void Syscall_Init(Process* process, seL4_MessageInfo_t message)
 {
+    size_t numUntypedsPerProcess = NUM_UNTYPED_PER_PROCESS;//_envir.num_untypeds / 8;
+
+    if(_envir.index_in_untyped + numUntypedsPerProcess > _envir.num_untypeds)
+    {
+        numUntypedsPerProcess = _envir.num_untypeds - _envir.index_in_untyped;
+    }
+
+    if(numUntypedsPerProcess == 0)
+    {
+        printf("No untypeds left, stop init process '%s' %i\n", process->name, process->pid);
+        seL4_SetMR(1, (seL4_Word) 0);
+        seL4_Reply(message);
+        return;
+    }
+
     assert(process->ctx == NULL);
     ProcessContext* ctx = (ProcessContext *) vspace_new_pages(&_envir.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(ctx != NULL);
@@ -263,7 +279,6 @@ void Syscall_Init(Process* process, seL4_MessageInfo_t message)
     size_t numPages = 1;
     void* venv = vspace_map_pages(&process->_process.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
 
-    const size_t numUntypedsPerProcess = 4;//_envir.num_untypeds / 8;
     printf("Allocate %lu untypeds for process %i\n", numUntypedsPerProcess, process->pid);
     printf("Index is %i\n", _envir.index_in_untyped);
     memcpy(ctx->untyped_size_bits_list,
@@ -540,11 +555,9 @@ void *main_continued(void *arg UNUSED)
 
     printSpecs();
 
-    printf("-> Init com device\n");
-
     /* allocate lots of untyped memory for tests to use */
 
-    _envir.num_untypeds = Environ_populate_untypeds(&_envir, untypeds, untyped_size_bits_list, ARRAY_SIZE(untyped_size_bits_list));
+    _envir.num_untypeds = Environ_populate_untypeds(&_envir, untypeds, untyped_size_bits_list, CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS);
     printf("Allocated %i untypeds  %i \n", _envir.num_untypeds, simple_get_untyped_count(&_envir.simple));
     _envir.untypeds = untypeds;
 
@@ -555,10 +568,6 @@ void *main_continued(void *arg UNUSED)
     spawnApp(&initProcess, "init");
     printf("Add process with pid %i\n", initProcess.pid);
     Process_Add(&initProcess);
-
-    seL4_DebugDumpScheduler();
-
-    printf("IRQ_EP_BADGE = %lu\n", IRQ_EP_BADGE);
 
 // timer test
 #if 0
@@ -638,26 +647,27 @@ void *main_continued(void *arg UNUSED)
             {
                 Syscall_GetService(callingProcess, message);
             }          
-            else if(rpcID == SofaSysCall_TestCap)
+            else if(rpcID == SofaSysCall_RequestCap)
             {
                 printf("[kernel_task] cap transfert test from pid=%i cap #=%li\n", callingProcess->pid, seL4_GetMR(1));
-
-                vka_object_t testEP;
-                vka_alloc_endpoint(&_envir.vka, &testEP);
 
                 struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
                                                     0,  // capsUnwrapped
                                                     1,  // extraCaps
                                                     1);
 
-                if(seL4_GetMR(1) == 0)
+                if(seL4_GetMR(1) == RequestCapID_TimerNotif)
+                {
                     seL4_SetCap(0, _envir.badged_timer_notifications[0].capPtr);
-                else
+                }
+                else if (seL4_GetMR(1) == RequestCapID_TimerAck)
                 {
                     seL4_SetCap(0, _envir.timer_irqs[0].handler_path.capPtr);
                 }
-
-                printf("[kernel_task] reply\n");
+                else
+                {
+                    assert(0);
+                }
 
                 seL4_Reply(msgRet);
 
@@ -670,7 +680,8 @@ void *main_continued(void *arg UNUSED)
         }
         else if( label == seL4_CapFault)
         {
-            printf("Got cap fault from %i\n", callingProcess->pid);
+            seL4_Word foreign_faulter_capfault_cap = seL4_GetMR(seL4_CapFault_Addr);
+            printf("Got cap fault from %i cap fault is %lu\n", callingProcess->pid, foreign_faulter_capfault_cap);
         }
         else if (label == seL4_VMFault)
         {

@@ -13,17 +13,15 @@ typedef enum
     SofaSysCall_PPID,
     SofaSysCall_Wait,
 
-
     SofaSysCall_RegisterService,
     SofaSysCall_GetService,
 
-
     SofaSysCall_Debug,
-    SofaSysCall_TestCap
+    SofaSysCall_RequestCap
 
 } SofaSysCall;
 
-
+// op codes for SofaSysCall_Debug
 typedef enum
 {
     DebugCode_DumpScheduler,
@@ -31,6 +29,12 @@ typedef enum
     DebugCode_ListIPCServers
 } DebugCode;
 
+// op codes for SofaSysCall_RequestCap
+typedef enum
+{
+    RequestCapID_TimerNotif = 0,
+    RequestCapID_TimerAck = 1
+} RequestCapID;
 
 
 /* TimeServer syscalls */
@@ -41,7 +45,6 @@ typedef enum
     TimeServerSysCall_GetTime,
     TimeServerSysCall_Sleep
 } TimeServerSysCall;
-
 
 
 /* Builtin Servers*/

@@ -50,7 +50,7 @@ fi
 
 if [ ! -f "init-build.sh" ]; then
 	ln -s tools/seL4/cmake-tool/init-build.sh init-build.sh
-fil
+fi
 
 if [ ! -f "easy-settings.cmake" ]; then
 	ln -s projects/Sofa/easy-settings.cmake easy-settings.cmake

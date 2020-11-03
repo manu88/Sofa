@@ -9,7 +9,10 @@
 int ProcessInit(seL4_CPtr endpoint);
 
 
+
 seL4_CPtr RequestCap(int index);
+
+
 ProcessContext* getProcessContext(void);
 
 seL4_CPtr registerIPCService(const char* name, seL4_CapRights_t rights);

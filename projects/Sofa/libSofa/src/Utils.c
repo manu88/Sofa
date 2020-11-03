@@ -12,6 +12,10 @@ int is_slot_empty(ProcessContext* context, seL4_Word slot)
      * seL4_DeleteFirst is it is not
      * The is check if the source is empty and raise seL4_FailedLookup if it is
      */
+    if (error != seL4_DeleteFirst && error != seL4_FailedLookup)
+    {
+        printf("is_slot_empty error=%i\n", error);
+    }
     assert(error == seL4_DeleteFirst || error == seL4_FailedLookup);
     return (error == seL4_FailedLookup);
 }

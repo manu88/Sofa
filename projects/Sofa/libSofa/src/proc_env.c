@@ -1,6 +1,8 @@
 #include "Sofa.h"
 #include "sys_calls.h"
 #include "proc_ctx.h"
+#include "Utils.h"
+
 #include <sel4/sel4.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -238,7 +240,7 @@ seL4_CPtr RequestCap(int index)
     assert(is_slot_empty(_ctx, capDest));
 
     set_cap_receive_path(_ctx, capDest);
-    seL4_SetMR(0, SofaSysCall_TestCap);
+    seL4_SetMR(0, SofaSysCall_RequestCap);
     seL4_SetMR(1, index);    
     seL4_Call(ctx->endpoint, msg);
 

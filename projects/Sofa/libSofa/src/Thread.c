@@ -46,6 +46,8 @@ static int create_thread(pthread_t *restrict thread, void *(*start_routine)(void
 
     threadConf = thread_config_auth(threadConf, _ctx->tcb);
 
+    seL4_Word data = seL4_CNode_CapData_new(0, seL4_WordBits - _ctx->cspace_size_bits).words[0];
+    threadConf = thread_config_cspace(threadConf, _ctx->root_cnode, data);
 
     error = sel4utils_configure_thread_config(&_ctx->vka , &_ctx->vspace , &_ctx->vspace , threadConf , &thread->_thread);
 
@@ -62,11 +64,10 @@ static int create_thread(pthread_t *restrict thread, void *(*start_routine)(void
         return error;
     }
 
-
     vka_object_t local_endpoint;
     error = vka_alloc_endpoint(&_ctx->vka, &local_endpoint);
     assert(error == 0);
-/*
+
     error = api_tcb_set_space(thread->_thread.tcb.cptr,
                       local_endpoint.cptr,
                       _ctx->root_cnode,
@@ -75,10 +76,9 @@ static int create_thread(pthread_t *restrict thread, void *(*start_routine)(void
 
     if (error != 0)
     {
-        printf("Failed to set fault EP for helper thread. err %i\n", error);
+        printf("Failed to api_tcb_set_space for thread. err %i\n", error);
         return error;
     }
-*/
     char name[16] = "";
     snprintf(name, 16, "thread-%i", _ctx->pid);
     seL4_DebugNameThread(thread->_thread.tcb.cptr, name);

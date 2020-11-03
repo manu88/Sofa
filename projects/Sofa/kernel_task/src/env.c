@@ -104,7 +104,6 @@ unsigned int Environ_populate_untypeds(Environ* env, vka_object_t *untypeds, uin
     unsigned int reserve_num = allocate_untypeds(env, reserve, KERN_TASK_UNTYPED_MEMORY, KERN_TASK_NUM_UNTYPEDS);
     /* Now allocate everything else for the tests */
 
-
     unsigned int num_untypeds = allocate_untypeds(env, untypeds, UINT_MAX, maxUntypeds);
 
 
