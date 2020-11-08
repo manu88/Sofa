@@ -13,10 +13,11 @@ int main(int argc, char *argv[])
     
   
     printf("Shell started parent pid is %i\n", getppid());
-
+/*
     DoDebug(DebugCode_DumpScheduler);
     DoDebug(DebugCode_ListProcesses);
     DoDebug(DebugCode_ListIPCServers);
+*/
     while (1)
     {
 

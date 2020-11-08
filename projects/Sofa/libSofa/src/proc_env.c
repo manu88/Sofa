@@ -45,7 +45,10 @@ static seL4_CPtr badge_endpoint(ProcessContext* context, seL4_Word badge, seL4_C
 
 TLSContext* getTLSContext()
 {
-    return (TLSContext*)seL4_GetUserData();
+    TLSContext* ctx = (TLSContext*)seL4_GetUserData();
+    assert(ctx);
+    assert(ctx->endpoint != 0);
+    return ctx;
 }
 
 ProcessContext* getProcessContext()
@@ -109,8 +112,12 @@ int ProcessInit(seL4_CPtr endpoint)
 
     sel4muslcsys_register_stdio_write_fn(write_buf);
     sel4runtime_set_exit(process_exit);
+
     init_allocator(_ctx);
     init_simple(_ctx);
+
+    printf("Free slots range %lu %lu\n", _ctx->free_slots.start, _ctx->free_slots.end);
+
     return 0;
 }
 

@@ -15,16 +15,23 @@
 // shared between kernel_task and processes
 typedef struct
 {
+
+    // the process' PID
+    int pid;
+
+    uint8_t ipcBuffer[IPC_BUF_LEN];
+    
     /* An initialised vka. Setup by the process itself */
     vka_t vka;
     /* virtual memory management interface */
     vspace_t vspace;
     /* abstract interface over application init */
     simple_t simple;
-    /* page directory of the process */
-    seL4_CPtr page_directory;
-    /* root cnode of the process */
-    seL4_CPtr root_cnode;
+
+    
+    seL4_CPtr root_cnode; /* root cnode of the process */
+    seL4_CPtr page_directory; /* page directory of the process */
+    seL4_CPtr tcb; /* tcb of the process */
 
     /* number of available cores */
     seL4_Word cores;
@@ -35,14 +42,11 @@ typedef struct
     /* size of the  process cspace */
     seL4_Word cspace_size_bits;
 
-    /* tcb of the process */
-    seL4_CPtr tcb;
+   
     
     /* range of untyped memory in the cspace */
     seL4_SlotRegion untypeds;
-
     uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
-
     /* range of free slots in the cspace */
     seL4_SlotRegion free_slots;
 
@@ -51,11 +55,6 @@ typedef struct
 
     /* address of the stack */
     void *stack;
-
-    // the process' PID
-    int pid;
-
-    uint8_t ipcBuffer[IPC_BUF_LEN];
 } ProcessContext;
 
 

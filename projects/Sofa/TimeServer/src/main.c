@@ -12,7 +12,9 @@ static seL4_CPtr timer_irq_handler = 0;
 static void* inter_thread(void*arg)
 {
     printf("[TimerServer] thread is running\n");
+
     while(1);
+
     seL4_CPtr ep = (seL4_CPtr) arg;
     while (1)
     {   
@@ -29,7 +31,6 @@ int main(int argc, char *argv[])
     
     seL4_CPtr ep = registerIPCService(TIME_SERVER_NAME, seL4_AllRights);
 
-
     timer_notif_cap = RequestCap(RequestCapID_TimerNotif);
     timer_irq_handler = RequestCap(RequestCapID_TimerAck);
     assert(timer_notif_cap);
@@ -37,8 +38,10 @@ int main(int argc, char *argv[])
 
     printf("[TimeServer] started pid is %i ppid is %i\n", getpid(), getppid());
     pthread_t th;
-    ret =  pthread_create(&th, NULL, inter_thread, timer_notif_cap);
- 
+    ret =  pthread_create(&th, NULL, inter_thread, NULL);
+    assert(ret == 0);
+
+
     seL4_Word sender;
     while (1)
     {  

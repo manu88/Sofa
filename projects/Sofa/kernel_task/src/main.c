@@ -24,7 +24,7 @@
 
 #define IRQ_EP_BADGE       BIT(seL4_BadgeBits - 1)
 
-#define NUM_UNTYPED_PER_PROCESS (size_t) 4
+#define NUM_UNTYPED_PER_PROCESS (size_t) 8
 
 /* list of untypeds to give out to processes */
 static vka_object_t untypeds[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
@@ -279,11 +279,11 @@ void Syscall_Init(Process* process, seL4_MessageInfo_t message)
     size_t numPages = 1;
     void* venv = vspace_map_pages(&process->_process.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
 
-    printf("Allocate %lu untypeds for process %i\n", numUntypedsPerProcess, process->pid);
+    printf("Allocate %lu untypeds for process '%s' %i\n", numUntypedsPerProcess, process->name, process->pid);
     printf("Index is %i\n", _envir.index_in_untyped);
     memcpy(ctx->untyped_size_bits_list,
            untyped_size_bits_list + _envir.index_in_untyped,
-           sizeof(uint8_t) * numUntypedsPerProcess);
+           numUntypedsPerProcess);
 
     ctx->page_directory = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.pd.cptr);
     ctx->tcb = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.thread.tcb.cptr);
@@ -308,7 +308,7 @@ void Syscall_Init(Process* process, seL4_MessageInfo_t message)
     ctx->free_slots.start =  ctx->untypeds.end + 1;
     ctx->free_slots.end = (1u << SOFA_PROCESS_CSPACE_SIZE_BITS);
     assert(ctx->free_slots.start < ctx->free_slots.end);
-
+    printf("[kern_task] Free slots range %lu %lu\n", ctx->free_slots.start, ctx->free_slots.end);
     seL4_SetMR(1, (seL4_Word) venv);
     seL4_Reply(message);
 
@@ -546,6 +546,51 @@ void Syscall_Debug(Process* callingProcess, seL4_MessageInfo_t message)
         assert(0);
         break;
     }
+}
+
+void ProcessCapFault(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    seL4_Word foreign_faulter_capfault_cap = seL4_GetMR(seL4_CapFault_Addr);
+    seL4_Word failureType = seL4_GetMR(seL4_CapFault_LookupFailureType);
+    printf("Got cap fault from '%s' %i cap fault is %lu\n",
+            callingProcess->name,
+            callingProcess->pid,
+            foreign_faulter_capfault_cap);
+    if(failureType == seL4_InvalidRoot)
+    {
+        printf("Invalid root\n");
+    }
+    else if(failureType == seL4_MissingCapability)
+    {
+        
+        printf("MissingCapability\n");
+
+        seL4_CPtr slot;
+        int error = vka_cspace_alloc(&_envir.vka, &slot);
+        assert(error == 0);
+        assert(is_slot_empty(&_envir.vka, slot));
+        
+        seL4_CNode_Copy(
+                        callingProcess->ctx->root_cnode,
+                        foreign_faulter_capfault_cap,
+                        seL4_WordBits,
+                        SEL4UTILS_CNODE_SLOT,
+                        slot,
+                        seL4_WordBits,
+                        seL4_AllRights
+                        );
+        
+        //seL4_Reply(seL4_MessageInfo_new(0, 0, 0, 0));
+
+    }
+    else if(failureType == seL4_DepthMismatch)
+    {
+        printf("DepthMismatch\n");
+    }
+    else if(failureType == seL4_GuardMismatch)
+    {
+        printf("GuardMismatch\n");
+    }
 
 }
 
@@ -565,7 +610,7 @@ void *main_continued(void *arg UNUSED)
 
     printf("-> start process init\n");
     ProcessInit(&initProcess);
-    spawnApp(&initProcess, "init");
+    spawnApp(&initProcess, "app");
     printf("Add process with pid %i\n", initProcess.pid);
     Process_Add(&initProcess);
 
@@ -680,8 +725,7 @@ void *main_continued(void *arg UNUSED)
         }
         else if( label == seL4_CapFault)
         {
-            seL4_Word foreign_faulter_capfault_cap = seL4_GetMR(seL4_CapFault_Addr);
-            printf("Got cap fault from %i cap fault is %lu\n", callingProcess->pid, foreign_faulter_capfault_cap);
+            ProcessCapFault(callingProcess, message);            
         }
         else if (label == seL4_VMFault)
         {
