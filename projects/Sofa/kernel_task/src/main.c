@@ -508,6 +508,32 @@ void Syscall_GetService(Process* callingProcess, seL4_MessageInfo_t message)
 
 }
 
+void Syscall_RequestCap(Process* callingProcess, seL4_MessageInfo_t message)
+{
+    printf("[kernel_task] cap transfert test from pid=%i cap #=%li\n", callingProcess->pid, seL4_GetMR(1));
+
+    struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
+                                        0,  // capsUnwrapped
+                                        1,  // extraCaps
+                                        1);
+
+    if(seL4_GetMR(1) == RequestCapID_TimerNotif)
+    {
+        seL4_SetCap(0, _envir.badged_timer_notifications[0].capPtr);
+    }
+    else if (seL4_GetMR(1) == RequestCapID_TimerAck)
+    {
+        seL4_SetCap(0, _envir.timer_irqs[0].handler_path.capPtr);
+    }
+    else
+    {
+        assert(0);
+    }
+
+    seL4_Reply(msgRet);
+
+}
+
 void Syscall_Debug(Process* callingProcess, seL4_MessageInfo_t message)
 {
     DebugCode code = seL4_GetMR(1);
@@ -580,7 +606,7 @@ void ProcessCapFault(Process* callingProcess, seL4_MessageInfo_t message)
                         seL4_AllRights
                         );
         
-        //seL4_Reply(seL4_MessageInfo_new(0, 0, 0, 0));
+        seL4_Reply(seL4_MessageInfo_new(0, 0, 0, 0));
 
     }
     else if(failureType == seL4_DepthMismatch)
@@ -627,7 +653,7 @@ void *main_continued(void *arg UNUSED)
     printf("-> start kernel_task run loop\n");
 
     seL4_CPtr capDest = get_free_slot(&_envir.vka);
-    assert(is_slot_empty(&_envir.vka, capDest));
+    //assert(is_slot_empty(&_envir.vka, capDest));
     set_cap_receive_path(&_envir.vka, capDest);
 
     while (1)
@@ -636,16 +662,6 @@ void *main_continued(void *arg UNUSED)
         seL4_MessageInfo_t message = seL4_Recv(_envir.rootTaskEP.cptr, &sender);
         seL4_Word label = seL4_MessageInfo_get_label(message);
         Process* callingProcess = (Process*) sender;
-/*
-        if(sender & IRQ_EP_BADGE)
-        {   
-            printf("IRQ\n");
-            int error = seL4_IRQHandler_Ack(_envir.timer_irqs[0].handler_path.capPtr);
-            ZF_LOGF_IF(error, "Failed to acknowledge timer IRQ handler");
-
-            tm_update(&_envir.tm);
-        }
-*/        
         if(label == seL4_NoFault)
         {
             seL4_Word rpcID = seL4_GetMR(0);
@@ -694,28 +710,11 @@ void *main_continued(void *arg UNUSED)
             }          
             else if(rpcID == SofaSysCall_RequestCap)
             {
-                printf("[kernel_task] cap transfert test from pid=%i cap #=%li\n", callingProcess->pid, seL4_GetMR(1));
-
-                struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
-                                                    0,  // capsUnwrapped
-                                                    1,  // extraCaps
-                                                    1);
-
-                if(seL4_GetMR(1) == RequestCapID_TimerNotif)
-                {
-                    seL4_SetCap(0, _envir.badged_timer_notifications[0].capPtr);
-                }
-                else if (seL4_GetMR(1) == RequestCapID_TimerAck)
-                {
-                    seL4_SetCap(0, _envir.timer_irqs[0].handler_path.capPtr);
-                }
-                else
-                {
-                    assert(0);
-                }
-
-                seL4_Reply(msgRet);
-
+                Syscall_RequestCap(callingProcess, message);
+            }
+            else if(rpcID == SofaSysCall_CreateCap)
+            {
+                printf("[Kernel task] create cap\n");
             }
             else
             {

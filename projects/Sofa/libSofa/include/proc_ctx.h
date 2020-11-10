@@ -29,7 +29,8 @@ typedef struct
     simple_t simple;
 
     
-    seL4_CPtr root_cnode; /* root cnode of the process */
+    seL4_CPtr root_cnode; /* root cnode of the process Note: eq. to cspace_root in env_t*/
+    seL4_CPtr mainEndpoint;
     seL4_CPtr page_directory; /* page directory of the process */
     seL4_CPtr tcb; /* tcb of the process */
 

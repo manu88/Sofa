@@ -17,7 +17,8 @@ typedef enum
     SofaSysCall_GetService,
 
     SofaSysCall_Debug,
-    SofaSysCall_RequestCap
+    SofaSysCall_RequestCap,
+    SofaSysCall_CreateCap
 
 } SofaSysCall;
 

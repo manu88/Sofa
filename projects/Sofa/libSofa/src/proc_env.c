@@ -108,6 +108,7 @@ int ProcessInit(seL4_CPtr endpoint)
     _mainThreadTLS.endpoint = endpoint;
 
     _ctx = sendInit();
+    _ctx->mainEndpoint = endpoint;
     Thread_init_tls(&_mainThreadTLS);
 
     sel4muslcsys_register_stdio_write_fn(write_buf);
@@ -116,7 +117,7 @@ int ProcessInit(seL4_CPtr endpoint)
     init_allocator(_ctx);
     init_simple(_ctx);
 
-    printf("Free slots range %lu %lu\n", _ctx->free_slots.start, _ctx->free_slots.end);
+//    printf("Free slots range %lu %lu\n", _ctx->free_slots.start, _ctx->free_slots.end);
 
     return 0;
 }
