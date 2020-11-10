@@ -1,0 +1,134 @@
+/*
+ * Copyright 2017, Data61
+ * Commonwealth Scientific and Industrial Research Organisation (CSIRO)
+ * ABN 41 687 119 230.
+ *
+ * This software may be distributed and modified according to the terms of
+ * the BSD 2-Clause license. Note that NO WARRANTY is provided.
+ * See "LICENSE_BSD2.txt" for details.
+ *
+ * @TAG(DATA61_BSD)
+ */
+
+/* Include Kconfig variables. */
+#include <autoconf.h>
+
+#include <sel4debug/register_dump.h>
+#include <vka/capops.h>
+
+#include "test.h"
+#include "timer.h"
+#include "testtypes.h"
+
+/* Basic test type. Each test is launched as its own process. */
+/* copy untyped caps into a processes cspace, return the cap range they can be found in */
+seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int num_untypeds,
+                                                driver_env_t env)
+{
+    seL4_SlotRegion range = {0};
+
+    for (int i = 0; i < num_untypeds; i++) {
+        seL4_CPtr slot = sel4utils_copy_cap_to_process(process, &env->vka, untypeds[i].cptr);
+
+        /* set up the cap range */
+        if (i == 0) {
+            range.start = slot;
+        }
+        range.end = slot;
+    }
+    assert((range.end - range.start) + 1 == num_untypeds);
+    return range;
+}
+
+
+void basic_set_up(uintptr_t e)
+{
+    int error;
+    driver_env_t env = (driver_env_t)e;
+
+    sel4utils_process_config_t config = process_config_default_simple(&env->simple, TESTS_APP, env->init->priority);
+    config = process_config_mcp(config, seL4_MaxPrio);
+    config = process_config_auth(config, simple_get_tcb(&env->simple));
+    config = process_config_create_cnode(config, TEST_PROCESS_CSPACE_SIZE_BITS);
+    error = sel4utils_configure_process_custom(&(env->test_process), &env->vka, &env->vspace, config);
+    assert(error == 0);
+
+    /* set up caps about the process */
+    env->init->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
+    env->init->stack = env->test_process.thread.stack_top - CONFIG_SEL4UTILS_STACK_SIZE;
+    env->init->page_directory = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, env->test_process.pd.cptr);
+    env->init->root_cnode = SEL4UTILS_CNODE_SLOT;
+    env->init->tcb = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, env->test_process.thread.tcb.cptr);
+    if (config_set(CONFIG_HAVE_TIMER)) {
+        env->init->timer_ntfn = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, env->timer_notify_test.cptr);
+    }
+
+    env->init->domain = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, simple_get_init_cap(&env->simple,
+                                                                                                           seL4_CapDomain));
+    env->init->asid_pool = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, simple_get_init_cap(&env->simple,
+                                                                                                              seL4_CapInitThreadASIDPool));
+    env->init->asid_ctrl = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, simple_get_init_cap(&env->simple,
+                                                                                                              seL4_CapASIDControl));
+#ifdef CONFIG_IOMMU
+    env->init->io_space = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, simple_get_init_cap(&env->simple,
+                                                                                                             seL4_CapIOSpace));
+#endif /* CONFIG_IOMMU */
+#ifdef CONFIG_TK1_SMMU
+    env->init->io_space_caps = arch_copy_iospace_caps_to_process(&(env->test_process), &env);
+#endif
+    env->init->cores = simple_get_core_count(&env->simple);
+    /* copy the sched ctrl caps to the remote process */
+    if (config_set(CONFIG_KERNEL_MCS)) {
+        seL4_CPtr sched_ctrl = simple_get_sched_ctrl(&env->simple, 0);
+        env->init->sched_ctrl = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, sched_ctrl);
+        for (int i = 1; i < env->init->cores; i++) {
+            sched_ctrl = simple_get_sched_ctrl(&env->simple, i);
+            sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, sched_ctrl);
+        }
+    }
+    /* setup data about untypeds */
+    env->init->untypeds = copy_untypeds_to_process(&(env->test_process), env->untypeds, env->num_untypeds, env);
+    /* copy the fault endpoint - we wait on the endpoint for a message
+     * or a fault to see when the test finishes */
+    env->endpoint = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, env->test_process.fault_endpoint.cptr);
+
+    /* copy the device frame, if any */
+    if (env->init->device_frame_cap) {
+        env->init->device_frame_cap = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, env->device_obj.cptr);
+    }
+
+    /* map the cap into remote vspace */
+    env->remote_vaddr = vspace_share_mem(&env->vspace, &(env->test_process).vspace, env->init, 1, PAGE_BITS_4K,
+                                         seL4_AllRights, 1);
+    assert(env->remote_vaddr != 0);
+
+    /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
+     * AS THE SLOTS WILL BE CONSIDERED FREE AND OVERRIDDEN BY THE TEST PROCESS. */
+    /* set up free slot range */
+    env->init->cspace_size_bits = TEST_PROCESS_CSPACE_SIZE_BITS;
+    if (env->init->device_frame_cap) {
+        env->init->free_slots.start = env->init->device_frame_cap + 1;
+    } else {
+        env->init->free_slots.start = env->endpoint + 1;
+    }
+    env->init->free_slots.end = (1u << TEST_PROCESS_CSPACE_SIZE_BITS);
+    assert(env->init->free_slots.start < env->init->free_slots.end);
+}
+
+void basic_tear_down(uintptr_t e)
+{
+    driver_env_t env = (driver_env_t)e;
+    /* unmap the env->init data frame */
+    vspace_unmap_pages(&(env->test_process).vspace, env->remote_vaddr, 1, PAGE_BITS_4K, NULL);
+
+    /* reset all the untypeds for the next test */
+    for (int i = 0; i < env->num_untypeds; i++) {
+        cspacepath_t path;
+        vka_cspace_make_path(&env->vka, env->untypeds[i].cptr, &path);
+        vka_cnode_revoke(&path);
+    }
+
+    /* destroy the process */
+    sel4utils_destroy_process(&(env->test_process), &env->vka);
+}
+

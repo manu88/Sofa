@@ -17,6 +17,11 @@ static int thread_run(seL4_CPtr ep)
 
 int main(int argc, char *argv[])
 {
+    while (1)
+    {
+        /* code */
+    }
+    
     seL4_CPtr endpoint = (seL4_CPtr) atoi(argv[1]);
 
     int err = ProcessInit(endpoint);
