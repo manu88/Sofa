@@ -20,6 +20,9 @@
 #include "timer.h"
 #include "testtypes.h"
 
+#define TIMER_ID 0
+
+
 /* Basic test type. Each test is launched as its own process. */
 /* copy untyped caps into a processes cspace, return the cap range they can be found in */
 seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int num_untypeds,
@@ -113,6 +116,42 @@ void basic_set_up(uintptr_t e)
     }
     env->init->free_slots.end = (1u << TEST_PROCESS_CSPACE_SIZE_BITS);
     assert(env->init->free_slots.start < env->init->free_slots.end);
+}
+
+
+void basic_run_test(const char *name, uintptr_t e)
+{
+    int error;
+    driver_env_t env = (driver_env_t)e;
+
+    /* copy test name */
+    strncpy(env->init->name, name, TEST_NAME_MAX);
+    /* ensure string is null terminated */
+    env->init->name[TEST_NAME_MAX - 1] = '\0';
+#ifdef CONFIG_DEBUG_BUILD
+    seL4_DebugNameThread(env->test_process.thread.tcb.cptr, env->init->name);
+#endif
+
+    /* set up args for the test process */
+    seL4_Word argc = 2;
+    char string_args[argc][WORD_STRING_SIZE];
+    char *argv[argc];
+    sel4utils_create_word_args(string_args, argv, argc, env->endpoint, env->remote_vaddr);
+
+    /* spawn the process */
+    error = sel4utils_spawn_process_v(&(env->test_process), &env->vka, &env->vspace,
+                                      argc, argv, 1);
+    ZF_LOGF_IF(error != 0, "Failed to start test process!");
+
+    if (config_set(CONFIG_HAVE_TIMER)) {
+        error = tm_alloc_id_at(&env->tm, TIMER_ID);
+        ZF_LOGF_IF(error != 0, "Failed to alloc time id %d", TIMER_ID);
+    }
+
+    /* wait on it to finish or fault, report result */
+   // int result = sel4test_driver_wait(env, test);
+
+   // test_assert(result == SUCCESS);
 }
 
 void basic_tear_down(uintptr_t e)

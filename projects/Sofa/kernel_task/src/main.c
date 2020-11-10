@@ -270,10 +270,14 @@ void *main_continued(void *arg UNUSED)
 
 
     basic_set_up(&env);
+    basic_run_test("app", &env);
 
     seL4_DebugDumpScheduler();
     while (1)
-    {
+    {   
+        seL4_Word badge = 0;
+        seL4_MessageInfo_t info = seL4_Recv(env.test_process.fault_endpoint.cptr, &badge);
+        printf("Received %lu from %lu\n", seL4_GetMR(0), badge);
         /* code */
     }
     
