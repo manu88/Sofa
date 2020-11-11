@@ -55,6 +55,7 @@ struct env {
 
     int priority;
     int cspace_size_bits;
+    int pid;
 };
 typedef struct env *env_t;
 

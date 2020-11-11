@@ -144,6 +144,7 @@ int RuntimeInit(int argc, char *argv[])
 
 
 /* configure env */
+    env.pid = init_data->pid;
     env.cspace_root = init_data->root_cnode;
     env.page_directory = init_data->page_directory;
     env.endpoint = endpoint;

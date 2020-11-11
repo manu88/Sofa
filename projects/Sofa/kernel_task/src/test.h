@@ -72,20 +72,10 @@ struct driver_env {
     /* timer callback information */
     timer_callback_info_t timer_cbs[MAX_TIMER_IRQS];
 
-    /* init data frame vaddr */
-    test_init_data_t *init;
-    /* extra cap to the init data frame for mapping into the remote vspace */
-    seL4_CPtr init_frame_cap_copy;
-
-// PER PROCESS
-    void *remote_vaddr; // the shared mem address for the process to retreive its init stuff
-    //sel4utils_process_t test_process;
-    seL4_CPtr process_endpoint;
-// END OF PER PROCESS
 
     vka_object_t root_task_endpoint;
 
-
+    int index_in_untypeds;
     int num_untypeds;
     vka_object_t *untypeds;
 

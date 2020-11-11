@@ -62,6 +62,7 @@ typedef struct {
     /* size of untyped that each untyped cap corresponds to
      * (size of the cap at untypeds.start is untyped_size_bits_lits[0]) */
     uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
+    
     /* name of the test to run */
     char name[TEST_NAME_MAX];
     /* priority the test process is running at */
@@ -84,6 +85,8 @@ typedef struct {
 
     /* number of available cores */
     seL4_Word cores;
+
+    int pid;
 
 } test_init_data_t;
 

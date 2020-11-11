@@ -199,6 +199,8 @@ static void init_timer(void)
         tm_init(&env.tm, &env.ltimer, &env.ops, 1);
     }
 }
+static Process app1;
+static Process app2;
 
 static void process_messages()
 {
@@ -216,7 +218,9 @@ static void process_messages()
             }
             else 
             {
-                printf("Received %lu from %lu\n", seL4_GetMR(0), badge);
+                Process* process = (Process*) badge; 
+                printf("Received %lu from '%s' %i\n", seL4_GetMR(0), process->init->name, process->init->pid);
+                seL4_DebugDumpScheduler();
             }
         }
         else 
@@ -227,6 +231,7 @@ static void process_messages()
     }
 
 }
+
 
 void *main_continued(void *arg UNUSED)
 {
@@ -270,20 +275,6 @@ void *main_continued(void *arg UNUSED)
     env.untypeds = untypeds;
     printf("Allocated %i untypeds (%i) \n", env.num_untypeds, simple_get_untyped_count(&env.simple));
 
-    /* create a frame that will act as the init data, we can then map that
-     * in to target processes */
-    env.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-    assert(env.init != NULL);
-
-    /* copy the untyped size bits list across to the init frame */
-    memcpy(env.init->untyped_size_bits_list, untyped_size_bits_list, sizeof(uint8_t) * env.num_untypeds);
-
-
-    /* setup init data that won't change test-to-test */
-    env.init->priority = seL4_MaxPrio - 1;
-    if (plat_init) {
-        plat_init(&env);
-    }
 
     /* Allocate a reply object for the RT kernel. */
     if (config_set(CONFIG_KERNEL_MCS)) {
@@ -291,9 +282,40 @@ void *main_continued(void *arg UNUSED)
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
-    Process app;
-    basic_set_up(&env, &app);
-    basic_run_test("app", &env, &app);
+    if (plat_init) 
+    {
+        printf("plat_init is set \n");
+        plat_init(&env);
+    }
+    else
+    {
+        printf("plat_init is NOT set \n");
+    }
+
+    env.index_in_untypeds = 0;
+    {
+        app1.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+        assert(app1.init != NULL);
+        app1.init->pid = 1;
+        app1.init->priority = seL4_MaxPrio - 1;
+        
+
+        basic_set_up(&env, untyped_size_bits_list, &app1, "app", &app1);
+        basic_run_test("app", &env, &app1);
+    }
+    env.index_in_untypeds += 8;
+
+    {
+        app2.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+        assert(app2.init != NULL);
+        app2.init->pid = 2;
+        app2.init->priority = seL4_MaxPrio - 1;
+        
+
+        basic_set_up(&env, untyped_size_bits_list, &app2, "app", &app2);
+        basic_run_test("app", &env, &app2);
+    }
+    env.index_in_untypeds += 8;
 
     seL4_DebugDumpScheduler();
 
@@ -419,12 +441,12 @@ int main(void)
 {
     /* Set exit handler */
     sel4runtime_set_exit(sel4test_exit);
-
+    memset(&env, 0, sizeof(struct driver_env));
     int error;
     seL4_BootInfo *info = platsupport_get_bootinfo();
 
 #ifdef CONFIG_DEBUG_BUILD
-    seL4_DebugNameThread(seL4_CapInitThreadTCB, "sel4test-driver");
+    seL4_DebugNameThread(seL4_CapInitThreadTCB, "kernel_task");
 #endif
 
     /* initialise libsel4simple, which abstracts away which kernel version
