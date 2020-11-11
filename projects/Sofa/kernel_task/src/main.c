@@ -52,7 +52,7 @@
 #include "testtypes.h"
 
 #include <sel4platsupport/io.h>
-
+#include <Sofa.h>
 #define TIMER_BADGE 123
 
 /* ammount of untyped memory to reserve for the driver (32mb) */
@@ -218,9 +218,20 @@ static void process_messages()
             }
             else 
             {
-                Process* process = (Process*) badge; 
-                printf("Received %lu from '%s' %i\n", seL4_GetMR(0), process->init->name, process->init->pid);
-                seL4_DebugDumpScheduler();
+                Process* process = (Process*) badge;
+
+                switch (seL4_GetMR(0))
+                {
+                case SyscallID_Exit:
+                    printf("Receveived exit code from '%s' %i\n", process->init->name, process->init->pid);
+                    break;
+                
+                default:
+                    printf("Received %lu from '%s' %i\n", seL4_GetMR(0), process->init->name, process->init->pid);
+                    seL4_DebugDumpScheduler();
+
+                    break;
+                }
             }
         }
         else 

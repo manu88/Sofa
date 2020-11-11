@@ -2,7 +2,11 @@
 #include "helpers.h"
 #include <allocman/vka.h>
 #include <allocman/bootstrap.h>
+#include <Sofa.h>
 
+/* dummy global for libsel4muslcsys */
+char _cpio_archive[1];
+char _cpio_archive_end[1];
 
 /* global static memory for init */
 static sel4utils_alloc_data_t alloc_data;
@@ -13,10 +17,6 @@ static sel4utils_alloc_data_t alloc_data;
 /* allocator static pool */
 #define ALLOCATOR_STATIC_POOL_SIZE ((1 << seL4_PageBits) * 20)
 static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
-
-
-
-
 
 static seL4_CPtr endpoint;
 static struct env env;
@@ -93,14 +93,6 @@ void init_allocator(env_t env, test_init_data_t *init_data)
                                      env->page_directory);
 }
 
-
-
-
-
-
-
-
-
 static uint8_t cnode_size_bits(void *data)
 {
     test_init_data_t *init = (test_init_data_t *) data;
@@ -130,6 +122,15 @@ void init_simple(env_t env, test_init_data_t *init_data)
     //arch_init_simple(env, &env->simple);
 }
 
+static void process_exit(int code)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, SyscallID_Exit);
+    seL4_SetMR(1, code);
+    seL4_Send(getProcessEndpoint(), info);
+
+}
+
 int RuntimeInit(int argc, char *argv[])
 {
     test_init_data_t *init_data;
@@ -142,6 +143,7 @@ int RuntimeInit(int argc, char *argv[])
 /* read in init data */
     init_data = (void *) atol(argv[1]);
 
+    sel4runtime_set_exit(process_exit);
 
 /* configure env */
     env.pid = init_data->pid;

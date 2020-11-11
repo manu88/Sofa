@@ -31,10 +31,5 @@ int main(int argc, char *argv[])
     seL4_SetMR(0, 42);
     seL4_Send(getProcessEndpoint(), info);
 
-    while (1)
-    {
-        /* code */
-    }
-
 }
 
