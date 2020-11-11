@@ -293,29 +293,30 @@ void *main_continued(void *arg UNUSED)
     }
 
     env.index_in_untypeds = 0;
-    {
-        app1.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-        assert(app1.init != NULL);
-        app1.init->pid = 1;
-        app1.init->priority = seL4_MaxPrio - 1;
-        
 
-        basic_set_up(&env, untyped_size_bits_list, &app1, "app", &app1);
-        basic_run_test("app", &env, &app1);
-    }
-    env.index_in_untypeds += 8;
+    app1.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    assert(app1.init != NULL);
+    app1.init->pid = 1;
+    app1.init->priority = seL4_MaxPrio - 1;
+    
 
-    {
-        app2.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-        assert(app2.init != NULL);
-        app2.init->pid = 2;
-        app2.init->priority = seL4_MaxPrio - 1;
-        
+    int consumed_untypeds = basic_set_up(&env, untyped_size_bits_list, &app1, "app",(seL4_Word) &app1);
+    basic_run_test("app", &env, &app1);
 
-        basic_set_up(&env, untyped_size_bits_list, &app2, "app", &app2);
-        basic_run_test("app", &env, &app2);
-    }
-    env.index_in_untypeds += 8;
+    env.index_in_untypeds += consumed_untypeds;
+
+
+    app2.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    assert(app2.init != NULL);
+    app2.init->pid = 2;
+    app2.init->priority = seL4_MaxPrio - 1;
+    
+
+    consumed_untypeds = basic_set_up(&env, untyped_size_bits_list, &app2, "app", (seL4_Word)&app2);
+    basic_run_test("app", &env, &app2);
+
+    env.index_in_untypeds += consumed_untypeds;
+    printf("untypeds Index is at %i\n", env.index_in_untypeds);
 
     seL4_DebugDumpScheduler();
 

@@ -44,7 +44,7 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
 }
 
 
-void basic_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
+int basic_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
 {
     int error;
 
@@ -94,7 +94,7 @@ void basic_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* pr
     }
 
     /* setup data about untypeds */
-    int num_untyped_per_process = 8;// env->num_untypeds;
+    int num_untyped_per_process = UNTYPEDS_PER_PROCESS_BASE;// env->num_untypeds;
 
     process->init->untypeds = copy_untypeds_to_process(&process->native,
                                                        &env->untypeds[env->index_in_untypeds],// + env->index_untypeds,
@@ -133,6 +133,8 @@ void basic_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* pr
     }
     process->init->free_slots.end = (1u << TEST_PROCESS_CSPACE_SIZE_BITS);
     assert(process->init->free_slots.start < process->init->free_slots.end);
+
+    return num_untyped_per_process;
 }
 
 
