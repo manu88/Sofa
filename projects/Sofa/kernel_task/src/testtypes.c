@@ -48,10 +48,14 @@ void basic_set_up(driver_env_t env)
 {
     int error;
 
+    //root_task_endpoint
+
+
     sel4utils_process_config_t config = process_config_default_simple(&env->simple, TESTS_APP, env->init->priority);
     config = process_config_mcp(config, seL4_MaxPrio);
     config = process_config_auth(config, simple_get_tcb(&env->simple));
     config = process_config_create_cnode(config, TEST_PROCESS_CSPACE_SIZE_BITS);
+    config = process_config_fault_endpoint(config, env->root_task_endpoint);
     error = sel4utils_configure_process_custom(&(env->test_process), &env->vka, &env->vspace, config);
     assert(error == 0);
 
@@ -96,8 +100,8 @@ void basic_set_up(driver_env_t env)
 
     // create a minted enpoint for the process
     cspacepath_t path;
-    vka_cspace_make_path(&env->vka, env->test_process.fault_endpoint.cptr, &path);
-    env->endpoint = sel4utils_mint_cap_to_process(&env->test_process,path, seL4_AllRights, 1234 );
+    vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr/* test_process.fault_endpoint.cptr*/, &path);
+    env->process_endpoint = sel4utils_mint_cap_to_process(&env->test_process,path, seL4_AllRights, 1234 );
 
 
     /* copy the device frame, if any */
@@ -117,7 +121,7 @@ void basic_set_up(driver_env_t env)
     if (env->init->device_frame_cap) {
         env->init->free_slots.start = env->init->device_frame_cap + 1;
     } else {
-        env->init->free_slots.start = env->endpoint + 1;
+        env->init->free_slots.start = env->process_endpoint + 1;
     }
     env->init->free_slots.end = (1u << TEST_PROCESS_CSPACE_SIZE_BITS);
     assert(env->init->free_slots.start < env->init->free_slots.end);
@@ -141,7 +145,7 @@ void basic_run_test(const char *name, driver_env_t env)
     char string_args[argc][WORD_STRING_SIZE];
     char *argv[argc];
 
-    sel4utils_create_word_args(string_args, argv, argc, env->endpoint, env->remote_vaddr);
+    sel4utils_create_word_args(string_args, argv, argc, env->process_endpoint, env->remote_vaddr);
 
     /* spawn the process */
     error = sel4utils_spawn_process_v(&(env->test_process), &env->vka, &env->vspace,

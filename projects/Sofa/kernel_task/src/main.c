@@ -209,6 +209,34 @@ void sel4test_start_suite(const char *name)
     }
 }
 
+static void process_messages()
+{
+    while (1)
+    {   
+        seL4_Word badge = 0;
+        seL4_MessageInfo_t info = seL4_Recv(env.root_task_endpoint.cptr, &badge);
+        seL4_Word label = seL4_MessageInfo_get_label(info);
+        if(label == seL4_NoFault)
+        {
+            if(badge == TIMER_BADGE)
+            {
+                //printf("ACK\n");
+                seL4_IRQHandler_Ack(env.timer_irqs[0].handler_path.capPtr);
+            }
+            else 
+            {
+                printf("Received %lu from %lu\n", seL4_GetMR(0), badge);
+                //seL4_DebugDumpScheduler();
+            }
+        }
+        else 
+        {
+            printf("Received message with label %lu\n", label);
+        }
+        
+    }
+
+}
 
 void *main_continued(void *arg UNUSED)
 {
@@ -220,6 +248,10 @@ void *main_continued(void *arg UNUSED)
     printf("\n");
 
     int error;
+
+    error = vka_alloc_endpoint(&env.vka, &env.root_task_endpoint);
+    assert(error == 0);
+
 
     /* allocate a piece of device untyped memory for the frame tests,
      * note that spike doesn't have any device untypes so the tests that require device untypes are turned off */
@@ -274,30 +306,8 @@ void *main_continued(void *arg UNUSED)
     basic_run_test("app", &env);
 
     seL4_DebugDumpScheduler();
-    while (1)
-    {   
-        seL4_Word badge = 0;
-        seL4_MessageInfo_t info = seL4_Recv(env.test_process.fault_endpoint.cptr, &badge);
-        seL4_Word label = seL4_MessageInfo_get_label(info);
-        if(label == seL4_NoFault)
-        {
-            if(badge == TIMER_BADGE)
-            {
-                seL4_IRQHandler_Ack(env.timer_irqs[0].handler_path.capPtr);
-            }
-            else 
-            {
-                printf("Received %lu from %lu\n", seL4_GetMR(0), badge);
-                //seL4_DebugDumpScheduler();
-            }
-        }
-        else 
-        {
-            printf("Received message with label %lu\n", label);
-        }
-        
-    }
-    
+
+    process_messages();    
 
     return NULL;
 }

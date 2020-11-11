@@ -76,9 +76,14 @@ struct driver_env {
     /* extra cap to the init data frame for mapping into the remote vspace */
     seL4_CPtr init_frame_cap_copy;
 
+// PER PROCESS
     void *remote_vaddr;
     sel4utils_process_t test_process;
-    seL4_CPtr endpoint;
+    seL4_CPtr process_endpoint;
+// END OF PER PROCESS
+
+    vka_object_t root_task_endpoint;
+
 
     int num_untypeds;
     vka_object_t *untypeds;
