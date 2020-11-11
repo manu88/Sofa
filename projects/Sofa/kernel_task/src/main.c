@@ -49,7 +49,6 @@
 
 #include <vspace/vspace.h>
 #include "test.h"
-#include "timer.h"
 #include "testtypes.h"
 
 #include <sel4platsupport/io.h>

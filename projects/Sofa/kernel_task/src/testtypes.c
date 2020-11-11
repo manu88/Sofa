@@ -17,7 +17,6 @@
 #include <vka/capops.h>
 
 #include "test.h"
-#include "timer.h"
 #include "testtypes.h"
 #include "utils.h"
 
@@ -45,10 +44,9 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
 }
 
 
-void basic_set_up(uintptr_t e)
+void basic_set_up(driver_env_t env)
 {
     int error;
-    driver_env_t env = (driver_env_t)e;
 
     sel4utils_process_config_t config = process_config_default_simple(&env->simple, TESTS_APP, env->init->priority);
     config = process_config_mcp(config, seL4_MaxPrio);
@@ -126,10 +124,9 @@ void basic_set_up(uintptr_t e)
 }
 
 
-void basic_run_test(const char *name, uintptr_t e)
+void basic_run_test(const char *name, driver_env_t env)
 {
     int error;
-    driver_env_t env = (driver_env_t)e;
 
     /* copy test name */
     strncpy(env->init->name, name, TEST_NAME_MAX);
@@ -155,16 +152,10 @@ void basic_run_test(const char *name, uintptr_t e)
         error = tm_alloc_id_at(&env->tm, TIMER_ID);
         ZF_LOGF_IF(error != 0, "Failed to alloc time id %d", TIMER_ID);
     }
-
-    /* wait on it to finish or fault, report result */
-   // int result = sel4test_driver_wait(env, test);
-
-   // test_assert(result == SUCCESS);
 }
 
-void basic_tear_down(uintptr_t e)
+void basic_tear_down(driver_env_t env)
 {
-    driver_env_t env = (driver_env_t)e;
     /* unmap the env->init data frame */
     vspace_unmap_pages(&(env->test_process).vspace, env->remote_vaddr, 1, PAGE_BITS_4K, NULL);
 
