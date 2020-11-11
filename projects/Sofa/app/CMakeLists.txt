@@ -5,7 +5,7 @@ project(app C)
 
 
 
-add_executable(app src/main.c)
+add_executable(app src/main.c src/runtime.c src/helpers.c)
 
 target_link_libraries(app sel4 sel4runtime muslc sel4muslcsys sofa)
 

@@ -54,6 +54,8 @@
 
 #include <sel4platsupport/io.h>
 
+#define TIMER_BADGE 123
+
 /* ammount of untyped memory to reserve for the driver (32mb) */
 #define DRIVER_UNTYPED_MEMORY (1 << 25)
 /* Number of untypeds to try and use to allocate the driver memory.
@@ -277,8 +279,24 @@ void *main_continued(void *arg UNUSED)
     {   
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env.test_process.fault_endpoint.cptr, &badge);
-        printf("Received %lu from %lu\n", seL4_GetMR(0), badge);
-        /* code */
+        seL4_Word label = seL4_MessageInfo_get_label(info);
+        if(label == seL4_NoFault)
+        {
+            if(badge == TIMER_BADGE)
+            {
+                seL4_IRQHandler_Ack(env.timer_irqs[0].handler_path.capPtr);
+            }
+            else 
+            {
+                printf("Received %lu from %lu\n", seL4_GetMR(0), badge);
+                //seL4_DebugDumpScheduler();
+            }
+        }
+        else 
+        {
+            printf("Received message with label %lu\n", label);
+        }
+        
     }
     
 
@@ -370,8 +388,10 @@ static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, i
     ZF_LOGF_IF(error, "Failed to allocate path for the badged notification");
     cspacepath_t root_notification_path = {0};
     vka_cspace_make_path(&env.vka, env.timer_notification.cptr, &root_notification_path);
+    seL4_Word badge = TIMER_BADGE; // BIT(num_timer_irqs)
+    printf("Mint timer with value %lu\n", BIT(num_timer_irqs));
     error = vka_cnode_mint(&env.badged_timer_notifications[num_timer_irqs], &root_notification_path,
-                           seL4_AllRights, BIT(num_timer_irqs));
+                           seL4_AllRights, badge);
     ZF_LOGF_IF(error, "Failed to mint notification for timer");
 
     /* Pair the notification and the handler */

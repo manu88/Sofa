@@ -19,6 +19,7 @@
 #include "test.h"
 #include "timer.h"
 #include "testtypes.h"
+#include "utils.h"
 
 #define TIMER_ID 0
 
@@ -93,7 +94,13 @@ void basic_set_up(uintptr_t e)
     env->init->untypeds = copy_untypeds_to_process(&(env->test_process), env->untypeds, env->num_untypeds, env);
     /* copy the fault endpoint - we wait on the endpoint for a message
      * or a fault to see when the test finishes */
-    env->endpoint = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, env->test_process.fault_endpoint.cptr);
+    //env->endpoint = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, env->test_process.fault_endpoint.cptr);
+
+    // create a minted enpoint for the process
+    cspacepath_t path;
+    vka_cspace_make_path(&env->vka, env->test_process.fault_endpoint.cptr, &path);
+    env->endpoint = sel4utils_mint_cap_to_process(&env->test_process,path, seL4_AllRights, 1234 );
+
 
     /* copy the device frame, if any */
     if (env->init->device_frame_cap) {
@@ -136,6 +143,7 @@ void basic_run_test(const char *name, uintptr_t e)
     seL4_Word argc = 2;
     char string_args[argc][WORD_STRING_SIZE];
     char *argv[argc];
+
     sel4utils_create_word_args(string_args, argv, argc, env->endpoint, env->remote_vaddr);
 
     /* spawn the process */

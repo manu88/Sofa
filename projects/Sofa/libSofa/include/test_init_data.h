@@ -11,15 +11,13 @@
  */
 #pragma once
 
-#include <utils/compile_time.h>
-#include <utils/page.h>
 #include <stdint.h>
 
 #include <sel4/sel4.h>
+#include <constants.h>
 
 #define TEST_NAME_MAX (64 - 4 * sizeof(seL4_Word))
 
-#define TEST_PROCESS_CSPACE_SIZE_BITS 17
 /* Init data shared between sel4test-driver and the sel4test-tests app -- the
  * sel4test-driver creates a shmem page to be shared between the driver and the
  * test child processes, and uses this struct to pass the data in the shmem
