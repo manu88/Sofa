@@ -200,15 +200,6 @@ static void init_timer(void)
     }
 }
 
-void sel4test_start_suite(const char *name)
-{
-    if (config_set(CONFIG_PRINT_XML)) {
-        printf("<testsuite>\n");
-    } else {
-        printf("Starting test suite %s\n", name);
-    }
-}
-
 static void process_messages()
 {
     while (1)
@@ -231,7 +222,7 @@ static void process_messages()
         }
         else 
         {
-            printf("Received message with label %lu\n", label);
+            printf("Received message with label %lu from %lu\n", label, badge);
         }
         
     }
