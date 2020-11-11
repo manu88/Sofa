@@ -217,7 +217,6 @@ static void process_messages()
             else 
             {
                 printf("Received %lu from %lu\n", seL4_GetMR(0), badge);
-                //seL4_DebugDumpScheduler();
             }
         }
         else 
@@ -292,9 +291,9 @@ void *main_continued(void *arg UNUSED)
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
-
-    basic_set_up(&env);
-    basic_run_test("app", &env);
+    Process app;
+    basic_set_up(&env, &app);
+    basic_run_test("app", &env, &app);
 
     seL4_DebugDumpScheduler();
 

@@ -18,12 +18,13 @@
 #include <platsupport/time_manager.h>
 #include <vka/vka.h>
 #include <vka/object.h>
-#include <sel4utils/process.h>
+
 #include <simple/simple.h>
 #include <vspace/vspace.h>
 
 /* This file is shared with seltest-tests. */
 #include "test_init_data.h"
+#include "Process.h"
 
 #define TESTS_APP "app"
 
@@ -77,8 +78,8 @@ struct driver_env {
     seL4_CPtr init_frame_cap_copy;
 
 // PER PROCESS
-    void *remote_vaddr;
-    sel4utils_process_t test_process;
+    void *remote_vaddr; // the shared mem address for the process to retreive its init stuff
+    //sel4utils_process_t test_process;
     seL4_CPtr process_endpoint;
 // END OF PER PROCESS
 
