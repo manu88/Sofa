@@ -309,6 +309,7 @@ void *main_continued(void *arg UNUSED)
 
     env.index_in_untypeds = 0;
 
+    ProcessInit(&app1);
     app1.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(app1.init != NULL);
     app1.init->pid = 1;
@@ -316,12 +317,15 @@ void *main_continued(void *arg UNUSED)
     
 
     int consumed_untypeds = basic_set_up(&env, untyped_size_bits_list, &app1, "app",(seL4_Word) &app1);
+    app1.untyped_index_start = env.index_in_untypeds;
+    app1.untyped_index_size = consumed_untypeds;
     basic_run_test("app", &env, &app1);
 
     env.index_in_untypeds += consumed_untypeds;
     printf("1. Index is at %i\n", env.index_in_untypeds);
+    printf("App1 untyped start at  %i len %i\n", app1.untyped_index_start, app1.untyped_index_size);
 
-
+    ProcessInit(&app2);
     app2.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(app2.init != NULL);
     app2.init->pid = 2;
@@ -329,7 +333,10 @@ void *main_continued(void *arg UNUSED)
     
 
     consumed_untypeds = basic_set_up(&env, untyped_size_bits_list, &app2, "app", (seL4_Word)&app2);
+    app2.untyped_index_start = env.index_in_untypeds;
+    app2.untyped_index_size = consumed_untypeds;
     basic_run_test("app2", &env, &app2);
+    printf("App2 untyped start at  %i len %i\n", app2.untyped_index_start, app2.untyped_index_size);
 
     env.index_in_untypeds += consumed_untypeds;
     printf("2. Index is at %i\n", env.index_in_untypeds);

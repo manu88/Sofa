@@ -192,7 +192,8 @@ void basic_tear_down(driver_env_t env, Process* process)
     vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, NULL);
 
     /* reset all the untypeds for the next test */
-    for (int i = 0; i < env->num_untypeds; i++) {
+    for (int i = process->untyped_index_start; i < process->untyped_index_size; i++) 
+    {
         cspacepath_t path;
         vka_cspace_make_path(&env->vka, env->untypeds[i].cptr, &path);
         vka_cnode_revoke(&path);

@@ -10,4 +10,13 @@ typedef struct
     void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
 
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
+
+    int untyped_index_start;
+    int untyped_index_size;
 } Process;
+
+
+static inline void ProcessInit(Process* p)
+{
+    memset(p, 0, sizeof(Process));
+}
