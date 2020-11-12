@@ -2,6 +2,7 @@
 #include "helpers.h"
 #include <allocman/vka.h>
 #include <allocman/bootstrap.h>
+#include <sel4runtime.h>
 #include <Sofa.h>
 
 /* dummy global for libsel4muslcsys */

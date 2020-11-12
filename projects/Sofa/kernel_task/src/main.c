@@ -28,7 +28,7 @@
 #include <cpio/cpio.h>
 
 #include <platsupport/local_time_manager.h>
-
+#include <sel4runtime.h>
 #include <sel4platsupport/timer.h>
 
 #include <sel4debug/register_dump.h>
@@ -213,8 +213,8 @@ static void process_messages()
         {
             if(badge == TIMER_BADGE)
             {
-                //printf("ACK\n");
                 seL4_IRQHandler_Ack(env.timer_irqs[0].handler_path.capPtr);
+                tm_update(&env.tm);
             }
             else 
             {
@@ -224,6 +224,8 @@ static void process_messages()
                 {
                 case SyscallID_Exit:
                     printf("Receveived exit code from '%s' %i\n", process->init->name, process->init->pid);
+                    basic_tear_down(&env, process);
+                    seL4_DebugDumpScheduler();
                     break;
                 
                 default:
@@ -248,11 +250,8 @@ void *main_continued(void *arg UNUSED)
 {
 
     /* Print welcome banner. */
-    printf("\n");
-    printf("seL4 Test\n");
-    printf("=========\n");
-    printf("\n");
-
+    printf("\n------Sofa------\n");
+    printf("----------------\n");
     int error;
 
     error = vka_alloc_endpoint(&env.vka, &env.root_task_endpoint);
