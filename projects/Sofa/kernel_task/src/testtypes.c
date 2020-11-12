@@ -187,6 +187,16 @@ void process_run(const char *name, driver_env_t *env, Process* process)
 
 void process_tear_down(driver_env_t *env, Process* process)
 {
+    Thread* elt = NULL;
+    Thread* tmp = NULL;
+    
+    LL_FOREACH_SAFE(process->threads,elt,tmp) 
+    {
+        LL_DELETE(process->threads,elt);
+        free(elt);
+    }
+
+
     /* unmap the env->init data frame */
     vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, NULL);
 

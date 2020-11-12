@@ -1,15 +1,17 @@
 #pragma once
 
 #include <sel4utils/process.h>
-#include <utils/uthash.h>
+#include "utlist.h"
 #include "test_init_data.h"
 
 typedef struct _Process Process;
 
-typedef struct
+typedef struct _Thread
 {
     seL4_CPtr process_endpoint;
     Process* parent;
+
+    struct _Thread *next; 
 } Thread;
 
 typedef struct _Process
@@ -23,6 +25,8 @@ typedef struct _Process
 
     int untyped_index_start;
     int untyped_index_size;
+
+    Thread* threads; // other threads, NOT including the main one
 } Process;
 
 
