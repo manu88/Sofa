@@ -55,7 +55,21 @@ int basic_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* pro
     config = process_config_mcp(config, seL4_MaxPrio);
     config = process_config_auth(config, simple_get_tcb(&env->simple));
     config = process_config_create_cnode(config, TEST_PROCESS_CSPACE_SIZE_BITS);
-    config = process_config_fault_endpoint(config, env->root_task_endpoint);
+// create a badged faut ep
+    cspacepath_t badged_ep_path;
+    error = vka_cspace_alloc_path(&env->vka, &badged_ep_path);
+    ZF_LOGF_IFERR(error, "Failed to allocate path\n");
+    assert(error == 0);
+
+    cspacepath_t ep_path = {0};
+    vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr, &ep_path);
+
+    error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, badge);
+    assert(error == 0);
+
+    config = process_config_fault_cptr(config, badged_ep_path.capPtr);
+//    
+    
     error = sel4utils_configure_process_custom(&process->native, &env->vka, &env->vspace, config);
     assert(error == 0);
 
@@ -111,16 +125,15 @@ int basic_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* pro
     vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr/* test_process.fault_endpoint.cptr*/, &path);
     process->process_endpoint = sel4utils_mint_cap_to_process(&process->native, path, seL4_AllRights, badge );
 
-
     /* copy the device frame, if any */
     if (process->init->device_frame_cap) {
         process->init->device_frame_cap = sel4utils_copy_cap_to_process(&process->native, &env->vka, env->device_obj.cptr);
     }
 
     /* map the cap into remote vspace */
-    process->remote_vaddr = vspace_share_mem(&env->vspace, &process->native.vspace, process->init, 1, PAGE_BITS_4K,
+    process->init_remote_vaddr = vspace_share_mem(&env->vspace, &process->native.vspace, process->init, 1, PAGE_BITS_4K,
                                          seL4_AllRights, 1);
-    assert(process->remote_vaddr != 0);
+    assert(process->init_remote_vaddr != 0);
 
     /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
      * AS THE SLOTS WILL BE CONSIDERED FREE AND OVERRIDDEN BY THE TEST PROCESS. */
@@ -157,7 +170,7 @@ void basic_run_test(const char *name, driver_env_t env, Process* process)
     char string_args[argc][WORD_STRING_SIZE];
     char *argv[argc];
 
-    sel4utils_create_word_args(string_args, argv, argc, process->process_endpoint, process->remote_vaddr);
+    sel4utils_create_word_args(string_args, argv, argc, process->process_endpoint, process->init_remote_vaddr);
 
     /* spawn the process */
     error = sel4utils_spawn_process_v(&process->native, &env->vka, &env->vspace,
@@ -176,7 +189,7 @@ void basic_run_test(const char *name, driver_env_t env, Process* process)
 void basic_tear_down(driver_env_t env, Process* process)
 {
     /* unmap the env->init data frame */
-    vspace_unmap_pages(&process->native.vspace, process->remote_vaddr, 1, PAGE_BITS_4K, NULL);
+    vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, NULL);
 
     /* reset all the untypeds for the next test */
     for (int i = 0; i < env->num_untypeds; i++) {

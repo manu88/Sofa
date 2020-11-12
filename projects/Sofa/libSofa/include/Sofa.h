@@ -5,5 +5,6 @@ typedef enum
 {
     SyscallID_Unknow = 0,
     SyscallID_Exit,
+    SyscallID_Wait,
 
 } SyscallIDs;

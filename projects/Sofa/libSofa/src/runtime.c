@@ -4,6 +4,7 @@
 #include <allocman/bootstrap.h>
 #include <sel4runtime.h>
 #include <Sofa.h>
+#include "syscalls.h"
 
 /* dummy global for libsel4muslcsys */
 char _cpio_archive[1];
@@ -125,11 +126,9 @@ void init_simple(env_t env, test_init_data_t *init_data)
 
 static void process_exit(int code)
 {
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-    seL4_SetMR(0, SyscallID_Exit);
-    seL4_SetMR(1, code);
-    seL4_Send(getProcessEndpoint(), info);
-
+    sc_exit(getProcessEndpoint(), code);
+    // no return
+    assert(0);
 }
 
 int RuntimeInit(int argc, char *argv[])

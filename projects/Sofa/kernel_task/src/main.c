@@ -223,18 +223,23 @@ static void process_messages()
                 switch (seL4_GetMR(0))
                 {
                 case SyscallID_Exit:
-                    printf("Receveived exit code from '%s' %i\n", process->init->name, process->init->pid);
+                    printf("Receiveved exit code from '%s' %i\n", process->init->name, process->init->pid);
                     basic_tear_down(&env, process);
                     seL4_DebugDumpScheduler();
                     break;
                 
                 default:
-                    printf("Received %lu from '%s' %i\n", seL4_GetMR(0), process->init->name, process->init->pid);
+                    printf("Received unknown %lu from '%s' %i\n", seL4_GetMR(0), process->init->name, process->init->pid);
                     seL4_DebugDumpScheduler();
 
                     break;
                 }
             }
+        }
+        else if (label == seL4_CapFault)
+        {
+            Process* process = (Process*) badge;
+            printf("Got cap fault from '%s' %i\n", process->init->name, process->init->pid);
         }
         else 
         {
@@ -314,6 +319,7 @@ void *main_continued(void *arg UNUSED)
     basic_run_test("app", &env, &app1);
 
     env.index_in_untypeds += consumed_untypeds;
+    printf("1. Index is at %i\n", env.index_in_untypeds);
 
 
     app2.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
@@ -323,10 +329,10 @@ void *main_continued(void *arg UNUSED)
     
 
     consumed_untypeds = basic_set_up(&env, untyped_size_bits_list, &app2, "app", (seL4_Word)&app2);
-    basic_run_test("app", &env, &app2);
+    basic_run_test("app2", &env, &app2);
 
     env.index_in_untypeds += consumed_untypeds;
-    printf("untypeds Index is at %i\n", env.index_in_untypeds);
+    printf("2. Index is at %i\n", env.index_in_untypeds);
 
     seL4_DebugDumpScheduler();
 
