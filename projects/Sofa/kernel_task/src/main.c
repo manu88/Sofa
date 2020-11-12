@@ -199,8 +199,7 @@ static void init_timer(void)
         tm_init(&env.tm, &env.ltimer, &env.ops, 1);
     }
 }
-static Process app1;
-static Process app2;
+
 
 static void process_messages()
 {
@@ -224,7 +223,7 @@ static void process_messages()
                 {
                 case SyscallID_Exit:
                     printf("Receiveved exit code from '%s' %i\n", process->init->name, process->init->pid);
-                    basic_tear_down(&env, process);
+                    process_tear_down(&env, process);
                     seL4_DebugDumpScheduler();
                     break;
                 
@@ -249,7 +248,30 @@ static void process_messages()
     }
 
 }
+static void spawnApp(Process* p, const char* imgName)
+{
+    static int pidPool = 1;
+    p->init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    assert(p->init != NULL);
+    p->init->pid = pidPool++;
+    p->init->priority = seL4_MaxPrio - 1;
+    
 
+    int consumed_untypeds = process_set_up(&env, untyped_size_bits_list, p, imgName,(seL4_Word) p);
+    p->untyped_index_start = env.index_in_untypeds;
+    p->untyped_index_size = consumed_untypeds;
+    process_run(imgName, &env, p);
+
+    env.index_in_untypeds += consumed_untypeds;
+
+
+    printf("1. Index is at %i\n", env.index_in_untypeds);
+    printf("App1 untyped start at  %i len %i\n", p->untyped_index_start, p->untyped_index_size);
+
+}
+
+static Process app1;
+static Process app2;
 
 void *main_continued(void *arg UNUSED)
 {
@@ -310,21 +332,13 @@ void *main_continued(void *arg UNUSED)
     env.index_in_untypeds = 0;
 
     ProcessInit(&app1);
-    app1.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-    assert(app1.init != NULL);
-    app1.init->pid = 1;
-    app1.init->priority = seL4_MaxPrio - 1;
-    
+    spawnApp(&app1, "app");
 
-    int consumed_untypeds = basic_set_up(&env, untyped_size_bits_list, &app1, "app",(seL4_Word) &app1);
-    app1.untyped_index_start = env.index_in_untypeds;
-    app1.untyped_index_size = consumed_untypeds;
-    basic_run_test("app", &env, &app1);
+    ProcessInit(&app2);
+    spawnApp(&app2, "app");
 
-    env.index_in_untypeds += consumed_untypeds;
-    printf("1. Index is at %i\n", env.index_in_untypeds);
-    printf("App1 untyped start at  %i len %i\n", app1.untyped_index_start, app1.untyped_index_size);
 
+#if 0
     ProcessInit(&app2);
     app2.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(app2.init != NULL);
@@ -332,15 +346,15 @@ void *main_continued(void *arg UNUSED)
     app2.init->priority = seL4_MaxPrio - 1;
     
 
-    consumed_untypeds = basic_set_up(&env, untyped_size_bits_list, &app2, "app", (seL4_Word)&app2);
+    int consumed_untypeds = process_set_up(&env, untyped_size_bits_list, &app2, "app", (seL4_Word)&app2);
     app2.untyped_index_start = env.index_in_untypeds;
     app2.untyped_index_size = consumed_untypeds;
-    basic_run_test("app2", &env, &app2);
+    process_run("app2", &env, &app2);
     printf("App2 untyped start at  %i len %i\n", app2.untyped_index_start, app2.untyped_index_size);
 
     env.index_in_untypeds += consumed_untypeds;
     printf("2. Index is at %i\n", env.index_in_untypeds);
-
+#endif
     seL4_DebugDumpScheduler();
 
     process_messages();    

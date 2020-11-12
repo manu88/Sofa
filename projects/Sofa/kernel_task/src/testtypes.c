@@ -44,7 +44,7 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
 }
 
 
-int basic_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
+int process_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
 {
     int error;
 
@@ -151,7 +151,7 @@ int basic_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* pro
 }
 
 
-void basic_run_test(const char *name, driver_env_t env, Process* process)
+void process_run(const char *name, driver_env_t env, Process* process)
 {
     int error;
 
@@ -186,7 +186,7 @@ void basic_run_test(const char *name, driver_env_t env, Process* process)
 */
 }
 
-void basic_tear_down(driver_env_t env, Process* process)
+void process_tear_down(driver_env_t env, Process* process)
 {
     /* unmap the env->init data frame */
     vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, NULL);
