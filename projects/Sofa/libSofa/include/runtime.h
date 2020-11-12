@@ -11,3 +11,5 @@ int RuntimeInit(int argc, char *argv[]);
 
 seL4_CPtr getProcessEndpoint(void);
 struct env* getProcessEnv(void);
+
+seL4_CPtr getNewThreadEndpoint(void);

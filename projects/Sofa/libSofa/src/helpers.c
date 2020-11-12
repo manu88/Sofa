@@ -305,7 +305,7 @@ void create_helper_thread_custom_stack(env_t env, helper_thread_t *thread, size_
     thread->is_process = false;
     thread->fault_endpoint = env->endpoint;
     seL4_Word data = api_make_guard_skip_word(seL4_WordBits - env->cspace_size_bits);
-    sel4utils_thread_config_t config = thread_config_default(&env->simple, env->cspace_root, data, env->endpoint,
+    sel4utils_thread_config_t config = thread_config_default(&env->simple, env->cspace_root, data, thread->fault_endpoint,
                                                              OUR_PRIO - 1);
     config = thread_config_stack_size(config, stack_pages);
     error = sel4utils_configure_thread_config(&env->vka, &env->vspace, &env->vspace,

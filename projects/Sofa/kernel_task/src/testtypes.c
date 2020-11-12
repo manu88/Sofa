@@ -26,7 +26,7 @@
 /* Basic test type. Each test is launched as its own process. */
 /* copy untyped caps into a processes cspace, return the cap range they can be found in */
 seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int num_untypeds,
-                                                driver_env_t env)
+                                                driver_env_t *env)
 {
     seL4_SlotRegion range = {0};
 
@@ -44,7 +44,7 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
 }
 
 
-int process_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
+int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
 {
     int error;
 
@@ -60,7 +60,6 @@ int process_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* p
     error = vka_cspace_alloc_path(&env->vka, &badged_ep_path);
     ZF_LOGF_IFERR(error, "Failed to allocate path\n");
     assert(error == 0);
-
     cspacepath_t ep_path = {0};
     vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr, &ep_path);
 
@@ -123,7 +122,7 @@ int process_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* p
     // create a minted enpoint for the process
     cspacepath_t path;
     vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr/* test_process.fault_endpoint.cptr*/, &path);
-    process->process_endpoint = sel4utils_mint_cap_to_process(&process->native, path, seL4_AllRights, badge );
+    process->main.process_endpoint = sel4utils_mint_cap_to_process(&process->native, path, seL4_AllRights, badge );
 
     /* copy the device frame, if any */
     if (process->init->device_frame_cap) {
@@ -142,7 +141,7 @@ int process_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* p
     if (process->init->device_frame_cap) {
         process->init->free_slots.start = process->init->device_frame_cap + 1;
     } else {
-        process->init->free_slots.start = process->process_endpoint + 1;
+        process->init->free_slots.start = process->main.process_endpoint + 1;
     }
     process->init->free_slots.end = (1u << TEST_PROCESS_CSPACE_SIZE_BITS);
     assert(process->init->free_slots.start < process->init->free_slots.end);
@@ -151,7 +150,7 @@ int process_set_up(driver_env_t env, uint8_t* untyped_size_bits_list, Process* p
 }
 
 
-void process_run(const char *name, driver_env_t env, Process* process)
+void process_run(const char *name, driver_env_t *env, Process* process)
 {
     int error;
 
@@ -170,7 +169,7 @@ void process_run(const char *name, driver_env_t env, Process* process)
     char string_args[argc][WORD_STRING_SIZE];
     char *argv[argc];
 
-    sel4utils_create_word_args(string_args, argv, argc, process->process_endpoint, process->init_remote_vaddr);
+    sel4utils_create_word_args(string_args, argv, argc, process->main.process_endpoint, process->init_remote_vaddr);
 
     /* spawn the process */
     error = sel4utils_spawn_process_v(&process->native, &env->vka, &env->vspace,
@@ -186,7 +185,7 @@ void process_run(const char *name, driver_env_t env, Process* process)
 */
 }
 
-void process_tear_down(driver_env_t env, Process* process)
+void process_tear_down(driver_env_t *env, Process* process)
 {
     /* unmap the env->init data frame */
     vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, NULL);

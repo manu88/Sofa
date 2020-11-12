@@ -8,7 +8,7 @@ get_property(cpio_apps GLOBAL PROPERTY apps_property)
 include(cpio)
 MakeCPIO(archive.o "${cpio_apps}")
 
-file(GLOB deps src/*.c)
+file(GLOB deps src/*.c src/*/*.c)
 list(SORT deps)
 
 add_executable(kernel_task ${deps} archive.o)

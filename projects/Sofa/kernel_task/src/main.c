@@ -53,7 +53,11 @@
 
 #include <sel4platsupport/io.h>
 #include <Sofa.h>
-#define TIMER_BADGE 123
+#include "Syscalls/SyscallTable.h"
+
+#define TIMER_BADGE 1
+
+#define TIMER_ID_COUT 100
 
 /* ammount of untyped memory to reserve for the driver (32mb) */
 #define DRIVER_UNTYPED_MEMORY (1 << 25)
@@ -84,7 +88,7 @@ extern char _cpio_archive_end[];
 static elf_t tests_elf;
 
 /* initialise our runtime environment */
-static void init_env(driver_env_t env)
+static void init_env(driver_env_t *env)
 {
     allocman_t *allocman;
     reservation_t virtual_reservation;
@@ -196,7 +200,7 @@ static void init_timer(void)
         ZF_LOGF_IF(error, "Failed to bind timer notification to sel4test-driver\n");
 
         /* set up the timer manager */
-        tm_init(&env.tm, &env.ltimer, &env.ops, 1);
+        tm_init(&env.tm, &env.ltimer, &env.ops, TIMER_ID_COUT);
     }
 }
 
@@ -217,21 +221,56 @@ static void process_messages()
             }
             else 
             {
-                Process* process = (Process*) badge;
+/*                
+                uint64_t currentTimeNS = 0;
+                int err = tm_get_time(&env.tm, &currentTimeNS);
+                assert(err == 0);
+                printf("Time= %lu\n", currentTimeNS);
+*/
+                Thread* caller = (Thread*) badge;
+                Process* process = caller->parent;
 
                 switch (seL4_GetMR(0))
                 {
-                case SyscallID_Exit:
-                    printf("Receiveved exit code from '%s' %i\n", process->init->name, process->init->pid);
-                    process_tear_down(&env, process);
-                    seL4_DebugDumpScheduler();
-                    break;
-                
-                default:
-                    printf("Received unknown %lu from '%s' %i\n", seL4_GetMR(0), process->init->name, process->init->pid);
-                    seL4_DebugDumpScheduler();
+                    case SyscallID_NewThread:
+                        printf("Received thead ep request from '%s' %i\n", ProcessGetName(process), ProcessGetPID(process));
 
-                    break;
+
+                        Thread* newThread = malloc(sizeof(Thread));
+                        assert(newThread);
+                        newThread->parent = process;
+
+                        cspacepath_t badged_ep_path;
+                        int error = vka_cspace_alloc_path(&env.vka, &badged_ep_path);
+                        ZF_LOGF_IFERR(error, "Failed to allocate path\n");
+                        assert(error == 0);
+                        cspacepath_t ep_path = {0};
+                        vka_cspace_make_path(&env.vka, env.root_task_endpoint.cptr, &ep_path);
+
+                        error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, (seL4_Word)newThread);
+                        newThread->process_endpoint = badged_ep_path.capPtr;
+                        assert(error == 0);
+
+                        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 1, 1);
+                        seL4_SetMR(0, SyscallID_NewThread);
+
+                        seL4_SetCap(0, badged_ep_path.capPtr);
+                        seL4_Reply(info);
+
+                        break;
+                    case SyscallID_Exit:
+                        printf("Received exit code from '%s' %i\n", ProcessGetName(process), ProcessGetPID(process));
+                        process_tear_down(&env, process);
+                        seL4_DebugDumpScheduler();
+                        break;
+                    case SyscallID_Sleep:
+                        Syscall_sleep(&env, caller, info);
+                        break;
+                    default:
+                        printf("Received unknown %lu from '%s' %i\n", seL4_GetMR(0), ProcessGetName(process), ProcessGetPID(process));
+                        seL4_DebugDumpScheduler();
+
+                        break;
                 }
             }
         }
@@ -243,11 +282,10 @@ static void process_messages()
         else 
         {
             printf("Received message with label %lu from %lu\n", label, badge);
-        }
-        
+        }   
     }
-
 }
+
 static void spawnApp(Process* p, const char* imgName)
 {
     static int pidPool = 1;
@@ -257,7 +295,7 @@ static void spawnApp(Process* p, const char* imgName)
     p->init->priority = seL4_MaxPrio - 1;
     
 
-    int consumed_untypeds = process_set_up(&env, untyped_size_bits_list, p, imgName,(seL4_Word) p);
+    int consumed_untypeds = process_set_up(&env, untyped_size_bits_list, p, imgName,(seL4_Word) &p->main);
     p->untyped_index_start = env.index_in_untypeds;
     p->untyped_index_size = consumed_untypeds;
     process_run(imgName, &env, p);
@@ -334,27 +372,6 @@ void *main_continued(void *arg UNUSED)
     ProcessInit(&app1);
     spawnApp(&app1, "app");
 
-    ProcessInit(&app2);
-    spawnApp(&app2, "app");
-
-
-#if 0
-    ProcessInit(&app2);
-    app2.init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-    assert(app2.init != NULL);
-    app2.init->pid = 2;
-    app2.init->priority = seL4_MaxPrio - 1;
-    
-
-    int consumed_untypeds = process_set_up(&env, untyped_size_bits_list, &app2, "app", (seL4_Word)&app2);
-    app2.untyped_index_start = env.index_in_untypeds;
-    app2.untyped_index_size = consumed_untypeds;
-    process_run("app2", &env, &app2);
-    printf("App2 untyped start at  %i len %i\n", app2.untyped_index_start, app2.untyped_index_size);
-
-    env.index_in_untypeds += consumed_untypeds;
-    printf("2. Index is at %i\n", env.index_in_untypeds);
-#endif
     seL4_DebugDumpScheduler();
 
     process_messages();    
