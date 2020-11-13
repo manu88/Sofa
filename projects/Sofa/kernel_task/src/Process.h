@@ -32,6 +32,8 @@ typedef struct _Process
     int untyped_index_size;
 
     Thread* threads; // other threads, NOT including the main one
+
+    struct _Process* next; // Global process list
 } Process;
 
 
@@ -52,3 +54,10 @@ static inline int ProcessGetPID(const Process* p)
 }
 
 void ThreadCleanupTimer(Thread* t, driver_env_t *env);
+
+
+Process* getProcessList(void);
+void ProcessListAdd(Process* p);
+void ProcessListRemove(Process* p);
+
+#define FOR_EACH_PROCESS(p) LL_FOREACH(getProcessList(),p)

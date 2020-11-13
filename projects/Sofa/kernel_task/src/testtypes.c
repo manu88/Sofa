@@ -175,7 +175,6 @@ void process_run(const char *name, driver_env_t *env, Process* process)
     error = sel4utils_spawn_process_v(&process->native, &env->vka, &env->vspace,
                                       argc, argv, 1);
     ZF_LOGF_IF(error != 0, "Failed to start test process!");
-
 }
 
 void process_tear_down(driver_env_t *env, Process* process)
@@ -202,12 +201,12 @@ void process_tear_down(driver_env_t *env, Process* process)
     {
         printf("Main Thread still have a reply cap\n");
         ThreadCleanupTimer(&process->main, env);
-
     }
-
 
     /* unmap the env->init data frame */
     vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, NULL);
+
+    printf("Will reset Untypeds at %i range %i\n", process->untyped_index_start, process->untyped_index_size);
 
     /* reset all the untypeds for the next test */
     for (int i = process->untyped_index_start; i < process->untyped_index_size; i++) 

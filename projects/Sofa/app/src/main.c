@@ -8,6 +8,14 @@
 
 void sc_exit(seL4_CPtr endpoint, int code);
 
+static void
+thread_init_tls(helper_thread_t *thread)
+{
+ //   thread->info.ipc_word = seL4_GetUserData();
+ //   assert(thread->info.ipc_word != 0);
+    seL4_SetUserData((seL4_Word)thread);
+}
+
 static void _sendThreadExit(seL4_CPtr ep)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);

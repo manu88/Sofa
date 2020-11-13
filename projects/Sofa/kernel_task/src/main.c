@@ -87,6 +87,12 @@ extern char _cpio_archive_end[];
 
 static elf_t tests_elf;
 
+
+static void spawnApp(Process* p, const char* imgName);
+static Process app1;
+static Process app2;
+static Process app3;
+
 /* initialise our runtime environment */
 static void init_env(driver_env_t *env)
 {
@@ -204,7 +210,19 @@ static void init_timer(void)
     }
 }
 
+static void DumpProcesses()
+{
+    Process* p = NULL;
+    printf("----- List process -----\n");
+    FOR_EACH_PROCESS(p)
+    {
+        printf("%i '%s'\n", ProcessGetPID(p), ProcessGetName(p));
+    }
+    printf("------------------------\n");
 
+    seL4_DebugDumpScheduler();
+
+}
 static void process_messages()
 {
     while (1)
@@ -221,12 +239,6 @@ static void process_messages()
             }
             else 
             {
-/*                
-                uint64_t currentTimeNS = 0;
-                int err = tm_get_time(&env.tm, &currentTimeNS);
-                assert(err == 0);
-                printf("Time= %lu\n", currentTimeNS);
-*/
                 Thread* caller = (Thread*) badge;
                 Process* process = caller->process;
 
@@ -241,14 +253,24 @@ static void process_messages()
                     case SyscallID_Exit:
                         printf("Received exit code from '%s' %i\n", ProcessGetName(process), ProcessGetPID(process));
                         process_tear_down(&env, process);
-                        seL4_DebugDumpScheduler();
+                        ProcessListRemove(process);
+                        DumpProcesses();
+
+                        static int once = 1;
+                        if(once)
+                        {
+                            printf("---->Spawning app\n");
+                            ProcessInit(&app3);
+                            spawnApp(&app3, "app");
+                            once = 0;
+                        }
                         break;
                     case SyscallID_Sleep:
                         Syscall_sleep(&env, caller, info);
                         break;
                     default:
                         printf("Received unknown %lu from '%s' %i\n", seL4_GetMR(0), ProcessGetName(process), ProcessGetPID(process));
-                        seL4_DebugDumpScheduler();
+                        DumpProcesses();
 
                         break;
                 }
@@ -266,9 +288,12 @@ static void process_messages()
     }
 }
 
+
 static void spawnApp(Process* p, const char* imgName)
 {
     static int pidPool = 1;
+    printf("Before use, Index is at %i\n", env.index_in_untypeds);
+
     p->init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(p->init != NULL);
     p->init->pid = pidPool++;
@@ -283,12 +308,12 @@ static void spawnApp(Process* p, const char* imgName)
     env.index_in_untypeds += consumed_untypeds;
 
 
-    printf("1. Index is at %i\n", env.index_in_untypeds);
+    printf("After use, Index is at %i\n", env.index_in_untypeds);
     printf("App1 untyped start at  %i len %i\n", p->untyped_index_start, p->untyped_index_size);
-
+    ProcessListAdd(p);
 }
 
-static Process app1;
+
 
 void *main_continued(void *arg UNUSED)
 {
@@ -351,7 +376,10 @@ void *main_continued(void *arg UNUSED)
     ProcessInit(&app1);
     spawnApp(&app1, "app");
 
-    seL4_DebugDumpScheduler();
+    ProcessInit(&app2);
+    spawnApp(&app2, "app");
+
+    DumpProcesses();
 
     process_messages();    
 
