@@ -3,38 +3,33 @@
 #include <platsupport/time_manager.h>
 #include <Sofa.h>
 
-
-typedef struct
-{
-    driver_env_t *env;
-    unsigned int timerID;
-    Process* process;
-    seL4_Word cap;
-
-} ReplyObject;
-
+static driver_env_t *_env = NULL;
 
 static int sleep_callback(uintptr_t token)
 {
-    ReplyObject* reply = (ReplyObject*) token;
-    assert(reply->process);
-    printf("Timer callback from process %i\n", ProcessGetPID(reply->process));
+    Thread* caller = (Thread*) token;
+    assert(caller);
 
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
     seL4_SetMR(0, SyscallID_Sleep);
     seL4_SetMR(1, 0); // sucess
 
-    seL4_Send(reply->cap, tag);
-
-    cnode_delete(&reply->env->vka, reply->cap);
-    tm_free_id(&reply->env->tm, reply->timerID);
-    free(reply);
+    seL4_Send(caller->replyCap, tag);
+    cnode_delete(&_env->vka, caller->replyCap);
+    caller->replyCap = 0;
+    tm_free_id(&_env->tm, caller->timerID);
     return 0;
 }
 
 
 void Syscall_sleep(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
 {
+    if(!_env)
+    {
+        _env = env;
+    }
+
+    assert(caller->replyCap == 0);
     Process* callingProcess = caller->process;
     assert(callingProcess);
     printf("Sleep request from %s %i (thread %p)\n",
@@ -68,34 +63,18 @@ void Syscall_sleep(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
     }
 
 
-    ReplyObject* reply = malloc(sizeof(ReplyObject));
-    if(reply == NULL)
-    {
-        printf("Unable to allocate a reply object\n");
-        tm_free_id(&env->tm, timerID);
-        cnode_delete(&env->vka, slot);
-        seL4_SetMR(1, -ENOMEM);
-        seL4_Reply(info);
-        return;
-
-    }
-    assert(reply);
-    memset(reply, 0, sizeof(ReplyObject));
-    error = tm_register_cb(&env->tm, TIMEOUT_RELATIVE, seL4_GetMR(1) * NS_IN_MS, 0, timerID , sleep_callback, (uintptr_t) reply);
+    error = tm_register_cb(&env->tm, TIMEOUT_RELATIVE, seL4_GetMR(1) * NS_IN_MS, 0, timerID , sleep_callback, (uintptr_t) caller);
     if(error)
     {
         printf("tm_register_failed, err=%i\n", error);
         tm_free_id(&env->tm, timerID);
         cnode_delete(&env->vka, slot);
-        free(reply);
         seL4_SetMR(1, -error);
         seL4_Reply(info);
         return;
     }
 
-    reply->env = env;
-    reply->timerID = timerID;
-    reply->process = callingProcess;
-    reply->cap = slot;
+    caller->timerID = timerID;
+    caller->replyCap = slot;
 
 }

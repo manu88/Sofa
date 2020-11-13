@@ -9,7 +9,9 @@ typedef struct _Process Process;
 typedef struct _Thread
 {
     seL4_CPtr process_endpoint;
+    seL4_Word replyCap;
     Process* process;
+    unsigned int timerID;
 
     struct _Thread *next; 
 } Thread;

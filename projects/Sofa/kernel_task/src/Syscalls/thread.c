@@ -36,4 +36,5 @@ void Syscall_ThreadExit(driver_env_t *env, Thread* caller, seL4_MessageInfo_t in
     Process* process = caller->process;
     assert(process);
     LL_DELETE(process->threads, caller);
+    free(caller);
 }

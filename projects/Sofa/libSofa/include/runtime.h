@@ -13,3 +13,5 @@ seL4_CPtr getProcessEndpoint(void);
 struct env* getProcessEnv(void);
 
 seL4_CPtr getNewThreadEndpoint(void);
+
+void sendThreadExit(seL4_CPtr ep);

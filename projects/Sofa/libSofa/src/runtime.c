@@ -190,3 +190,11 @@ seL4_CPtr getNewThreadEndpoint()
     info = seL4_Call(endpoint, info);
     return recvSlot;
 }
+
+void sendThreadExit(seL4_CPtr ep)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+    seL4_SetMR(0, SyscallID_ThreadExit);
+
+    seL4_Send(ep, info);
+}

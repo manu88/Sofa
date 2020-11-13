@@ -289,7 +289,6 @@ static void spawnApp(Process* p, const char* imgName)
 }
 
 static Process app1;
-static Process app2;
 
 void *main_continued(void *arg UNUSED)
 {

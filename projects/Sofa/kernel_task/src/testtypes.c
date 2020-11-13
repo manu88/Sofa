@@ -176,13 +176,6 @@ void process_run(const char *name, driver_env_t *env, Process* process)
                                       argc, argv, 1);
     ZF_LOGF_IF(error != 0, "Failed to start test process!");
 
-/*
-    if (config_set(CONFIG_HAVE_TIMER)) 
-    {
-        error = tm_alloc_id_at(&env->tm, TIMER_ID);
-        ZF_LOGF_IF(error != 0, "Failed to alloc time id %d", TIMER_ID);
-    }
-*/
 }
 
 void process_tear_down(driver_env_t *env, Process* process)
@@ -190,6 +183,10 @@ void process_tear_down(driver_env_t *env, Process* process)
     Thread* elt = NULL;
     Thread* tmp = NULL;
     
+    int threadCount =0;
+
+    LL_COUNT(process->threads, elt, threadCount);
+    printf("Got %i threads in process %i\n", threadCount, ProcessGetPID(process));
     LL_FOREACH_SAFE(process->threads,elt,tmp) 
     {
         LL_DELETE(process->threads,elt);
