@@ -28,14 +28,8 @@ static int on_thread1(seL4_Word ep, seL4_Word ep2, seL4_Word runs, seL4_Word arg
 {
     printf("Hello thread %i\n", getProcessEnv()->pid);
 
-    //while(1)
-    {
-        int ret = SofaSleep2(ep, 1000);
-        printf("Thread Sleep returned %i\n", ret);
-        sc_exit(ep, 0);
-    }
     
-    _sendThreadExit(ep);
+//    _sendThreadExit(ep);
     
     return 0;
 }
@@ -46,19 +40,17 @@ int main(int argc, char *argv[])
     printf("\n\n");
     fflush(stdout);
     printf("[%i] started\n", getProcessEnv()->pid);
-
-    seL4_CPtr ep =  getNewThreadEndpoint();
-    printf("Got a new thread enpoint\n");
+//    return 0;
+    seL4_CPtr ep = 0;// getNewThreadEndpoint();
     helper_thread_t thread1;
     create_helper_thread(getProcessEnv(), &thread1);
 
     start_helper(getProcessEnv(), &thread1, on_thread1, ep, 0, 0, 0);
 
-    SofaSleep(4000);
-    return 0;
 
     wait_for_helper(&thread1);
     printf("[%i] thread returned\n", getProcessEnv()->pid);
+    cleanup_helper(getProcessEnv(), &thread1);
 
     return 1;
 }

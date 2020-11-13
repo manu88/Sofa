@@ -37,6 +37,8 @@ typedef struct _Process
 } Process;
 
 
+// Process methods
+
 static inline void ProcessInit(Process* p)
 {
     memset(p, 0, sizeof(Process));
@@ -53,9 +55,13 @@ static inline int ProcessGetPID(const Process* p)
     return p->init->pid;
 }
 
+int ProcessCountExtraThreads(const Process* p);
+
+// Thread methods
+
 void ThreadCleanupTimer(Thread* t, driver_env_t *env);
 
-
+// Process List methods
 Process* getProcessList(void);
 void ProcessListAdd(Process* p);
 void ProcessListRemove(Process* p);

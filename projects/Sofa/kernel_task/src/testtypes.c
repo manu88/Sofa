@@ -131,7 +131,7 @@ int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* 
 
     /* map the cap into remote vspace */
     process->init_remote_vaddr = vspace_share_mem(&env->vspace, &process->native.vspace, process->init, 1, PAGE_BITS_4K,
-                                         seL4_AllRights, 1);
+                                         seL4_CanRead, 1);
     assert(process->init_remote_vaddr != 0);
 
     /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
@@ -182,10 +182,8 @@ void process_tear_down(driver_env_t *env, Process* process)
     Thread* elt = NULL;
     Thread* tmp = NULL;
     
-    int threadCount =0;
 
-    LL_COUNT(process->threads, elt, threadCount);
-    printf("Got %i threads in process %i\n", threadCount, ProcessGetPID(process));
+    printf("Got %i threads in process %i\n", ProcessCountExtraThreads(process), ProcessGetPID(process));
     LL_FOREACH_SAFE(process->threads,elt,tmp) 
     {
         LL_DELETE(process->threads,elt);

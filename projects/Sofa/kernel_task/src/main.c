@@ -85,13 +85,12 @@ static uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
-static elf_t tests_elf;
-
 
 static void spawnApp(Process* p, const char* imgName);
 static Process app1;
 static Process app2;
 static Process app3;
+static Process app4;
 
 /* initialise our runtime environment */
 static void init_env(driver_env_t *env)
@@ -216,7 +215,7 @@ static void DumpProcesses()
     printf("----- List process -----\n");
     FOR_EACH_PROCESS(p)
     {
-        printf("%i '%s'\n", ProcessGetPID(p), ProcessGetName(p));
+        printf("%i '%s' %i threads\n", ProcessGetPID(p), ProcessGetName(p), ProcessCountExtraThreads(p));
     }
     printf("------------------------\n");
 
@@ -251,20 +250,14 @@ static void process_messages()
                         Syscall_ThreadNew(&env, caller, info);
                         break;
                     case SyscallID_Exit:
-                        printf("Received exit code from '%s' %i\n", ProcessGetName(process), ProcessGetPID(process));
+                    {
+                        int retCode = seL4_GetMR(1);
+                        printf("Received exit code %i from '%s' %i\n", retCode, ProcessGetName(process), ProcessGetPID(process));
                         process_tear_down(&env, process);
                         ProcessListRemove(process);
                         DumpProcesses();
-
-                        static int once = 1;
-                        if(once)
-                        {
-                            printf("---->Spawning app\n");
-                            ProcessInit(&app3);
-                            spawnApp(&app3, "app");
-                            once = 0;
-                        }
                         break;
+                    }
                     case SyscallID_Sleep:
                         Syscall_sleep(&env, caller, info);
                         break;
@@ -326,10 +319,11 @@ void *main_continued(void *arg UNUSED)
     error = vka_alloc_endpoint(&env.vka, &env.root_task_endpoint);
     assert(error == 0);
 
-
+#if 0
     /* allocate a piece of device untyped memory for the frame tests,
      * note that spike doesn't have any device untypes so the tests that require device untypes are turned off */
     if (!config_set(CONFIG_PLAT_SPIKE)) {
+        assert(0);
         bool allocated = false;
         int untyped_count = simple_get_untyped_count(&env.simple);
         for (int i = 0; i < untyped_count; i++) {
@@ -348,7 +342,7 @@ void *main_continued(void *arg UNUSED)
         }
         ZF_LOGF_IF(allocated == false, "Failed to allocate a device frame for the frame tests");
     }
-
+#endif
     /* allocate lots of untyped memory for tests to use */
     env.num_untypeds = populate_untypeds(untypeds);
     env.untypeds = untypeds;
@@ -378,6 +372,12 @@ void *main_continued(void *arg UNUSED)
 
     ProcessInit(&app2);
     spawnApp(&app2, "app");
+
+    ProcessInit(&app3);
+    spawnApp(&app3, "app");
+
+    ProcessInit(&app4);
+    spawnApp(&app4, "app");
 
     DumpProcesses();
 
