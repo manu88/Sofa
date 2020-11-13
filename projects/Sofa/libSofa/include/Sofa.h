@@ -4,7 +4,8 @@
 typedef enum
 {
     SyscallID_Unknown = 0,
-    SyscallID_NewThread,
+    SyscallID_ThreadNew,
+    SyscallID_ThreadExit,
     SyscallID_Exit,
     SyscallID_Sleep,
 

@@ -9,7 +9,7 @@ typedef struct _Process Process;
 typedef struct _Thread
 {
     seL4_CPtr process_endpoint;
-    Process* parent;
+    Process* process;
 
     struct _Thread *next; 
 } Thread;
@@ -33,7 +33,7 @@ typedef struct _Process
 static inline void ProcessInit(Process* p)
 {
     memset(p, 0, sizeof(Process));
-    p->main.parent = p;
+    p->main.process = p;
 }
 
 static inline const char* ProcessGetName(const Process* p)

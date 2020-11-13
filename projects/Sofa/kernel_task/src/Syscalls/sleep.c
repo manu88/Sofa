@@ -35,7 +35,7 @@ static int sleep_callback(uintptr_t token)
 
 void Syscall_sleep(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
 {
-    Process* callingProcess = caller->parent;
+    Process* callingProcess = caller->process;
     assert(callingProcess);
     printf("Sleep request from %s %i (thread %p)\n",
            ProcessGetName(callingProcess),

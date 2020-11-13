@@ -228,35 +228,15 @@ static void process_messages()
                 printf("Time= %lu\n", currentTimeNS);
 */
                 Thread* caller = (Thread*) badge;
-                Process* process = caller->parent;
+                Process* process = caller->process;
 
                 switch (seL4_GetMR(0))
                 {
-                    case SyscallID_NewThread:
-                        printf("Received thead ep request from '%s' %i\n", ProcessGetName(process), ProcessGetPID(process));
-
-
-                        Thread* newThread = malloc(sizeof(Thread));
-                        assert(newThread);
-                        newThread->parent = process;
-
-                        cspacepath_t badged_ep_path;
-                        int error = vka_cspace_alloc_path(&env.vka, &badged_ep_path);
-                        ZF_LOGF_IFERR(error, "Failed to allocate path\n");
-                        assert(error == 0);
-                        cspacepath_t ep_path = {0};
-                        vka_cspace_make_path(&env.vka, env.root_task_endpoint.cptr, &ep_path);
-
-                        error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, (seL4_Word)newThread);
-                        newThread->process_endpoint = badged_ep_path.capPtr;
-                        assert(error == 0);
-
-                        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 1, 1);
-                        seL4_SetMR(0, SyscallID_NewThread);
-                        LL_APPEND(process->threads, newThread);
-                        seL4_SetCap(0, badged_ep_path.capPtr);
-                        seL4_Reply(info);
-
+                    case SyscallID_ThreadExit:
+                        Syscall_ThreadExit(&env, caller, info);
+                        break;
+                    case SyscallID_ThreadNew:
+                        Syscall_ThreadNew(&env, caller, info);
                         break;
                     case SyscallID_Exit:
                         printf("Received exit code from '%s' %i\n", ProcessGetName(process), ProcessGetPID(process));
