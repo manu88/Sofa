@@ -190,7 +190,19 @@ void process_tear_down(driver_env_t *env, Process* process)
     LL_FOREACH_SAFE(process->threads,elt,tmp) 
     {
         LL_DELETE(process->threads,elt);
+        if(elt->replyCap != 0)
+        {
+            printf("Thread still have a reply cap\n");
+            ThreadCleanupTimer(elt, env);
+        }
         free(elt);
+    }
+
+    if(process->main.replyCap)
+    {
+        printf("Main Thread still have a reply cap\n");
+        ThreadCleanupTimer(&process->main, env);
+
     }
 
 

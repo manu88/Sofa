@@ -10,6 +10,7 @@ void Syscall_ThreadNew(driver_env_t *env, Thread* caller, seL4_MessageInfo_t inf
 
     Thread* newThread = malloc(sizeof(Thread));
     assert(newThread);
+    memset(newThread, 0, sizeof(Thread));
     newThread->process = process;
 
     cspacepath_t badged_ep_path;

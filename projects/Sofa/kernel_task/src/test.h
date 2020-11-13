@@ -18,13 +18,13 @@
 #include <platsupport/time_manager.h>
 #include <vka/vka.h>
 #include <vka/object.h>
-
+#include <sel4platsupport/irq.h>
 #include <simple/simple.h>
 #include <vspace/vspace.h>
 
 /* This file is shared with seltest-tests. */
 #include "test_init_data.h"
-#include "Process.h"
+//#include "Process.h"
 
 #define TESTS_APP "app"
 

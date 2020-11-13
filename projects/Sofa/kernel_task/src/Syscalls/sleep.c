@@ -15,9 +15,8 @@ static int sleep_callback(uintptr_t token)
     seL4_SetMR(1, 0); // sucess
 
     seL4_Send(caller->replyCap, tag);
-    cnode_delete(&_env->vka, caller->replyCap);
-    caller->replyCap = 0;
-    tm_free_id(&_env->tm, caller->timerID);
+
+    ThreadCleanupTimer(caller, _env);
     return 0;
 }
 
