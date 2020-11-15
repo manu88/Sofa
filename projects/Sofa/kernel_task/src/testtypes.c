@@ -191,7 +191,7 @@ void process_tear_down(driver_env_t *env, Process* process)
             printf("Thread still have a reply cap\n");
             ThreadCleanupTimer(elt, env);
         }
-        free(elt);
+        kfree(elt);
     }
 
     if(process->main.replyCap)

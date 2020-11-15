@@ -8,7 +8,7 @@ void Syscall_ThreadNew(driver_env_t *env, Thread* caller, seL4_MessageInfo_t inf
     assert(process);
     printf("Received thead ep request from '%s' %i\n", ProcessGetName(process), ProcessGetPID(process));
 
-    Thread* newThread = malloc(sizeof(Thread));
+    Thread* newThread = kmalloc(sizeof(Thread));
     assert(newThread);
     memset(newThread, 0, sizeof(Thread));
     newThread->process = process;
@@ -37,5 +37,5 @@ void Syscall_ThreadExit(driver_env_t *env, Thread* caller, seL4_MessageInfo_t in
     Process* process = caller->process;
     assert(process);
     LL_DELETE(process->threads, caller);
-    free(caller);
+    kfree(caller);
 }

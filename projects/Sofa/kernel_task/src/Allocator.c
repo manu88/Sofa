@@ -9,6 +9,8 @@ static vka_object_t untypeds[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
 static uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
 
 
+static size_t _kmallocatedMem;
+
 /* list of untypeds to give out to test processes */
 vka_object_t* getUntypeds()
 {
@@ -51,13 +53,9 @@ int UntypedsGetFreeRange(UntypedRange* range)
     FreeRange* freeRange = getFirstFreeRange();
     if(freeRange)
     {
-        printf("Got a free range available\n");
         range->start = freeRange->start;
         range->size = freeRange->size;
-        free(freeRange);
-        printf("AFTER\n");
-        printUntypedRange();
-
+        kfree(freeRange);
         return 0;
     }
 
@@ -87,11 +85,22 @@ void UnypedsGiveBack(const UntypedRange* range)
 {
     assert(range);
 
-
-    FreeRange* newRange = malloc(sizeof(FreeRange));
+    FreeRange* newRange = kmalloc(sizeof(FreeRange));
     assert(newRange);
     newRange->start = range->start;
     newRange->size = range->size;
     LL_APPEND(untypedsFree, newRange);
    
+}
+
+
+
+void *kmalloc(size_t size)
+{
+    return malloc(size);
+}
+void kfree(void *ptr)
+{
+    free(ptr);
+    
 }

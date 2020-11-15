@@ -87,6 +87,7 @@ static void spawnApp(Process* p, const char* imgName);
 static Process app1;
 
 
+
 /* initialise our runtime environment */
 static void init_env(driver_env_t *env)
 {
@@ -238,7 +239,7 @@ static void process_messages()
 
             spawnNew = 0;
 
-            Process* newProc = malloc(sizeof(Process));
+            Process* newProc = kmalloc(sizeof(Process));
             assert(newProc);
             ProcessInit(newProc);
             spawnApp(newProc, "app");
@@ -272,6 +273,10 @@ static void process_messages()
                     {
                         int retCode = seL4_GetMR(1);
                         cleanAndRemoveProcess(process, retCode);
+                        if(process != &app1)
+                        {
+                            kfree(process);
+                        }
                         spawnNew = 1;
                         break;
                     }
@@ -329,9 +334,6 @@ static void spawnApp(Process* p, const char* imgName)
     ProcessListAdd(p);
 }
 
-
-
-
 void *main_continued(void *arg UNUSED)
 {
 
@@ -369,7 +371,6 @@ void *main_continued(void *arg UNUSED)
 #endif
     /* allocate lots of untyped memory for tests to use */
     env.num_untypeds = populate_untypeds(getUntypeds());
-    //env.untypeds = getUntypeds();
 
 
     /* Allocate a reply object for the RT kernel. */
@@ -390,9 +391,7 @@ void *main_continued(void *arg UNUSED)
 
 
     ProcessInit(&app1);
-    printf("##### Spawn app\n");
     spawnApp(&app1, "app");
-    printf("##### DID Spawn app\n");
 
     DumpProcesses();
 
