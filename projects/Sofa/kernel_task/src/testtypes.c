@@ -20,10 +20,8 @@
 #include "testtypes.h"
 #include "utils.h"
 
-#define TIMER_ID 0
 
-
-void spawnApp(struct driver_env* envir, Process* p, const char* imgName)
+void spawnApp(struct driver_env* envir, Process* p, const char* imgName, Process* parent)
 {
     static int pidPool = 1;
 
@@ -44,11 +42,12 @@ void spawnApp(struct driver_env* envir, Process* p, const char* imgName)
     assert(p->main.ipcBuffer);
     p->init->mainIPCBuffer = vspace_share_mem(&envir->vspace, &p->native.vspace, p->main.ipcBuffer, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
     assert(p->init->mainIPCBuffer);
+
+    p->parent = parent;
+    ProcessListAdd(p);
     process_run(imgName, envir, p);
 
 
-
-    ProcessListAdd(p);
 }
 
 
@@ -253,3 +252,15 @@ void process_tear_down(driver_env_t *env, Process* process)
     
 }
 
+
+
+void cleanAndRemoveProcess(driver_env_t *env, Process* process, int retCode)
+{
+    process_tear_down(env, process);
+    ProcessListRemove(process);
+
+    UnypedsGiveBack(&process->untypedRange);
+
+    printUntypedRange();
+
+}

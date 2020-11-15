@@ -6,7 +6,24 @@
 #include "test.h"
 #include "Allocator.h"
 
+
+
+
+typedef enum
+{
+    ThreadState_Running = 0,
+    ThreadState_Sleeping,
+    ThreadState_Waiting,
+} ThreadState;
+
+typedef enum
+{
+    ProcessState_Running,
+    ProcessState_Exit
+} ProcessState;
+
 typedef struct _Process Process;
+
 
 typedef struct _Thread
 {
@@ -19,6 +36,7 @@ typedef struct _Thread
 
     unsigned int timerID;
 
+    ThreadState state;
     struct _Thread *next; 
 } Thread;
 
@@ -31,8 +49,10 @@ typedef struct _Process
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
     UntypedRange untypedRange;
 
-    Thread* threads; // other threads, NOT including the main one
+    struct _Process *parent;
 
+    Thread* threads; // other threads, NOT including the main one
+    ProcessState state;
     struct _Process* next; // Global process list
 } Process;
 
@@ -56,6 +76,11 @@ static inline int ProcessGetPID(const Process* p)
 }
 
 int ProcessCountExtraThreads(const Process* p);
+
+
+Thread* ProcessGetWaitingThread( const Process*p);
+
+#define PROCESS_FOR_EACH_EXTRA_THREAD(proc, t) LL_FOREACH(proc->threads,t)
 
 // Thread methods
 

@@ -10,7 +10,7 @@
 static void* on_thread(void*args)
 {
     printf("Hello thread %i\n", getProcessEnv()->pid);
-    SofaSleep(2000);
+    SofaSleep(500);
     return (void*)12;
 }
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     int retThread = 0;
     ThreadJoin(&th, (void**)&retThread);
     printf("[%i] thread returned %i\n", getProcessEnv()->pid, retThread);
-    SofaSleep(2000);
+    SofaSleep(500);
     //cleanup_helper(getProcessEnv(), &thread1);
 
     return 1;

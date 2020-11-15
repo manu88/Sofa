@@ -33,7 +33,7 @@ void Syscall_ThreadNew(driver_env_t *env, Thread* caller, seL4_MessageInfo_t inf
 // reply
     seL4_MessageInfo_t infoRet = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 1, 2);
     seL4_SetMR(0, SyscallID_ThreadNew);
-    seL4_SetMR(1, newThread->ipcBuffer_vaddr);
+    seL4_SetMR(1,(seL4_Word) newThread->ipcBuffer_vaddr);
     LL_APPEND(process->threads, newThread);
     seL4_SetCap(0, badged_ep_path.capPtr);
     seL4_Reply(infoRet);

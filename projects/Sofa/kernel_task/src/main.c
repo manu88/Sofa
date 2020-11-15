@@ -217,18 +217,7 @@ static void DumpProcesses()
     seL4_DebugDumpScheduler();
 }
 
-static void cleanAndRemoveProcess(Process* process, int retCode)
-{
-    printf("Received exit code %i from '%s' %i\n", retCode, ProcessGetName(process), ProcessGetPID(process));
-    process_tear_down(&env, process);
-    ProcessListRemove(process);
-    DumpProcesses();
 
-    UnypedsGiveBack(&process->untypedRange);
-
-    printUntypedRange();
-
-}
 static void process_messages()
 {
     while (1)
@@ -248,39 +237,7 @@ static void process_messages()
                 Thread* caller = (Thread*) badge;
                 Process* process = caller->process;
 
-                switch (seL4_GetMR(0))
-                {
-                    case SyscallID_ThreadExit:
-                        Syscall_ThreadExit(&env, caller, info);
-                        break;
-                    case SyscallID_ThreadNew:
-                        Syscall_ThreadNew(&env, caller, info);
-                        break;
-                    case SyscallID_Exit:
-                    {
-                        int retCode = seL4_GetMR(1);
-                        cleanAndRemoveProcess(process, retCode);
-                        if(process != &initProcess)
-                        {
-                            kfree(process);
-                        }
-                        break;
-                    }
-                    case SyscallID_Sleep:
-                        Syscall_sleep(&env, caller, info);
-                        break;
-                    case SyscallID_Spawn:
-                        Syscall_spawn(&env, caller, info);
-                        break;
-                    case SyscallID_Wait:
-                        Syscall_wait(&env, caller, info);
-                        break;
-                    default:
-                        printf("Received unknown %lu from '%s' %i\n", seL4_GetMR(0), ProcessGetName(process), ProcessGetPID(process));
-                        DumpProcesses();
-
-                        break;
-                }
+                syscallTable[seL4_GetMR(0)](&env, caller, info);
             }
         }
         else if (label == seL4_CapFault)
@@ -309,7 +266,7 @@ static void process_messages()
             printf("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
             printf("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
 
-            cleanAndRemoveProcess(process, -1);
+            cleanAndRemoveProcess(&env, process, -1);
 
 
         }
@@ -380,7 +337,7 @@ void *main_continued(void *arg UNUSED)
 
 
     ProcessInit(&initProcess);
-    spawnApp(&env, &initProcess, "init");
+    spawnApp(&env, &initProcess, "init", NULL);
 
     process_messages();    
 

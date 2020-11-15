@@ -27,3 +27,21 @@ int ProcessCountExtraThreads(const Process* p)
     LL_COUNT(p->threads, el, count);
     return count;
 }
+
+
+Thread* ProcessGetWaitingThread( const Process*p)
+{
+    if(p->main.state == ThreadState_Waiting)
+    {
+        return &(p->main);
+    }
+    Thread* t = NULL;
+    PROCESS_FOR_EACH_EXTRA_THREAD(p, t)
+    {
+        if(t->state == ThreadState_Waiting)
+        {
+            return t;
+        }
+    }
+    return NULL;
+}

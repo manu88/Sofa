@@ -55,6 +55,7 @@ void Syscall_sleep(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
     if (error)
     {
         printf("Unable to save caller err=%i\n", error);
+        cnode_delete(&env->vka, slot);
         tm_free_id(&env->tm, timerID);
         seL4_SetMR(1, -error);
         seL4_Reply(info);
