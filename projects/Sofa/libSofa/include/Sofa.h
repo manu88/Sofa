@@ -14,4 +14,3 @@ typedef enum
 
 
 int SofaSleep(int ms);
-int SofaSleep2(int ep, int ms);

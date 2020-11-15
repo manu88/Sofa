@@ -46,6 +46,7 @@ util_libs_import_libraries()
 sel4_libs_import_libraries()
 
 add_subdirectory(libSofa)
+add_subdirectory(init)
 add_subdirectory(app)
 add_subdirectory(kernel_task)
 

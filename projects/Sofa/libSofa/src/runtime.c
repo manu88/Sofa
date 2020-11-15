@@ -145,6 +145,8 @@ int RuntimeInit(int argc, char *argv[])
 
     sel4runtime_set_exit(process_exit);
 
+    seL4_SetUserData(endpoint);
+
 /* configure env */
     env.pid = init_data->pid;
     env.cspace_root = init_data->root_cnode;
@@ -174,6 +176,8 @@ int RuntimeInit(int argc, char *argv[])
 /* initialise simple */
     init_simple(&env, init_data);
 
+
+
     return 0;
 }
 
@@ -187,7 +191,7 @@ seL4_CPtr getNewThreadEndpoint()
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
     seL4_SetMR(0, SyscallID_ThreadNew);
 
-    info = seL4_Call(endpoint, info);
+    info = seL4_Call(seL4_GetUserData(), info);
     return recvSlot;
 }
 
