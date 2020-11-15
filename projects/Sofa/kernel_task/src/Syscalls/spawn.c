@@ -4,7 +4,9 @@
 void Syscall_spawn(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
 {
     Process* process = caller->process;
-    printf("Spawn request from %i '%s'\n", ProcessGetPID(process), ProcessGetName(process));
+
+    const char* dataBuf = caller->ipcBuffer;
+    printf("Spawn request from %i '%s' -> '%s'\n", ProcessGetPID(process), ProcessGetName(process), dataBuf);
 
     Process* newProc = kmalloc(sizeof(Process));
     ProcessInit(newProc);

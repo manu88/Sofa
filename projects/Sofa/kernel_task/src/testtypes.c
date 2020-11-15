@@ -38,6 +38,12 @@ void spawnApp(struct driver_env* envir, Process* p, const char* imgName)
     printf("range for PID %i is %i %i\n", ProcessGetPID(p), p->untypedRange.start, p->untypedRange.size);
     int consumed_untypeds = process_set_up(envir, GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
     p->untypedRange.size = consumed_untypeds;
+
+
+    p->main.ipcBuffer = (uint8_t*) vspace_new_pages(&envir->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    assert(p->main.ipcBuffer);
+    p->init->mainIPCBuffer = vspace_share_mem(&envir->vspace, &p->native.vspace, p->main.ipcBuffer, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
+    assert(p->init->mainIPCBuffer);
     process_run(imgName, envir, p);
 
 
@@ -211,8 +217,11 @@ void process_tear_down(driver_env_t *env, Process* process)
         LL_DELETE(process->threads,elt);
         if(elt->replyCap != 0)
         {
-            printf("Thread still have a reply cap\n");
             ThreadCleanupTimer(elt, env);
+            if(elt->ipcBuffer_vaddr)
+            {
+                vspace_unmap_pages(&process->native.vspace, elt->ipcBuffer_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
+            }
         }
         kfree(elt);
     }
@@ -226,8 +235,8 @@ void process_tear_down(driver_env_t *env, Process* process)
     /* unmap the env->init data frame */
 
     vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
+    vspace_unmap_pages(&process->native.vspace, process->init->mainIPCBuffer, 1, PAGE_BITS_4K, VSPACE_FREE);
 
-    printf("Will reset Untypeds at %i range %i\n", process->untypedRange.start, process->untypedRange.size);
 
     /* reset all the untypeds for the next test */
     for (int i = process->untypedRange.start; i < process->untypedRange.size; i++) 

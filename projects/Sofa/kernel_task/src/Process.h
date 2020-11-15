@@ -11,6 +11,9 @@ typedef struct _Process Process;
 typedef struct _Thread
 {
     seL4_CPtr process_endpoint;
+
+    uint8_t* ipcBuffer_vaddr;
+    uint8_t* ipcBuffer;
     seL4_Word replyCap;
     Process* process;
 
@@ -25,7 +28,6 @@ typedef struct _Process
     sel4utils_process_t native;
     
     void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
-
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
     UntypedRange untypedRange;
 

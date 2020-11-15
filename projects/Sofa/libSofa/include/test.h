@@ -53,6 +53,8 @@ struct env {
     seL4_CPtr domain;
     seL4_CPtr device_frame;
 
+    uint8_t *mainIPCBuffer;
+
     int priority;
     int cspace_size_bits;
     int pid;

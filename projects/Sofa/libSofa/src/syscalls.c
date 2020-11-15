@@ -24,6 +24,8 @@ int sc_spawn(seL4_CPtr endpoint, const char* path)
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     seL4_SetMR(0, SyscallID_Spawn);
     seL4_SetMR(1, strlen(path));
+
+    memcpy(TLSGet()->buffer, path, strlen(path));
     info = seL4_Call(endpoint, info);
 
     return seL4_GetMR(1);    

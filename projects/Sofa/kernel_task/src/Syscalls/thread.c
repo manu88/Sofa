@@ -12,7 +12,7 @@ void Syscall_ThreadNew(driver_env_t *env, Thread* caller, seL4_MessageInfo_t inf
     assert(newThread);
     memset(newThread, 0, sizeof(Thread));
     newThread->process = process;
-
+// create per thread endpoint
     cspacepath_t badged_ep_path;
     int error = vka_cspace_alloc_path(&env->vka, &badged_ep_path);
     ZF_LOGF_IFERR(error, "Failed to allocate path\n");
@@ -23,9 +23,17 @@ void Syscall_ThreadNew(driver_env_t *env, Thread* caller, seL4_MessageInfo_t inf
     error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, (seL4_Word)newThread);
     newThread->process_endpoint = badged_ep_path.capPtr;
     assert(error == 0);
+// create per thread IPC page
+    newThread->ipcBuffer = (uint8_t*) vspace_new_pages(&env->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    assert(newThread->ipcBuffer);
+    newThread->ipcBuffer_vaddr = vspace_share_mem(&env->vspace, &process->native.vspace, newThread->ipcBuffer, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
+    assert(newThread->ipcBuffer_vaddr);
 
-    seL4_MessageInfo_t infoRet = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 1, 1);
+
+// reply
+    seL4_MessageInfo_t infoRet = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 1, 2);
     seL4_SetMR(0, SyscallID_ThreadNew);
+    seL4_SetMR(1, newThread->ipcBuffer_vaddr);
     LL_APPEND(process->threads, newThread);
     seL4_SetCap(0, badged_ep_path.capPtr);
     seL4_Reply(infoRet);

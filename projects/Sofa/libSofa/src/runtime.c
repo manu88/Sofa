@@ -144,13 +144,16 @@ int RuntimeInit(int argc, char *argv[])
 
 /* read in init data */
     init_data = (void *) atol(argv[1]);
-
+    memset(&_mainTLSContext, 0, sizeof(TLSContext));
     _mainTLSContext.ep = endpoint;
     sel4runtime_set_exit(process_exit);
 
     TLSSet(&_mainTLSContext);
 
 /* configure env */
+    env.mainIPCBuffer = init_data->mainIPCBuffer;
+    _mainTLSContext.buffer = env.mainIPCBuffer;
+
     env.pid = init_data->pid;
     env.cspace_root = init_data->root_cnode;
     env.page_directory = init_data->page_directory;
@@ -185,16 +188,18 @@ int RuntimeInit(int argc, char *argv[])
 }
 
 
-seL4_CPtr getNewThreadEndpoint()
+seL4_CPtr getNewThreadEndpoint(uint8_t** ipcBufferAddr)
 {
     seL4_CPtr recvSlot;
     int vka_error = vka_cspace_alloc(&getProcessEnv()->vka, &recvSlot);
     assert(vka_error == 0);
     set_cap_receive_path(getProcessEnv(), recvSlot);
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     seL4_SetMR(0, SyscallID_ThreadNew);
 
     info = seL4_Call(TLSGet()->ep, info);
+
+    *ipcBufferAddr = (uint8_t*)seL4_GetMR(1);
     return recvSlot;
 }
 
@@ -205,7 +210,6 @@ void sendThreadExit(seL4_CPtr ep)
 
     seL4_Send(ep, info);
 }
-
 
 
 void TLSSet( TLSContext* ctx)

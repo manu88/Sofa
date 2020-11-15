@@ -290,8 +290,25 @@ static void process_messages()
         {
             Thread* sender = (Thread*) badge;
             Process* process = sender->process;
-            printf("Got VM fault from %i %s\n", ProcessGetPID(process), ProcessGetName(process));
+            printf("Got VM fault from %i %s in thread %p\n",
+                   ProcessGetPID(process),
+                   ProcessGetName(process),
+                   sender == &process->main? 0: sender
+                   );
+
+            const seL4_Word programCounter      = seL4_GetMR(seL4_VMFault_IP);
+            const seL4_Word faultAddr           = seL4_GetMR(seL4_VMFault_Addr);
+            const seL4_Word isPrefetch          = seL4_GetMR(seL4_VMFault_PrefetchFault);
+            const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
+            
+            printf("[kernel_task] programCounter      0X%lX\n",programCounter);
+            printf("[kernel_task] faultAddr           0X%lX\n",faultAddr);
+            printf("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
+            printf("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
+
             cleanAndRemoveProcess(process, -1);
+
+
         }
         else 
         {
