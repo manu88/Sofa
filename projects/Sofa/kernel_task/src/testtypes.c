@@ -112,7 +112,7 @@ int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* 
 /* setup data about untypeds */
     int num_untyped_per_process = UNTYPEDS_PER_PROCESS_BASE;// env->num_untypeds;
     process->init->untypeds = copy_untypeds_to_process(&process->native,
-                                                       env->untypeds + process->untypedRange.start,
+                                                       getUntypeds() + process->untypedRange.start,
                                                        num_untyped_per_process,
                                                        env);
 
@@ -210,7 +210,7 @@ void process_tear_down(driver_env_t *env, Process* process)
     for (int i = process->untypedRange.start; i < process->untypedRange.size; i++) 
     {
         cspacepath_t path;
-        vka_cspace_make_path(&env->vka, env->untypeds[i].cptr, &path);
+        vka_cspace_make_path(&env->vka, getUntypeds()[i].cptr/* env->untypeds[i].cptr*/, &path);
         int err = vka_cnode_revoke(&path);
         assert(err == 0);
     }

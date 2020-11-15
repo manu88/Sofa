@@ -84,7 +84,7 @@ struct driver_env {
     vka_object_t root_task_endpoint;
 
     int num_untypeds;
-    vka_object_t *untypeds;
+//    vka_object_t *untypeds;
     /* device frame to use for some tests */
     vka_object_t device_obj;
 

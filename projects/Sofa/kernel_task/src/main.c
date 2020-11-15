@@ -330,25 +330,7 @@ static void spawnApp(Process* p, const char* imgName)
 }
 
 
-static vspace_new_pages_fn prev_method_new_frame;
 
-
-static void *_on_vspace_new_pages(vspace_t *vspace, seL4_CapRights_t rights,
-                                     size_t num_pages, size_t size_bits)
-{
-//    printf("--> vspace_new_pages request num_pages = %li\n", num_pages);
-    return prev_method_new_frame(vspace, rights, num_pages, size_bits);
-}
-
-
-static vspace_unmap_pages_fn prev_method_unmap_pages;
-
-static void _on_unmap_pages(vspace_t *vspace, void *vaddr, size_t num_pages,
-                                      size_t size_bits, vka_t *_free)
-{
-//    printf("--> vspace_unmap_pages request num_pages = %li free %p(%p) \n", num_pages, _free, &env.vka);
-    prev_method_unmap_pages(vspace, vaddr, num_pages, size_bits, _free);
-}
 
 void *main_continued(void *arg UNUSED)
 {
@@ -387,7 +369,7 @@ void *main_continued(void *arg UNUSED)
 #endif
     /* allocate lots of untyped memory for tests to use */
     env.num_untypeds = populate_untypeds(getUntypeds());
-    env.untypeds = getUntypeds();
+    //env.untypeds = getUntypeds();
 
 
     /* Allocate a reply object for the RT kernel. */
@@ -406,12 +388,6 @@ void *main_continued(void *arg UNUSED)
         printf("plat_init is NOT set \n");
     }
 
-    prev_method_new_frame = env.vspace.new_pages;
-    env.vspace.new_pages = _on_vspace_new_pages;
-
-
-    prev_method_unmap_pages = env.vspace.unmap_pages;
-    env.vspace.unmap_pages = _on_unmap_pages;
 
     ProcessInit(&app1);
     printf("##### Spawn app\n");
