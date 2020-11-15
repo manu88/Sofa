@@ -88,9 +88,7 @@ extern char _cpio_archive_end[];
 
 static void spawnApp(Process* p, const char* imgName);
 static Process app1;
-static Process app2;
-static Process app3;
-static Process app4;
+
 
 /* initialise our runtime environment */
 static void init_env(driver_env_t *env)
@@ -168,11 +166,10 @@ static unsigned int populate_untypeds(vka_object_t *untypeds)
     /* First reserve some memory for the driver */
     vka_object_t reserve[DRIVER_NUM_UNTYPEDS];
     unsigned int reserve_num = allocate_untypeds(reserve, DRIVER_UNTYPED_MEMORY, DRIVER_NUM_UNTYPEDS);
-
+    printf("Allocated %i untypeds for kernel_task\n", reserve_num);
     /* Now allocate everything else for the tests */
-    printf("Array size %li\n", ARRAY_SIZE(untyped_size_bits_list));
+
     unsigned int num_untypeds = allocate_untypeds(untypeds, UINT_MAX, ARRAY_SIZE(untyped_size_bits_list));
-    printf("Got %i untypeds\n", num_untypeds);
     /* Fill out the size_bits list */
     for (unsigned int i = 0; i < num_untypeds; i++) {
         untyped_size_bits_list[i] = untypeds[i].size_bits;
@@ -220,12 +217,52 @@ static void DumpProcesses()
     printf("------------------------\n");
 
     seL4_DebugDumpScheduler();
+}
+
+static void printUntypedRange(void)
+{
+    printf("List free range\n");
+    FreeRange* elt= NULL;
+    LL_FOREACH(env.untypedsFree, elt)
+    {
+        printf("\t%i %i\n", elt->untyped_index_start, elt->untyped_index_size);
+    }
+    printf("End list range\n");
+
+}
+
+static void cleanAndRemoveProcess(Process* process, int retCode)
+{
+    printf("Received exit code %i from '%s' %i\n", retCode, ProcessGetName(process), ProcessGetPID(process));
+    process_tear_down(&env, process);
+    ProcessListRemove(process);
+    DumpProcesses();
+    FreeRange* newRange = malloc(sizeof(FreeRange));
+    assert(newRange);
+    newRange->untyped_index_start = process->untyped_index_start;
+    newRange->untyped_index_size = process->untyped_index_size;
+    LL_APPEND(env.untypedsFree, newRange);
+
+    printUntypedRange();
 
 }
 static void process_messages()
 {
+    uint8_t spawnNew = 0;
     while (1)
     {   
+        if (spawnNew)
+        {
+
+            spawnNew = 0;
+
+            Process* newProc = malloc(sizeof(Process));
+            assert(newProc);
+            ProcessInit(newProc);
+            spawnApp(newProc, "app");
+
+
+        }
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env.root_task_endpoint.cptr, &badge);
         seL4_Word label = seL4_MessageInfo_get_label(info);
@@ -252,10 +289,8 @@ static void process_messages()
                     case SyscallID_Exit:
                     {
                         int retCode = seL4_GetMR(1);
-                        printf("Received exit code %i from '%s' %i\n", retCode, ProcessGetName(process), ProcessGetPID(process));
-                        process_tear_down(&env, process);
-                        ProcessListRemove(process);
-                        DumpProcesses();
+                        cleanAndRemoveProcess(process, retCode);
+                        spawnNew = 1;
                         break;
                     }
                     case SyscallID_Sleep:
@@ -271,8 +306,16 @@ static void process_messages()
         }
         else if (label == seL4_CapFault)
         {
-            Process* process = (Process*) badge;
+            Thread* sender = (Thread*) badge;
+            Process* process = sender->process;
             printf("Got cap fault from '%s' %i\n", process->init->name, process->init->pid);
+        }
+        else if (label == seL4_VMFault)
+        {
+            Thread* sender = (Thread*) badge;
+            Process* process = sender->process;
+            printf("Got VM fault from %i %s\n", ProcessGetPID(process), ProcessGetName(process));
+            cleanAndRemoveProcess(process, -1);
         }
         else 
         {
@@ -292,7 +335,6 @@ static void spawnApp(Process* p, const char* imgName)
     p->init->pid = pidPool++;
     p->init->priority = seL4_MaxPrio - 1;
     
-
     int consumed_untypeds = process_set_up(&env, untyped_size_bits_list, p, imgName,(seL4_Word) &p->main);
     p->untyped_index_start = env.index_in_untypeds;
     p->untyped_index_size = consumed_untypeds;
@@ -302,11 +344,30 @@ static void spawnApp(Process* p, const char* imgName)
 
 
     printf("After use, Index is at %i\n", env.index_in_untypeds);
-    printf("App1 untyped start at  %i len %i\n", p->untyped_index_start, p->untyped_index_size);
+    printf("process %i untyped start at  %i len %i\n", p->init->pid, p->untyped_index_start, p->untyped_index_size);
     ProcessListAdd(p);
 }
 
 
+static vspace_new_pages_fn prev_method_new_frame;
+
+
+static void *_on_vspace_new_pages(vspace_t *vspace, seL4_CapRights_t rights,
+                                     size_t num_pages, size_t size_bits)
+{
+//    printf("--> vspace_new_pages request num_pages = %li\n", num_pages);
+    return prev_method_new_frame(vspace, rights, num_pages, size_bits);
+}
+
+
+static vspace_unmap_pages_fn prev_method_unmap_pages;
+
+static void _on_unmap_pages(vspace_t *vspace, void *vaddr, size_t num_pages,
+                                      size_t size_bits, vka_t *_free)
+{
+//    printf("--> vspace_unmap_pages request num_pages = %li free %p(%p) \n", num_pages, _free, &env.vka);
+    prev_method_unmap_pages(vspace, vaddr, num_pages, size_bits, _free);
+}
 
 void *main_continued(void *arg UNUSED)
 {
@@ -365,20 +426,45 @@ void *main_continued(void *arg UNUSED)
         printf("plat_init is NOT set \n");
     }
 
+    prev_method_new_frame = env.vspace.new_pages;
+    env.vspace.new_pages = _on_vspace_new_pages;
+
+
+    prev_method_unmap_pages = env.vspace.unmap_pages;
+    env.vspace.unmap_pages = _on_unmap_pages;
+
+#if 0 // map test
+    printf("#############################\n");
+
+    for (int i=0;i<10000;i++)
+    {
+        int *p = vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+        if(!p)
+        {
+            printf("Test failed at %i\n",i);
+        }
+        assert(p);
+        *p = 42;
+        vspace_unmap_pages(&env.vspace, p, 1, PAGE_BITS_4K, NULL);// VSPACE_FREE);
+    }
+    printf("#############################\n");
+    exit(0);
+#endif
     env.index_in_untypeds = 0;
 
     ProcessInit(&app1);
+    printf("##### Spawn app\n");
     spawnApp(&app1, "app");
-
-    ProcessInit(&app2);
-    spawnApp(&app2, "app");
-
-    ProcessInit(&app3);
-    spawnApp(&app3, "app");
-
-    ProcessInit(&app4);
-    spawnApp(&app4, "app");
-
+    printf("##### DID Spawn app\n");
+/*
+    for (int i=0;i<2;i++)
+    {
+        Process*p = malloc(sizeof(Process));
+        assert(p);
+        ProcessInit(p);
+        spawnApp(p, "app");
+    }
+*/
     DumpProcesses();
 
     process_messages();    

@@ -24,7 +24,7 @@
 
 /* This file is shared with seltest-tests. */
 #include "test_init_data.h"
-//#include "Process.h"
+#include "utlist.h"
 
 #define TESTS_APP "app"
 
@@ -35,6 +35,14 @@ struct timer_callback_info {
     void *callback_data;
 };
 typedef struct timer_callback_info timer_callback_info_t;
+
+typedef struct _FreeRange
+{
+    int untyped_index_start;
+    int untyped_index_size;
+
+    struct _FreeRange *next;
+}FreeRange;
 
 struct driver_env {
     /* An initialised vka that may be used by the test. */
@@ -78,7 +86,7 @@ struct driver_env {
     int index_in_untypeds;
     int num_untypeds;
     vka_object_t *untypeds;
-
+    FreeRange *untypedsFree;
     /* device frame to use for some tests */
     vka_object_t device_obj;
 

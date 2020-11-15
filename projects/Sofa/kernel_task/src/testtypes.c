@@ -25,21 +25,44 @@
 
 /* Basic test type. Each test is launched as its own process. */
 /* copy untyped caps into a processes cspace, return the cap range they can be found in */
-seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int num_untypeds,
+seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int numUntypeds,
                                                 driver_env_t *env)
 {
     seL4_SlotRegion range = {0};
 
-    for (int i = 0; i < num_untypeds; i++) {
-        seL4_CPtr slot = sel4utils_copy_cap_to_process(process, &env->vka, untypeds[i].cptr);
-
+    int i_offset =0;
+    int realNumUntypeds = numUntypeds;
+    int availableUntypeds = 0;
+    FreeRange* elt= NULL;
+    LL_COUNT(env->untypedsFree, elt, availableUntypeds);
+    if(0)//availableUntypeds)
+    {
+        printf("copy_untypeds_to_process got %i available range\n", availableUntypeds);
+        FreeRange* range = NULL;
+        LL_FOREACH(env->untypedsFree, elt)
+        {
+            range = elt;
+            break;
+        }
+        assert(range);
+        LL_DELETE(env->untypedsFree, range);
+        i_offset = range->untyped_index_start;
+        realNumUntypeds = range->untyped_index_size;
+        free(range);
+    }
+    printf("Copy untyped from %i size %i\n",i_offset, realNumUntypeds);
+    for (int i = 0; i < realNumUntypeds; i++) {
+        seL4_CPtr slot = sel4utils_copy_cap_to_process(process, &env->vka, untypeds[i + i_offset].cptr);
         /* set up the cap range */
-        if (i == 0) {
+        if (i == 0) 
+        {
             range.start = slot;
         }
         range.end = slot;
     }
-    assert((range.end - range.start) + 1 == num_untypeds);
+    printf("Range start %li end %li realNumUntypeds %i numUntypeds %i\n", range.start, range.end, realNumUntypeds, numUntypeds);
+    assert((range.end - range.start) + 1 == realNumUntypeds);
+
     return range;
 }
 
@@ -49,7 +72,6 @@ int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* 
     int error;
 
     //root_task_endpoint
-
 
     sel4utils_process_config_t config = process_config_default_simple(&env->simple, imgName, process->init->priority);
     config = process_config_mcp(config, seL4_MaxPrio);
@@ -106,18 +128,20 @@ int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* 
         }
     }
 
-    /* setup data about untypeds */
+/* setup data about untypeds */
     int num_untyped_per_process = UNTYPEDS_PER_PROCESS_BASE;// env->num_untypeds;
 
     process->init->untypeds = copy_untypeds_to_process(&process->native,
-                                                       &env->untypeds[env->index_in_untypeds],// + env->index_untypeds,
+                                                       env->untypeds + env->index_in_untypeds,// + env->index_untypeds,
                                                        num_untyped_per_process,
                                                        env);
-
-    memcpy(process->init->untyped_size_bits_list, &untyped_size_bits_list[env->index_in_untypeds], num_untyped_per_process);
-    /* copy the fault endpoint - we wait on the endpoint for a message
-     * or a fault to see when the test finishes */
-    //env->endpoint = sel4utils_copy_cap_to_process(&(env->test_process), &env->vka, env->test_process.fault_endpoint.cptr);
+    size_t memSize = 0;
+    for(int i=0;i <num_untyped_per_process;i++)
+    {
+        memSize +=  BIT(untyped_size_bits_list[env->index_in_untypeds + i])/1024;
+    }
+    printf("Process Has %zi kb memory\n", memSize);
+    memcpy(process->init->untyped_size_bits_list, untyped_size_bits_list + env->index_in_untypeds, num_untyped_per_process);
 
     // create a minted enpoint for the process
     cspacepath_t path;
@@ -202,7 +226,8 @@ void process_tear_down(driver_env_t *env, Process* process)
     }
 
     /* unmap the env->init data frame */
-    vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, NULL);
+
+    vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
 
     printf("Will reset Untypeds at %i range %i\n", process->untyped_index_start, process->untyped_index_size);
 
@@ -211,10 +236,13 @@ void process_tear_down(driver_env_t *env, Process* process)
     {
         cspacepath_t path;
         vka_cspace_make_path(&env->vka, env->untypeds[i].cptr, &path);
-        vka_cnode_revoke(&path);
+        int err = vka_cnode_revoke(&path);
+        assert(err == 0);
     }
 
     /* destroy the process */
     sel4utils_destroy_process(&process->native, &env->vka);
+    
+    
 }
 

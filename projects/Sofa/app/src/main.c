@@ -40,7 +40,8 @@ int main(int argc, char *argv[])
     printf("\n\n");
     fflush(stdout);
     printf("[%i] started\n", getProcessEnv()->pid);
-//    return 0;
+    SofaSleep(2000);
+    return 0;
     seL4_CPtr ep = 0;// getNewThreadEndpoint();
     helper_thread_t thread1;
     create_helper_thread(getProcessEnv(), &thread1);
@@ -50,7 +51,7 @@ int main(int argc, char *argv[])
 
     wait_for_helper(&thread1);
     printf("[%i] thread returned\n", getProcessEnv()->pid);
-    cleanup_helper(getProcessEnv(), &thread1);
+    //cleanup_helper(getProcessEnv(), &thread1);
 
     return 1;
 }
