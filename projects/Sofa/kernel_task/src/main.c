@@ -54,6 +54,7 @@
 #include <sel4platsupport/io.h>
 #include <Sofa.h>
 #include "Syscalls/SyscallTable.h"
+#include "Allocator.h"
 
 #define TIMER_BADGE 1
 
@@ -407,7 +408,6 @@ void *main_continued(void *arg UNUSED)
     /* allocate lots of untyped memory for tests to use */
     env.num_untypeds = populate_untypeds(untypeds);
     env.untypeds = untypeds;
-    printf("Allocated %i untypeds (%i) \n", env.num_untypeds, simple_get_untyped_count(&env.simple));
 
 
     /* Allocate a reply object for the RT kernel. */
@@ -433,38 +433,14 @@ void *main_continued(void *arg UNUSED)
     prev_method_unmap_pages = env.vspace.unmap_pages;
     env.vspace.unmap_pages = _on_unmap_pages;
 
-#if 0 // map test
-    printf("#############################\n");
 
-    for (int i=0;i<10000;i++)
-    {
-        int *p = vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-        if(!p)
-        {
-            printf("Test failed at %i\n",i);
-        }
-        assert(p);
-        *p = 42;
-        vspace_unmap_pages(&env.vspace, p, 1, PAGE_BITS_4K, NULL);// VSPACE_FREE);
-    }
-    printf("#############################\n");
-    exit(0);
-#endif
     env.index_in_untypeds = 0;
 
     ProcessInit(&app1);
     printf("##### Spawn app\n");
     spawnApp(&app1, "app");
     printf("##### DID Spawn app\n");
-/*
-    for (int i=0;i<2;i++)
-    {
-        Process*p = malloc(sizeof(Process));
-        assert(p);
-        ProcessInit(p);
-        spawnApp(p, "app");
-    }
-*/
+
     DumpProcesses();
 
     process_messages();    

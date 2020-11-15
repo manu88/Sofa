@@ -26,8 +26,9 @@
 /* Basic test type. Each test is launched as its own process. */
 /* copy untyped caps into a processes cspace, return the cap range they can be found in */
 seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int numUntypeds,
-                                                driver_env_t *env)
+                                                driver_env_t *env, size_t *realIndex)
 {
+    assert(realIndex);
     seL4_SlotRegion range = {0};
 
     int i_offset =0;
@@ -35,7 +36,7 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
     int availableUntypeds = 0;
     FreeRange* elt= NULL;
     LL_COUNT(env->untypedsFree, elt, availableUntypeds);
-    if(0)//availableUntypeds)
+    if(availableUntypeds)
     {
         printf("copy_untypeds_to_process got %i available range\n", availableUntypeds);
         FreeRange* range = NULL;
@@ -62,6 +63,8 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
     }
     printf("Range start %li end %li realNumUntypeds %i numUntypeds %i\n", range.start, range.end, realNumUntypeds, numUntypeds);
     assert((range.end - range.start) + 1 == realNumUntypeds);
+
+    *realIndex = i_offset;
 
     return range;
 }
@@ -130,17 +133,20 @@ int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* 
 
 /* setup data about untypeds */
     int num_untyped_per_process = UNTYPEDS_PER_PROCESS_BASE;// env->num_untypeds;
-
+    size_t realIndexInUntypeds = 0;
     process->init->untypeds = copy_untypeds_to_process(&process->native,
                                                        env->untypeds + env->index_in_untypeds,// + env->index_untypeds,
                                                        num_untyped_per_process,
-                                                       env);
+                                                       env, &realIndexInUntypeds);
+/*
     size_t memSize = 0;
     for(int i=0;i <num_untyped_per_process;i++)
     {
         memSize +=  BIT(untyped_size_bits_list[env->index_in_untypeds + i])/1024;
     }
     printf("Process Has %zi kb memory\n", memSize);
+*/
+    printf("Process_set_up, realindex is %zi\n", realIndexInUntypeds);
     memcpy(process->init->untyped_size_bits_list, untyped_size_bits_list + env->index_in_untypeds, num_untyped_per_process);
 
     // create a minted enpoint for the process
