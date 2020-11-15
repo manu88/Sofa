@@ -4,6 +4,6 @@
 
 int SofaSleep(int ms)
 {
-    return sc_sleep(seL4_GetUserData(), ms);
+    return sc_sleep(TLSGet()->ep, ms);
 }
 

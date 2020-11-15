@@ -7,11 +7,14 @@ static int on_thread(seL4_Word threadPtr, seL4_Word routinePtr, seL4_Word arg, s
 {
     Thread* self = (Thread*)threadPtr;
     assert(self);
-    seL4_SetUserData(self->ep);
+    TLSContext _ctx;
+    _ctx.ep = self->ep;
+    TLSSet(&_ctx);
 
     void* ret = ((start_routine) routinePtr)((void*)arg);
 
     sendThreadExit(self->ep);
+    TLSSet(NULL);
     self->ret = ret;
     return 0;
 }

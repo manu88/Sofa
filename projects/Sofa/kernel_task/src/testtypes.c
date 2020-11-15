@@ -23,6 +23,29 @@
 #define TIMER_ID 0
 
 
+void spawnApp(struct driver_env* envir, Process* p, const char* imgName)
+{
+    static int pidPool = 1;
+
+    p->init = (test_init_data_t *) vspace_new_pages(&envir->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    assert(p->init != NULL);
+    p->init->pid = pidPool++;
+    p->init->priority = seL4_MaxPrio - 1;
+
+    int err = UntypedsGetFreeRange(&p->untypedRange);
+    assert(err == 0);
+    assert(p->untypedRange.size);
+    printf("range for PID %i is %i %i\n", ProcessGetPID(p), p->untypedRange.start, p->untypedRange.size);
+    int consumed_untypeds = process_set_up(envir, GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
+    p->untypedRange.size = consumed_untypeds;
+    process_run(imgName, envir, p);
+
+
+
+    ProcessListAdd(p);
+}
+
+
 /* Basic test type. Each test is launched as its own process. */
 /* copy untyped caps into a processes cspace, return the cap range they can be found in */
 seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int numUntypeds,

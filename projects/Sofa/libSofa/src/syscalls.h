@@ -6,3 +6,5 @@ void sc_exit(seL4_CPtr endpoint, int code);
 
 // sleep syscall
 int sc_sleep(seL4_CPtr endpoint, int ms);
+
+int sc_spawn(seL4_CPtr endpoint, const char* path);

@@ -24,6 +24,8 @@ static seL4_CPtr endpoint;
 static struct env env;
 
 
+static TLSContext _mainTLSContext;
+
 seL4_CPtr getProcessEndpoint(void)
 {
     return endpoint;
@@ -143,9 +145,10 @@ int RuntimeInit(int argc, char *argv[])
 /* read in init data */
     init_data = (void *) atol(argv[1]);
 
+    _mainTLSContext.ep = endpoint;
     sel4runtime_set_exit(process_exit);
 
-    seL4_SetUserData(endpoint);
+    TLSSet(&_mainTLSContext);
 
 /* configure env */
     env.pid = init_data->pid;
@@ -191,7 +194,7 @@ seL4_CPtr getNewThreadEndpoint()
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
     seL4_SetMR(0, SyscallID_ThreadNew);
 
-    info = seL4_Call(seL4_GetUserData(), info);
+    info = seL4_Call(TLSGet()->ep, info);
     return recvSlot;
 }
 
@@ -201,4 +204,15 @@ void sendThreadExit(seL4_CPtr ep)
     seL4_SetMR(0, SyscallID_ThreadExit);
 
     seL4_Send(ep, info);
+}
+
+
+
+void TLSSet( TLSContext* ctx)
+{
+    seL4_SetUserData((seL4_Word) ctx);
+}
+TLSContext* TLSGet(void)
+{
+    return (TLSContext*) seL4_GetUserData();
 }

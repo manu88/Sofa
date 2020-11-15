@@ -83,8 +83,8 @@ extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
 
-static void spawnApp(Process* p, const char* imgName);
-static Process app1;
+
+static Process initProcess;
 
 
 
@@ -231,21 +231,8 @@ static void cleanAndRemoveProcess(Process* process, int retCode)
 }
 static void process_messages()
 {
-    uint8_t spawnNew = 0;
     while (1)
     {   
-        if (spawnNew)
-        {
-
-            spawnNew = 0;
-
-            Process* newProc = kmalloc(sizeof(Process));
-            assert(newProc);
-            ProcessInit(newProc);
-            spawnApp(newProc, "app");
-
-
-        }
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env.root_task_endpoint.cptr, &badge);
         seL4_Word label = seL4_MessageInfo_get_label(info);
@@ -273,15 +260,17 @@ static void process_messages()
                     {
                         int retCode = seL4_GetMR(1);
                         cleanAndRemoveProcess(process, retCode);
-                        if(process != &app1)
+                        if(process != &initProcess)
                         {
                             kfree(process);
                         }
-                        spawnNew = 1;
                         break;
                     }
                     case SyscallID_Sleep:
                         Syscall_sleep(&env, caller, info);
+                        break;
+                    case SyscallID_Spawn:
+                        Syscall_spawn(&env, caller, info);
                         break;
                     default:
                         printf("Received unknown %lu from '%s' %i\n", seL4_GetMR(0), ProcessGetName(process), ProcessGetPID(process));
@@ -312,27 +301,7 @@ static void process_messages()
 }
 
 
-static void spawnApp(Process* p, const char* imgName)
-{
-    static int pidPool = 1;
 
-    p->init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-    assert(p->init != NULL);
-    p->init->pid = pidPool++;
-    p->init->priority = seL4_MaxPrio - 1;
-
-    int err = UntypedsGetFreeRange(&p->untypedRange);
-    assert(err == 0);
-    assert(p->untypedRange.size);
-    printf("range for PID %i is %i %i\n", ProcessGetPID(p), p->untypedRange.start, p->untypedRange.size);
-    int consumed_untypeds = process_set_up(&env, GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
-    p->untypedRange.size = consumed_untypeds;
-    process_run(imgName, &env, p);
-
-
-
-    ProcessListAdd(p);
-}
 
 void *main_continued(void *arg UNUSED)
 {
@@ -390,10 +359,8 @@ void *main_continued(void *arg UNUSED)
     }
 
 
-    ProcessInit(&app1);
-    spawnApp(&app1, "app");
-
-    DumpProcesses();
+    ProcessInit(&initProcess);
+    spawnApp(&env, &initProcess, "init");
 
     process_messages();    
 
