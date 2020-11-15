@@ -4,7 +4,7 @@
 #include "utlist.h"
 #include "test_init_data.h"
 #include "test.h"
-
+#include "Allocator.h"
 
 typedef struct _Process Process;
 
@@ -27,9 +27,7 @@ typedef struct _Process
     void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
 
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
-
-    int untyped_index_start;
-    int untyped_index_size;
+    UntypedRange untypedRange;
 
     Thread* threads; // other threads, NOT including the main one
 

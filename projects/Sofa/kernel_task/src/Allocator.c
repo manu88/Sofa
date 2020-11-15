@@ -1,22 +1,97 @@
+#include <vka/object.h>
 #include "Allocator.h"
+#include "testtypes.h"
+#include "utlist.h"
 
-int findUntypedBySize(driver_env_t* env, size_t size)
+/* list of untypeds to give out to test processes */
+static vka_object_t untypeds[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
+/* list of sizes (in bits) corresponding to untyped */
+static uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
+
+
+/* list of untypeds to give out to test processes */
+vka_object_t* getUntypeds()
 {
-    return -1;
+    return untypeds;
+}
+
+/* list of sizes (in bits) corresponding to untyped */
+uint8_t* GetUntypedSizeBitsList(void)
+{
+    return untyped_size_bits_list;
 }
 
 
-size_t countUntypedBySize(driver_env_t* env, size_t size, uint8_t* size_bit_list, size_t list_size)
-{
-    size_t count = 0;
-    for (size_t i=0; i < list_size; i++)
-    {
-        size_t bitSize = BIT(size_bit_list[i]);
-        if(bitSize >= size)
-        {
-            count++;
-        }
 
+static int _index = 0;
+static FreeRange *untypedsFree = NULL;
+
+
+static FreeRange* getFirstFreeRange(void)
+{
+    FreeRange* elt = NULL;
+    FreeRange* tmp = NULL;
+    LL_FOREACH_SAFE(untypedsFree, elt, tmp)
+    {
+        LL_DELETE(untypedsFree, elt);
+        break;
     }
-    return count;
+
+    return elt;
+}
+
+int UntypedsGetFreeRange(UntypedRange* range)
+{
+    assert(range);
+
+    printf("BEFORE\n");
+    printUntypedRange();
+
+
+    FreeRange* freeRange = getFirstFreeRange();
+    if(freeRange)
+    {
+        printf("Got a free range available\n");
+        range->start = freeRange->start;
+        range->size = freeRange->size;
+        free(freeRange);
+        printf("AFTER\n");
+        printUntypedRange();
+
+        return 0;
+    }
+
+    range->start = _index;
+    range->size = UNTYPEDS_PER_PROCESS_BASE;
+
+    _index += range->size;
+
+    return 0;
+}
+
+
+void printUntypedRange(void)
+{
+    printf("List free range\n");
+    FreeRange* elt= NULL;
+    LL_FOREACH(untypedsFree, elt)
+    {
+        printf("\t%i %i\n", elt->start, elt->size);
+    }
+    printf("End list range\n");
+
+}
+
+
+void UnypedsGiveBack(const UntypedRange* range)
+{
+    assert(range);
+
+
+    FreeRange* newRange = malloc(sizeof(FreeRange));
+    assert(newRange);
+    newRange->start = range->start;
+    newRange->size = range->size;
+    LL_APPEND(untypedsFree, newRange);
+   
 }

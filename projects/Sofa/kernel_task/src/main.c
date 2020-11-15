@@ -78,10 +78,6 @@ static sel4utils_alloc_data_t data;
 
 /* environment encapsulating allocation interfaces etc */
 struct driver_env env;
-/* list of untypeds to give out to test processes */
-static vka_object_t untypeds[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
-/* list of sizes (in bits) corresponding to untyped */
-static uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
 
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
@@ -170,10 +166,10 @@ static unsigned int populate_untypeds(vka_object_t *untypeds)
     printf("Allocated %i untypeds for kernel_task\n", reserve_num);
     /* Now allocate everything else for the tests */
 
-    unsigned int num_untypeds = allocate_untypeds(untypeds, UINT_MAX, ARRAY_SIZE(untyped_size_bits_list));
+    unsigned int num_untypeds = allocate_untypeds(getUntypeds(), UINT_MAX, CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS);
     /* Fill out the size_bits list */
     for (unsigned int i = 0; i < num_untypeds; i++) {
-        untyped_size_bits_list[i] = untypeds[i].size_bits;
+        GetUntypedSizeBitsList()[i] = untypeds[i].size_bits;
     }
 
     /* Return reserve memory */
@@ -220,29 +216,14 @@ static void DumpProcesses()
     seL4_DebugDumpScheduler();
 }
 
-static void printUntypedRange(void)
-{
-    printf("List free range\n");
-    FreeRange* elt= NULL;
-    LL_FOREACH(env.untypedsFree, elt)
-    {
-        printf("\t%i %i\n", elt->untyped_index_start, elt->untyped_index_size);
-    }
-    printf("End list range\n");
-
-}
-
 static void cleanAndRemoveProcess(Process* process, int retCode)
 {
     printf("Received exit code %i from '%s' %i\n", retCode, ProcessGetName(process), ProcessGetPID(process));
     process_tear_down(&env, process);
     ProcessListRemove(process);
     DumpProcesses();
-    FreeRange* newRange = malloc(sizeof(FreeRange));
-    assert(newRange);
-    newRange->untyped_index_start = process->untyped_index_start;
-    newRange->untyped_index_size = process->untyped_index_size;
-    LL_APPEND(env.untypedsFree, newRange);
+
+    UnypedsGiveBack(&process->untypedRange);
 
     printUntypedRange();
 
@@ -329,23 +310,22 @@ static void process_messages()
 static void spawnApp(Process* p, const char* imgName)
 {
     static int pidPool = 1;
-    printf("Before use, Index is at %i\n", env.index_in_untypeds);
 
     p->init = (test_init_data_t *) vspace_new_pages(&env.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(p->init != NULL);
     p->init->pid = pidPool++;
     p->init->priority = seL4_MaxPrio - 1;
-    
-    int consumed_untypeds = process_set_up(&env, untyped_size_bits_list, p, imgName,(seL4_Word) &p->main);
-    p->untyped_index_start = env.index_in_untypeds;
-    p->untyped_index_size = consumed_untypeds;
+
+    int err = UntypedsGetFreeRange(&p->untypedRange);
+    assert(err == 0);
+    assert(p->untypedRange.size);
+    printf("range for PID %i is %i %i\n", ProcessGetPID(p), p->untypedRange.start, p->untypedRange.size);
+    int consumed_untypeds = process_set_up(&env, GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
+    p->untypedRange.size = consumed_untypeds;
     process_run(imgName, &env, p);
 
-    env.index_in_untypeds += consumed_untypeds;
 
 
-    printf("After use, Index is at %i\n", env.index_in_untypeds);
-    printf("process %i untyped start at  %i len %i\n", p->init->pid, p->untyped_index_start, p->untyped_index_size);
     ProcessListAdd(p);
 }
 
@@ -406,8 +386,8 @@ void *main_continued(void *arg UNUSED)
     }
 #endif
     /* allocate lots of untyped memory for tests to use */
-    env.num_untypeds = populate_untypeds(untypeds);
-    env.untypeds = untypeds;
+    env.num_untypeds = populate_untypeds(getUntypeds());
+    env.untypeds = getUntypeds();
 
 
     /* Allocate a reply object for the RT kernel. */
@@ -432,9 +412,6 @@ void *main_continued(void *arg UNUSED)
 
     prev_method_unmap_pages = env.vspace.unmap_pages;
     env.vspace.unmap_pages = _on_unmap_pages;
-
-
-    env.index_in_untypeds = 0;
 
     ProcessInit(&app1);
     printf("##### Spawn app\n");

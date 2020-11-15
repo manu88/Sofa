@@ -38,8 +38,8 @@ typedef struct timer_callback_info timer_callback_info_t;
 
 typedef struct _FreeRange
 {
-    int untyped_index_start;
-    int untyped_index_size;
+    int start;
+    int size;
 
     struct _FreeRange *next;
 }FreeRange;
@@ -83,10 +83,8 @@ struct driver_env {
 
     vka_object_t root_task_endpoint;
 
-    int index_in_untypeds;
     int num_untypeds;
     vka_object_t *untypeds;
-    FreeRange *untypedsFree;
     /* device frame to use for some tests */
     vka_object_t device_obj;
 

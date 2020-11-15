@@ -3,5 +3,23 @@
 #include "test.h"
 
 
-int findUntypedBySize(driver_env_t* env, size_t size);
-size_t countUntypedBySize(driver_env_t* env, size_t size, uint8_t* size_bit_list, size_t list_size);
+typedef struct _UntypedRange
+{
+    int start;
+    int size;
+
+}UntypedRange;
+
+
+/* list of untypeds to give out to test processes */
+vka_object_t* getUntypeds(void);
+
+/* list of sizes (in bits) corresponding to untyped */
+uint8_t* GetUntypedSizeBitsList(void);
+
+
+int UntypedsGetFreeRange(UntypedRange* range);
+
+void UnypedsGiveBack(const UntypedRange* range);
+
+void printUntypedRange(void);
