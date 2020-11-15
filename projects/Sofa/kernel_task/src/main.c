@@ -272,6 +272,9 @@ static void process_messages()
                     case SyscallID_Spawn:
                         Syscall_spawn(&env, caller, info);
                         break;
+                    case SyscallID_Wait:
+                        Syscall_wait(&env, caller, info);
+                        break;
                     default:
                         printf("Received unknown %lu from '%s' %i\n", seL4_GetMR(0), ProcessGetName(process), ProcessGetPID(process));
                         DumpProcesses();

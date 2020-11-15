@@ -1,5 +1,5 @@
 #pragma once
-
+#include <sys/types.h> // pid_t
 
 typedef enum
 {
@@ -13,6 +13,7 @@ typedef enum
     SyscallID_Sleep,
 
     SyscallID_Spawn,
+    SyscallID_Wait,
 
 } SyscallIDs;
 
@@ -22,3 +23,6 @@ int SofaSleep(int ms);
 
 
 int SofaSpawn(const char* path);
+
+pid_t SofaWaitPid(pid_t pid, int *wstatus, int options);
+pid_t SofaWait(int *wstatus);
