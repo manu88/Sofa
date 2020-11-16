@@ -9,8 +9,8 @@ int SerialInit(void);
 void handleSerialInput(KernelTaskContext* env);
 
 
-typedef void (*OnBytesAvailable)(size_t size, void* ptr);
+typedef void (*OnBytesAvailable)(size_t size, char until, void* ptr);
 
 size_t SerialGetAvailableChar(void);
 size_t SerialCopyAvailableChar(char* dest, size_t maxSize);
-int SerialRegisterWaiter(OnBytesAvailable callback, size_t forSize, void* ptr);
+int SerialRegisterWaiter(OnBytesAvailable callback, size_t forSize, char until, void* ptr);

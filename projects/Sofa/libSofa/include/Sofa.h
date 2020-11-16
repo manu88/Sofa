@@ -32,3 +32,4 @@ pid_t SofaWait(int *wstatus);
 
 
 ssize_t SofaRead(char* data, size_t dataSize);
+ssize_t SofaReadLine(char* data, size_t dataSize);

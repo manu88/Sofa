@@ -22,16 +22,16 @@ void on_read_complete(ps_chardevice_t* device, enum chardev_status stat, size_t 
     caller->replyCap = 0;
 }
 */
-static void onBytesAvailable(size_t size, void* ptr)
+static void onBytesAvailable(size_t size, char until, void* ptr)
 {
-//    printf("onBytesAvailable got %zi bytes to read\n", size);
     Thread* caller = (Thread*) ptr;
     assert(caller);
 
     size_t bytes = SerialCopyAvailableChar(caller->ipcBuffer, size);
-    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
     seL4_SetMR(0, SyscallID_Read);
-    seL4_SetMR(1, bytes);
+    seL4_SetMR(1, until?bytes: -EAGAIN);
+    
 
     seL4_Send(caller->replyCap, tag);
 
@@ -45,6 +45,7 @@ void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
     KernelTaskContext* env = getKernelTaskContext();
 
     size_t sizeToRead = seL4_GetMR(1);
+    char readUntil = (char)seL4_GetMR(2);
 
     assert(caller->replyCap == 0);
 
@@ -60,6 +61,6 @@ void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
     }
 
     caller->replyCap = slot;
-    SerialRegisterWaiter(onBytesAvailable, sizeToRead, caller);
+    SerialRegisterWaiter(onBytesAvailable, sizeToRead, readUntil, caller);
 
 }
