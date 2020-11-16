@@ -22,13 +22,10 @@ int main(int argc, char *argv[])
 
     printf("app pid is %i\n", appPid);
 
-    
-    retPid = SofaWait(&appStatus);
-    printf("Wait 2 returned %i status %i\n", retPid, appStatus);  
-
     while (1)
     {
-        seL4_Yield();
+        retPid = SofaWait(&appStatus);
+        printf("Wait returned pid %i status %i\n", retPid, appStatus);
     }
     
     return 1;

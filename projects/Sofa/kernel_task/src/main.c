@@ -34,6 +34,7 @@
 #include <sel4debug/register_dump.h>
 #include <sel4platsupport/device.h>
 #include <sel4platsupport/platsupport.h>
+#include <platsupport/chardev.h>
 #include <sel4utils/vspace.h>
 #include <sel4utils/stack.h>
 #include <sel4utils/process.h>
@@ -55,6 +56,9 @@
 #include <Sofa.h>
 #include "Syscalls/SyscallTable.h"
 #include "Allocator.h"
+
+
+#include <sel4platsupport/arch/io.h>
 
 #define TIMER_BADGE 1
 
@@ -235,8 +239,16 @@ static void process_messages()
             {
                 Thread* caller = (Thread*) badge;
                 Process* process = caller->process;
-
-                syscallTable[seL4_GetMR(0)](&env, caller, info);
+                SyscallID rpcID = seL4_GetMR(0);  
+                if(rpcID > 0 && rpcID < SyscallID_Last)
+                {
+                    syscallTable[rpcID](&env, caller, info);
+                }
+                else
+                {
+                    assert(0);
+                }
+                
             }
         }
         else if (label == seL4_CapFault)
@@ -334,6 +346,10 @@ void *main_continued(void *arg UNUSED)
         printf("plat_init is NOT set \n");
     }
 
+    printf("=====>Init Serial\n");
+    sel4platsupport_get_io_port_ops(&env.ops.io_port_ops, &env.simple, &env.vka);
+    ps_cdev_init(PC99_SERIAL_COM1 , &env.ops ,&env.comDev);
+    printf("<===== End Init Serial\n");
 
     ProcessInit(&initProcess);
     spawnApp(&env, &initProcess, "init", NULL);

@@ -24,3 +24,8 @@ pid_t SofaWait(int *wstatus)
 {
     return SofaWaitPid(-1, wstatus, 0);
 }
+
+int SofaReadChar(void)
+{
+    return sc_read(TLSGet()->ep);
+}

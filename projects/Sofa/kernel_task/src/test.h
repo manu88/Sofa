@@ -21,6 +21,7 @@
 #include <sel4platsupport/irq.h>
 #include <simple/simple.h>
 #include <vspace/vspace.h>
+#include <platsupport/chardev.h>
 
 /* This file is shared with seltest-tests. */
 #include "test_init_data.h"
@@ -90,6 +91,8 @@ struct driver_env {
 
     /* time server for managing timeouts */
     time_manager_t tm;
+
+    ps_chardevice_t comDev;
 };
 typedef struct driver_env driver_env_t;
 
