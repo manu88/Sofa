@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     int retThread = 0;
     ThreadJoin(&th, (void**)&retThread);
     printf("[%i] thread returned %i\n", getProcessEnv()->pid, retThread);
-    SofaSleep(500);
+    SofaSleep(2000);
     //cleanup_helper(getProcessEnv(), &thread1);
 
     return 1;
