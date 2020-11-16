@@ -57,6 +57,7 @@
 #include "Syscalls/SyscallTable.h"
 #include "Allocator.h"
 #include "Timer.h"
+#include "Serial.h"
 
 
 #include <sel4platsupport/arch/io.h>
@@ -333,17 +334,8 @@ void *main_continued(void *arg UNUSED)
     }
 
     printf("=====>Init Serial\n");
-    sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
-    ps_cdev_init(PC99_SERIAL_COM1 , &env->ops ,&env->comDev);
-
-    for (int i=0;i<256;i++)
-    {
-        if(ps_cdev_produces_irq(&env->comDev, i))
-        {
-            printf("COM DEV PRODUCES IRQ %i\n",i);
-        }
-
-    }
+    error = SerialInit();
+    assert(error == 0);
     printf("<===== End Init Serial\n");
 
     ProcessInit(&initProcess);
@@ -410,8 +402,6 @@ static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4
     }
 }
 
-
-/* When the root task exists, it should simply suspend itself */
 static void sel4test_exit(int code)
 {
     seL4_TCB_Suspend(seL4_CapInitThreadTCB);
