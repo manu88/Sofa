@@ -70,3 +70,12 @@ ssize_t sc_read(seL4_CPtr endpoint, char* data, size_t dataSize, char until)
 
     return readSize;
 }
+
+void sc_debug(seL4_CPtr endpoint, SofaDebugCode code)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, SyscallID_Debug);
+    seL4_SetMR(1, code);
+
+    seL4_Send(endpoint, info);
+}

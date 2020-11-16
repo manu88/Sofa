@@ -17,6 +17,10 @@ void processCommand(const char* cmd)
     {
         exit(0);
     }
+    else if (startsWith("ps", cmd))
+    {
+        SofaDebug(SofaDebugCode_ListProcesses);
+    }
     else
     {
         printf("Unknown command '%s'\n", cmd);
@@ -54,7 +58,10 @@ int main(int argc, char *argv[])
                 data[bufferIndex + readSize -1] = 0;
             }
         }
-        processCommand(data);
+        if(strlen(data))
+        {
+            processCommand(data);
+        }
 
     }
     

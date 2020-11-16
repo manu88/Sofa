@@ -15,3 +15,6 @@ int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options);
 
 
 ssize_t sc_read(seL4_CPtr endpoint, char* data, size_t dataSize, char until);
+
+
+void sc_debug(seL4_CPtr endpoint, SofaDebugCode code);

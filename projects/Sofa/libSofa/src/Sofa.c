@@ -40,6 +40,11 @@ ssize_t SofaReadLine(char* data, size_t dataSize)
     return sc_read(TLSGet()->ep, data, dataSize, '\n');
 }
 
+void SofaDebug(SofaDebugCode code)
+{
+    sc_debug(TLSGet()->ep, code);
+}
+
 void exit(int code)
 {
     sc_exit(getProcessEndpoint(), code);
