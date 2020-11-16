@@ -26,6 +26,7 @@ int sc_spawn(seL4_CPtr endpoint, uint8_t* ipcBuffer, const char* path)
     seL4_SetMR(1, strlen(path));
 
     memcpy(ipcBuffer, path, strlen(path));
+    ipcBuffer[strlen(path)] = 0;
     info = seL4_Call(endpoint, info);
 
     return seL4_GetMR(1);    
@@ -52,10 +53,10 @@ int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options)
 
 int sc_read(seL4_CPtr endpoint)
 {
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     seL4_SetMR(0, SyscallID_Read);
 
-    seL4_Call(endpoint, info);
+    info = seL4_Call(endpoint, info);
 
-    return seL4_GetMR(1);
+    return (int) seL4_GetMR(1);
 }

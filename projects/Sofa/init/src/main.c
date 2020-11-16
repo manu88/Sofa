@@ -18,8 +18,12 @@ int main(int argc, char *argv[])
     pid_t retPid = SofaWait(&appStatus);
     printf("Wait 1 returned %i status %i\n", retPid, appStatus);
 
-    int appPid = SofaSpawn("app");
 
+    int shellPid = SofaSpawn("shell");
+    printf("shell pid is %i\n", shellPid);
+
+
+    int appPid = SofaSpawn("app");
     printf("app pid is %i\n", appPid);
 
     while (1)
