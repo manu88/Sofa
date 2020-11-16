@@ -45,3 +45,24 @@ Thread* ProcessGetWaitingThread( const Process*p)
     }
     return NULL;
 }
+
+
+void ProcessAddChild(Process* parent, Process* child)
+{
+    assert(parent != child);
+    child->parent = parent;
+    LL_APPEND2(parent->children, child, nextChild);
+}
+
+void ProcessRemoveChild(Process* parent, Process* child)
+{
+    LL_DELETE2(parent->children, child, nextChild);
+}
+
+int ProcessCoundChildren(const Process* p)
+{
+    int counter = 0;
+    Process* tmp = NULL;
+    LL_COUNT2(p->children, tmp, counter, nextChild);
+    return counter;
+}

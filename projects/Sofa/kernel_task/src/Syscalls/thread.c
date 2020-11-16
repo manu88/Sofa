@@ -6,7 +6,6 @@ void Syscall_ThreadNew(driver_env_t *env, Thread* caller, seL4_MessageInfo_t inf
 {
     Process* process = caller->process;
     assert(process);
-    printf("Received thead ep request from '%s' %i\n", ProcessGetName(process), ProcessGetPID(process));
 
     Thread* newThread = kmalloc(sizeof(Thread));
     assert(newThread);

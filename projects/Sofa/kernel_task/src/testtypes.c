@@ -20,7 +20,7 @@
 #include "testtypes.h"
 #include "utils.h"
 
-
+extern Process initProcess;
 void spawnApp(struct driver_env* envir, Process* p, const char* imgName, Process* parent)
 {
     static int pidPool = 1;
@@ -43,7 +43,11 @@ void spawnApp(struct driver_env* envir, Process* p, const char* imgName, Process
     p->init->mainIPCBuffer = vspace_share_mem(&envir->vspace, &p->native.vspace, p->main.ipcBuffer, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
     assert(p->init->mainIPCBuffer);
 
-    p->parent = parent;
+    if(parent != NULL)
+    {
+        ProcessAddChild(parent, p);
+        assert(p != &initProcess); // we only allow NULL parent for the first process
+    }
     ProcessListAdd(p);
     process_run(imgName, envir, p);
 
@@ -209,8 +213,6 @@ void process_tear_down(driver_env_t *env, Process* process)
     Thread* elt = NULL;
     Thread* tmp = NULL;
     
-
-    printf("Got %i threads in process %i\n", ProcessCountExtraThreads(process), ProcessGetPID(process));
     LL_FOREACH_SAFE(process->threads,elt,tmp) 
     {
         LL_DELETE(process->threads,elt);
@@ -260,7 +262,4 @@ void cleanAndRemoveProcess(driver_env_t *env, Process* process, int retCode)
     ProcessListRemove(process);
 
     UnypedsGiveBack(&process->untypedRange);
-
-    printUntypedRange();
-
 }

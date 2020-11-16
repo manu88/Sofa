@@ -31,11 +31,6 @@ void Syscall_sleep(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
     assert(caller->replyCap == 0);
     Process* callingProcess = caller->process;
     assert(callingProcess);
-    printf("Sleep request from %s %i (thread %p)\n",
-           ProcessGetName(callingProcess),
-           ProcessGetPID(callingProcess),
-           caller == &callingProcess->main? 0 : (void*) caller
-           );
 
     unsigned int timerID = 0;
     int error = tm_alloc_id(&env->tm, &timerID);
@@ -47,7 +42,6 @@ void Syscall_sleep(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
         seL4_Reply(info);
         return;
     }
-    printf("Allocated timer ID=%i\n", timerID);
 
 
     seL4_Word slot = get_free_slot(&env->vka);

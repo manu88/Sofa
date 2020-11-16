@@ -28,13 +28,22 @@ void Syscall_wait(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
     int options = seL4_GetMR(2);
     printf("Wait request from %i '%s' on %i\n", ProcessGetPID(process), ProcessGetName(process), pidToWait);
 
+    // does the process have any children?
+    if(ProcessCoundChildren(process) == 0)
+    {
+        printf("[Syscall_wait] no children, return\n");
+        seL4_SetMR(1, -1);
+        seL4_SetMR(2, 0); // wstatus
+        seL4_Reply(info);
+        return;
+    }
 
 
     seL4_Word slot = get_free_slot(&env->vka);
     int error = cnode_savecaller(&env->vka, slot);
     if (error)
     {
-        printf("[Syscall_wait]Unable to save caller err=%i\n", error);
+        printf("[Syscall_wait] Unable to save caller err=%i\n", error);
         cnode_delete(&env->vka, slot);
         seL4_SetMR(1, -error);
         seL4_Reply(info);

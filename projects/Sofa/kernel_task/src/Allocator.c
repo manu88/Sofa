@@ -46,9 +46,6 @@ int UntypedsGetFreeRange(UntypedRange* range)
 {
     assert(range);
 
-    printf("BEFORE\n");
-    printUntypedRange();
-
 
     FreeRange* freeRange = getFirstFreeRange();
     if(freeRange)

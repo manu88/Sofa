@@ -83,8 +83,7 @@ extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
 
-
-static Process initProcess;
+Process initProcess;
 
 
 

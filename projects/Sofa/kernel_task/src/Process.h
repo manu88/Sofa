@@ -53,7 +53,10 @@ typedef struct _Process
 
     Thread* threads; // other threads, NOT including the main one
     ProcessState state;
-    struct _Process* next; // Global process list
+
+    struct _Process* children;
+    struct _Process* next; // For Global process list
+    struct _Process* nextChild; // For Children
 } Process;
 
 
@@ -82,6 +85,11 @@ Thread* ProcessGetWaitingThread( const Process*p);
 
 #define PROCESS_FOR_EACH_EXTRA_THREAD(proc, t) LL_FOREACH(proc->threads,t)
 
+
+
+void ProcessAddChild(Process* parent, Process* child);
+void ProcessRemoveChild(Process* parent, Process* child);
+int ProcessCoundChildren(const Process* p);
 // Thread methods
 
 void ThreadCleanupTimer(Thread* t, driver_env_t *env);
