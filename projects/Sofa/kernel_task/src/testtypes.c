@@ -35,7 +35,7 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
     assert(err == 0);
     assert(p->untypedRange.size);
     printf("range for PID %i is %i %i\n", ProcessGetPID(p), p->untypedRange.start, p->untypedRange.size);
-    int consumed_untypeds = process_set_up(envir, GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
+    int consumed_untypeds = process_set_up(GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
     p->untypedRange.size = consumed_untypeds;
 
 
@@ -50,7 +50,7 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
         assert(p != &initProcess); // we only allow NULL parent for the first process
     }
     ProcessListAdd(p);
-    process_run(imgName, envir, p);
+    process_run(imgName, p);
 
 
 }
@@ -58,9 +58,9 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
 
 /* Basic test type. Each test is launched as its own process. */
 /* copy untyped caps into a processes cspace, return the cap range they can be found in */
-seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int numUntypeds,
-                                                driver_env_t *env)
+seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int numUntypeds)
 {
+    KernelTaskContext* env = getKernelTaskContext();
     seL4_SlotRegion range = {0};
 
     int realNumUntypeds = numUntypeds;
@@ -81,8 +81,9 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
 }
 
 
-int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
+int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
 {
+    KernelTaskContext* env = getKernelTaskContext();
     int error;
 
     //root_task_endpoint
@@ -146,8 +147,7 @@ int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* 
     int num_untyped_per_process = UNTYPEDS_PER_PROCESS_BASE;// env->num_untypeds;
     process->init->untypeds = copy_untypeds_to_process(&process->native,
                                                        getUntypeds() + process->untypedRange.start,
-                                                       num_untyped_per_process,
-                                                       env);
+                                                       num_untyped_per_process);
 
     memcpy(process->init->untyped_size_bits_list, untyped_size_bits_list + process->untypedRange.start, num_untyped_per_process);
 
@@ -182,8 +182,9 @@ int process_set_up(driver_env_t *env, uint8_t* untyped_size_bits_list, Process* 
 }
 
 
-void process_run(const char *name, driver_env_t *env, Process* process)
+void process_run(const char *name, Process* process)
 {
+    KernelTaskContext* env = getKernelTaskContext();
     int error;
 
     strncpy(process->init->name, name, TEST_NAME_MAX);
@@ -209,8 +210,10 @@ void process_run(const char *name, driver_env_t *env, Process* process)
     ZF_LOGF_IF(error != 0, "Failed to start test process!");
 }
 
-void process_tear_down(driver_env_t *env, Process* process)
+void process_tear_down(Process* process)
 {
+    KernelTaskContext* env = getKernelTaskContext();
+
     Thread* elt = NULL;
     Thread* tmp = NULL;
     
@@ -259,7 +262,7 @@ void process_tear_down(driver_env_t *env, Process* process)
 
 void cleanAndRemoveProcess(Process* process, int retCode)
 {
-    process_tear_down(getKernelTaskContext(), process);
+    process_tear_down(process);
     ProcessListRemove(process);
 
     UnypedsGiveBack(&process->untypedRange);
