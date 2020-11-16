@@ -49,7 +49,7 @@
 #include <vka/capops.h>
 
 #include <vspace/vspace.h>
-#include "test.h"
+#include "Environ.h"
 #include "testtypes.h"
 
 #include <sel4platsupport/io.h>
@@ -80,8 +80,6 @@ static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
 /* static memory for virtual memory bootstrapping */
 static sel4utils_alloc_data_t data;
 
-/* environment encapsulating allocation interfaces etc */
-struct driver_env env;
 
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
@@ -92,8 +90,9 @@ Process initProcess;
 
 
 /* initialise our runtime environment */
-static void init_env(driver_env_t *env)
+static void init_env()
 {
+    KernelTaskContext *env = getKernelTaskContext();
     allocman_t *allocman;
     reservation_t virtual_reservation;
     int error;
@@ -136,7 +135,7 @@ static void init_env(driver_env_t *env)
 static void free_objects(vka_object_t *objects, unsigned int num)
 {
     for (unsigned int i = 0; i < num; i++) {
-        vka_free_object(&env.vka, &objects[i]);
+        vka_free_object(&getKernelTaskContext()->vka, &objects[i]);
     }
 }
 
@@ -153,7 +152,7 @@ static unsigned int allocate_untypeds(vka_object_t *untypeds, size_t bytes, unsi
          * cause us to allocate too much memory*/
         while (num_untypeds < max_untypeds &&
                allocated + BIT(size_bits) <= bytes &&
-               vka_alloc_untyped(&env.vka, size_bits, &untypeds[num_untypeds]) == 0) {
+               vka_alloc_untyped(&getKernelTaskContext()->vka, size_bits, &untypeds[num_untypeds]) == 0) {
             allocated += BIT(size_bits);
             num_untypeds++;
         }
@@ -193,17 +192,17 @@ static void init_timer(void)
         int error;
 
         /* setup the timers and have our wrapper around simple capture the IRQ caps */
-        error = ltimer_default_init(&env.ltimer, env.ops, NULL, NULL);
+        error = ltimer_default_init(&getKernelTaskContext()->ltimer, getKernelTaskContext()->ops, NULL, NULL);
         ZF_LOGF_IF(error, "Failed to setup the timers");
 
-        error = vka_alloc_notification(&env.vka, &env.timer_notify_test);
+        error = vka_alloc_notification(&getKernelTaskContext()->vka, &getKernelTaskContext()->timer_notify_test);
         ZF_LOGF_IF(error, "Failed to allocate notification object for tests");
 
-        error = seL4_TCB_BindNotification(simple_get_tcb(&env.simple), env.timer_notification.cptr);
+        error = seL4_TCB_BindNotification(simple_get_tcb(&getKernelTaskContext()->simple), getKernelTaskContext()->timer_notification.cptr);
         ZF_LOGF_IF(error, "Failed to bind timer notification to sel4test-driver\n");
 
         /* set up the timer manager */
-        tm_init(&env.tm, &env.ltimer, &env.ops, TIMER_ID_COUT);
+        tm_init(&getKernelTaskContext()->tm, &getKernelTaskContext()->ltimer, &getKernelTaskContext()->ops, TIMER_ID_COUT);
     }
 }
 
@@ -225,15 +224,16 @@ static void process_messages()
 {
     while (1)
     {   
+        ps_cdev_handle_irq(&getKernelTaskContext()->comDev, -1);
         seL4_Word badge = 0;
-        seL4_MessageInfo_t info = seL4_Recv(env.root_task_endpoint.cptr, &badge);
+        seL4_MessageInfo_t info = seL4_Recv(getKernelTaskContext()->root_task_endpoint.cptr, &badge);
         seL4_Word label = seL4_MessageInfo_get_label(info);
         if(label == seL4_NoFault)
         {
             if(badge == TIMER_BADGE)
             {
-                seL4_IRQHandler_Ack(env.timer_irqs[0].handler_path.capPtr);
-                tm_update(&env.tm);
+                seL4_IRQHandler_Ack(getKernelTaskContext()->timer_irqs[0].handler_path.capPtr);
+                tm_update(&getKernelTaskContext()->tm);
             }
             else 
             {
@@ -242,7 +242,7 @@ static void process_messages()
                 SyscallID rpcID = seL4_GetMR(0);  
                 if(rpcID > 0 && rpcID < SyscallID_Last)
                 {
-                    syscallTable[rpcID](&env, caller, info);
+                    syscallTable[rpcID](caller, info);
                 }
                 else
                 {
@@ -277,7 +277,7 @@ static void process_messages()
             printf("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
             printf("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
 
-            cleanAndRemoveProcess(&env, process, -1);
+            cleanAndRemoveProcess(process, -1);
 
 
         }
@@ -299,7 +299,7 @@ void *main_continued(void *arg UNUSED)
     printf("----------------\n");
     int error;
 
-    error = vka_alloc_endpoint(&env.vka, &env.root_task_endpoint);
+    error = vka_alloc_endpoint(&getKernelTaskContext()->vka, &getKernelTaskContext()->root_task_endpoint);
     assert(error == 0);
 
 #if 0
@@ -327,19 +327,19 @@ void *main_continued(void *arg UNUSED)
     }
 #endif
     /* allocate lots of untyped memory for tests to use */
-    env.num_untypeds = populate_untypeds(getUntypeds());
+    getKernelTaskContext()->num_untypeds = populate_untypeds(getUntypeds());
 
 
     /* Allocate a reply object for the RT kernel. */
     if (config_set(CONFIG_KERNEL_MCS)) {
-        error = vka_alloc_reply(&env.vka, &env.reply);
+        error = vka_alloc_reply(&getKernelTaskContext()->vka, &getKernelTaskContext()->reply);
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
     if (plat_init) 
     {
         printf("plat_init is set \n");
-        plat_init(&env);
+        plat_init(getKernelTaskContext());
     }
     else
     {
@@ -347,12 +347,21 @@ void *main_continued(void *arg UNUSED)
     }
 
     printf("=====>Init Serial\n");
-    sel4platsupport_get_io_port_ops(&env.ops.io_port_ops, &env.simple, &env.vka);
-    ps_cdev_init(PC99_SERIAL_COM1 , &env.ops ,&env.comDev);
+    sel4platsupport_get_io_port_ops(&getKernelTaskContext()->ops.io_port_ops, &getKernelTaskContext()->simple, &getKernelTaskContext()->vka);
+    ps_cdev_init(PC99_SERIAL_COM1 , &getKernelTaskContext()->ops ,&getKernelTaskContext()->comDev);
+
+    for (int i=0;i<256;i++)
+    {
+        if(ps_cdev_produces_irq(&getKernelTaskContext()->comDev, i))
+        {
+            printf("COM DEV PRODUCES IRQ %i\n",i);
+        }
+
+    }
     printf("<===== End Init Serial\n");
 
     ProcessInit(&initProcess);
-    spawnApp(&env, &initProcess, "init", NULL);
+    spawnApp(&initProcess, "init", NULL);
 
     process_messages();    
 
@@ -429,39 +438,39 @@ static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, i
     ZF_LOGF_IF(num_timer_irqs >= MAX_TIMER_IRQS, "Trying to register too many timer IRQs");
 
     /* Allocate the IRQ */
-    error = sel4platsupport_copy_irq_cap(&env.vka, &env.simple, &irq,
-                                         &env.timer_irqs[num_timer_irqs].handler_path);
+    error = sel4platsupport_copy_irq_cap(&getKernelTaskContext()->vka, &getKernelTaskContext()->simple, &irq,
+                                         &getKernelTaskContext()->timer_irqs[num_timer_irqs].handler_path);
     ZF_LOGF_IF(error, "Failed to allocate IRQ handler");
 
     /* Allocate the root notifitcation if we haven't already done so */
-    if (env.timer_notification.cptr == seL4_CapNull) {
-        error = vka_alloc_notification(&env.vka, &env.timer_notification);
+    if (getKernelTaskContext()->timer_notification.cptr == seL4_CapNull) {
+        error = vka_alloc_notification(&getKernelTaskContext()->vka, &getKernelTaskContext()->timer_notification);
         ZF_LOGF_IF(error, "Failed to allocate notification object");
     }
 
     /* Mint a notification for the IRQ handler to pair with */
-    error = vka_cspace_alloc_path(&env.vka, &env.badged_timer_notifications[num_timer_irqs]);
+    error = vka_cspace_alloc_path(&getKernelTaskContext()->vka, &getKernelTaskContext()->badged_timer_notifications[num_timer_irqs]);
     ZF_LOGF_IF(error, "Failed to allocate path for the badged notification");
     cspacepath_t root_notification_path = {0};
-    vka_cspace_make_path(&env.vka, env.timer_notification.cptr, &root_notification_path);
+    vka_cspace_make_path(&getKernelTaskContext()->vka, getKernelTaskContext()->timer_notification.cptr, &root_notification_path);
     seL4_Word badge = TIMER_BADGE; // BIT(num_timer_irqs)
     printf("Mint timer with value %lu\n", BIT(num_timer_irqs));
-    error = vka_cnode_mint(&env.badged_timer_notifications[num_timer_irqs], &root_notification_path,
+    error = vka_cnode_mint(&getKernelTaskContext()->badged_timer_notifications[num_timer_irqs], &root_notification_path,
                            seL4_AllRights, badge);
     ZF_LOGF_IF(error, "Failed to mint notification for timer");
 
     /* Pair the notification and the handler */
-    error = seL4_IRQHandler_SetNotification(env.timer_irqs[num_timer_irqs].handler_path.capPtr,
-                                            env.badged_timer_notifications[num_timer_irqs].capPtr);
+    error = seL4_IRQHandler_SetNotification(getKernelTaskContext()->timer_irqs[num_timer_irqs].handler_path.capPtr,
+                                            getKernelTaskContext()->badged_timer_notifications[num_timer_irqs].capPtr);
     ZF_LOGF_IF(error, "Failed to pair the notification and handler together");
 
     /* Ack the handler so interrupts can come in */
-    error = seL4_IRQHandler_Ack(env.timer_irqs[num_timer_irqs].handler_path.capPtr);
+    error = seL4_IRQHandler_Ack(getKernelTaskContext()->timer_irqs[num_timer_irqs].handler_path.capPtr);
     ZF_LOGF_IF(error, "Failed to ack the IRQ handler");
 
     /* Fill out information about the callbacks */
-    env.timer_cbs[num_timer_irqs].callback = callback;
-    env.timer_cbs[num_timer_irqs].callback_data = callback_data;
+    getKernelTaskContext()->timer_cbs[num_timer_irqs].callback = callback;
+    getKernelTaskContext()->timer_cbs[num_timer_irqs].callback_data = callback_data;
 
     return num_timer_irqs++;
 }
@@ -476,7 +485,7 @@ int main(void)
 {
     /* Set exit handler */
     sel4runtime_set_exit(sel4test_exit);
-    memset(&env, 0, sizeof(struct driver_env));
+    memset(getKernelTaskContext(), 0, sizeof(KernelTaskContext));
     int error;
     seL4_BootInfo *info = platsupport_get_bootinfo();
 
@@ -486,12 +495,12 @@ int main(void)
 
     /* initialise libsel4simple, which abstracts away which kernel version
      * we are running on */
-    simple_default_init_bootinfo(&env.simple, info);
+    simple_default_init_bootinfo(&getKernelTaskContext()->simple, info);
 
     /* initialise the test environment - allocator, cspace manager, vspace
      * manager, timer
      */
-    init_env(&env);
+    init_env();
 
     /* Partially overwrite part of the VKA implementation to cache objects. We need to
      * create this wrapper as the actual vka implementation will only
@@ -505,26 +514,26 @@ int main(void)
      * lifetime of this application, and for the resources that are allocated to
      * be able to be copied, I.E. frames.
      */
-    vka_utspace_alloc_at_base = env.vka.utspace_alloc_at;
-    env.vka.utspace_alloc_at = serial_utspace_alloc_at_fn;
+    vka_utspace_alloc_at_base = getKernelTaskContext()->vka.utspace_alloc_at;
+    getKernelTaskContext()->vka.utspace_alloc_at = serial_utspace_alloc_at_fn;
 
     /* enable serial driver */
     serial_utspace_record = true;
-    platsupport_serial_setup_simple(&env.vspace, &env.simple, &env.vka);
+    platsupport_serial_setup_simple(&getKernelTaskContext()->vspace, &getKernelTaskContext()->simple, &getKernelTaskContext()->vka);
     serial_utspace_record = false;
 
     /* Partially overwrite the IRQ interface so that we can record the IRQ caps that were allocated.
      * We need this only for the timer as the ltimer interfaces allocates the caps for us and hides them away.
      * A few of the tests require actual interactions with the caps hence we record them.
      */
-    irq_register_fn_copy = env.ops.irq_ops.irq_register_fn;
-    env.ops.irq_ops.irq_register_fn = sel4test_timer_irq_register;
+    irq_register_fn_copy = getKernelTaskContext()->ops.irq_ops.irq_register_fn;
+    getKernelTaskContext()->ops.irq_ops.irq_register_fn = sel4test_timer_irq_register;
     /* Initialise ltimer */
     init_timer();
     /* Restore the IRQ interface's register function */
-    env.ops.irq_ops.irq_register_fn = irq_register_fn_copy;
+    getKernelTaskContext()->ops.irq_ops.irq_register_fn = irq_register_fn_copy;
 
-    simple_print(&env.simple);
+    simple_print(&getKernelTaskContext()->simple);
 
     /* switch to a bigger, safer stack with a guard page
      * before starting the tests */
@@ -533,7 +542,7 @@ int main(void)
     void *res;
 
     /* Run sel4test-test related tests */
-    error = sel4utils_run_on_stack(&env.vspace, main_continued, NULL, &res);
+    error = sel4utils_run_on_stack(&getKernelTaskContext()->vspace, main_continued, NULL, &res);
     assert(error == 0);
     assert(res == 0);
 

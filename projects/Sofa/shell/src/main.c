@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
     while (1)
     {
         int c = SofaReadChar();
+        printf("SofaReadChar returned %i\n", c);
         if(c > 0)
         {
             printf("%c\n", c);

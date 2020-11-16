@@ -16,13 +16,14 @@
 #include <sel4debug/register_dump.h>
 #include <vka/capops.h>
 
-#include "test.h"
+#include "Environ.h"
 #include "testtypes.h"
 #include "utils.h"
 
 extern Process initProcess;
-void spawnApp(struct driver_env* envir, Process* p, const char* imgName, Process* parent)
+void spawnApp(Process* p, const char* imgName, Process* parent)
 {
+    KernelTaskContext* envir = getKernelTaskContext();
     static int pidPool = 1;
 
     p->init = (test_init_data_t *) vspace_new_pages(&envir->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
@@ -218,7 +219,7 @@ void process_tear_down(driver_env_t *env, Process* process)
         LL_DELETE(process->threads,elt);
         if(elt->replyCap != 0)
         {
-            ThreadCleanupTimer(elt, env);
+            ThreadCleanupTimer(elt);
             if(elt->ipcBuffer_vaddr)
             {
                 vspace_unmap_pages(&process->native.vspace, elt->ipcBuffer_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
@@ -230,7 +231,7 @@ void process_tear_down(driver_env_t *env, Process* process)
     if(process->main.replyCap)
     {
         printf("Main Thread still have a reply cap\n");
-        ThreadCleanupTimer(&process->main, env);
+        ThreadCleanupTimer(&process->main);
     }
 
     /* unmap the env->init data frame */
@@ -256,9 +257,9 @@ void process_tear_down(driver_env_t *env, Process* process)
 
 
 
-void cleanAndRemoveProcess(driver_env_t *env, Process* process, int retCode)
+void cleanAndRemoveProcess(Process* process, int retCode)
 {
-    process_tear_down(env, process);
+    process_tear_down(getKernelTaskContext(), process);
     ProcessListRemove(process);
 
     UnypedsGiveBack(&process->untypedRange);

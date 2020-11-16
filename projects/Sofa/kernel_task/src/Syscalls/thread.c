@@ -2,8 +2,9 @@
 #include <Sofa.h>
 #include <vka/capops.h>
 
-void Syscall_ThreadNew(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
+void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info)
 {
+    KernelTaskContext* env = getKernelTaskContext();
     Process* process = caller->process;
     assert(process);
 
@@ -39,7 +40,7 @@ void Syscall_ThreadNew(driver_env_t *env, Thread* caller, seL4_MessageInfo_t inf
 }
 
 
-void Syscall_ThreadExit(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
+void Syscall_ThreadExit(Thread* caller, seL4_MessageInfo_t info)
 {
     Process* process = caller->process;
     assert(process);

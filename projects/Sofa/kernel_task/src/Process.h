@@ -3,7 +3,7 @@
 #include <sel4utils/process.h>
 #include "utlist.h"
 #include "test_init_data.h"
-#include "test.h"
+#include "Environ.h"
 #include "Allocator.h"
 
 
@@ -92,7 +92,7 @@ void ProcessRemoveChild(Process* parent, Process* child);
 int ProcessCoundChildren(const Process* p);
 // Thread methods
 
-void ThreadCleanupTimer(Thread* t, driver_env_t *env);
+void ThreadCleanupTimer(Thread* t);
 
 // Process List methods
 Process* getProcessList(void);

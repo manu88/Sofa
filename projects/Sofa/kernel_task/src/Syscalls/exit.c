@@ -5,7 +5,7 @@
 #include "../Panic.h"
 
 
-static driver_env_t *_env = NULL;
+
 
 static void replyToWait(Thread* onThread, int pid, int retCode)
 {
@@ -14,15 +14,12 @@ static void replyToWait(Thread* onThread, int pid, int retCode)
     seL4_SetMR(1, pid);
     seL4_SetMR(2, retCode);
     seL4_Send(onThread->replyCap, tag);
-    cnode_delete(&_env->vka, onThread->replyCap);
+    cnode_delete(&getKernelTaskContext()->vka, onThread->replyCap);
 
 }
-void Syscall_exit(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
+void Syscall_exit(Thread* caller, seL4_MessageInfo_t info)
 {
-    if(!_env)
-    {
-        _env = env;
-    }
+    KernelTaskContext* env = getKernelTaskContext();
 
     Process* process = caller->process;
     int retCode = seL4_GetMR(1);
@@ -49,7 +46,7 @@ void Syscall_exit(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
 
     }
     int shouldFree = process->init->pid > 1;
-    cleanAndRemoveProcess(env, process, retCode);
+    cleanAndRemoveProcess(process, retCode);
     if(shouldFree)
     {
         kfree(process);

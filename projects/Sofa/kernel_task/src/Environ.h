@@ -96,9 +96,13 @@ struct driver_env {
 };
 typedef struct driver_env driver_env_t;
 
+typedef struct driver_env KernelTaskContext;
+
 void plat_init(driver_env_t *env) WEAK;
 
 #ifdef CONFIG_TK1_SMMU
 seL4_SlotRegion arch_copy_iospace_caps_to_process(sel4utils_process_t *process, driver_env_t env);
 #endif
 
+
+KernelTaskContext* getKernelTaskContext(void);

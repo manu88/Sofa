@@ -3,8 +3,6 @@
 #include <platsupport/time_manager.h>
 #include <Sofa.h>
 
-static driver_env_t *_env = NULL;
-
 static int sleep_callback(uintptr_t token)
 {
     Thread* caller = (Thread*) token;
@@ -16,18 +14,14 @@ static int sleep_callback(uintptr_t token)
 
     seL4_Send(caller->replyCap, tag);
 
-    ThreadCleanupTimer(caller, _env);
+    ThreadCleanupTimer(caller);
     return 0;
 }
 
 
-void Syscall_sleep(driver_env_t *env, Thread* caller, seL4_MessageInfo_t info)
+void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
 {
-    if(!_env)
-    {
-        _env = env;
-    }
-
+    KernelTaskContext* env = getKernelTaskContext();
     assert(caller->replyCap == 0);
     Process* callingProcess = caller->process;
     assert(callingProcess);
