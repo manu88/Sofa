@@ -14,6 +14,11 @@ int SofaSpawn(const char* path)
     return ret;
 }
 
+pid_t SofaGetPid()
+{
+    return getProcessEnv()->pid;
+}
+
 
 pid_t SofaWaitPid(pid_t pid, int *wstatus, int options)
 {
@@ -33,4 +38,11 @@ ssize_t SofaRead(char* data, size_t dataSize)
 ssize_t SofaReadLine(char* data, size_t dataSize)
 {
     return sc_read(TLSGet()->ep, data, dataSize, '\n');
+}
+
+void exit(int code)
+{
+    sc_exit(getProcessEndpoint(), code);
+    // no return
+    assert(0);
 }

@@ -135,7 +135,6 @@ void handleSerialInput(KernelTaskContext* env)
             {
                 if(_waiter.until && data == _waiter.until)
                 {
-                    printf("Got UNTIL char\n");
                     _waiter.waiter(SerialGetAvailableChar(), _waiter.until, _waiter.ptr);
                     memset(&_waiter, 0, sizeof(_waiter));
                 }

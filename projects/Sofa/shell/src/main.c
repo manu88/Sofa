@@ -1,19 +1,35 @@
-#include <allocman/vka.h>
-#include <allocman/bootstrap.h>
-
-
-#include "helpers.h"
-#include "runtime.h"
 #include <Sofa.h>
-#include <Thread.h>
+#include <errno.h>
+#include <stdio.h>
+#include "runtime.h"
 
+static int startsWith(const char *pre, const char *str)
+{
+    size_t lenpre = strlen(pre),
+    lenstr = strlen(str);
+    
+    return lenstr < lenpre ? 0 : strncmp(pre, str, lenpre) == 0;
+}
+
+void processCommand(const char* cmd)
+{
+    if(startsWith("exit", cmd))
+    {
+        exit(0);
+    }
+    else
+    {
+        printf("Unknown command '%s'\n", cmd);
+    }
+
+}
 
 int main(int argc, char *argv[])
 {
     RuntimeInit(argc, argv);
     printf("\n\n");
     fflush(stdout);
-    printf("[%i] Shell \n", getProcessEnv()->pid);
+    printf("[%i] Shell \n", SofaGetPid());
 
     while (1)
     {
@@ -38,7 +54,7 @@ int main(int argc, char *argv[])
                 data[bufferIndex + readSize -1] = 0;
             }
         }
-        printf("[shell] %zi '%s'\n", readSize, data);
+        processCommand(data);
 
     }
     
