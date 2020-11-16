@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
     fflush(stdout);
     printf("[%i] Shell \n", getProcessEnv()->pid);
 
+    SofaSleep(1000*100);
     while (1)
     {
         int c = SofaReadChar();

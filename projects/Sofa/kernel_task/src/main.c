@@ -209,7 +209,19 @@ static void process_messages()
     KernelTaskContext* env = getKernelTaskContext();
     while (1)
     {   
-        ps_cdev_handle_irq(&env->comDev, -1);
+        int data = 0;
+        while(data != EOF)
+        {  
+            data = ps_cdev_getchar(&env->comDev);
+            if(data > 0)
+            {
+                if(data == '\r')
+                    printf("\n");
+                putchar(data);
+                fflush(stdout);
+            }
+        }
+
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env->root_task_endpoint.cptr, &badge);
         seL4_Word label = seL4_MessageInfo_get_label(info);
@@ -220,6 +232,22 @@ static void process_messages()
                 seL4_IRQHandler_Ack(env->timer_irqs[0].handler_path.capPtr);
                 tm_update(&env->tm);
             }
+#if 0
+            else if(badge == SERIAL_BADGE)
+            {
+                seL4_IRQHandler_Ack(env->handler.capPtr);
+                printf("IRQ\n");
+                //ps_cdev_handle_irq(&env->comDev, -1);
+/*                int data = 0;
+                while(data != EOF)
+                {  
+                    data = ps_cdev_getchar(&env->comDev);
+                    if(data > 0)
+                        printf("%c\n", data);
+                }
+*/                
+            }
+#endif            
             else 
             {
                 Thread* caller = (Thread*) badge;

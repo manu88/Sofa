@@ -93,6 +93,7 @@ struct _KernelTaskContext {
     time_manager_t tm;
 
     ps_chardevice_t comDev;
+    cspacepath_t handler;
 };
 
 typedef struct _KernelTaskContext KernelTaskContext;

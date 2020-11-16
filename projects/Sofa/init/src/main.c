@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
     printf("Wait 1 returned %i status %i\n", retPid, appStatus);
 
 
-    int shellPid = SofaSpawn("shell");
-    printf("shell pid is %i\n", shellPid);
+//    int shellPid = SofaSpawn("shell");
+//    printf("shell pid is %i\n", shellPid);
 
 
     int appPid = SofaSpawn("app");
