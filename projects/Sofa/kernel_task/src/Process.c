@@ -19,6 +19,20 @@ void ProcessListRemove(Process* p)
 }
 
 
+Process* ProcessListGetByPid(pid_t pid)
+{
+    Process* p= NULL;
+    FOR_EACH_PROCESS(p)
+    {
+        if(ProcessGetPID(p) == pid)
+        {
+            return p;
+        }
+    }
+    return NULL;
+}
+
+
 
 int ProcessCountExtraThreads(const Process* p)
 {

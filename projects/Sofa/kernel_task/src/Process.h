@@ -97,4 +97,6 @@ Process* getProcessList(void);
 void ProcessListAdd(Process* p);
 void ProcessListRemove(Process* p);
 
+Process* ProcessListGetByPid(pid_t pid);
+
 #define FOR_EACH_PROCESS(p) LL_FOREACH(getProcessList(),p)

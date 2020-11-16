@@ -266,4 +266,5 @@ void cleanAndRemoveProcess(Process* process, int retCode)
     ProcessListRemove(process);
 
     UnypedsGiveBack(&process->untypedRange);
+    kfree(process);
 }

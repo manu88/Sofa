@@ -14,6 +14,7 @@ typedef enum
 
     SyscallID_Spawn,
     SyscallID_Wait,
+    SyscallID_Kill,
 
     SyscallID_Read,
 
@@ -37,6 +38,7 @@ pid_t SofaGetPid(void);
 pid_t SofaWaitPid(pid_t pid, int *wstatus, int options);
 pid_t SofaWait(int *wstatus);
 
+int SofaKill(pid_t pid, int sig);
 
 ssize_t SofaRead(char* data, size_t dataSize);
 
