@@ -209,18 +209,7 @@ static void process_messages()
     KernelTaskContext* env = getKernelTaskContext();
     while (1)
     {   
-        int data = 0;
-        while(data != EOF)
-        {  
-            data = ps_cdev_getchar(&env->comDev);
-            if(data > 0)
-            {
-                if(data == '\r')
-                    printf("\n");
-                putchar(data);
-                fflush(stdout);
-            }
-        }
+        handleSerialInput(env);
 
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env->root_task_endpoint.cptr, &badge);

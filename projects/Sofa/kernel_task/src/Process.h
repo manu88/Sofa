@@ -7,8 +7,6 @@
 #include "Allocator.h"
 
 
-
-
 typedef enum
 {
     ThreadState_Running = 0,

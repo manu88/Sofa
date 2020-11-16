@@ -15,15 +15,11 @@ int main(int argc, char *argv[])
     fflush(stdout);
     printf("[%i] Shell \n", getProcessEnv()->pid);
 
-    SofaSleep(1000*100);
     while (1)
     {
-        int c = SofaReadChar();
-        printf("SofaReadChar returned %i\n", c);
-        if(c > 0)
-        {
-            printf("%c\n", c);
-        }
+        char data[128];
+        ssize_t readSize = SofaRead(data, 10);
+        printf("[shell] %zi '%s'\n", readSize, data);
     }
     
     return 1;

@@ -1,31 +1,50 @@
 #include "SyscallTable.h"
 #include "../utils.h"
+#include "../Serial.h"
 #include <platsupport/time_manager.h>
 #include <Sofa.h>
 
 
-
+/*
 void on_read_complete(ps_chardevice_t* device, enum chardev_status stat, size_t bytes_transfered, void* token)
 {
     Thread* caller = (Thread*) token;
-    printf("on_read_complete got %zi bytes\n", bytes_transfered);
+    printf("on_read_complete got %zi bytes %zi are available\n", bytes_transfered, SerialGetAvailableChar());
 
+    size_t bytes = SerialCopyAvailableChar(caller->ipcBuffer, bytes_transfered);
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
     seL4_SetMR(0, SyscallID_Read);
-    seL4_SetMR(1, 0);
+    seL4_SetMR(1, bytes);
 
     seL4_Send(caller->replyCap, tag);
 
     cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
     caller->replyCap = 0;
 }
+*/
+static void onBytesAvailable(size_t size, void* ptr)
+{
+//    printf("onBytesAvailable got %zi bytes to read\n", size);
+    Thread* caller = (Thread*) ptr;
+    assert(caller);
 
+    size_t bytes = SerialCopyAvailableChar(caller->ipcBuffer, size);
+    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
+    seL4_SetMR(0, SyscallID_Read);
+    seL4_SetMR(1, bytes);
 
-void Syscall_read(Thread* caller, seL4_MessageInfo_t info)
+    seL4_Send(caller->replyCap, tag);
+
+    cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
+    caller->replyCap = 0;
+
+}
+
+void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
 {
     KernelTaskContext* env = getKernelTaskContext();
 
-    printf("[Syscall_read] request\n");
+    size_t sizeToRead = seL4_GetMR(1);
 
     assert(caller->replyCap == 0);
 
@@ -41,13 +60,6 @@ void Syscall_read(Thread* caller, seL4_MessageInfo_t info)
     }
 
     caller->replyCap = slot;
+    SerialRegisterWaiter(onBytesAvailable, sizeToRead, caller);
 
-    ssize_t r =  ps_cdev_read(&env->comDev, caller->ipcBuffer, 12, on_read_complete, caller);
-    printf("AFTER ps_cdev_read %li\n", r);
-/*    
-    int c = ps_cdev_getchar(&env->comDev);
-
-    seL4_SetMR(1, (seL4_Word) c);
-    seL4_Reply(info);
-*/
 }

@@ -17,7 +17,7 @@ void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_ThreadExit(Thread* caller, seL4_MessageInfo_t info);
 
 
-void Syscall_read(Thread* caller, seL4_MessageInfo_t info);
+void Syscall_Read(Thread* caller, seL4_MessageInfo_t info);
 
 static SyscallMethod syscallTable[] =
 {
@@ -33,5 +33,5 @@ static SyscallMethod syscallTable[] =
     Syscall_spawn,
     Syscall_wait,
 
-    Syscall_read,
+    Syscall_Read,
 };

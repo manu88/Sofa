@@ -1,6 +1,27 @@
 #include "Serial.h"
 #include "Environ.h"
 #include <vka/capops.h>
+#include <utils/circular_buffer.h>
+
+
+static char _circ_buffer[sizeof(circ_buf_t) + SERIAL_CIRCULAR_BUFFER_SIZE -1]; // '-1' 'cause 1 byte is already present in circ_buf_t
+
+
+typedef struct 
+{
+    OnBytesAvailable waiter;
+    size_t size;
+    void* ptr;
+
+} SerialWaiter;
+
+static SerialWaiter _waiter = {0};
+
+
+static circ_buf_t* getCircularBuffer()
+{
+    return (circ_buf_t *) _circ_buffer;
+}
 
 int SerialInit()
 {
@@ -12,7 +33,16 @@ int SerialInit()
     {
         return -1;
     }
+
+    int err = circ_buf_init(SERIAL_CIRCULAR_BUFFER_SIZE, getCircularBuffer());
+    if(err != 0)
+    {
+        return err;
+    }
+
     return 0;
+    // FIXME: can't get the serial IRQ to work on pc99 :( :(
+#if 0    
     int irqNum = -1;
     for (int i=0;i<256;i++)
     {
@@ -49,5 +79,62 @@ int SerialInit()
     err = seL4_IRQHandler_Ack(env->handler.capPtr);
     assert(err == 0);
     return 0;
+#endif
 }
 
+size_t SerialGetAvailableChar()
+{
+    return getCircularBuffer()->tail - getCircularBuffer()->head;
+}
+
+
+int SerialRegisterWaiter(OnBytesAvailable callback, size_t forSize, void* ptr)
+{
+    _waiter.waiter = callback;
+    _waiter.size = forSize;
+    _waiter.ptr = ptr;
+    return 0;
+}
+
+size_t SerialCopyAvailableChar(char* dest, size_t maxSize)
+{
+    size_t copied = 0;
+    while (circ_buf_is_empty(getCircularBuffer()) == 0)
+    {
+        dest[copied] = circ_buf_get(getCircularBuffer());        
+        copied +=1;
+        if(copied > maxSize)
+        {
+            break;
+        }
+    }
+
+    return copied;
+    
+}
+
+void handleSerialInput(KernelTaskContext* env)
+{
+    int data = 0;
+    while(data != EOF)
+    {  
+        data = ps_cdev_getchar(&env->comDev);
+        if(data > 0)
+        {
+            if(data == '\r')
+                data = '\n';
+
+            circ_buf_put(getCircularBuffer(), data);
+// echo
+            putchar(data);
+            fflush(stdout);
+//
+            if(_waiter.waiter &&  _waiter.size && SerialGetAvailableChar() >= _waiter.size)
+            {
+                _waiter.waiter(SerialGetAvailableChar(), _waiter.ptr);
+                memset(&_waiter, 0, sizeof(_waiter));
+            }
+
+        }
+    }
+}
