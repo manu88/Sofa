@@ -17,7 +17,6 @@ typedef enum
 typedef enum
 {
     ProcessState_Running,
-    ProcessState_Exit,
     ProcessState_Zombie
 } ProcessState;
 

@@ -13,8 +13,6 @@ void Syscall_Kill(Thread* caller, seL4_MessageInfo_t info)
 
     int ret = 0;
 
-    printf("Kill request from %i to %i with signal %i\n", ProcessGetPID(process), pidToKill, signal);
-
     Process* processToKill = ProcessListGetByPid(pidToKill);
     if(processToKill == NULL)
     {

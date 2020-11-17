@@ -340,15 +340,6 @@ void *main_continued(void *arg UNUSED)
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
-    if (plat_init) 
-    {
-        printf("plat_init is set \n");
-        plat_init(env);
-    }
-    else
-    {
-        printf("plat_init is NOT set \n");
-    }
 
     printf("=====>Init Serial\n");
     error = SerialInit();

@@ -10,13 +10,11 @@ static char getProcessStateStr(ProcessState s)
     {
     case ProcessState_Running:
         return 'R';
-    case ProcessState_Exit:
-        return 'E';
     case ProcessState_Zombie:
         return 'Z';
     
     default:
-        break;
+        assert(0);
     }
 }
 

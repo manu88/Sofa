@@ -37,7 +37,6 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
     int err = UntypedsGetFreeRange(&p->untypedRange);
     assert(err == 0);
     assert(p->untypedRange.size);
-    printf("range for PID %i is %i %i\n", ProcessGetPID(p), p->untypedRange.start, p->untypedRange.size);
     int consumed_untypeds = process_set_up(GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
     p->untypedRange.size = consumed_untypeds;
 
@@ -58,7 +57,6 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
 
 static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
 {
-    printf("replyToWaitingParent\n");
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
     seL4_SetMR(0, SyscallID_Wait);
     seL4_SetMR(1, pid);
@@ -70,8 +68,6 @@ static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
 
 void doExit(Process* process, int retCode)
 {
-    printf("[doExit] Process %i did exit with code %i\n", ProcessGetPID(process), retCode);
-
     if(ProcessGetPID(process) == 1)
     {
         Panic("init returned");
@@ -85,7 +81,6 @@ void doExit(Process* process, int retCode)
         Process* c = NULL;
         PROCESS_FOR_EACH_CHILD(process, c)
         {
-            printf("Attaching process %i %s to init\n", ProcessGetPID(c), ProcessGetName(c));
             ProcessAddChild(&initProcess, c);
         }
     }
@@ -94,12 +89,6 @@ void doExit(Process* process, int retCode)
     uint8_t freeProcess = 0;
     if(waitingThread)
     {
-        printf("[doExit] Parent %i is waiting on %i on thread %p\n",
-               ProcessGetPID(parent),
-               ProcessGetPID(process),
-               waitingThread == &parent->main? 0: waitingThread 
-              );
-
         assert(waitingThread->replyCap != 0);
         freeProcess = 1;
 
@@ -110,7 +99,6 @@ void doExit(Process* process, int retCode)
     }
     else
     {
-        printf("[doExit] Parent is not waiting -> zombie time\n");
         process->retCode = retCode;
         process->state = ProcessState_Zombie;
     }
@@ -127,14 +115,8 @@ void doExit(Process* process, int retCode)
     }
     if(freeProcess)
     {
-        printf("Free Process %i\n", pidToFree);
         kfree(process);
     }
-    else
-    {
-        printf("[doExit] will not free process\n");
-    }
-    printf("------>\n");
 }
 
 
@@ -315,7 +297,6 @@ void process_tear_down(Process* process)
 
     if(process->main.replyCap)
     {
-        printf("Main Thread still have a reply cap\n");
         ThreadCleanupTimer(&process->main);
     }
 

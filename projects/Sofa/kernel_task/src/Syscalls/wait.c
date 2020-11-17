@@ -11,12 +11,10 @@ void Syscall_wait(Thread* caller, seL4_MessageInfo_t info)
 
     pid_t pidToWait = seL4_GetMR(1);
     int options = seL4_GetMR(2);
-    printf("Wait request from %i '%s' on %i\n", ProcessGetPID(process), ProcessGetName(process), pidToWait);
 
     // does the process have any children?
     if(ProcessCoundChildren(process) == 0)
     {
-        printf("[Syscall_wait] no children, return\n");
         seL4_SetMR(1, -1);
         seL4_SetMR(2, 0); // wstatus
         seL4_Reply(info);
@@ -58,6 +56,5 @@ void Syscall_wait(Thread* caller, seL4_MessageInfo_t info)
     }
     caller->replyCap = slot;
     caller->state = ThreadState_Waiting;
-    printf("[Syscall_wait] Go into wait state\n");
 
 }

@@ -101,7 +101,7 @@ void processCommand(const char* cmd)
     {
         int appStatus = 0;
         pid_t ret = SofaWait(&appStatus);
-        printf("wait returned pid %i status%i\n", ret, appStatus);
+        printf("wait returned pid %i status %i\n", ret, appStatus);
 
     }
     else
