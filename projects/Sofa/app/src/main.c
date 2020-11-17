@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
     RuntimeInit(argc, argv);
     printf("\n\n");
     fflush(stdout);
-    printf("[%i] started\n", getProcessEnv()->pid);
-
+    printf("[%i] started\n", SofaGetPid());
+    return 10 + SofaGetPid();
     Thread th;
     ThreadInit(&th, on_thread, NULL);
 

@@ -92,9 +92,17 @@ void processCommand(const char* cmd)
     {
         const char *strApp = cmd + strlen("spawn ");
         int pid = SofaSpawn(strApp);
+        return;
         int appStatus = 0;
         pid_t ret = SofaWait(&appStatus);
         printf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+    }
+    else if(startsWith("wait", cmd))
+    {
+        int appStatus = 0;
+        pid_t ret = SofaWait(&appStatus);
+        printf("wait returned pid %i status%i\n", ret, appStatus);
+
     }
     else
     {

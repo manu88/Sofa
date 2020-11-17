@@ -11,7 +11,7 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
     Process* p = NULL;
     FOR_EACH_PROCESS(p)
     {
-        printf("%i %s\n", ProcessGetPID(p), ProcessGetName(p));
+        printf("%i %s %s\n", ProcessGetPID(p), ProcessGetName(p), caller->process == p ? "*":"");
     }
 
 }

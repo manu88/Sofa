@@ -17,7 +17,8 @@ typedef enum
 typedef enum
 {
     ProcessState_Running,
-    ProcessState_Exit
+    ProcessState_Exit,
+    ProcessState_Zombie
 } ProcessState;
 
 typedef struct _Process Process;
@@ -38,6 +39,7 @@ typedef struct _Thread
     struct _Thread *next; 
 } Thread;
 
+
 typedef struct _Process
 {
     Thread main;
@@ -47,10 +49,12 @@ typedef struct _Process
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
     UntypedRange untypedRange;
 
-    struct _Process *parent;
 
     Thread* threads; // other threads, NOT including the main one
+ 
+    int retCode;
     ProcessState state;
+    struct _Process *parent;
 
     struct _Process* children;
     struct _Process* next; // For Global process list
@@ -88,6 +92,14 @@ Thread* ProcessGetWaitingThread( const Process*p);
 void ProcessAddChild(Process* parent, Process* child);
 void ProcessRemoveChild(Process* parent, Process* child);
 int ProcessCoundChildren(const Process* p);
+
+static inline Process* ProcessGetChildren(Process* p)
+{
+    return p->children;
+}
+
+#define PROCESS_FOR_EACH_CHILD(proc, c) LL_FOREACH(proc->children,c) 
+
 // Thread methods
 
 void ThreadCleanupTimer(Thread* t);

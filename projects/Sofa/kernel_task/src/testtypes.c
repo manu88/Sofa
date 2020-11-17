@@ -23,7 +23,6 @@
 
 extern Process initProcess;
 
-static void cleanAndRemoveProcess(Process* process);
 
 void spawnApp(Process* p, const char* imgName, Process* parent)
 {
@@ -71,7 +70,7 @@ static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
 
 void doExit(Process* process, int retCode)
 {
-    printf("[Syscall_exit] Process %i did exit with code %i\n", ProcessGetPID(process), retCode);
+    printf("[doExit] Process %i did exit with code %i\n", ProcessGetPID(process), retCode);
 
     if(ProcessGetPID(process) == 1)
     {
@@ -80,24 +79,46 @@ void doExit(Process* process, int retCode)
 
     Process* parent = process->parent;
     Thread* waitingThread = ProcessGetWaitingThread(parent);
+    uint8_t freeProcess = 0;
     if(waitingThread)
     {
-        printf("[Syscall_exit] Parent %i is waiting on %i on thread %p\n",
+        printf("[doExit] Parent %i is waiting on %i on thread %p\n",
                ProcessGetPID(parent),
                ProcessGetPID(process),
                waitingThread == &parent->main? 0: waitingThread 
               );
 
         assert(waitingThread->replyCap != 0);
+        freeProcess = 1;
         replyToWaitingParent(waitingThread, ProcessGetPID(process), retCode);
-
+        ProcessRemoveChild(parent, process);
+        ProcessListRemove(process);        
     }
+    else
+    {
+        printf("[doExit] Parent is not waiting -> zombie time\n");
+        process->retCode = retCode;
+        process->state = ProcessState_Zombie;
+    }
+
     int pidToFree = process->init->pid;
-    cleanAndRemoveProcess(process);
+
+    process_tear_down(process);
+    UnypedsGiveBack(&process->untypedRange);
+
+
     if(pidToFree > 1)
+    {
+        freeProcess = 0;
+    }
+    if(freeProcess)
     {
         printf("Free Process %i\n", pidToFree);
         kfree(process);
+    }
+    else
+    {
+        printf("[doExit] will not free process\n");
     }
     printf("------>\n");
 }
@@ -305,14 +326,3 @@ void process_tear_down(Process* process)
     
 }
 
-
-
-static void cleanAndRemoveProcess(Process* process)
-{
-    ProcessListRemove(process);
-    ProcessRemoveChild(process->parent, process);
-    process_tear_down(process);
-
-
-    UnypedsGiveBack(&process->untypedRange);
-}
