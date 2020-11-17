@@ -82,7 +82,7 @@ static inline int ProcessGetPID(const Process* p)
 int ProcessCountExtraThreads(const Process* p);
 
 
-Thread* ProcessGetWaitingThread( const Process*p);
+Thread* ProcessGetWaitingThread(Process*p);
 
 #define PROCESS_FOR_EACH_EXTRA_THREAD(proc, t) LL_FOREACH(proc->threads,t)
 

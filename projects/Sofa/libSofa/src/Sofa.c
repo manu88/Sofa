@@ -19,6 +19,11 @@ pid_t SofaGetPid()
     return getProcessEnv()->pid;
 }
 
+pid_t SofaGetPPid()
+{
+    return sc_getppid(TLSGet()->ep);
+}
+
 
 pid_t SofaWaitPid(pid_t pid, int *wstatus, int options)
 {

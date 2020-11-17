@@ -1,5 +1,7 @@
 #include <platsupport/irq.h>
 #include <vka/capops.h>
+#include <platsupport/local_time_manager.h>
+#include <sel4platsupport/device.h>
 #include "Timer.h"
 #include "Environ.h"
 

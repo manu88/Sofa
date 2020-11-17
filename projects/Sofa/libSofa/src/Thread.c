@@ -26,7 +26,7 @@ int ThreadInit(Thread* t, start_routine threadMain, void* arg)
     create_helper_thread(getProcessEnv(), &t->th);
     uint8_t* ipcBufAddr = NULL;
     t->ep = getNewThreadEndpoint(&ipcBufAddr);
-    start_helper(getProcessEnv(), &t->th, on_thread, (seL4_Word) t, (seL4_Word) threadMain, (seL4_Word) arg, ipcBufAddr);
+    start_helper(getProcessEnv(), &t->th, on_thread, (seL4_Word) t, (seL4_Word) threadMain, (seL4_Word) arg, (seL4_Word) ipcBufAddr);
     return 0;
 }
 

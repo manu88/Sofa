@@ -17,7 +17,7 @@ typedef enum
     SyscallID_Kill,
 
     SyscallID_Read,
-
+    SyscallID_PPID,
     SyscallID_Debug,
 
     SyscallID_Last // Not a real ID, just here to count ids
@@ -34,6 +34,7 @@ int SofaSleep(int ms);
 int SofaSpawn(const char* path);
 
 pid_t SofaGetPid(void);
+pid_t SofaGetPPid(void);
 
 pid_t SofaWaitPid(pid_t pid, int *wstatus, int options);
 pid_t SofaWait(int *wstatus);

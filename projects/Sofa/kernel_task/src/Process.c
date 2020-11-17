@@ -43,7 +43,7 @@ int ProcessCountExtraThreads(const Process* p)
 }
 
 
-Thread* ProcessGetWaitingThread( const Process*p)
+Thread* ProcessGetWaitingThread(Process*p)
 {
     if(p->main.state == ThreadState_Waiting)
     {

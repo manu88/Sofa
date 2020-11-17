@@ -19,3 +19,5 @@ ssize_t sc_read(seL4_CPtr endpoint, char* data, size_t dataSize, char until);
 int sc_kill(seL4_CPtr endpoint, pid_t pid, int sig);
 
 void sc_debug(seL4_CPtr endpoint, SofaDebugCode code);
+
+pid_t sc_getppid(seL4_CPtr endpoint);

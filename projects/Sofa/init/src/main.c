@@ -8,7 +8,10 @@ int main(int argc, char *argv[])
 {
     RuntimeInit(argc, argv);
 
-
+    if(SofaGetPid() != 1)
+    {
+        return EXIT_FAILURE;
+    }
     int shellPid = SofaSpawn("shell");
     printf("[init] shell pid is %i\n", shellPid);
 

@@ -332,7 +332,7 @@ void *main_continued(void *arg UNUSED)
 #endif
     /* allocate lots of untyped memory for tests to use */
     env->num_untypeds = populate_untypeds(getUntypeds());
-
+    printf("Got %i available untypeds\n", env->num_untypeds);
 
     /* Allocate a reply object for the RT kernel. */
     if (config_set(CONFIG_KERNEL_MCS)) {

@@ -80,7 +80,6 @@ void processCommand(const char* cmd)
         const char *strPid = cmd + strlen("kill ");
         if(strlen(strPid) == 0)
         {
-            
             printf("Kill usage: kill pid signal\n");
             return;
         }
@@ -109,6 +108,14 @@ void processCommand(const char* cmd)
         int ms = atol(strMS);
         SofaSleep(ms);
     }
+    else if(startsWith("pid", cmd))
+    {
+        printf("PID=%i\n", SofaGetPid());
+    }
+    else if(startsWith("ppid", cmd))
+    {
+        printf("PPID=%i\n", SofaGetPPid());
+    }    
     else
     {
         printf("Unknown command '%s'\n", cmd);

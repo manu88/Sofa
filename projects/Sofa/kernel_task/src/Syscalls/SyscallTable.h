@@ -18,6 +18,8 @@ void Syscall_ThreadExit(Thread* caller, seL4_MessageInfo_t info);
 
 
 void Syscall_Read(Thread* caller, seL4_MessageInfo_t info);
+
+void Syscall_PPID(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info);
 
 static SyscallMethod syscallTable[] =
@@ -36,5 +38,6 @@ static SyscallMethod syscallTable[] =
     Syscall_Kill,
 
     Syscall_Read,
+    Syscall_PPID,
     Syscall_Debug,
 };

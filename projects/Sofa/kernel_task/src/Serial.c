@@ -1,5 +1,6 @@
 #include "Serial.h"
 #include "Environ.h"
+#include <sel4platsupport/arch/io.h>
 #include <vka/capops.h>
 #include <utils/circular_buffer.h>
 
