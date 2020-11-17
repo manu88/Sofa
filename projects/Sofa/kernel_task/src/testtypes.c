@@ -15,12 +15,16 @@
 
 #include <sel4debug/register_dump.h>
 #include <vka/capops.h>
-
+#include <Sofa.h>
 #include "Environ.h"
 #include "testtypes.h"
 #include "utils.h"
+#include "Panic.h"
 
 extern Process initProcess;
+
+static void cleanAndRemoveProcess(Process* process);
+
 void spawnApp(Process* p, const char* imgName, Process* parent)
 {
     KernelTaskContext* envir = getKernelTaskContext();
@@ -51,8 +55,51 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
     }
     ProcessListAdd(p);
     process_run(imgName, p);
+}
 
+static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
+{
+    printf("replyToWaitingParent\n");
+    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
+    seL4_SetMR(0, SyscallID_Wait);
+    seL4_SetMR(1, pid);
+    seL4_SetMR(2, retCode);
+    seL4_Send(onThread->replyCap, tag);
+    cnode_delete(&getKernelTaskContext()->vka, onThread->replyCap);
+    onThread->replyCap = 0;
+}
 
+void doExit(Process* process, int retCode)
+{
+    printf("[Syscall_exit] Process %i did exit with code %i\n", ProcessGetPID(process), retCode);
+
+    if(ProcessGetPID(process) == 1)
+    {
+        Panic("init returned");
+    }
+
+    Process* parent = process->parent;
+    Thread* waitingThread = ProcessGetWaitingThread(parent);
+    if(waitingThread)
+    {
+        printf("[Syscall_exit] Parent %i is waiting on %i on thread %p\n",
+               ProcessGetPID(parent),
+               ProcessGetPID(process),
+               waitingThread == &parent->main? 0: waitingThread 
+              );
+
+        assert(waitingThread->replyCap != 0);
+        replyToWaitingParent(waitingThread, ProcessGetPID(process), retCode);
+
+    }
+    int pidToFree = process->init->pid;
+    cleanAndRemoveProcess(process);
+    if(pidToFree > 1)
+    {
+        printf("Free Process %i\n", pidToFree);
+        kfree(process);
+    }
+    printf("------>\n");
 }
 
 
@@ -260,11 +307,12 @@ void process_tear_down(Process* process)
 
 
 
-void cleanAndRemoveProcess(Process* process, int retCode)
+static void cleanAndRemoveProcess(Process* process)
 {
-    process_tear_down(process);
     ProcessListRemove(process);
+    ProcessRemoveChild(process->parent, process);
+    process_tear_down(process);
+
 
     UnypedsGiveBack(&process->untypedRange);
-    kfree(process);
 }

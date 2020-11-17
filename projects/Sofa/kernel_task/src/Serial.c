@@ -127,12 +127,13 @@ void handleSerialInput(KernelTaskContext* env)
                 data = '\n';
 
             circ_buf_put(getCircularBuffer(), data);
-// echo
-            putchar(data);
-            fflush(stdout);
-//
+
             if(_waiter.waiter &&  _waiter.size)
             {
+                // echo only if someone is waiting on us!
+                putchar(data);
+                fflush(stdout);
+                //
                 if(_waiter.until && data == _waiter.until)
                 {
                     _waiter.waiter(SerialGetAvailableChar(), _waiter.until, _waiter.ptr);

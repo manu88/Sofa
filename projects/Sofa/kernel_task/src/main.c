@@ -279,7 +279,7 @@ static void process_messages()
             printf("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
             printf("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
 
-            cleanAndRemoveProcess(process, -1);
+            doExit(process, -1);
 
 
         }

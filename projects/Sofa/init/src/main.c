@@ -20,6 +20,11 @@ int main(int argc, char *argv[])
     {
         pid_t retPid = SofaWait(&appStatus);
         printf("Wait returned pid %i status %i\n", retPid, appStatus);
+        if(retPid == shellPid)
+        {
+            shellPid = SofaSpawn("shell");
+            printf("shell pid is %i\n", shellPid);
+        }
     }
     
     return 1;

@@ -40,8 +40,8 @@ void Syscall_Kill(Thread* caller, seL4_MessageInfo_t info)
     }
     else
     {
-        pid_t callerPid = ProcessGetPID(process);        
-        cleanAndRemoveProcess(processToKill, -1);
+        pid_t callerPid = ProcessGetPID(process);
+        doExit(processToKill, signal);        
         ret = 0;
 
         // did we just killed yourselves?
