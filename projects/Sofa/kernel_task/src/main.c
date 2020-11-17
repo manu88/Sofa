@@ -59,7 +59,6 @@
 #include "Timer.h"
 #include "Serial.h"
 
-
 #include <sel4platsupport/arch/io.h>
 
 
@@ -341,10 +340,9 @@ void *main_continued(void *arg UNUSED)
     }
 
 
-    printf("=====>Init Serial\n");
     error = SerialInit();
     assert(error == 0);
-    printf("<===== End Init Serial\n");
+
 
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init", NULL);
