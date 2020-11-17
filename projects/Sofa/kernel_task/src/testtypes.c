@@ -78,6 +78,18 @@ void doExit(Process* process, int retCode)
     }
 
     Process* parent = process->parent;
+
+    // Do we have soon-to-be orphean children?
+    if(ProcessCoundChildren(process))
+    {
+        Process* c = NULL;
+        PROCESS_FOR_EACH_CHILD(process, c)
+        {
+            printf("Attaching process %i %s to init\n", ProcessGetPID(c), ProcessGetName(c));
+            ProcessAddChild(&initProcess, c);
+        }
+    }
+
     Thread* waitingThread = ProcessGetWaitingThread(parent);
     uint8_t freeProcess = 0;
     if(waitingThread)
@@ -90,6 +102,8 @@ void doExit(Process* process, int retCode)
 
         assert(waitingThread->replyCap != 0);
         freeProcess = 1;
+
+        
         replyToWaitingParent(waitingThread, ProcessGetPID(process), retCode);
         ProcessRemoveChild(parent, process);
         ProcessListRemove(process);        
