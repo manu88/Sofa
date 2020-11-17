@@ -58,7 +58,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     printf("Sofa shell\n");
-    printf("Available commands are: exit help ps kill\n");
+    printf("Available commands are: exit help ps kill spawn\n");
 }
 
 void processCommand(const char* cmd)
@@ -88,6 +88,14 @@ void processCommand(const char* cmd)
         printf("Kill pid %i\n", pidToKill);
         SofaKill(pidToKill, SIGKILL);
     } 
+    else if(startsWith("spawn", cmd))
+    {
+        const char *strApp = cmd + strlen("spawn ");
+        int pid = SofaSpawn(strApp);
+        int appStatus = 0;
+        pid_t ret = SofaWait(&appStatus);
+        printf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+    }
     else
     {
         printf("Unknown command '%s'\n", cmd);
