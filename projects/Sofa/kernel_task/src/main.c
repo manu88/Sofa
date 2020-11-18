@@ -1,754 +1,485 @@
+/*
+ * Copyright 2017, Data61
+ * Commonwealth Scientific and Industrial Research Organisation (CSIRO)
+ * ABN 41 687 119 230.
+ *
+ * This software may be distributed and modified according to the terms of
+ * the BSD 2-Clause license. Note that NO WARRANTY is provided.
+ * See "LICENSE_BSD2.txt" for details.
+ *
+ * @TAG(DATA61_BSD)
+ */
+
+/* Include Kconfig variables. */
+#include <autoconf.h>
+#define CONFIG_HAVE_TIMER 1
+#include <regex.h>
 #include <stdio.h>
-#include <cpio/cpio.h>
-#include <sel4platsupport/bootinfo.h>
-#include <simple-default/simple-default.h>
+#include <string.h>
 #include <assert.h>
-#include <sel4utils/stack.h>
+#include <stdlib.h>
+#include <limits.h>
 
-#include <sel4utils/process.h>
-#include <vka/capops.h>
-#include <vka/ipcbuffer.h>
+#include <sel4runtime.h>
+
+#include <allocman/bootstrap.h>
+#include <allocman/vka.h>
+
 #include <cpio/cpio.h>
 
-//#include <sel4platsupport/arch/io.h>
+#include <platsupport/local_time_manager.h>
+#include <sel4runtime.h>
+#include <sel4platsupport/timer.h>
+
+#include <sel4debug/register_dump.h>
 #include <sel4platsupport/device.h>
-#include <sys_calls.h>
-#include <proc_ctx.h>
+#include <sel4platsupport/platsupport.h>
+#include <platsupport/chardev.h>
+#include <sel4utils/vspace.h>
+#include <sel4utils/stack.h>
+#include <sel4utils/process.h>
 
 
-#include "env.h"
-#include "timer.h"
-#include "utils.h"
-#include "Process.h"
-#include "Nameserver.h"
+#include <simple/simple.h>
+#include <simple-default/simple-default.h>
 
-#define IRQ_EP_BADGE       BIT(seL4_BadgeBits - 1)
+#include <utils/util.h>
 
-#define NUM_UNTYPED_PER_PROCESS (size_t) 8
+#include <vka/object.h>
+#include <vka/capops.h>
 
-/* list of untypeds to give out to processes */
-static vka_object_t untypeds[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
-/* list of sizes (in bits) corresponding to untyped */
-static uint8_t untyped_size_bits_list[CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS];
+#include <vspace/vspace.h>
+#include "Environ.h"
+#include "testtypes.h"
 
-static Environ _envir;
+#include <sel4platsupport/io.h>
+#include <Sofa.h>
+#include "Syscalls/SyscallTable.h"
+#include "Allocator.h"
+#include "Timer.h"
+#include "Serial.h"
+#include "DeviceTree.h"
+#include <sel4platsupport/arch/io.h>
 
-static Process initProcess;
-static Process timeServer;
+
+
+
+
+/* ammount of untyped memory to reserve for the driver (32mb) */
+#define DRIVER_UNTYPED_MEMORY (1 << 25)
+/* Number of untypeds to try and use to allocate the driver memory.
+ * if we cannot get 32mb with 16 untypeds then something is probably wrong */
+#define DRIVER_NUM_UNTYPEDS 16
+
+/* dimensions of virtual memory for the allocator to use */
+#define ALLOCATOR_VIRTUAL_POOL_SIZE ((1 << seL4_PageBits) * 100)
+
+/* static memory for the allocator to bootstrap with */
+#define ALLOCATOR_STATIC_POOL_SIZE ((1 << seL4_PageBits) * 20)
+static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
+
+/* static memory for virtual memory bootstrapping */
+static sel4utils_alloc_data_t data;
+
 
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
-static ps_irq_register_fn_t irq_register_fn_copy;
 
-void *main_continued(void *arg UNUSED);
+Process initProcess;
 
 
-static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, irq_callback_fn_t callback,
-                                            void *callback_data)
+
+/* initialise our runtime environment */
+static void init_env()
 {
-    printf("--> sel4test_timer_irq_register called \n");
-    static int num_timer_irqs = 0;
-
+    KernelTaskContext *env = getKernelTaskContext();
+    allocman_t *allocman;
+    reservation_t virtual_reservation;
     int error;
 
-    ZF_LOGF_IF(!callback, "Passed in a NULL callback");
-
-    ZF_LOGF_IF(num_timer_irqs >= MAX_TIMER_IRQS, "Trying to register too many timer IRQs");
-
-    /* Allocate the IRQ */
-    error = sel4platsupport_copy_irq_cap(&_envir.vka, &_envir.simple, &irq,
-                                         &_envir.timer_irqs[num_timer_irqs].handler_path);
-    ZF_LOGF_IF(error, "Failed to allocate IRQ handler");
-
-    /* Allocate the root notifitcation if we haven't already done so */
-    if (_envir.timer_notification.cptr == seL4_CapNull) {
-        error = vka_alloc_notification(&_envir.vka, &_envir.timer_notification);
-        ZF_LOGF_IF(error, "Failed to allocate notification object");
-    }
-    assert(_envir.timer_notification.cptr != seL4_CapNull);
-
-    /* Mint a notification for the IRQ handler to pair with */
-    error = vka_cspace_alloc_path(&_envir.vka, &_envir.badged_timer_notifications[num_timer_irqs]);
-    ZF_LOGF_IF(error, "Failed to allocate path for the badged notification");
-    cspacepath_t root_notification_path = {0};
-    vka_cspace_make_path(&_envir.vka, _envir.timer_notification.cptr, &root_notification_path);
-    error = vka_cnode_mint(&_envir.badged_timer_notifications[num_timer_irqs],
-                           &root_notification_path,
-                           seL4_AllRights, IRQ_EP_BADGE);//BIT(num_timer_irqs));
-
-    ZF_LOGF_IF(error, "Failed to mint notification for timer");
-
-    /* Pair the notification and the handler */
-    error = seL4_IRQHandler_SetNotification(_envir.timer_irqs[num_timer_irqs].handler_path.capPtr,
-                                            _envir.badged_timer_notifications[num_timer_irqs].capPtr);
-
-    ZF_LOGF_IF(error, "Failed to pair the notification and handler together");
-
-    /* Ack the handler so interrupts can come in */
-    error = seL4_IRQHandler_Ack(_envir.timer_irqs[num_timer_irqs].handler_path.capPtr);
-    ZF_LOGF_IF(error, "Failed to ack the IRQ handler");
-
-    /* Fill out information about the callbacks */
-    //_envir.timer_cbs[num_timer_irqs].callback = callback;
-    //_envir.timer_cbs[num_timer_irqs].callback_data = callback_data;
-
-    return num_timer_irqs++;
-}
-
-int main(void)
-{
-    int error;
-    seL4_BootInfo *bootInfo = platsupport_get_bootinfo();
-    simple_default_init_bootinfo(&_envir.simple, bootInfo);
-
-    printf("\n\n");
-    printf("-> Init environment\n");
-    Environ_init(&_envir);
-    
-    printf("-> init kernel_task endpoint\n");
-    error = vka_alloc_endpoint( &_envir.vka, &_envir.rootTaskEP);
-    ZF_LOGF_IF(error, "Failed to alloc kernel_task endpoint");
-
-    printf("-> Init timer\n");
-
-    irq_register_fn_copy = _envir.ops.irq_ops.irq_register_fn;
-    _envir.ops.irq_ops.irq_register_fn = sel4test_timer_irq_register;
-    Timer_init(&_envir);
-    _envir.ops.irq_ops.irq_register_fn = irq_register_fn_copy;
-
-
-    fflush(stdout);
-    void *res;
-
-    error = sel4utils_run_on_stack(&_envir.vspace, main_continued, NULL, &res);
-    assert(error == 0);
-    assert(res == 0);
-    
-    return 0;
-}
-
-
-void listCPIOFiles()
-{
-    unsigned long cpioArchiveLen = _cpio_archive_end - _cpio_archive;
-    struct cpio_info cpioInfos;
-    int error;
-    error = cpio_info(_cpio_archive, cpioArchiveLen, &cpioInfos);
-    ZF_LOGF_IF(error, "Failed to Get CPIO info");
-
-    printf("-> CPIO: got %i file(s)\n", cpioInfos.file_count);
-
-    char **fileNames = malloc(cpioInfos.file_count);
-    ZF_LOGF_IF(fileNames == NULL, "Failed to malloc memory for CPIO files");
-
-    for (int i=0;i<cpioInfos.file_count; i++)
-    {
-        fileNames[i] = malloc(cpioInfos.max_path_sz);
-        ZF_LOGF_IF(fileNames[i] == NULL, "Failed to malloc memory for CPIO file at %i", i);
+    /* create an allocator */
+    allocman = bootstrap_use_current_simple(&env->simple, ALLOCATOR_STATIC_POOL_SIZE, allocator_mem_pool);
+    if (allocman == NULL) {
+        ZF_LOGF("Failed to create allocman");
     }
 
-    cpio_ls(_cpio_archive, cpioArchiveLen, fileNames, cpioInfos.file_count);
+    /* create a vka (interface for interacting with the underlying allocator) */
+    allocman_make_vka(&env->vka, allocman);
 
-    for(int i=0;i<cpioInfos.file_count; i++)
-    {
-        printf("\tfile : '%s'\n", fileNames[i]);
+    /* create a vspace (virtual memory management interface). We pass
+     * boot info not because it will use capabilities from it, but so
+     * it knows the address and will add it as a reserved region */
+    error = sel4utils_bootstrap_vspace_with_bootinfo_leaky(&env->vspace,
+                                                           &data, simple_get_pd(&env->simple),
+                                                           &env->vka, platsupport_get_bootinfo());
+    if (error) {
+        ZF_LOGF("Failed to bootstrap vspace");
     }
-    // FIXME : bug in cpio cleanup
-    printf("[kernel_task] Warning, leaking memory in 'listCPIOFiles'\n");
-    return;
-    // cleanup
-    for(int i=0;i<cpioInfos.file_count; i++)
-    {
-        printf("Clean at %i\n",i);
-        free(fileNames[i]);
+
+    /* fill the allocator with virtual memory */
+    void *vaddr;
+    virtual_reservation = vspace_reserve_range(&env->vspace,
+                                               ALLOCATOR_VIRTUAL_POOL_SIZE, seL4_AllRights, 1, &vaddr);
+    if (virtual_reservation.res == 0) {
+        ZF_LOGF("Failed to provide virtual memory for allocator");
     }
-    printf("Clean All\n");
-    free(fileNames);
+
+    bootstrap_configure_virtual_pool(allocman, vaddr,
+                                     ALLOCATOR_VIRTUAL_POOL_SIZE, simple_get_pd(&env->simple));
+
+    error = sel4platsupport_new_io_ops(&env->vspace, &env->vka, &env->simple, &env->ops);
+    ZF_LOGF_IF(error, "Failed to initialise IO ops");
 }
 
-int spawnApp(Process* process, const char* appName)
+/* Free a list of objects */
+static void free_objects(vka_object_t *objects, unsigned int num)
 {
-    process->name = strdup(appName);
-    assert(process->name);
-    unsigned long fileSize = 0;
-    void* filePos = cpio_get_file(_cpio_archive, _cpio_archive_end - _cpio_archive, appName, &fileSize);
-
-    if(filePos == NULL)
-    {
-        printf("file '%s' not found\n",appName);
-        return -ENOENT;
+    for (unsigned int i = 0; i < num; i++) {
+        vka_free_object(&getKernelTaskContext()->vka, &objects[i]);
     }
-    int error;
-
-    sel4utils_process_config_t config = process_config_default_simple( &_envir.simple, appName, seL4_MaxPrio-1);
-
-    cspacepath_t badged_ep_path;
-    error = vka_cspace_alloc_path(&_envir.vka, &badged_ep_path);
-    ZF_LOGF_IFERR(error, "Failed to allocate path\n");
-    assert(error == 0);
-
-    cspacepath_t ep_path = {0};
-    vka_cspace_make_path(&_envir.vka, _envir.rootTaskEP.cptr, &ep_path);
-
-    process->pid = Process_GetNextPID();
-    seL4_Word badge =(seL4_Word) process;//->pid;
-
-    error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, badge);
-    assert(error == 0);
-
-    config = process_config_fault_cptr(config ,badged_ep_path.capPtr );
-
-    error = sel4utils_configure_process_custom(&process->_process , &_envir.vka , &_envir.vspace, config);
-    ZF_LOGF_IFERR(error, "Failed to configure a new process.\n");
-    assert(error == 0);
-
-    process->main.endpoint = process_copy_cap_into(&process->_process, badge, &_envir.vka, _envir.rootTaskEP.cptr, seL4_AllRights);
-
-
-    char endpoint_string[16] = "";
-    snprintf(endpoint_string, 16, "%ld", (long) process->main.endpoint);// process_ep_cap);
-
-    seL4_Word argc = 2;
-    char *argv[] = { (char*)appName, endpoint_string};
-
-    error = sel4utils_spawn_process_v(&process->_process , &_envir.vka , &_envir.vspace , argc, argv , 1);
-    ZF_LOGF_IFERR(error, "Failed to spawn and start the new thread.\n");
-
-    printf("Started app '%s'\n", appName);
-    return 0;
 }
 
-void ProcessContext_init(ProcessContext* ctx)
+/* Allocate untypeds till either a certain number of bytes is allocated
+ * or a certain number of untyped objects */
+static unsigned int allocate_untypeds(vka_object_t *untypeds, size_t bytes, unsigned int max_untypeds)
 {
-    memset(ctx, 0, sizeof(ProcessContext));
-    ctx->root_cnode = SEL4UTILS_CNODE_SLOT;
-    ctx->cspace_size_bits = SOFA_PROCESS_CSPACE_SIZE_BITS;
-    ctx->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
-    ctx->cores = simple_get_core_count(&_envir.simple);
-}
+    unsigned int num_untypeds = 0;
+    size_t allocated = 0;
 
-
-static seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int num_untypeds,
-                                                Environ* env)
-{
-    seL4_SlotRegion range = {0};
-
-    for (int i = 0; i < num_untypeds; i++) {
-        seL4_CPtr slot = sel4utils_copy_cap_to_process(process, &env->vka, untypeds[i].cptr);
-
-        /* set up the cap range */
-        if (i == 0) {
-            range.start = slot;
+    /* try to allocate as many of each possible untyped size as possible */
+    for (uint8_t size_bits = seL4_WordBits - 1; size_bits > PAGE_BITS_4K; size_bits--) {
+        /* keep allocating until we run out, or if allocating would
+         * cause us to allocate too much memory*/
+        while (num_untypeds < max_untypeds &&
+               allocated + BIT(size_bits) <= bytes &&
+               vka_alloc_untyped(&getKernelTaskContext()->vka, size_bits, &untypeds[num_untypeds]) == 0) {
+            allocated += BIT(size_bits);
+            num_untypeds++;
         }
-        range.end = slot;
     }
-    assert((range.end - range.start) + 1 == num_untypeds);
-    return range;
+    return num_untypeds;
 }
 
-void Syscall_Init(Process* process, seL4_MessageInfo_t message)
+/* extract a large number of untypeds from the allocator */
+static unsigned int populate_untypeds(vka_object_t *untypeds)
 {
-    size_t numUntypedsPerProcess = NUM_UNTYPED_PER_PROCESS;//_envir.num_untypeds / 8;
+    /* First reserve some memory for the driver */
+    vka_object_t reserve[DRIVER_NUM_UNTYPEDS];
+    unsigned int reserve_num = allocate_untypeds(reserve, DRIVER_UNTYPED_MEMORY, DRIVER_NUM_UNTYPEDS);
+    printf("Allocated %i untypeds for kernel_task\n", reserve_num);
+    /* Now allocate everything else for the tests */
 
-    if(_envir.index_in_untyped + numUntypedsPerProcess > _envir.num_untypeds)
-    {
-        numUntypedsPerProcess = _envir.num_untypeds - _envir.index_in_untyped;
+    unsigned int num_untypeds = allocate_untypeds(getUntypeds(), UINT_MAX, CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS);
+    /* Fill out the size_bits list */
+    for (unsigned int i = 0; i < num_untypeds; i++) {
+        GetUntypedSizeBitsList()[i] = untypeds[i].size_bits;
     }
 
-    if(numUntypedsPerProcess == 0)
-    {
-        printf("No untypeds left, stop init process '%s' %i\n", process->name, process->pid);
-        seL4_SetMR(1, (seL4_Word) 0);
-        seL4_Reply(message);
-        return;
+    /* Return reserve memory */
+    free_objects(reserve, reserve_num);
+
+    /* Return number of untypeds for tests */
+    if (num_untypeds == 0) {
+        ZF_LOGF("No untypeds for tests!");
     }
 
-    assert(process->ctx == NULL);
-    ProcessContext* ctx = (ProcessContext *) vspace_new_pages(&_envir.vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-    assert(ctx != NULL);
-    process->ctx = ctx;
-    ProcessContext_init(ctx);
-
-    ctx->pid = process->pid;
-
-    seL4_CPtr process_data_frame = vspace_get_cap(&_envir.vspace, ctx);
-    seL4_CPtr process_data_frame_copy = 0;
-    util_copy_cap(&_envir.vka, process_data_frame, &process_data_frame_copy);
-
-    size_t numPages = 1;
-    void* venv = vspace_map_pages(&process->_process.vspace, &process_data_frame_copy, NULL, seL4_AllRights, numPages, PAGE_BITS_4K, 1/*cacheable*/);
-
-    printf("Allocate %lu untypeds for process '%s' %i\n", numUntypedsPerProcess, process->name, process->pid);
-    printf("Index is %i\n", _envir.index_in_untyped);
-    memcpy(ctx->untyped_size_bits_list,
-           untyped_size_bits_list + _envir.index_in_untyped,
-           numUntypedsPerProcess);
-
-    ctx->page_directory = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.pd.cptr);
-    ctx->tcb = sel4utils_copy_cap_to_process(&process->_process, &_envir.vka, process->_process.thread.tcb.cptr);
-
-// set priority for process other threads
-    seL4_Error err =  seL4_TCB_SetMCPriority(process->_process.thread.tcb.cptr, seL4_CapInitThreadTCB, 254);
-    if(err != seL4_NoError)
-    {
-        printf("seL4_TCB_SetMCPriority (1) err %i\n", err);
-    }
-// end set priority for process other threads
-
-    /* setup data about untypeds */
-    ctx->untypeds = copy_untypeds_to_process(&process->_process,
-                                             _envir.untypeds + _envir.index_in_untyped,
-                                             numUntypedsPerProcess,
-                                             &_envir);
-    /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
-     * AS THE SLOTS WILL BE CONSIDERED FREE AND OVERRIDDEN BY THE TEST PROCESS. */
-    /* set up free slot range */
-
-    ctx->free_slots.start =  ctx->untypeds.end + 1;
-    ctx->free_slots.end = (1u << SOFA_PROCESS_CSPACE_SIZE_BITS);
-    assert(ctx->free_slots.start < ctx->free_slots.end);
-    printf("[kern_task] Free slots range %lu %lu\n", ctx->free_slots.start, ctx->free_slots.end);
-    seL4_SetMR(1, (seL4_Word) venv);
-    seL4_Reply(message);
-
-    _envir.index_in_untyped += numUntypedsPerProcess;
-}
-
-static void cleanup_process(Process* proc)
-{
-    vspace_unmap_pages(&_envir.vspace, proc->ctx, 1, PAGE_BITS_4K, NULL);
-    sel4utils_destroy_process(&proc->_process, &_envir.vka);
+    return num_untypeds;
 }
 
 
-void Syscall_Exit(Process* callingProcess, seL4_MessageInfo_t message)
+
+static void DumpProcesses()
 {
-    int exitCode = seL4_GetMR(1);
-    printf("exit from %i with status %i\n", callingProcess->pid, exitCode);
-    
-    if(Process_IsWaiting(callingProcess->parent))
+    Process* p = NULL;
+    printf("----- List process -----\n");
+    FOR_EACH_PROCESS(p)
     {
-        printf("Parent is waiting!\n");
-        seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
-        seL4_SetMR(0, SofaSysCall_Wait);
-        seL4_SetMR(1, callingProcess->pid);
-        seL4_SetMR(2, 0);
-//                    seL4_SetMR(3, process->retSignal);
-        
-        seL4_Send(callingProcess->parent->main.reply , tag);
-        cnode_delete(&_envir.vka, callingProcess->parent->main.reply);
-        callingProcess->parent->main.reply = 0;
-        Process_RemoveChild(callingProcess->parent, callingProcess);
+        printf("%i '%s' %i threads\n", ProcessGetPID(p), ProcessGetName(p), ProcessCountExtraThreads(p));
     }
-    Process_Remove(callingProcess);
-    cleanup_process(callingProcess);
+    printf("------------------------\n");
+
     seL4_DebugDumpScheduler();
 }
 
-void Syscall_GetPPID(Process* callingProcess, seL4_MessageInfo_t message)
+
+static void process_messages()
 {
-    if(callingProcess->parent == NULL)
-    {
-        // sanity check :)
-        assert(callingProcess == &initProcess);
-    }
-    seL4_Word ppid = callingProcess->parent? callingProcess->parent->pid: 0;
-    seL4_SetMR(1, ppid);
-    seL4_Reply(message);
-}
-
-void Syscall_Wait(Process* callingProcess, seL4_MessageInfo_t message)
-{
-    pid_t pidToWait = seL4_GetMR(1);
-    int options = seL4_GetMR(2);
-
-    printf("Process %i wait on pid %i (has %li child)\n", callingProcess->pid, pidToWait, Process_CountChildren(callingProcess));
-//    int retPid = seL4_GetMR(1);
-//    int status = seL4_GetMR(2);
-    if (Process_CountChildren(callingProcess) == 0)
-    {
-        seL4_SetMR(1, -1);
-        seL4_SetMR(2, -1);
-        seL4_Reply(message);
-        return;
-    }
-
-    assert(callingProcess->main.reply == 0);
-    callingProcess->main.reply = get_free_slot(&_envir.vka);
-    // FIXME: leak if cnode_savecaller
-    int err = cnode_savecaller(&_envir.vka, callingProcess->main.reply );
-    if (err != 0)
-    {
-        printf("kernel_task: unable to save caller for wait on %i\n", callingProcess->pid);
-        seL4_SetMR(1, -1);
-        seL4_SetMR(2, -1);
-        seL4_Reply(message);
-    }
-    else
-    {
-        callingProcess->_isWaiting = 1;
-    }
-}
-
-void Syscall_Write(Process* callingProcess, seL4_MessageInfo_t message)
-{
-    const size_t dataSize = (size_t) seL4_GetMR(1);
-    for(size_t i =0; i< dataSize;i++)
-    {
-        putchar(callingProcess->ctx->ipcBuffer[i]);
-    }
-}
-
-
-static void printSpecs()
-{
-    printf("Kernel Build %s MCS\n", config_set(CONFIG_KERNEL_MCS)? "with": "without");    
-}
-
-int process_spawn(Process* callingProcess, seL4_MessageInfo_t message)
-{
-    const size_t filePathLen = (size_t) seL4_GetMR(1);
-    printf("Spawn request from %i: '%s' \n", callingProcess->pid, callingProcess->ctx->ipcBuffer);
-    const char* filePath = (const char*) callingProcess->ctx->ipcBuffer;
-
-    Process* p = malloc(sizeof(Process));
-    if(p == NULL)
-    {
-        return -ENOMEM;
-    }
-
-    ProcessInit(p);
-
-
-    int error = spawnApp(p, filePath);
-
-    if (error != 0)
-    {
-        free(p);
-        return error;
-    }
-    Process_Add(p);
-    Process_AddChild(callingProcess, p);
-    assert(p->parent == callingProcess);
-    size_t c = Process_CountChildren(callingProcess);
-    printf("Process %i has %li children\n", callingProcess->pid, c);
-
-    return p->pid;
-}
-
-void Syscall_Spawn(Process* callingProcess, seL4_MessageInfo_t message)
-{
-    int ret = process_spawn(callingProcess, message);
-    int pid = 0;
-    if(ret > 0)
-    {
-        pid = ret;
-        ret = 0;
-    }
-    else
-    {
-        ret = -ret;
-    }
-    
-    seL4_SetMR(1, ret);
-    seL4_SetMR(2, pid);
-    seL4_Reply(message);
-}
-
-void Syscall_RegisterService(Process* callingProcess, seL4_MessageInfo_t message, seL4_Word capDest)
-{
-    char* serviceName = strdup(callingProcess->ctx->ipcBuffer);
-
-    printf("[Kernel_task] register endpoint for '%s'\n", serviceName);
-    IPCService* service = malloc(sizeof(IPCService));
-    memset(service, 0, sizeof(IPCService));
-    assert(service);
-    service->owner = callingProcess;
-    service->name = serviceName;
-
-    assert(is_slot_empty(&_envir.vka, capDest) == 0);
-    service->endpoint = get_free_slot(&_envir.vka);
-    int err = cnode_move(&_envir.vka, capDest, service->endpoint);
-    assert(err == 0);
-
-    service->rights.words[0] = seL4_GetMR(2);
-
-    NameServer_AddService(service);
-}
-
-void Syscall_GetService(Process* callingProcess, seL4_MessageInfo_t message)
-{
-    const char* nameService = callingProcess->ctx->ipcBuffer;
-
-    IPCService* service = NameServer_FindService(nameService);
-
-    assert(seL4_GetMR(1) <= 1);
-    if(seL4_GetMR(1) == 1) // status check request
-    {
-        seL4_SetMR(1, service? 1:0);
-        seL4_Reply(message);
-        return;
-    }
-    assert(service);
-
-    struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
-                        0,  // capsUnwrapped
-                        1,  // extraCaps
-                        2);
-
-    seL4_SetMR(1, 1);
-
-    seL4_CPtr capMint = get_free_slot(&_envir.vka);
-
-    cnode_mint(&_envir.vka, service->endpoint, capMint, seL4_AllRights, callingProcess->pid);
-    seL4_SetCap(0, capMint);
-
-    seL4_Reply(msgRet);
-
-}
-
-void Syscall_Debug(Process* callingProcess, seL4_MessageInfo_t message)
-{
-    DebugCode code = seL4_GetMR(1);
-
-    switch (code)
-    {
-    case DebugCode_DumpScheduler:
-        seL4_DebugDumpScheduler();
-        break;
-    case DebugCode_ListProcesses:
-    {
-        Process *proc, *temp = NULL;
-        printf("--- Proc List ---\n");
-        
-        ProcessListIter(proc, temp)
-        {
-            printf("'%s' pid=%i\n", proc->name, proc->pid);
-        }
-        printf("-----------------\n");
-        break;
-    }
-    case DebugCode_ListIPCServers:
-    {
-        IPCService *s, *temp = NULL;
-
-        printf("--- IPC Services List ---\n");
-        NameServerListIter(s, temp)
-        {
-            printf("'%s': owner '%s' %i\n", s->name, s->owner->name, s->owner->pid);
-            
-        }
-        printf("-------------------------\n");  
-        break;
-    }
-    default:
-        assert(0);
-        break;
-    }
-}
-
-void ProcessCapFault(Process* callingProcess, seL4_MessageInfo_t message)
-{
-    seL4_Word foreign_faulter_capfault_cap = seL4_GetMR(seL4_CapFault_Addr);
-    seL4_Word failureType = seL4_GetMR(seL4_CapFault_LookupFailureType);
-    printf("Got cap fault from '%s' %i cap fault is %lu\n",
-            callingProcess->name,
-            callingProcess->pid,
-            foreign_faulter_capfault_cap);
-    if(failureType == seL4_InvalidRoot)
-    {
-        printf("Invalid root\n");
-    }
-    else if(failureType == seL4_MissingCapability)
-    {
-        
-        printf("MissingCapability\n");
-
-        seL4_CPtr slot;
-        int error = vka_cspace_alloc(&_envir.vka, &slot);
-        assert(error == 0);
-        assert(is_slot_empty(&_envir.vka, slot));
-        
-        seL4_CNode_Copy(
-                        callingProcess->ctx->root_cnode,
-                        foreign_faulter_capfault_cap,
-                        seL4_WordBits,
-                        SEL4UTILS_CNODE_SLOT,
-                        slot,
-                        seL4_WordBits,
-                        seL4_AllRights
-                        );
-        
-        //seL4_Reply(seL4_MessageInfo_new(0, 0, 0, 0));
-
-    }
-    else if(failureType == seL4_DepthMismatch)
-    {
-        printf("DepthMismatch\n");
-    }
-    else if(failureType == seL4_GuardMismatch)
-    {
-        printf("GuardMismatch\n");
-    }
-
-}
-
-void *main_continued(void *arg UNUSED)
-{
-    printf("\n------Sofa------\n");
-
-    printSpecs();
-
-    /* allocate lots of untyped memory for tests to use */
-
-    _envir.num_untypeds = Environ_populate_untypeds(&_envir, untypeds, untyped_size_bits_list, CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS);
-    printf("Allocated %i untypeds  %i \n", _envir.num_untypeds, simple_get_untyped_count(&_envir.simple));
-    _envir.untypeds = untypeds;
-
-    listCPIOFiles();
-
-    printf("-> start process init\n");
-    ProcessInit(&initProcess);
-    spawnApp(&initProcess, "app");
-    printf("Add process with pid %i\n", initProcess.pid);
-    Process_Add(&initProcess);
-
-// timer test
-#if 0
-    unsigned int timerID = 0;
-    int err = tm_alloc_id(&_envir.tm, &timerID);
-    assert(err == 0);
-    printf("Timer ID is %u\n", timerID);
-    tm_register_rel_cb(&_envir.tm, 5*NS_IN_S, timerID, on_time, 1);
-#endif
-// timer test
-
-    printf("-> start kernel_task run loop\n");
-
-    seL4_CPtr capDest = get_free_slot(&_envir.vka);
-    assert(is_slot_empty(&_envir.vka, capDest));
-    set_cap_receive_path(&_envir.vka, capDest);
-
+    KernelTaskContext* env = getKernelTaskContext();
     while (1)
-    {
-        seL4_Word sender;
-        seL4_MessageInfo_t message = seL4_Recv(_envir.rootTaskEP.cptr, &sender);
-        seL4_Word label = seL4_MessageInfo_get_label(message);
-        Process* callingProcess = (Process*) sender;
-/*
-        if(sender & IRQ_EP_BADGE)
-        {   
-            printf("IRQ\n");
-            int error = seL4_IRQHandler_Ack(_envir.timer_irqs[0].handler_path.capPtr);
-            ZF_LOGF_IF(error, "Failed to acknowledge timer IRQ handler");
+    {   
+        handleSerialInput(env);
 
-            tm_update(&_envir.tm);
-        }
-*/        
+        seL4_Word badge = 0;
+        seL4_MessageInfo_t info = seL4_Recv(env->root_task_endpoint.cptr, &badge);
+        seL4_Word label = seL4_MessageInfo_get_label(info);
         if(label == seL4_NoFault)
         {
-            seL4_Word rpcID = seL4_GetMR(0);
-
-            if(callingProcess == NULL)
+            if(badge == TIMER_BADGE)
             {
-                printf("Process not found for %lu\n", sender);
+                seL4_IRQHandler_Ack(env->timer_irqs[0].handler_path.capPtr);
+                tm_update(&env->tm);
             }
-            assert(callingProcess);
-
-            if(rpcID == SofaSysCall_InitProc)
+#if 0
+            else if(badge == SERIAL_BADGE)
             {
-                Syscall_Init(callingProcess, message);
-            }
-            else if(rpcID == SofaSysCall_Exit)
-            {
-                Syscall_Exit(callingProcess, message);
-            }
-            else if(rpcID == SofaSysCall_Debug)
-            {
-                Syscall_Debug(callingProcess, message);
-            }
-            else if(rpcID == SofaSysCall_PPID)
-            {
-                Syscall_GetPPID(callingProcess, message);
-            }
-            else if(rpcID == SofaSysCall_Wait)
-            {
-                Syscall_Wait(callingProcess, message);
-            }
-            else if(rpcID == SofaSysCall_Write)
-            {
-                Syscall_Write(callingProcess, message);
-            }
-            else if(rpcID == SofaSysCall_Spawn)
-            {
-                Syscall_Spawn(callingProcess, message);
-            }
-            else if(rpcID == SofaSysCall_RegisterService)
-            {
-                Syscall_RegisterService(callingProcess, message, capDest);
-            }     
-            else if(rpcID == SofaSysCall_GetService)
-            {
-                Syscall_GetService(callingProcess, message);
-            }          
-            else if(rpcID == SofaSysCall_RequestCap)
-            {
-                printf("[kernel_task] cap transfert test from pid=%i cap #=%li\n", callingProcess->pid, seL4_GetMR(1));
-
-                struct seL4_MessageInfo msgRet =  seL4_MessageInfo_new(seL4_Fault_NullFault,
-                                                    0,  // capsUnwrapped
-                                                    1,  // extraCaps
-                                                    1);
-
-                if(seL4_GetMR(1) == RequestCapID_TimerNotif)
-                {
-                    seL4_SetCap(0, _envir.badged_timer_notifications[0].capPtr);
+                seL4_IRQHandler_Ack(env->handler.capPtr);
+                printf("IRQ\n");
+                //ps_cdev_handle_irq(&env->comDev, -1);
+/*                int data = 0;
+                while(data != EOF)
+                {  
+                    data = ps_cdev_getchar(&env->comDev);
+                    if(data > 0)
+                        printf("%c\n", data);
                 }
-                else if (seL4_GetMR(1) == RequestCapID_TimerAck)
+*/                
+            }
+#endif            
+            else 
+            {
+                Thread* caller = (Thread*) badge;
+                Process* process = caller->process;
+                SyscallID rpcID = seL4_GetMR(0);  
+                if(rpcID > 0 && rpcID < SyscallID_Last)
                 {
-                    seL4_SetCap(0, _envir.timer_irqs[0].handler_path.capPtr);
+                    syscallTable[rpcID](caller, info);
                 }
                 else
                 {
                     assert(0);
                 }
-
-                seL4_Reply(msgRet);
-
-            }
-            else
-            {
-                printf("Received unknown RPC id %lu from sender %i\n", rpcID, callingProcess->pid);
-                assert(0);
+                
             }
         }
-        else if( label == seL4_CapFault)
+        else if (label == seL4_CapFault)
         {
-            ProcessCapFault(callingProcess, message);            
+            Thread* sender = (Thread*) badge;
+            Process* process = sender->process;
+            printf("Got cap fault from '%s' %i\n", process->init->name, process->init->pid);
         }
         else if (label == seL4_VMFault)
         {
-            printf("Got VM fault from %i\n", callingProcess->pid);
+            Thread* sender = (Thread*) badge;
+            Process* process = sender->process;
+            printf("Got VM fault from %i %s in thread %p\n",
+                   ProcessGetPID(process),
+                   ProcessGetName(process),
+                   sender == &process->main? 0: sender
+                   );
+
             const seL4_Word programCounter      = seL4_GetMR(seL4_VMFault_IP);
             const seL4_Word faultAddr           = seL4_GetMR(seL4_VMFault_Addr);
             const seL4_Word isPrefetch          = seL4_GetMR(seL4_VMFault_PrefetchFault);
             const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
             
-            printf("[kernel_task] programCounter      %lu\n",programCounter);
-            printf("[kernel_task] faultAddr           %lu\n",faultAddr);
-            printf("[kernel_task] isPrefetch          %lu\n",isPrefetch);
+            printf("[kernel_task] programCounter      0X%lX\n",programCounter);
+            printf("[kernel_task] faultAddr           0X%lX\n",faultAddr);
+            printf("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
             printf("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
-            seL4_DebugDumpScheduler();
+
+            doExit(process, -1);
+
+
         }
-        else if(label == seL4_UserException)
+        else 
         {
-            printf("got user exception\n");
-        }
-        else
-        {
-            printf("got Other msg label %lx\n" , label);
-        }
+            printf("Received message with label %lu from %lu\n", label, badge);
+        }   
     }
-    
 }
+
+
+
+
+void *main_continued(void *arg UNUSED)
+{
+
+    /* Print welcome banner. */
+    printf("\n------Sofa------\n");
+    printf("----------------\n");
+    int error;
+
+    KernelTaskContext* env = getKernelTaskContext();
+
+    error = vka_alloc_endpoint(&env->vka, &env->root_task_endpoint);
+    assert(error == 0);
+
+#if 0
+    /* allocate a piece of device untyped memory for the frame tests,
+     * note that spike doesn't have any device untypes so the tests that require device untypes are turned off */
+    if (!config_set(CONFIG_PLAT_SPIKE)) {
+        assert(0);
+        bool allocated = false;
+        int untyped_count = simple_get_untyped_count(&env.simple);
+        for (int i = 0; i < untyped_count; i++) {
+            bool device = false;
+            uintptr_t ut_paddr = 0;
+            size_t ut_size_bits = 0;
+            seL4_CPtr ut_cptr = simple_get_nth_untyped(&env.simple, i, &ut_size_bits, &ut_paddr, &device);
+            if (device) {
+                error = vka_alloc_frame_at(&env.vka, seL4_PageBits, ut_paddr, &env.device_obj);
+                if (!error) {
+                    allocated = true;
+                    /* we've allocated a single device frame and that's all we need */
+                    break;
+                }
+            }
+        }
+        ZF_LOGF_IF(allocated == false, "Failed to allocate a device frame for the frame tests");
+    }
+#endif
+    /* allocate lots of untyped memory for tests to use */
+    env->num_untypeds = populate_untypeds(getUntypeds());
+    printf("Got %i available untypeds\n", env->num_untypeds);
+
+    /* Allocate a reply object for the RT kernel. */
+    if (config_set(CONFIG_KERNEL_MCS)) {
+        error = vka_alloc_reply(&env->vka, &env->reply);
+        ZF_LOGF_IF(error, "Failed to allocate reply");
+    }
+
+    sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
+
+    error = DeviceTreeInit();
+    assert(error == 0);
+
+    error = SerialInit();
+    assert(error == 0);
+
+
+    ProcessInit(&initProcess);
+    spawnApp(&initProcess, "init", NULL);
+
+    process_messages();    
+
+    return NULL;
+}
+
+/* Note that the following globals are place here because it is not expected that
+ * this function be refactored out of sel4test-driver in its current form. */
+/* Number of objects to track allocation of. Currently all serial devices are
+ * initialised with a single Frame object.  Future devices may need more than 1.
+ */
+#define NUM_ALLOC_AT_TO_TRACK 1
+/* Static global to store the original vka_utspace_alloc_at function. It
+ * isn't expected for this to dynamically change after initialisation.*/
+static vka_utspace_alloc_at_fn vka_utspace_alloc_at_base;
+/* State that serial_utspace_alloc_at_fn uses to determine whether to cache
+ * allocations. It is intended that this flag gets set before the serial device
+ * is initialised and then unset afterwards. */
+static bool serial_utspace_record = false;
+
+typedef struct uspace_alloc_at_args {
+    uintptr_t paddr;
+    seL4_Word type;
+    seL4_Word size_bits;
+    cspacepath_t dest;
+} uspace_alloc_at_args_t;
+/* This instance of vka_utspace_alloc_at_fn will keep a record of allocations up
+ * to NUM_ALLOC_AT_TO_TRACK while serial_utspace_record is set. When serial_utspace_record
+ * is unset, any allocations matching recorded allocations will instead copy the cap
+ * that was originally allocated. These subsequent allocations cannot be freed using
+ * vka_utspace_free and instead the caps would have to be manually deleted.
+ * Freeing these objects via vka_utspace_free would require also wrapping that function.*/
+static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4_Word type, seL4_Word size_bits,
+                                      uintptr_t paddr, seL4_Word *cookie)
+{
+    static uspace_alloc_at_args_t args_prev[NUM_ALLOC_AT_TO_TRACK] = {};
+    static size_t num_alloc = 0;
+
+    ZF_LOGF_IF(!vka_utspace_alloc_at_base, "vka_utspace_alloc_at_base not initialised.");
+    if (!serial_utspace_record) {
+        for (int i = 0; i < num_alloc; i++) {
+            if (paddr == args_prev[i].paddr &&
+                type == args_prev[i].type &&
+                size_bits == args_prev[i].size_bits) {
+                return vka_cnode_copy(dest, &args_prev[i].dest, seL4_AllRights);
+            }
+        }
+        return vka_utspace_alloc_at_base(data, dest, type, size_bits, paddr, cookie);
+    } else {
+        ZF_LOGF_IF(num_alloc >= NUM_ALLOC_AT_TO_TRACK, "Trying to allocate too many utspace objects");
+        int ret = vka_utspace_alloc_at_base(data, dest, type, size_bits, paddr, cookie);
+        if (ret) {
+            return ret;
+        }
+        uspace_alloc_at_args_t a = {.paddr = paddr, .type = type, .size_bits = size_bits, .dest = *dest};
+        args_prev[num_alloc] = a;
+        num_alloc++;
+        return ret;
+
+    }
+}
+
+static void sel4test_exit(int code)
+{
+    seL4_TCB_Suspend(seL4_CapInitThreadTCB);
+}
+
+int main(void)
+{
+    KernelTaskContext* env = getKernelTaskContext();
+    /* Set exit handler */
+    sel4runtime_set_exit(sel4test_exit);
+    memset(env, 0, sizeof(KernelTaskContext));
+    int error;
+    seL4_BootInfo *info = platsupport_get_bootinfo();
+
+#ifdef CONFIG_DEBUG_BUILD
+    seL4_DebugNameThread(seL4_CapInitThreadTCB, "kernel_task");
+#endif
+
+    /* initialise libsel4simple, which abstracts away which kernel version
+     * we are running on */
+    simple_default_init_bootinfo(&env->simple, info);
+
+    /* initialise the test environment - allocator, cspace manager, vspace
+     * manager, timer
+     */
+    init_env();
+
+    /* Partially overwrite part of the VKA implementation to cache objects. We need to
+     * create this wrapper as the actual vka implementation will only
+     * allocate/return any given device frame once.
+     * We allocate serial objects for initialising the serial server in
+     * platsupport_serial_setup_simple but then we also need to use the objects
+     * in some of the tests but attempts to allocate will fail.
+     * Instead, this wrapper records the initial serial object allocations and
+     * then returns a copy of the one already allocated for future allocations.
+     * This requires the allocations for the serial driver to exist for the full
+     * lifetime of this application, and for the resources that are allocated to
+     * be able to be copied, I.E. frames.
+     */
+/*
+    vka_utspace_alloc_at_base = env->vka.utspace_alloc_at;
+    env->vka.utspace_alloc_at = serial_utspace_alloc_at_fn;
+
+    serial_utspace_record = true;
+    platsupport_serial_setup_simple(&env->vspace, &env->simple, &env->vka);
+    serial_utspace_record = false;
+*/
+    /* Partially overwrite the IRQ interface so that we can record the IRQ caps that were allocated.
+     * We need this only for the timer as the ltimer interfaces allocates the caps for us and hides them away.
+     * A few of the tests require actual interactions with the caps hence we record them.
+     */
+
+    error = TimerInit();
+    assert(error == 0);
+
+    simple_print(&env->simple);
+
+    /* switch to a bigger, safer stack with a guard page
+     * before starting the tests */
+    printf("Switching to a safer, bigger stack... ");
+    fflush(stdout);
+    void *res;
+
+    /* Run sel4test-test related tests */
+    error = sel4utils_run_on_stack(&env->vspace, main_continued, NULL, &res);
+    assert(error == 0);
+    assert(res == 0);
+
+    return 0;
+}
+

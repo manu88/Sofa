@@ -1,66 +1,35 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <sel4/sel4.h>
+#include <allocman/vka.h>
+#include <allocman/bootstrap.h>
+
+
+#include "helpers.h"
+#include "runtime.h"
 #include <Sofa.h>
-#include <Spawn.h>
+#include <Thread.h>
 
-
-static void* inter_thread(void*arg)
+static void* on_thread(void*args)
 {
-    printf("[App-thread] started\n");
-
+    printf("Hello thread %i\n", getProcessEnv()->pid);
+    SofaSleep(500);
+    return (void*)12;
 }
+
 int main(int argc, char *argv[])
 {
-    int ret = ProcessInit(atoi(argv[1]));
-    assert(ret == 0);
+    RuntimeInit(argc, argv);
+    printf("\n\n");
+    fflush(stdout);
+    printf("[%i] started\n", SofaGetPid());
+    return 10 + SofaGetPid();
+    Thread th;
+    ThreadInit(&th, on_thread, NULL);
 
-    for (int i=0;i<10;i++)
-    {
-        vka_object_t res;
-        vka_alloc_endpoint(&getProcessContext()->vka, &res);
-        printf("%i - %lu\n", i, res.cptr);
-        assert(res.cptr);
-    }
+    int retThread = 0;
+    ThreadJoin(&th, (void**)&retThread);
+    printf("[%i] thread returned %i\n", getProcessEnv()->pid, retThread);
+    SofaSleep(2000);
+    //cleanup_helper(getProcessEnv(), &thread1);
 
-    printf("App started parent pid is %i\n", getppid());
-
-
-    pthread_t th;
-    ret =  pthread_create(&th, NULL, inter_thread, NULL);
-    assert(ret == 0);
-    
-    printf("Start Thread join\n");
-//    pthread_join(th, NULL);
-//    printf("Thread join ok\n");
-
-    while (1)
-    {
-    }
-    
-
-    seL4_CPtr cap = 0;
-    while (cap ==  0)
-    {
-        cap = getIPCService("TimeServer.main");
-    }
-    
-    printf("[App] received cap\n");
-
-
-    tempSetTimeServerEP(cap);
-    struct timespec tm;
-    tm.tv_sec = 2;
-    tm.tv_nsec = 0;
-
-    nanosleep(&tm, NULL);
-
-    while (1)
-    {
-
-    }
-    
-    return 0;
+    return 1;
 }
 

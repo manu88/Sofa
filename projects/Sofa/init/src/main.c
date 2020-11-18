@@ -1,44 +1,32 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <sel4/sel4.h>
+#include <allocman/vka.h>
+#include <allocman/bootstrap.h>
 #include <Sofa.h>
-#include <Spawn.h>
+#include <Thread.h>
+#include <runtime.h>
 
 int main(int argc, char *argv[])
 {
-    int ret = ProcessInit(atoi(argv[1]));
-    assert(ret == 0);
-    
-    
-    if(getpid() != 1)
+    RuntimeInit(argc, argv);
+
+    if(SofaGetPid() != 1)
     {
-        printf("Init is not PID 1, will stop!\n");
-        return 0;
+        return EXIT_FAILURE;
     }
+    int shellPid = SofaSpawn("shell");
+    printf("[init] shell pid is %i\n", shellPid);
 
-    printf("[Init] started parent pid is %i\n", getppid());
-
-    pid_t timeServerPID = 0;
-    ret = posix_spawnp(&timeServerPID, "TimeServer", NULL, NULL, NULL, NULL);
-    printf("[Init] Spawn returned %i, TimeServer pid is %i\n", ret, timeServerPID);
-
-
-    pid_t appPID = 0;
-    ret = posix_spawnp(&appPID, "app", NULL, NULL, NULL, NULL);
-    printf("[Init] Spawn returned %i, App pid is %i\n", ret, appPID);
-
-    pid_t shellPID = 0;
-    ret = posix_spawnp(&shellPID, "shell", NULL, NULL, NULL, NULL);
-    printf("[Init] Spawn returned %i, Shell pid is %i\n", ret, shellPID);
+    int appStatus = 0;
 
     while (1)
     {
-        int status = 0;
-        pid_t pid = wait(&status);
-        printf("[Init] Wait returned pid %i status %i\n", pid, status);
+        pid_t retPid = SofaWait(&appStatus);
+        printf("[init] Wait returned pid %i status %i\n", retPid, appStatus);
+        if(retPid == shellPid)
+        {
+            shellPid = SofaSpawn("shell");
+            printf("[init] shell pid is %i\n", shellPid);
+        }
     }
-    
-    return 0;
+    return 1;
 }
 

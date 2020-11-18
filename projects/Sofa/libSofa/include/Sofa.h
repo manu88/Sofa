@@ -1,36 +1,54 @@
 #pragma once
-#include <sys/types.h>
-#include <unistd.h>
-#include <sel4/sel4.h>
-#include <proc_ctx.h>
-#include <time.h>
-/* API that should go at some point in the runtime in order to be called before/after main()*/
+#include <sys/types.h> // pid_t
 
-int ProcessInit(seL4_CPtr endpoint);
+typedef enum
+{
+    SyscallID_Unknown = 0,
+
+    SyscallID_ThreadNew,
+    SyscallID_ThreadExit,
+
+    SyscallID_Exit,
+
+    SyscallID_Sleep,
+
+    SyscallID_Spawn,
+    SyscallID_Wait,
+    SyscallID_Kill,
+
+    SyscallID_Read,
+    SyscallID_PPID,
+    SyscallID_Debug,
+
+    SyscallID_Last // Not a real ID, just here to count ids
+} SyscallID;
+
+typedef enum
+{
+    SofaDebugCode_ListProcesses,
+} SofaDebugCode;
+
+int SofaSleep(int ms);
+
+
+int SofaSpawn(const char* path);
+
+pid_t SofaGetPid(void);
+pid_t SofaGetPPid(void);
+
+pid_t SofaWaitPid(pid_t pid, int *wstatus, int options);
+pid_t SofaWait(int *wstatus);
+
+int SofaKill(pid_t pid, int sig);
+
+ssize_t SofaRead(char* data, size_t dataSize);
+
+// if returns -EAGAIN, it means that no endline was found in dataSize, BUT data was written.
+// simply issue the call again to get the rest. 
+ssize_t SofaReadLine(char* data, size_t dataSize);
 
 
 
-seL4_CPtr RequestCap(int index);
+// temp/debug syscall
 
-
-ProcessContext* getProcessContext(void);
-
-seL4_CPtr registerIPCService(const char* name, seL4_CapRights_t rights);
-seL4_CPtr getIPCService(const char* name);
-
-void DoDebug(int code);
-
-void tempSetTimeServerEP( seL4_CPtr ep);
-/* PUBLIC API*/
-
-pid_t waitpid(pid_t pid, int *wstatus, int options);
-pid_t wait(int *wstatus);
-
-pid_t getpid(void);
-pid_t getppid(void);
-
-int nanosleep(const struct timespec *req, struct timespec *rem);
-
-
-TLSContext* getTLSContext(void);
-
+void SofaDebug(SofaDebugCode code);

@@ -1,63 +1,82 @@
 #include "Process.h"
 
-static size_t _pid = 1;
 
+static Process* _processes = NULL;
 
-static Process *_processes = NULL;
-
-
-Process* ProcessGetList()
+Process* getProcessList()
 {
     return _processes;
 }
 
-
-void ProcessInit(Process*p)
+void ProcessListAdd(Process* p)
 {
-    memset(p, 0, sizeof(Process));
+    LL_APPEND(_processes, p);
 }
 
-size_t Process_GetNextPID()
+void ProcessListRemove(Process* p)
 {
-    return _pid++;
+    LL_DELETE(_processes, p);
 }
 
-Process* Process_GetByPID(int pid)
+
+Process* ProcessListGetByPid(pid_t pid)
 {
-    Process* p = NULL;
-    HASH_FIND_INT(_processes, &pid, p);
-    return p;
+    Process* p= NULL;
+    FOR_EACH_PROCESS(p)
+    {
+        if(ProcessGetPID(p) == pid)
+        {
+            return p;
+        }
+    }
+    return NULL;
 }
 
-void Process_Add(Process* p)
+
+
+int ProcessCountExtraThreads(const Process* p)
 {
-    HASH_ADD_INT(_processes, pid, p);
+    int count = 0;
+    Thread* el = NULL;
+    LL_COUNT(p->threads, el, count);
+    return count;
 }
 
-void Process_Remove(Process* p)
+
+Thread* ProcessGetWaitingThread(Process*p)
 {
-    HASH_DEL(_processes, p);
+    if(p->main.state == ThreadState_Waiting)
+    {
+        return &(p->main);
+    }
+    Thread* t = NULL;
+    PROCESS_FOR_EACH_EXTRA_THREAD(p, t)
+    {
+        if(t->state == ThreadState_Waiting)
+        {
+            return t;
+        }
+    }
+    return NULL;
 }
 
-void Process_AddChild(Process* parent, Process* child)
+
+void ProcessAddChild(Process* parent, Process* child)
 {
-    HASH_ADD(hchld, parent->children, pid, sizeof(int), child);
+    assert(parent != child);
     child->parent = parent;
+    LL_APPEND2(parent->children, child, nextChild);
 }
 
-void Process_RemoveChild(Process* parent, Process* child)
+void ProcessRemoveChild(Process* parent, Process* child)
 {
-    HASH_DELETE(hchld, parent->children, child);
-    child->parent = NULL;
+    LL_DELETE2(parent->children, child, nextChild);
 }
 
-size_t Process_CountChildren( const Process* p)
+int ProcessCoundChildren(const Process* p)
 {
-    return HASH_CNT(hchld, p->children);
-    //return HASH_COUNT(p->children);
-}
-
-int Process_IsWaiting(const Process* p)
-{
-    return p->_isWaiting;
+    int counter = 0;
+    Process* tmp = NULL;
+    LL_COUNT2(p->children, tmp, counter, nextChild);
+    return counter;
 }

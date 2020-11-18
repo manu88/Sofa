@@ -46,10 +46,10 @@ util_libs_import_libraries()
 sel4_libs_import_libraries()
 
 add_subdirectory(libSofa)
+add_subdirectory(libACPI)
 add_subdirectory(init)
 add_subdirectory(app)
 add_subdirectory(shell)
-add_subdirectory(TimeServer)
 add_subdirectory(kernel_task)
 
 

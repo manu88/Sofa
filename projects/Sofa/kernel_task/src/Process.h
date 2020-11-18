@@ -1,62 +1,113 @@
 #pragma once
 
-#include <utils/uthash.h>
 #include <sel4utils/process.h>
-#include <proc_ctx.h>
-#include "ThreadContext.h"
+#include "utlist.h"
+#include "test_init_data.h"
+#include "Environ.h"
+#include "Allocator.h"
 
 
 typedef enum
 {
-    ProcessState_Stopped,
-    ProcessState_Run,
-    ProcessState_Zombie
+    ThreadState_Running = 0,
+    ThreadState_Sleeping,
+    ThreadState_Waiting,
+} ThreadState;
 
-} ProcessState;
-
-
-struct _Process
+typedef enum
 {
-    char* name;
-    int pid;
-    sel4utils_process_t _process;
-//    seL4_CPtr endpoint;
-
-    ProcessContext* ctx;
-    ThreadContext main;
-
-    // Hash handle for Global Proc table
-    UT_hash_handle hh;
-
-    // Hash handle for child processes
-    UT_hash_handle hchld;
-
-    struct _Process *parent;
-
-    // This is a Hash map
-    struct _Process* children;
-
-    ProcessState state;
-
-    uint8_t _isWaiting;
-};
+    ProcessState_Running,
+    ProcessState_Zombie
+} ProcessState;
 
 typedef struct _Process Process;
 
-Process* ProcessGetList(void);
 
-#define ProcessListIter(p, tmp) HASH_ITER(hh, ProcessGetList(), p, tmp)
+typedef struct _Thread
+{
+    seL4_CPtr process_endpoint;
 
-void ProcessInit(Process*p);
+    uint8_t* ipcBuffer_vaddr;
+    uint8_t* ipcBuffer;
+    seL4_Word replyCap;
+    Process* process;
 
-size_t Process_GetNextPID(void);
+    unsigned int timerID;
 
-void Process_Add(Process* p);
-void Process_Remove(Process* p);
-Process* Process_GetByPID(int pid);
+    ThreadState state;
+    struct _Thread *next; 
+} Thread;
 
 
-int Process_IsWaiting(const Process* p);
-void Process_AddChild(Process* parent, Process* child);
-void Process_RemoveChild(Process* parent, Process* child);
-size_t Process_CountChildren( const Process* p);
+typedef struct _Process
+{
+    Thread main;
+    sel4utils_process_t native;
+    
+    void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
+    test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
+    UntypedRange untypedRange;
+
+
+    Thread* threads; // other threads, NOT including the main one
+ 
+    int retCode;
+    ProcessState state;
+    struct _Process *parent;
+
+    struct _Process* children;
+    struct _Process* next; // For Global process list
+    struct _Process* nextChild; // For Children
+} Process;
+
+
+// Process methods
+
+static inline void ProcessInit(Process* p)
+{
+    memset(p, 0, sizeof(Process));
+    p->main.process = p;
+}
+
+static inline const char* ProcessGetName(const Process* p)
+{
+    return p->init->name;
+}
+
+static inline int ProcessGetPID(const Process* p)
+{
+    return p->init->pid;
+}
+
+int ProcessCountExtraThreads(const Process* p);
+
+
+Thread* ProcessGetWaitingThread(Process*p);
+
+#define PROCESS_FOR_EACH_EXTRA_THREAD(proc, t) LL_FOREACH(proc->threads,t)
+
+
+
+void ProcessAddChild(Process* parent, Process* child);
+void ProcessRemoveChild(Process* parent, Process* child);
+int ProcessCoundChildren(const Process* p);
+
+static inline Process* ProcessGetChildren(Process* p)
+{
+    return p->children;
+}
+
+#define PROCESS_FOR_EACH_CHILD(proc, c) LL_FOREACH(proc->children,c) 
+
+// Thread methods
+
+void ThreadCleanupTimer(Thread* t);
+
+// Process List methods
+Process* getProcessList(void);
+void ProcessListAdd(Process* p);
+void ProcessListRemove(Process* p);
+
+Process* ProcessListGetByPid(pid_t pid);
+
+#define FOR_EACH_PROCESS(p) LL_FOREACH(getProcessList(),p)
