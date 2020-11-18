@@ -46,6 +46,13 @@ else
         git clone https://github.com/SEL4PROJ/sel4runtime.git projects/sel4runtime
 fi
 
+echo "==> Getting libACPI"
+if [ -d "projects/Sofa/libACPI/" ]; then
+        git -C projects/Sofa/libACPI/ pull
+else
+        git clone https://github.com/manu88/libACPI.git projects/Sofa/libACPI/
+fi
+
 # create some links
 
 if [ ! -f "init-build.sh" ]; then

@@ -26,6 +26,8 @@ target_link_libraries(
         sel4vka
         sofa
         utils
+        libACPI
+        pci
 )
 
 # Set this image as the rootserver

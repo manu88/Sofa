@@ -58,7 +58,7 @@
 #include "Allocator.h"
 #include "Timer.h"
 #include "Serial.h"
-
+#include "DeviceTree.h"
 #include <sel4platsupport/arch/io.h>
 
 
@@ -339,6 +339,10 @@ void *main_continued(void *arg UNUSED)
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
+    sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
+
+    error = DeviceTreeInit();
+    assert(error == 0);
 
     error = SerialInit();
     assert(error == 0);
