@@ -34,11 +34,12 @@
 #include <sel4debug/register_dump.h>
 #include <sel4platsupport/device.h>
 #include <sel4platsupport/platsupport.h>
+#include <sel4platsupport/arch/io.h>
 #include <platsupport/chardev.h>
 #include <sel4utils/vspace.h>
 #include <sel4utils/stack.h>
 #include <sel4utils/process.h>
-
+#include <sel4utils/page_dma.h>
 
 #include <simple/simple.h>
 #include <simple-default/simple-default.h>
@@ -58,6 +59,7 @@
 #include "Allocator.h"
 #include "Timer.h"
 #include "Serial.h"
+#include "Net.h"
 #include "DeviceTree.h"
 #include <sel4platsupport/arch/io.h>
 
@@ -341,6 +343,7 @@ void *main_continued(void *arg UNUSED)
 
     sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
 
+    sel4utils_new_page_dma_alloc(&env->vka, &env->vspace, &env->ops.dma_manager);
     error = DeviceTreeInit();
     assert(error == 0);
 

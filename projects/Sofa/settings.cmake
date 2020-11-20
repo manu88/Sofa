@@ -47,7 +47,9 @@ endif()
 
 # Declare a cache variable that enables/disablings the forcing of cache variables to
 # the specific test values. By default it is disabled
+
 set(Sel4testAllowSettingsOverride OFF CACHE BOOL "Allow user to override configuration settings")
+
 if(NOT Sel4testAllowSettingsOverride)
     # We use 'FORCE' when settings these values instead of 'INTERNAL' so that they still appear
     # in the cmake-gui to prevent excessively confusing users
@@ -61,10 +63,9 @@ if(NOT Sel4testAllowSettingsOverride)
 
     if(SIMULATION)
         ApplyCommonSimulationSettings(${KernelArch})
-    else()
-        if(KernelArchX86)
-            set(KernelIOMMU ON CACHE BOOL "" FORCE)
-        endif()
+    endif()
+    if(KernelArchX86)
+        set(KernelIOMMU ON CACHE BOOL "" FORCE)
     endif()
 
     # sel4test specific config settings.

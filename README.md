@@ -13,7 +13,7 @@ mkdir build
 cd build
 ../init-build.sh  -DPLATFORM=x86_64 -DSIMULATION=TRUE -DRELEASE=FALSE
 ninja
-./simulate
+./simulate --extra-qemu-args "-nic model=virtio-net-pci"
 ```
 
 ## Status

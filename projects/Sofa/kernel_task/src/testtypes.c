@@ -190,8 +190,7 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     process->init->asid_ctrl = sel4utils_copy_cap_to_process(&process->native, &env->vka, simple_get_init_cap(&env->simple,
                                                                                                               seL4_CapASIDControl));
 #ifdef CONFIG_IOMMU
-    env->init->io_space = sel4utils_copy_cap_to_process(&process->native, &env->vka, simple_get_init_cap(&env->simple,
-                                                                                                             seL4_CapIOSpace));
+    //env->init->io_space = sel4utils_copy_cap_to_process(&process->native, &env->vka, simple_get_init_cap(&env->simple, seL4_CapIOSpace));
 #endif /* CONFIG_IOMMU */
 #ifdef CONFIG_TK1_SMMU
     env->init->io_space_caps = arch_copy_iospace_caps_to_process(&process->native, &env);

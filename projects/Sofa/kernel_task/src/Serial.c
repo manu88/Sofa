@@ -29,7 +29,6 @@ int SerialInit()
 {
     KernelTaskContext* env = getKernelTaskContext();
 
-    sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
     ps_chardevice_t* r = ps_cdev_init(PC99_SERIAL_COM1 , &env->ops ,&env->comDev);
     if(r == NULL)
     {
