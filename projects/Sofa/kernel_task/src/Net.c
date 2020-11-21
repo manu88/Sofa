@@ -2,6 +2,7 @@
 #include <ethdrivers/intel.h>
 #include <ethdrivers/virtio_pci.h>
 #include <netif/etharp.h>
+#include <lwip/udp.h>
 #include "Environ.h"
 #include "Net.h"
 
@@ -24,6 +25,10 @@ native_ethdriver_init(
     return error;
 }
 
+
+static NetworkDriver _driver = {0};
+lwip_iface_t lwip_driver;
+
 static void
 handle_irq(void *state, int irq_num)
 {
@@ -33,12 +38,24 @@ handle_irq(void *state, int irq_num)
 
 
 
-static NetworkDriver _driver = {0};
-lwip_iface_t lwip_driver;
+
+static struct udp_pcb udp;
+static struct udp_pcb* _udp = &udp; 
+
+static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
+{
+    printf("RECV from %s:%i '%s'\n",ipaddr_ntoa(addr), port, p->payload);
+    pbuf_free(p);
+}
+
+
 
 void NetInit(uint32_t iobase0)
 {
-    LWIP_DEBUG_ENABLED(LWIP_DBG_MIN_LEVEL);
+    lwip_init();
+    udp_init();
+
+    LWIP_DEBUG_ENABLED(LWIP_DBG_LEVEL_ALL);
     KernelTaskContext* env = getKernelTaskContext();
     printf("---->NetInit\n");
 
@@ -76,29 +93,48 @@ void NetInit(uint32_t iobase0)
     error = seL4_IRQHandler_SetNotification(irq_path.capPtr, irq_aep);
     assert(error == 0);
 
-#if 1
+// add interface
 
     ip_addr_t addr, gw, mask;
     ipaddr_aton("192.168.0.1",   &gw);
-    ipaddr_aton("192.168.0.100", &addr);
-    ipaddr_aton("255.255.255.°", &mask);
+    ipaddr_aton("10.0.2.15", &addr);
+    ipaddr_aton("255.255.255.*", &mask);
 
     assert(lwip_driver.netif == NULL);
     lwip_driver.netif = malloc(sizeof(struct netif));
     assert(lwip_driver.netif);
-    struct netif * ret = netif_add(lwip_driver.netif, &addr, &mask, &gw, _driver.driver, _driver.init_fn, ethernet_input);
-    assert(ret);
+    //lwip_driver.netif = netif_add_noaddr(lwip_driver.netif, _driver.driver, _driver.init_fn, ethernet_input);
+    netif_add(lwip_driver.netif, &addr, &mask, &gw, _driver.driver, _driver.init_fn, ethernet_input);
+    assert(lwip_driver.netif);
+    netif_set_up(lwip_driver.netif);
+    netif_set_default(lwip_driver.netif);
 
-#endif
-    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
-    seL4_Send(irq_aep, msg);
+    printf("NETIF is %i\n", netif_is_up(lwip_driver.netif));
+   // netif_ip4_addr(netif)
+// create udp stack
+
+    printf("Begin UDP stack init\n");
+    _udp = udp_new();
+    assert(_udp);
+
+    udp_recv(_udp, _on_udp, NULL);
+
+    //udp_bind_netif(_udp, lwip_driver.netif);
+    err_t error_bind = udp_bind(_udp, NULL, 3000);
+    assert(error_bind == ERR_OK);
+
+// Go!
+//    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
+//    seL4_Send(irq_aep, msg);
     printf("Begin irq loop\n");
     while (1)
     {
+        printf("Wait on IRQ\n");
         seL4_Wait(irq_aep,NULL);
-        printf("IRQ\n");
-         _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
         seL4_IRQHandler_Ack(irq);
+
+         _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
+
     }
     
 
