@@ -306,6 +306,12 @@ void process_tear_down(Process* process)
                 vspace_unmap_pages(&process->native.vspace, elt->ipcBuffer_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
             }
         }
+
+        cspacepath_t path;
+        vka_cspace_make_path(&env->vka, elt->process_endpoint, &path);
+        int err = vka_cnode_revoke(&path);
+        assert(err == 0);
+
         kfree(elt);
     }
 

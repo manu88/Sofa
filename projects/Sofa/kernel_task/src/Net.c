@@ -51,6 +51,7 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
 
 void NetInit(uint32_t iobase0)
 {
+    return;
     lwip_init();
     udp_init();
 
@@ -117,8 +118,6 @@ void NetInit(uint32_t iobase0)
     assert(_udp);
 
     udp_recv(_udp, _on_udp, NULL);
-
-    //udp_bind_netif(_udp, lwip_driver.netif);
     err_t error_bind = udp_bind(_udp, NULL, 3000);
     assert(error_bind == ERR_OK);
 
@@ -126,7 +125,6 @@ void NetInit(uint32_t iobase0)
     seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
     seL4_Send(irq_aep, msg);
     printf("<----NetInit\n");
-    return;
     while (1)
     {
         seL4_Wait(irq_aep,NULL);
