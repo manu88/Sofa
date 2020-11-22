@@ -24,8 +24,10 @@
 extern Process initProcess;
 
 
-void spawnApp(Process* p, const char* imgName, Process* parent)
+int spawnApp(Process* p, const char* imgName, Process* parent)
 {
+    printf("########\n");
+    printUntypedRange();
     KernelTaskContext* envir = getKernelTaskContext();
     static int pidPool = 1;
 
@@ -38,6 +40,12 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
     assert(err == 0);
     assert(p->untypedRange.size);
     int consumed_untypeds = process_set_up(GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
+    if (consumed_untypeds < 0) // error
+    {
+        vspace_unmap_pages(&envir->vspace, p->init, 1, PAGE_BITS_4K, VSPACE_FREE);
+        return consumed_untypeds;
+    }
+
     p->untypedRange.size = consumed_untypeds;
 
 
@@ -53,6 +61,7 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
     }
     ProcessListAdd(p);
     process_run(imgName, p);
+    return 0;
 }
 
 static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
@@ -128,8 +137,8 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
     seL4_SlotRegion range = {0};
 
     int realNumUntypeds = numUntypeds;
-    int availableUntypeds = 0;
-    for (int i = 0; i < realNumUntypeds; i++) {
+    size_t totSize = 0;
+    for (int i = 0; i < numUntypeds; i++) {
         seL4_CPtr slot = sel4utils_copy_cap_to_process(process, &env->vka, untypeds[i].cptr);
         /* set up the cap range */
         if (i == 0) 
@@ -137,10 +146,10 @@ seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_objec
             range.start = slot;
         }
         range.end = slot;
+        totSize += BIT(untypeds[i].size_bits);
     }
-//    printf("Range start %li end %li realNumUntypeds %i numUntypeds %i\n", range.start, range.end, realNumUntypeds, numUntypeds);
-    assert((range.end - range.start) + 1 == realNumUntypeds);
-
+    assert((range.end - range.start) + 1 == numUntypeds);
+    printf("===Allocated Size is %zi\n", totSize/1048576);
     return range;
 }
 
@@ -171,6 +180,12 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
 //    
     
     error = sel4utils_configure_process_custom(&process->native, &env->vka, &env->vspace, config);
+    if(error != 0)
+    {
+        printf("Process: out of memory, giving up for '%s'\n", imgName);
+        vka_cnode_delete(&ep_path);
+        return error;
+    }
     assert(error == 0);
 
     /* set up caps about the process */

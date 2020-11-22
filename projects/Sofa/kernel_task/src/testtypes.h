@@ -5,7 +5,7 @@
 
 #define UNTYPEDS_PER_PROCESS_BASE 1
 
-void spawnApp(Process* p, const char* imgName, Process* parent);
+int spawnApp(Process* p, const char* imgName, Process* parent);
 void doExit(Process*p, int retCode);
 
 

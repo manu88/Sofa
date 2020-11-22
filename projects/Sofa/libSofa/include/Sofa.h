@@ -26,6 +26,7 @@ typedef enum
 typedef enum
 {
     SofaDebugCode_ListProcesses,
+    SofaDebugCode_MemStats,
 } SofaDebugCode;
 
 int SofaSleep(int ms);

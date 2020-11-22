@@ -12,8 +12,18 @@ void Syscall_spawn(Thread* caller, seL4_MessageInfo_t info)
 
     Process* newProc = kmalloc(sizeof(Process));
     ProcessInit(newProc);
-    spawnApp(newProc, dataBuf, process);
+    int ret = spawnApp(newProc, dataBuf, process);
+    printf("After spawn %zi pages\n", getNumPagesAlloc());
 
-    seL4_SetMR(1, newProc->init->pid);
+    if(ret != 0)
+    { 
+        printf("[Syscall_spawn] spawn returned %i\n",ret);
+        kfree(newProc);
+        seL4_SetMR(1, ret);
+    }
+    else
+    {
+        seL4_SetMR(1, newProc->init->pid);
+    }
     seL4_Reply(info);
-}
+}   

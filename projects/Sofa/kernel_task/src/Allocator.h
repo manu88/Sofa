@@ -28,3 +28,9 @@ void printUntypedRange(void);
 
 void *kmalloc(size_t size);
 void kfree(void *ptr);
+
+
+
+void installEnvCallbacks(void);
+
+size_t getNumPagesAlloc(void);

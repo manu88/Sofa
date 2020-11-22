@@ -71,6 +71,11 @@ void processCommand(const char* cmd)
     {
         SofaDebug(SofaDebugCode_ListProcesses);
     }
+    else if(startsWith("mem", cmd))
+    {
+        SofaDebug(SofaDebugCode_MemStats);
+    }
+
     else if(startsWith("help", cmd))
     {
         cmdHelp();

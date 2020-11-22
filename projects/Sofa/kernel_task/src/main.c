@@ -39,7 +39,6 @@
 #include <sel4utils/vspace.h>
 #include <sel4utils/stack.h>
 #include <sel4utils/process.h>
-#include <sel4utils/page_dma.h>
 
 #include <simple/simple.h>
 #include <simple-default/simple-default.h>
@@ -53,7 +52,7 @@
 #include "Environ.h"
 #include "testtypes.h"
 
-#include <sel4platsupport/io.h>
+
 #include <Sofa.h>
 #include "Syscalls/SyscallTable.h"
 #include "Allocator.h"
@@ -61,14 +60,13 @@
 #include "Serial.h"
 #include "Net.h"
 #include "DeviceTree.h"
-#include <sel4platsupport/arch/io.h>
 
 
 
 
 
 /* ammount of untyped memory to reserve for the driver (32mb) */
-#define DRIVER_UNTYPED_MEMORY (1 << 25)
+#define DRIVER_UNTYPED_MEMORY (1 << 26)
 /* Number of untypeds to try and use to allocate the driver memory.
  * if we cannot get 32mb with 16 untypeds then something is probably wrong */
 #define DRIVER_NUM_UNTYPEDS 16
@@ -160,6 +158,7 @@ static unsigned int allocate_untypeds(vka_object_t *untypeds, size_t bytes, unsi
             num_untypeds++;
         }
     }
+    printf("Allocated %zi mb\n", bytes/1048576);
     return num_untypeds;
 }
 
@@ -341,18 +340,20 @@ void *main_continued(void *arg UNUSED)
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
-    sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
+    error = IOInit();
+    assert(error == 0);
 
-    sel4utils_new_page_dma_alloc(&env->vka, &env->vspace, &env->ops.dma_manager);
     error = DeviceTreeInit();
     assert(error == 0);
 
     error = SerialInit();
     assert(error == 0);
 
+    printf("After device init %zi pages\n", getNumPagesAlloc());
 
     ProcessInit(&initProcess);
-    spawnApp(&initProcess, "init", NULL);
+    error = spawnApp(&initProcess, "init", NULL);
+    assert(error == 0);
 
     process_messages();    
 
@@ -441,6 +442,7 @@ int main(void)
      * manager, timer
      */
     init_env();
+    installEnvCallbacks();
 
     /* Partially overwrite part of the VKA implementation to cache objects. We need to
      * create this wrapper as the actual vka implementation will only

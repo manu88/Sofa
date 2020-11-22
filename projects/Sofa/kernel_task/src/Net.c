@@ -33,7 +33,6 @@ static void
 handle_irq(void *state, int irq_num)
 {
     ethif_lwip_handle_irq(state, irq_num);
-    printf("after ethif_lwip_handle_irq\n");
 }
 
 
@@ -123,20 +122,17 @@ void NetInit(uint32_t iobase0)
     err_t error_bind = udp_bind(_udp, NULL, 3000);
     assert(error_bind == ERR_OK);
 
-// Go!
-//    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
-//    seL4_Send(irq_aep, msg);
-    printf("Begin irq loop\n");
+// Fire once to ensure IRQ Loop
+    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
+    seL4_Send(irq_aep, msg);
+    printf("<----NetInit\n");
+    return;
     while (1)
     {
-        printf("Wait on IRQ\n");
         seL4_Wait(irq_aep,NULL);
         seL4_IRQHandler_Ack(irq);
 
          _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
 
     }
-    
-
-    printf("<----NetInit\n");
 }
