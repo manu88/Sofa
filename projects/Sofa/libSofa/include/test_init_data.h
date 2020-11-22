@@ -52,6 +52,8 @@ typedef struct {
      */
     seL4_CPtr timer_ntfn;
 
+    seL4_CPtr vspace_root;
+
     /* size of the test processes cspace */
     seL4_Word cspace_size_bits;
     /* range of free slots in the cspace */

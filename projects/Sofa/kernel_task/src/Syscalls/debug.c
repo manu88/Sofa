@@ -23,10 +23,26 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
     KernelTaskContext* env = getKernelTaskContext();
     Process* proc = caller->process;
 
-    Process* p = NULL;
-    FOR_EACH_PROCESS(p)
+    SofaDebugCode op = seL4_GetMR(1);
+    switch (op)
     {
-        printf("%i %s %c %s\n", ProcessGetPID(p), ProcessGetName(p), getProcessStateStr(p->state), proc == p ? "*":"");
+    case SofaDebugCode_DumpSched:
+        seL4_DebugDumpScheduler();
+        break;
+    case SofaDebugCode_ListProcesses:
+        {
+            Process* p = NULL;
+            FOR_EACH_PROCESS(p)
+            {
+                printf("%i %s %c %s\n", ProcessGetPID(p), ProcessGetName(p), getProcessStateStr(p->state), proc == p ? "*":"");
+            }
+
+        }
+        break;
+    
+    default:
+        break;
     }
+
 
 }

@@ -20,13 +20,23 @@ typedef enum
     SyscallID_PPID,
     SyscallID_Debug,
 
+    SyscallID_RequestCap,
+
     SyscallID_Last // Not a real ID, just here to count ids
-} SyscallID;
+}SyscallID;
 
 typedef enum
 {
     SofaDebugCode_ListProcesses,
-} SofaDebugCode;
+    SofaDebugCode_DumpSched,
+}SofaDebugCode;
+
+
+typedef enum
+{
+    SofaRequestCap_TCB,
+    SofaRequestCap_MAP,
+}SofaRequestCap;
 
 int SofaSleep(int ms);
 

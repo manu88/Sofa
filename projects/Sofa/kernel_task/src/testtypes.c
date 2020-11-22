@@ -220,6 +220,8 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr/* test_process.fault_endpoint.cptr*/, &path);
     process->main.process_endpoint = sel4utils_mint_cap_to_process(&process->native, path, seL4_AllRights, badge );
 
+    process->init->vspace_root = sel4utils_copy_cap_to_process(&process->native, &env->vka, vspace_get_root(&process->native.vspace));
+
     /* copy the device frame, if any */
     if (process->init->device_frame_cap) {
         process->init->device_frame_cap = sel4utils_copy_cap_to_process(&process->native, &env->vka, env->device_obj.cptr);
@@ -228,6 +230,7 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     /* map the cap into remote vspace */
     process->init_remote_vaddr = vspace_share_mem(&env->vspace, &process->native.vspace, process->init, 1, PAGE_BITS_4K,
                                          seL4_CanRead, 1);
+
     assert(process->init_remote_vaddr != 0);
 
     /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
