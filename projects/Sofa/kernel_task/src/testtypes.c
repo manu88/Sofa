@@ -215,12 +215,13 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
 
     memcpy(process->init->untyped_size_bits_list, untyped_size_bits_list + process->untypedRange.start, num_untyped_per_process);
 
+    process->init->vspace_root = sel4utils_copy_cap_to_process(&process->native, &env->vka, vspace_get_root(&process->native.vspace));
+
     // create a minted enpoint for the process
     cspacepath_t path;
     vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr/* test_process.fault_endpoint.cptr*/, &path);
     process->main.process_endpoint = sel4utils_mint_cap_to_process(&process->native, path, seL4_AllRights, badge );
 
-    process->init->vspace_root = sel4utils_copy_cap_to_process(&process->native, &env->vka, vspace_get_root(&process->native.vspace));
 
     /* copy the device frame, if any */
     if (process->init->device_frame_cap) {

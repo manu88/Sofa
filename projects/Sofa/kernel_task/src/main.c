@@ -349,7 +349,7 @@ void *main_continued(void *arg UNUSED)
 
 
     ProcessInit(&initProcess);
-    spawnApp(&initProcess, "app2", NULL);
+    spawnApp(&initProcess, "init", NULL);
 
     process_messages();    
 
