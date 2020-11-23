@@ -57,8 +57,8 @@ static int startsWith(const char *pre, const char *str)
 
 void cmdHelp()
 {
-    printf("Sofa shell\n");
-    printf("Available commands are: exit help ps kill spawn sleep\n");
+    SofaPrintf("Sofa shell\n");
+    SofaPrintf("Available commands are: exit help ps kill spawn sleep\n");
 }
 
 void processCommand(const char* cmd)
@@ -80,11 +80,11 @@ void processCommand(const char* cmd)
         const char *strPid = cmd + strlen("kill ");
         if(strlen(strPid) == 0)
         {
-            printf("Kill usage: kill pid signal\n");
+            SofaPrintf("Kill usage: kill pid signal\n");
             return;
         }
         pid_t pidToKill = atol(strPid);
-        printf("Kill pid %i\n", pidToKill);
+        SofaPrintf("Kill pid %i\n", pidToKill);
         SofaKill(pidToKill, SIGKILL);
     } 
     else if(startsWith("spawn", cmd))
@@ -94,13 +94,13 @@ void processCommand(const char* cmd)
         return;
         int appStatus = 0;
         pid_t ret = SofaWait(&appStatus);
-        printf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+        SofaPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
     }
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
         pid_t ret = SofaWait(&appStatus);
-        printf("wait returned pid %i status %i\n", ret, appStatus);
+        SofaPrintf("wait returned pid %i status %i\n", ret, appStatus);
     }
     else if(startsWith("sleep", cmd))
     {
@@ -110,15 +110,15 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("pid", cmd))
     {
-        printf("PID=%i\n", SofaGetPid());
+        SofaPrintf("PID=%i\n", SofaGetPid());
     }
     else if(startsWith("ppid", cmd))
     {
-        printf("PPID=%i\n", SofaGetPPid());
+        SofaPrintf("PPID=%i\n", SofaGetPPid());
     }    
     else
     {
-        printf("Unknown command '%s'\n", cmd);
+        SofaPrintf("Unknown command '%s'\n", cmd);
     }
 
 }
@@ -126,13 +126,11 @@ void processCommand(const char* cmd)
 int main(int argc, char *argv[])
 {
     RuntimeInit2(argc, argv);
-    printf("\n\n");
-    fflush(stdout);
-    printf("[%i] Shell \n", SofaGetPid());
+    SofaPrintf("[%i] Shell \n", SofaGetPid());
 
     while (1)
     {
-        printf(">:");
+        SofaPrintf(">:");
         fflush(stdout);
 
         char data[128] = "";

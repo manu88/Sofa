@@ -36,7 +36,6 @@ static void process_exit(int code)
     assert(0);
 }
 
-
 int RuntimeInit2(int argc, char *argv[])
 {
     assert(argc == 2);
@@ -47,9 +46,9 @@ int RuntimeInit2(int argc, char *argv[])
     _mainTLSContext.ep = endpoint;
     _mainTLSContext.buffer = init_data->mainIPCBuffer;
     env.pid = init_data->pid;
-    sel4runtime_set_exit(process_exit);
 
     TLSSet(&_mainTLSContext);
+    sel4runtime_set_exit(process_exit);
 
     return 0;
 }

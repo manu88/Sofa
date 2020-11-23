@@ -20,6 +20,7 @@
 #include "testtypes.h"
 #include "utils.h"
 #include "Panic.h"
+#include "Log.h"
 
 extern Process initProcess;
 
@@ -63,10 +64,10 @@ static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
 
 void doExit(Process* process, int retCode)
 {
+    LOG_TRACE("doExit for process %s %i with code %i\n", ProcessGetName(process), ProcessGetPID(process), retCode);
     if(ProcessGetPID(process) == 1)
     {
-
-//        Panic("init returned");
+        Panic("init returned");
     }
 
     Process* parent = process->parent;

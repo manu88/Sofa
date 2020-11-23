@@ -121,7 +121,7 @@ static void process_messages()
                 SyscallID rpcID = seL4_GetMR(0);  
                 if(rpcID > 0 && rpcID < SyscallID_Last)
                 {
-                    syscallTable[rpcID](caller, info);
+                    Syscall_perform(rpcID, caller, info);
                 }
                 else
                 {

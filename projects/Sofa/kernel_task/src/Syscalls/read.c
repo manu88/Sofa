@@ -22,6 +22,8 @@ void on_read_complete(ps_chardevice_t* device, enum chardev_status stat, size_t 
     caller->replyCap = 0;
 }
 */
+
+
 static void onBytesAvailable(size_t size, char until, void* ptr)
 {
     Thread* caller = (Thread*) ptr;
@@ -63,4 +65,12 @@ void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
     caller->replyCap = slot;
     SerialRegisterWaiter(onBytesAvailable, sizeToRead, readUntil, caller);
 
+}
+
+
+void Syscall_Write(Thread* caller, seL4_MessageInfo_t info)
+{
+    size_t sizeToWrite = seL4_GetMR(1);
+    printf("%s", caller->ipcBuffer);
+    fflush(stdout);
 }

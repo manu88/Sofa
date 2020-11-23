@@ -1,6 +1,7 @@
 #include <Sofa.h>
 #include "syscalls.h"
 #include <runtime.h>
+#include <stdarg.h>
 
 int SofaSpawn(const char* path)
 {
@@ -45,6 +46,11 @@ ssize_t SofaRead(char* data, size_t dataSize)
     return sc_read(TLSGet()->ep, data, dataSize, 0);
 }
 
+ssize_t SofaWrite(const char* data, size_t dataSize)
+{
+    return sc_write(TLSGet()->ep, data, dataSize);
+}
+
 ssize_t SofaReadLine(char* data, size_t dataSize)
 {
     return sc_read(TLSGet()->ep, data, dataSize, '\n');
@@ -60,4 +66,26 @@ void exit(int code)
     sc_exit(getProcessEndpoint(), code);
     // no return
     assert(0);
+}
+
+
+
+int SofaPrintf(const char *format, ...)
+{
+    va_list args;
+
+    va_start(args, format);
+    int length = vsnprintf(TLSGet()->buffer, 4096, format, args);
+    va_end(args);
+    TLSGet()->buffer[length] = 0;
+
+
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, SyscallID_Write);
+    seL4_SetMR(1, length);
+
+    seL4_Send(TLSGet()->ep, info);
+    return length;
+
+
 }
