@@ -115,7 +115,11 @@ void processCommand(const char* cmd)
     else if(startsWith("ppid", cmd))
     {
         SofaPrintf("PPID=%i\n", SofaGetPPid());
-    }    
+    }
+    else if(startsWith("dump", cmd))
+    {
+        SofaDebug(SofaDebugCode_DumpSched);
+    }
     else
     {
         SofaPrintf("Unknown command '%s'\n", cmd);

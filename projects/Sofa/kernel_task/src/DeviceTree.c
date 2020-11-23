@@ -37,15 +37,12 @@ static int _onValue(AMLDecompiler* decomp,const ParserContext* context, uint64_t
 
 int DeviceTreeInit()
 {
-
-    
     KernelTaskContext* env = getKernelTaskContext();
     int error = 0;
     
     printf("#### PCI SCAN\n");
     libpci_scan(env->ops.io_port_ops);
     printf("#### PCI SCAN\n");
-    return 0;
     ps_io_mapper_t io_mapper;
     error =  sel4platsupport_new_io_mapper(env->vspace, env->vka, &io_mapper);
     assert(error == 0);

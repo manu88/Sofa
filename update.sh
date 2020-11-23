@@ -53,6 +53,14 @@ else
         git clone https://github.com/manu88/libACPI.git projects/Sofa/libACPI/
 fi
 
+
+echo "==> Getting lwip"
+if [ -d "projects/libliwip/" ]; then
+        git -C projects/libliwip/ pull
+else
+        git clone https://git.savannah.nongnu.org/git/lwip.git projects/libliwip/
+fi
+
 # create some links
 
 if [ ! -f "init-build.sh" ]; then
