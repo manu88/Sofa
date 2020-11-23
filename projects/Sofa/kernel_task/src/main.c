@@ -87,7 +87,6 @@ static void process_messages()
     while (1)
     {   
         handleSerialInput(env);
-
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env->root_task_endpoint.cptr, &badge);
         seL4_Word label = seL4_MessageInfo_get_label(info);
@@ -98,22 +97,6 @@ static void process_messages()
                 seL4_IRQHandler_Ack(env->timer_irqs[0].handler_path.capPtr);
                 tm_update(&env->tm);
             }
-#if 0
-            else if(badge == SERIAL_BADGE)
-            {
-                seL4_IRQHandler_Ack(env->handler.capPtr);
-                printf("IRQ\n");
-                //ps_cdev_handle_irq(&env->comDev, -1);
-/*                int data = 0;
-                while(data != EOF)
-                {  
-                    data = ps_cdev_getchar(&env->comDev);
-                    if(data > 0)
-                        printf("%c\n", data);
-                }
-*/                
-            }
-#endif            
             else 
             {
                 Thread* caller = (Thread*) badge;
@@ -172,8 +155,6 @@ static void process_messages()
 
 void *main_continued(void *arg UNUSED)
 {
-
-    /* Print welcome banner. */
     printf("\n------Sofa------\n");
     printf("----------------\n");
     int error;
@@ -183,39 +164,14 @@ void *main_continued(void *arg UNUSED)
     error = vka_alloc_endpoint(&env->vka, &env->root_task_endpoint);
     assert(error == 0);
 
-#if 0
-    /* allocate a piece of device untyped memory for the frame tests,
-     * note that spike doesn't have any device untypes so the tests that require device untypes are turned off */
-    if (!config_set(CONFIG_PLAT_SPIKE)) {
-        assert(0);
-        bool allocated = false;
-        int untyped_count = simple_get_untyped_count(&env.simple);
-        for (int i = 0; i < untyped_count; i++) {
-            bool device = false;
-            uintptr_t ut_paddr = 0;
-            size_t ut_size_bits = 0;
-            seL4_CPtr ut_cptr = simple_get_nth_untyped(&env.simple, i, &ut_size_bits, &ut_paddr, &device);
-            if (device) {
-                error = vka_alloc_frame_at(&env.vka, seL4_PageBits, ut_paddr, &env.device_obj);
-                if (!error) {
-                    allocated = true;
-                    /* we've allocated a single device frame and that's all we need */
-                    break;
-                }
-            }
-        }
-        ZF_LOGF_IF(allocated == false, "Failed to allocate a device frame for the frame tests");
-    }
-#endif
-    /* allocate lots of untyped memory for tests to use */
-
-    /* Allocate a reply object for the RT kernel. */
     if (config_set(CONFIG_KERNEL_MCS)) {
         error = vka_alloc_reply(&env->vka, &env->reply);
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
-    sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
+
+    error = IOInit();
+    assert(error == 0);
 
     error = DeviceTreeInit();
     assert(error == 0);
@@ -235,6 +191,8 @@ void *main_continued(void *arg UNUSED)
     }
     seL4_DebugDumpScheduler();
 */
+
+    seL4_DebugDumpScheduler();
     process_messages();    
 
     return NULL;
@@ -299,12 +257,12 @@ static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4
 
 int main(void)
 {
-    //assert(0);
-    InitEnv();
-
     KernelTaskContext* env = getKernelTaskContext();
     int error;
 
+    error = sel4platsupport_new_io_ops(&env->vspace, &env->vka, &env->simple, &env->ops);
+    ZF_LOGF_IF(error, "Failed to initialise IO ops");
+    assert(error == 0);
 
 #ifdef CONFIG_DEBUG_BUILD
     seL4_DebugNameThread(seL4_CapInitThreadTCB, "kernel_task");
@@ -313,15 +271,7 @@ int main(void)
     error = TimerInit();
     assert(error == 0);
 
-    simple_print(&env->simple);
-
-    /* switch to a bigger, safer stack with a guard page
-     * before starting the tests */
-    printf("Switching to a safer, bigger stack... ");
-    fflush(stdout);
     void *res;
-
-    /* Run sel4test-test related tests */
     error = sel4utils_run_on_stack(&env->vspace, main_continued, NULL, &res);
     assert(error == 0);
     assert(res == 0);

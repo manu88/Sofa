@@ -29,7 +29,6 @@ int SerialInit()
 {
     KernelTaskContext* env = getKernelTaskContext();
 
-    sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
     ps_chardevice_t* r = ps_cdev_init(PC99_SERIAL_COM1 , &env->ops ,&env->comDev);
     if(r == NULL)
     {
@@ -42,9 +41,7 @@ int SerialInit()
         return err;
     }
 
-    return 0;
-    // FIXME: can't get the serial IRQ to work on pc99 :( :(
-#if 0    
+  
     int irqNum = -1;
     for (int i=0;i<256;i++)
     {
@@ -55,6 +52,9 @@ int SerialInit()
         }
     }
     printf("COM DEV PRODUCES IRQ %i\n",irqNum);
+    return 0;
+    // FIXME: can't get the serial IRQ to work on pc99 :( :(
+#if 0  
     seL4_CPtr cap;
     int err = vka_cspace_alloc(&env->vka, &cap);
     assert(err == 0);

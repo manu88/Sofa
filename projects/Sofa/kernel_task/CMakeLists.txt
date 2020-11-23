@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.7.2)
 
-project(kernel_task C) # create a new C project called 'init' 
+project(kernel_task C)
 
+include(../../util_libs/liblwip/lwip_helpers.cmake)
+set(LibLwip ON CACHE BOOL "" FORCE)
+AddLWIPConfiguration(../../util_libs/liblwip/default_opts)
 
 #list of apps to include in the cpio archive
 get_property(cpio_apps GLOBAL PROPERTY apps_property)
@@ -29,6 +32,8 @@ target_link_libraries(
         utils
         libACPI
         pci
+        lwip
+        ethdrivers
 )
 
 # Set this image as the rootserver

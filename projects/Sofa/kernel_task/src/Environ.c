@@ -59,12 +59,17 @@ KernelTaskContext* getKernelTaskContext(void)
     return &_ctx;
 }
 
-void InitEnv()
+
+int IOInit()
 {
     KernelTaskContext* env = getKernelTaskContext();
-    int error = sel4platsupport_new_io_ops(&env->vspace, &env->vka, &env->simple, &env->ops);
-    ZF_LOGF_IF(error, "Failed to initialise IO ops");
 
+
+    int error = sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
+    assert(error == 0);
+
+    error = sel4utils_new_page_dma_alloc(&env->vka, &env->vspace, &env->ops.dma_manager);
+    assert(error == 0);
 }
 
 /* globals for malloc */
