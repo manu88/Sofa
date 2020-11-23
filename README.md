@@ -11,7 +11,7 @@ Then call the update.sh script to fetch all the required components (seL4 kernel
 sh update.sh
 mkdir build
 cd build
-../init-build.sh  -DPLATFORM=x86_64 -DSIMULATION=TRUE -DRELEASE=FALSE
+../init-build.sh  -DPLATFORM=x86_64 -DSIMULATION=TRUE -DRELEASE=FALSE -DLWIP_DEBUG=1 -DLWIP_PATH=../projects/libliwip/
 ninja
 ./simulate
 ```

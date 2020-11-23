@@ -15,7 +15,12 @@ static void* on_thread(void*args)
 }
 
 int main(int argc, char *argv[])
-{
+{   
+    while (1)
+    {
+        /* code */
+    }
+    
     RuntimeInit(argc, argv);
     printf("\n\n");
     fflush(stdout);

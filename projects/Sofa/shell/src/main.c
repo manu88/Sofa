@@ -125,7 +125,7 @@ void processCommand(const char* cmd)
 
 int main(int argc, char *argv[])
 {
-    RuntimeInit(argc, argv);
+    RuntimeInit2(argc, argv);
     printf("\n\n");
     fflush(stdout);
     printf("[%i] Shell \n", SofaGetPid());

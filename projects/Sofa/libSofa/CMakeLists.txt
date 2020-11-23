@@ -15,7 +15,6 @@ target_link_libraries(sofa
         sel4_autoconf
 		sel4
         muslc
-        sel4muslcsys
         sel4allocman
         sel4vka
 )

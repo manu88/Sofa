@@ -26,8 +26,18 @@ void RequestCapTCB(Thread* caller, seL4_MessageInfo_t info)
 
 void RequestMap(Thread* caller, seL4_MessageInfo_t info)
 {
+    Process* process = caller->process;
     KernelTaskContext* env = getKernelTaskContext();
     void* p = vspace_new_sized_stack(&caller->process->native.vspace, 1);
+
+    Thread* newThread = kmalloc(sizeof(Thread));
+    assert(newThread);
+    memset(newThread, 0, sizeof(Thread));
+    newThread->process = process;
+    LL_APPEND(process->threads, newThread);
+    newThread->stack = p;
+    newThread->stackSize = 1;
+
     //  vspace_new_pages(&env->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(p);
 

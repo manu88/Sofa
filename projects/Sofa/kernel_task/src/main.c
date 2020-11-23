@@ -22,7 +22,6 @@
 
 #include <sel4runtime.h>
 
-#include <allocman/bootstrap.h>
 #include <allocman/vka.h>
 
 #include <cpio/cpio.h>
@@ -35,13 +34,12 @@
 #include <sel4platsupport/device.h>
 #include <sel4platsupport/platsupport.h>
 #include <platsupport/chardev.h>
-#include <sel4utils/vspace.h>
+
 #include <sel4utils/stack.h>
 #include <sel4utils/process.h>
 
 
 #include <simple/simple.h>
-#include <simple-default/simple-default.h>
 
 #include <utils/util.h>
 
@@ -52,7 +50,6 @@
 #include "Environ.h"
 #include "testtypes.h"
 
-#include <sel4platsupport/io.h>
 #include <Sofa.h>
 #include "Syscalls/SyscallTable.h"
 #include "Allocator.h"
@@ -64,130 +61,11 @@
 
 
 
-
-/* ammount of untyped memory to reserve for the driver (32mb) */
-#define DRIVER_UNTYPED_MEMORY (1 << 25)
-/* Number of untypeds to try and use to allocate the driver memory.
- * if we cannot get 32mb with 16 untypeds then something is probably wrong */
-#define DRIVER_NUM_UNTYPEDS 16
-
-/* dimensions of virtual memory for the allocator to use */
-#define ALLOCATOR_VIRTUAL_POOL_SIZE ((1 << seL4_PageBits) * 100)
-
-/* static memory for the allocator to bootstrap with */
-#define ALLOCATOR_STATIC_POOL_SIZE ((1 << seL4_PageBits) * 20)
-static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
-
-/* static memory for virtual memory bootstrapping */
-static sel4utils_alloc_data_t data;
-
-
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
 
 Process initProcess;
-
-
-
-/* initialise our runtime environment */
-static void init_env()
-{
-    KernelTaskContext *env = getKernelTaskContext();
-    allocman_t *allocman;
-    reservation_t virtual_reservation;
-    int error;
-
-    /* create an allocator */
-    allocman = bootstrap_use_current_simple(&env->simple, ALLOCATOR_STATIC_POOL_SIZE, allocator_mem_pool);
-    if (allocman == NULL) {
-        ZF_LOGF("Failed to create allocman");
-    }
-
-    /* create a vka (interface for interacting with the underlying allocator) */
-    allocman_make_vka(&env->vka, allocman);
-
-    /* create a vspace (virtual memory management interface). We pass
-     * boot info not because it will use capabilities from it, but so
-     * it knows the address and will add it as a reserved region */
-    error = sel4utils_bootstrap_vspace_with_bootinfo_leaky(&env->vspace,
-                                                           &data, simple_get_pd(&env->simple),
-                                                           &env->vka, platsupport_get_bootinfo());
-    if (error) {
-        ZF_LOGF("Failed to bootstrap vspace");
-    }
-
-    /* fill the allocator with virtual memory */
-    void *vaddr;
-    virtual_reservation = vspace_reserve_range(&env->vspace,
-                                               ALLOCATOR_VIRTUAL_POOL_SIZE, seL4_AllRights, 1, &vaddr);
-    if (virtual_reservation.res == 0) {
-        ZF_LOGF("Failed to provide virtual memory for allocator");
-    }
-
-    bootstrap_configure_virtual_pool(allocman, vaddr,
-                                     ALLOCATOR_VIRTUAL_POOL_SIZE, simple_get_pd(&env->simple));
-
-    error = sel4platsupport_new_io_ops(&env->vspace, &env->vka, &env->simple, &env->ops);
-    ZF_LOGF_IF(error, "Failed to initialise IO ops");
-}
-
-/* Free a list of objects */
-static void free_objects(vka_object_t *objects, unsigned int num)
-{
-    for (unsigned int i = 0; i < num; i++) {
-        vka_free_object(&getKernelTaskContext()->vka, &objects[i]);
-    }
-}
-
-/* Allocate untypeds till either a certain number of bytes is allocated
- * or a certain number of untyped objects */
-static unsigned int allocate_untypeds(vka_object_t *untypeds, size_t bytes, unsigned int max_untypeds)
-{
-    unsigned int num_untypeds = 0;
-    size_t allocated = 0;
-
-    /* try to allocate as many of each possible untyped size as possible */
-    for (uint8_t size_bits = seL4_WordBits - 1; size_bits > PAGE_BITS_4K; size_bits--) {
-        /* keep allocating until we run out, or if allocating would
-         * cause us to allocate too much memory*/
-        while (num_untypeds < max_untypeds &&
-               allocated + BIT(size_bits) <= bytes &&
-               vka_alloc_untyped(&getKernelTaskContext()->vka, size_bits, &untypeds[num_untypeds]) == 0) {
-            allocated += BIT(size_bits);
-            num_untypeds++;
-        }
-    }
-    return num_untypeds;
-}
-
-/* extract a large number of untypeds from the allocator */
-static unsigned int populate_untypeds(vka_object_t *untypeds)
-{
-    /* First reserve some memory for the driver */
-    vka_object_t reserve[DRIVER_NUM_UNTYPEDS];
-    unsigned int reserve_num = allocate_untypeds(reserve, DRIVER_UNTYPED_MEMORY, DRIVER_NUM_UNTYPEDS);
-    printf("Allocated %i untypeds for kernel_task\n", reserve_num);
-    /* Now allocate everything else for the tests */
-
-    unsigned int num_untypeds = allocate_untypeds(getUntypeds(), UINT_MAX, CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS);
-    /* Fill out the size_bits list */
-    for (unsigned int i = 0; i < num_untypeds; i++) {
-        GetUntypedSizeBitsList()[i] = untypeds[i].size_bits;
-    }
-
-    /* Return reserve memory */
-    free_objects(reserve, reserve_num);
-
-    /* Return number of untypeds for tests */
-    if (num_untypeds == 0) {
-        ZF_LOGF("No untypeds for tests!");
-    }
-
-    return num_untypeds;
-}
-
-
 
 static void DumpProcesses()
 {
@@ -330,8 +208,6 @@ void *main_continued(void *arg UNUSED)
     }
 #endif
     /* allocate lots of untyped memory for tests to use */
-    env->num_untypeds = populate_untypeds(getUntypeds());
-    printf("Got %i available untypeds\n", env->num_untypeds);
 
     /* Allocate a reply object for the RT kernel. */
     if (config_set(CONFIG_KERNEL_MCS)) {
@@ -347,10 +223,18 @@ void *main_continued(void *arg UNUSED)
     error = SerialInit();
     assert(error == 0);
 
-
     ProcessInit(&initProcess);
-    spawnApp(&initProcess, "init", NULL);
-
+    spawnApp(&initProcess, "shell", NULL);
+/*
+    for(int i=0;i<40;i++)
+    {
+        Process* p = malloc(sizeof(Process));
+        assert(p);
+        ProcessInit(p);
+        spawnApp(p, "app", &initProcess);
+    }
+    seL4_DebugDumpScheduler();
+*/
     process_messages();    
 
     return NULL;
@@ -412,57 +296,19 @@ static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4
     }
 }
 
-static void sel4test_exit(int code)
-{
-    seL4_TCB_Suspend(seL4_CapInitThreadTCB);
-}
 
 int main(void)
 {
+    //assert(0);
+    InitEnv();
+
     KernelTaskContext* env = getKernelTaskContext();
-    /* Set exit handler */
-    sel4runtime_set_exit(sel4test_exit);
-    memset(env, 0, sizeof(KernelTaskContext));
     int error;
-    seL4_BootInfo *info = platsupport_get_bootinfo();
+
 
 #ifdef CONFIG_DEBUG_BUILD
     seL4_DebugNameThread(seL4_CapInitThreadTCB, "kernel_task");
 #endif
-
-    /* initialise libsel4simple, which abstracts away which kernel version
-     * we are running on */
-    simple_default_init_bootinfo(&env->simple, info);
-
-    /* initialise the test environment - allocator, cspace manager, vspace
-     * manager, timer
-     */
-    init_env();
-
-    /* Partially overwrite part of the VKA implementation to cache objects. We need to
-     * create this wrapper as the actual vka implementation will only
-     * allocate/return any given device frame once.
-     * We allocate serial objects for initialising the serial server in
-     * platsupport_serial_setup_simple but then we also need to use the objects
-     * in some of the tests but attempts to allocate will fail.
-     * Instead, this wrapper records the initial serial object allocations and
-     * then returns a copy of the one already allocated for future allocations.
-     * This requires the allocations for the serial driver to exist for the full
-     * lifetime of this application, and for the resources that are allocated to
-     * be able to be copied, I.E. frames.
-     */
-/*
-    vka_utspace_alloc_at_base = env->vka.utspace_alloc_at;
-    env->vka.utspace_alloc_at = serial_utspace_alloc_at_fn;
-
-    serial_utspace_record = true;
-    platsupport_serial_setup_simple(&env->vspace, &env->simple, &env->vka);
-    serial_utspace_record = false;
-*/
-    /* Partially overwrite the IRQ interface so that we can record the IRQ caps that were allocated.
-     * We need this only for the timer as the ltimer interfaces allocates the caps for us and hides them away.
-     * A few of the tests require actual interactions with the caps hence we record them.
-     */
 
     error = TimerInit();
     assert(error == 0);

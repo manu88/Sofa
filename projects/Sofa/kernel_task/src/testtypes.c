@@ -34,12 +34,7 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
     p->init->pid = pidPool++;
     p->init->priority = seL4_MaxPrio - 1;
 
-    int err = UntypedsGetFreeRange(&p->untypedRange);
-    assert(err == 0);
-    assert(p->untypedRange.size);
-    int consumed_untypeds = process_set_up(GetUntypedSizeBitsList(), p, imgName,(seL4_Word) &p->main);
-    p->untypedRange.size = consumed_untypeds;
-
+    int consumed_untypeds = process_set_up(NULL, p, imgName,(seL4_Word) &p->main);
 
     p->main.ipcBuffer = (uint8_t*) vspace_new_pages(&envir->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(p->main.ipcBuffer);
@@ -70,7 +65,8 @@ void doExit(Process* process, int retCode)
 {
     if(ProcessGetPID(process) == 1)
     {
-        Panic("init returned");
+
+//        Panic("init returned");
     }
 
     Process* parent = process->parent;
@@ -106,7 +102,7 @@ void doExit(Process* process, int retCode)
     int pidToFree = process->init->pid;
 
     process_tear_down(process);
-    UnypedsGiveBack(&process->untypedRange);
+//    UnypedsGiveBack(&process->untypedRange);
 
 
     if(pidToFree > 1)
@@ -208,13 +204,15 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     }
 
 /* setup data about untypeds */
+    int num_untyped_per_process = 0;
+#if 0
     int num_untyped_per_process = UNTYPEDS_PER_PROCESS_BASE;// env->num_untypeds;
     process->init->untypeds = copy_untypeds_to_process(&process->native,
                                                        getUntypeds() + process->untypedRange.start,
                                                        num_untyped_per_process);
 
     memcpy(process->init->untyped_size_bits_list, untyped_size_bits_list + process->untypedRange.start, num_untyped_per_process);
-
+#endif
     process->init->vspace_root = sel4utils_copy_cap_to_process(&process->native, &env->vka, vspace_get_root(&process->native.vspace));
 
     // create a minted enpoint for the process
@@ -294,7 +292,14 @@ void process_tear_down(Process* process)
             if(elt->ipcBuffer_vaddr)
             {
                 vspace_unmap_pages(&process->native.vspace, elt->ipcBuffer_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
+            
             }
+
+        }
+        if(elt->stack && elt->stackSize)
+        {
+            printf("Remove Thread stack (size %zi)\n", elt->stackSize);
+            vspace_free_sized_stack(&process->native.vspace, elt->stack, elt->stackSize);
         }
         kfree(elt);
     }
@@ -310,18 +315,8 @@ void process_tear_down(Process* process)
     vspace_unmap_pages(&process->native.vspace, process->init->mainIPCBuffer, 1, PAGE_BITS_4K, VSPACE_FREE);
 
 
-    /* reset all the untypeds for the next test */
-    for (int i = process->untypedRange.start; i < process->untypedRange.size; i++) 
-    {
-        cspacepath_t path;
-        vka_cspace_make_path(&env->vka, getUntypeds()[i].cptr/* env->untypeds[i].cptr*/, &path);
-        int err = vka_cnode_revoke(&path);
-        assert(err == 0);
-    }
 
     /* destroy the process */
-    sel4utils_destroy_process(&process->native, &env->vka);
-    
-    
+    sel4utils_destroy_process(&process->native, &env->vka);   
 }
 
