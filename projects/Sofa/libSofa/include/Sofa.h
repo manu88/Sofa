@@ -17,16 +17,28 @@ typedef enum
     SyscallID_Kill,
 
     SyscallID_Read,
+    SyscallID_Write,
     SyscallID_PPID,
     SyscallID_Debug,
 
+    SyscallID_RequestCap,
+
     SyscallID_Last // Not a real ID, just here to count ids
-} SyscallID;
+}SyscallID;
 
 typedef enum
 {
     SofaDebugCode_ListProcesses,
-} SofaDebugCode;
+    SofaDebugCode_DumpSched,
+}SofaDebugCode;
+
+
+typedef enum
+{
+    SofaRequestCap_TCB,
+    SofaRequestCap_MAP,
+    SofaRequestCap_IPCBuff,
+}SofaRequestCap;
 
 int SofaSleep(int ms);
 
@@ -42,6 +54,10 @@ pid_t SofaWait(int *wstatus);
 int SofaKill(pid_t pid, int sig);
 
 ssize_t SofaRead(char* data, size_t dataSize);
+ssize_t SofaWrite(const char* data, size_t dataSize);
+
+int SofaPrintf(const char *format, ...);
+
 
 // if returns -EAGAIN, it means that no endline was found in dataSize, BUT data was written.
 // simply issue the call again to get the rest. 

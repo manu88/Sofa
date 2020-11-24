@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[])
 {
-    RuntimeInit(argc, argv);
+    RuntimeInit2(argc, argv);
 
     if(SofaGetPid() != 1)
     {

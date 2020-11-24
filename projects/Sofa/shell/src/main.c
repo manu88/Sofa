@@ -57,8 +57,8 @@ static int startsWith(const char *pre, const char *str)
 
 void cmdHelp()
 {
-    printf("Sofa shell\n");
-    printf("Available commands are: exit help ps kill spawn sleep\n");
+    SofaPrintf("Sofa shell\n");
+    SofaPrintf("Available commands are: exit help ps kill spawn sleep\n");
 }
 
 void processCommand(const char* cmd)
@@ -80,27 +80,27 @@ void processCommand(const char* cmd)
         const char *strPid = cmd + strlen("kill ");
         if(strlen(strPid) == 0)
         {
-            printf("Kill usage: kill pid signal\n");
+            SofaPrintf("Kill usage: kill pid signal\n");
             return;
         }
         pid_t pidToKill = atol(strPid);
-        printf("Kill pid %i\n", pidToKill);
+        SofaPrintf("Kill pid %i\n", pidToKill);
         SofaKill(pidToKill, SIGKILL);
     } 
     else if(startsWith("spawn", cmd))
     {
         const char *strApp = cmd + strlen("spawn ");
         int pid = SofaSpawn(strApp);
-        return;
+
         int appStatus = 0;
-        pid_t ret = SofaWait(&appStatus);
-        printf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+        int ret = SofaWait(&appStatus);
+        SofaPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
     }
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
-        pid_t ret = SofaWait(&appStatus);
-        printf("wait returned pid %i status %i\n", ret, appStatus);
+        int ret = SofaWait(&appStatus);
+        SofaPrintf("wait returned pid %i status %i\n", ret, appStatus);
     }
     else if(startsWith("sleep", cmd))
     {
@@ -110,29 +110,31 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("pid", cmd))
     {
-        printf("PID=%i\n", SofaGetPid());
+        SofaPrintf("PID=%i\n", SofaGetPid());
     }
     else if(startsWith("ppid", cmd))
     {
-        printf("PPID=%i\n", SofaGetPPid());
-    }    
+        SofaPrintf("PPID=%i\n", SofaGetPPid());
+    }
+    else if(startsWith("dump", cmd))
+    {
+        SofaDebug(SofaDebugCode_DumpSched);
+    }
     else
     {
-        printf("Unknown command '%s'\n", cmd);
+        SofaPrintf("Unknown command '%s'\n", cmd);
     }
 
 }
 
 int main(int argc, char *argv[])
 {
-    RuntimeInit(argc, argv);
-    printf("\n\n");
-    fflush(stdout);
-    printf("[%i] Shell \n", SofaGetPid());
+    RuntimeInit2(argc, argv);
+    SofaPrintf("[%i] Shell \n", SofaGetPid());
 
     while (1)
     {
-        printf(">:");
+        SofaPrintf(">:");
         fflush(stdout);
 
         char data[128] = "";
@@ -143,6 +145,10 @@ int main(int argc, char *argv[])
         {
             const size_t sizeToRead = 16;
             readSize = SofaReadLine(data + bufferIndex, sizeToRead);
+            if(readSize == -EINTR)
+            {
+                SofaPrintf("[Shell] got ctl-c\n");
+            }
             if(readSize == -EAGAIN)
             {
                 bufferIndex += sizeToRead;

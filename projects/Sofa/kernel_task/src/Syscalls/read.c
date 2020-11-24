@@ -5,23 +5,33 @@
 #include <Sofa.h>
 
 
-/*
-void on_read_complete(ps_chardevice_t* device, enum chardev_status stat, size_t bytes_transfered, void* token)
+static void onControlChar(char ctl, void* ptr)
 {
-    Thread* caller = (Thread*) token;
-    printf("on_read_complete got %zi bytes %zi are available\n", bytes_transfered, SerialGetAvailableChar());
+    Thread* caller = (Thread*) ptr;
+    assert(caller);
+    if (ctl == '\03')
+    {
+        printf("CTL-C\n");
+        if(ThreadIsWaiting(caller))
+        {
+            printf("Caller is waiting\n");
+            seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
+            seL4_SetMR(0, SyscallID_Read);
+            seL4_SetMR(1, -EINTR);
+    
+            seL4_Send(caller->replyCap, tag);
 
-    size_t bytes = SerialCopyAvailableChar(caller->ipcBuffer, bytes_transfered);
-    seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 2);
-    seL4_SetMR(0, SyscallID_Read);
-    seL4_SetMR(1, bytes);
-
-    seL4_Send(caller->replyCap, tag);
-
-    cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
-    caller->replyCap = 0;
+            cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
+            caller->replyCap = 0;
+            caller->state = ThreadState_Running;
+        }
+    }
+    else
+    {
+        printf("Got Control char %i\n", ctl);
+    }
 }
-*/
+
 static void onBytesAvailable(size_t size, char until, void* ptr)
 {
     Thread* caller = (Thread*) ptr;
@@ -34,9 +44,9 @@ static void onBytesAvailable(size_t size, char until, void* ptr)
     
 
     seL4_Send(caller->replyCap, tag);
-
     cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
     caller->replyCap = 0;
+    caller->state = ThreadState_Running;
 
 }
 
@@ -62,5 +72,14 @@ void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
 
     caller->replyCap = slot;
     SerialRegisterWaiter(onBytesAvailable, sizeToRead, readUntil, caller);
+    SerialRegisterController(onControlChar, caller);
 
+}
+
+
+void Syscall_Write(Thread* caller, seL4_MessageInfo_t info)
+{
+    size_t sizeToWrite = seL4_GetMR(1);
+    printf("%s", caller->ipcBuffer);
+    fflush(stdout);
 }

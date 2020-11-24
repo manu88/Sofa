@@ -35,7 +35,10 @@ typedef struct _Thread
     unsigned int timerID;
 
     ThreadState state;
-    struct _Thread *next; 
+    struct _Thread *next;
+    void *stack;
+    size_t stackSize;
+
 } Thread;
 
 
@@ -46,7 +49,6 @@ typedef struct _Process
     
     void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
-    UntypedRange untypedRange;
 
 
     Thread* threads; // other threads, NOT including the main one
@@ -102,7 +104,10 @@ static inline Process* ProcessGetChildren(Process* p)
 // Thread methods
 
 void ThreadCleanupTimer(Thread* t);
-
+static inline uint8_t ThreadIsWaiting(const Thread* t)
+{
+    return t->replyCap != 0;
+}
 // Process List methods
 Process* getProcessList(void);
 void ProcessListAdd(Process* p);

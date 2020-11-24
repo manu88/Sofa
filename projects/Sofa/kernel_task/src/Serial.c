@@ -11,13 +11,22 @@ static char _circ_buffer[sizeof(circ_buf_t) + SERIAL_CIRCULAR_BUFFER_SIZE -1]; /
 typedef struct 
 {
     OnBytesAvailable waiter;
+
     size_t size;
     char until;
     void* ptr;
 
 } SerialWaiter;
 
+typedef struct
+{
+    OnControlChar waitCtl;
+    void *ptr;
+} SerialController;
+
+
 static SerialWaiter _waiter = {0};
+static SerialController _controller = {0};
 
 
 static circ_buf_t* getCircularBuffer()
@@ -29,7 +38,6 @@ int SerialInit()
 {
     KernelTaskContext* env = getKernelTaskContext();
 
-    sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
     ps_chardevice_t* r = ps_cdev_init(PC99_SERIAL_COM1 , &env->ops ,&env->comDev);
     if(r == NULL)
     {
@@ -42,9 +50,7 @@ int SerialInit()
         return err;
     }
 
-    return 0;
-    // FIXME: can't get the serial IRQ to work on pc99 :( :(
-#if 0    
+  
     int irqNum = -1;
     for (int i=0;i<256;i++)
     {
@@ -55,6 +61,9 @@ int SerialInit()
         }
     }
     printf("COM DEV PRODUCES IRQ %i\n",irqNum);
+    return 0;
+    // FIXME: can't get the serial IRQ to work on pc99 :( :(
+#if 0  
     seL4_CPtr cap;
     int err = vka_cspace_alloc(&env->vka, &cap);
     assert(err == 0);
@@ -99,6 +108,12 @@ int SerialRegisterWaiter(OnBytesAvailable callback, size_t forSize, char until, 
     return 0;
 }
 
+int SerialRegisterController(OnControlChar callback, void* ptr)
+{
+    _controller.waitCtl = callback;
+    _controller.ptr = ptr;
+}
+
 size_t SerialCopyAvailableChar(char* dest, size_t maxSize)
 {
     size_t copied = 0;
@@ -124,6 +139,16 @@ void handleSerialInput(KernelTaskContext* env)
         data = ps_cdev_getchar(&env->comDev);
         if(data > 0)
         {
+            if(data == '\03')
+            {
+                if(_controller.waitCtl)
+                {
+                    _controller.waitCtl(data, _controller.ptr);
+                    continue;
+                }
+
+
+            }
             if(data == '\r')
                 data = '\n';
 

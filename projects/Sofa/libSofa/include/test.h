@@ -25,33 +25,10 @@
 /* Contains information about the test environment for regular tests, bootstrap tests do
  * not use this environment */
 struct env {
-    /* An initialised vka that may be used by the test. */
-    vka_t vka;
-    /* virtual memory management interface */
-    vspace_t vspace;
-    /* abstract interface over application init */
-    simple_t simple;
-    /* notification for timer */
+    seL4_CPtr vspace_root;
+
     vka_object_t timer_notification;
 
-    /* caps for the current process */
-    seL4_CPtr cspace_root;
-    seL4_CPtr page_directory;
-    seL4_CPtr endpoint;
-    seL4_CPtr tcb;
-    seL4_CPtr timer_untyped;
-    seL4_CPtr asid_pool;
-    seL4_CPtr asid_ctrl;
-    seL4_CPtr sched_ctrl;
-#ifdef CONFIG_IOMMU
-    seL4_CPtr io_space;
-#endif /* CONFIG_IOMMU */
-#ifdef CONFIG_TK1_SMMU
-    seL4_SlotRegion io_space_caps;
-#endif
-    seL4_Word cores;
-    seL4_CPtr domain;
-    seL4_CPtr device_frame;
 
     uint8_t *mainIPCBuffer;
 

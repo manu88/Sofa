@@ -42,6 +42,11 @@ int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options)
 
     info = seL4_Call(endpoint, info);
 
+    if(pid == -EINTR)
+    {
+        return -EINTR;
+    }
+
     if (wstatus)
     {
         *wstatus = (int) seL4_GetMR(2);
@@ -50,6 +55,20 @@ int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options)
     return seL4_GetMR(1);
 }
 
+ssize_t sc_write(seL4_CPtr endpoint, const char* data, size_t dataSize)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, SyscallID_Write);
+    seL4_SetMR(1, dataSize);
+
+    size_t effectiveSize = dataSize; 
+    memcpy(TLSGet()->buffer, data, effectiveSize);
+    TLSGet()->buffer[effectiveSize] = 0;
+
+    seL4_Send(endpoint, info);
+    return effectiveSize;
+
+}
 
 ssize_t sc_read(seL4_CPtr endpoint, char* data, size_t dataSize, char until)
 {
@@ -65,6 +84,10 @@ ssize_t sc_read(seL4_CPtr endpoint, char* data, size_t dataSize, char until)
     if(readSize == -EAGAIN)
     {
         effectiveSize = dataSize;
+    }
+    else if(readSize < 0)
+    {
+        return readSize;
     }
     memcpy(data, TLSGet()->buffer, effectiveSize );
 

@@ -7,3 +7,4 @@ projects/seL4_libs/
 projects/util_libs/
 projects/sel4runtime/
 projects/Sofa/libACPI/
+projects/libliwip/

@@ -11,10 +11,19 @@ Then call the update.sh script to fetch all the required components (seL4 kernel
 sh update.sh
 mkdir build
 cd build
-../init-build.sh  -DPLATFORM=x86_64 -DSIMULATION=TRUE -DRELEASE=FALSE
+../init-build.sh  -DPLATFORM=x86_64 -DSIMULATION=TRUE -DRELEASE=FALSE -DLWIP_DEBUG=1 -DLWIP_PATH=../projects/libliwip/
 ninja
-./simulate
+./simulate --extra-qemu-args "-netdev user,id=net1,hostfwd=udp::3000-:3000 -device virtio-net-pci,netdev=net1"
 ```
+
+## Test the UDP stack:
+You can send udp messages using:
+```
+nc  -u 127.0.0.1 3000
+# or
+echo "test2" > /dev/udp/127.0.0.1/3000
+```
+
 
 ## Status
 for now I'm trying to understand more the [sel4test](https://github.com/seL4/sel4test) repo and the [libsel4osapi](https://github.com/rticommunity/libsel4osapi) repo in order to create a process model with memory management.
@@ -23,14 +32,16 @@ for now I'm trying to understand more the [sel4test](https://github.com/seL4/sel
 ### System:
 * IPC Model between root server ('kernel_task') and applications
 * process spawn from CPIO archive
-* Thread in processes 
+* Thread in processes
+* UDP stack with virtio device
 
 ### Process API
 * printf
 * getpid, getppid,
-* posix_spawn
+* spawn
 * sleep
 * wait/waitpid
+* kill
 
 ## Applications
 * init

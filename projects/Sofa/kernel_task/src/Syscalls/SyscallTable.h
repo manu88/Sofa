@@ -1,7 +1,7 @@
 #pragma once
 #include "../Process.h"
 #include "../Environ.h"
-
+#include "../Log.h"
 
 
 typedef void (*SyscallMethod)(Thread* caller, seL4_MessageInfo_t info);
@@ -18,9 +18,12 @@ void Syscall_ThreadExit(Thread* caller, seL4_MessageInfo_t info);
 
 
 void Syscall_Read(Thread* caller, seL4_MessageInfo_t info);
+void Syscall_Write(Thread* caller, seL4_MessageInfo_t info);
 
 void Syscall_PPID(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info);
+void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info);
+
 
 static SyscallMethod syscallTable[] =
 {
@@ -38,6 +41,15 @@ static SyscallMethod syscallTable[] =
     Syscall_Kill,
 
     Syscall_Read,
+    Syscall_Write,
     Syscall_PPID,
     Syscall_Debug,
+    Syscall_RequestCap,
 };
+
+
+static inline void Syscall_perform(int rpcID, Thread* caller, seL4_MessageInfo_t info)
+{
+    //LOG_TRACE("--> Syscall %i\n", rpcID);
+    syscallTable[rpcID](caller, info);
+}

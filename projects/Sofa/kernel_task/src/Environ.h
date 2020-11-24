@@ -14,7 +14,7 @@
 #define CONFIG_HAVE_TIMER 1
 #include <autoconf.h>
 #include <sel4/bootinfo.h>
-
+#include <allocman/allocman.h>
 #include <platsupport/time_manager.h>
 #include <vka/vka.h>
 #include <vka/object.h>
@@ -46,6 +46,7 @@ typedef struct _FreeRange
 }FreeRange;
 
 struct _KernelTaskContext {
+    allocman_t *allocman;
     /* An initialised vka that may be used by the test. */
     vka_t vka;
     /* virtual memory management interface */
@@ -81,10 +82,8 @@ struct _KernelTaskContext {
     /* timer callback information */
     timer_callback_info_t timer_cbs[MAX_TIMER_IRQS];
 
-
     vka_object_t root_task_endpoint;
 
-    int num_untypeds;
 //    vka_object_t *untypeds;
     /* device frame to use for some tests */
     vka_object_t device_obj;
@@ -105,4 +104,8 @@ seL4_SlotRegion arch_copy_iospace_caps_to_process(sel4utils_process_t *process, 
 #endif
 
 
+
+int IOInit(void);
 KernelTaskContext* getKernelTaskContext(void);
+
+
