@@ -37,6 +37,7 @@ typedef enum
 {
     SofaRequestCap_TCB,
     SofaRequestCap_MAP,
+    SofaRequestCap_IPCBuff,
 }SofaRequestCap;
 
 int SofaSleep(int ms);

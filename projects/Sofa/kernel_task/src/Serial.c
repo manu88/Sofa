@@ -11,13 +11,22 @@ static char _circ_buffer[sizeof(circ_buf_t) + SERIAL_CIRCULAR_BUFFER_SIZE -1]; /
 typedef struct 
 {
     OnBytesAvailable waiter;
+
     size_t size;
     char until;
     void* ptr;
 
 } SerialWaiter;
 
+typedef struct
+{
+    OnControlChar waitCtl;
+    void *ptr;
+} SerialController;
+
+
 static SerialWaiter _waiter = {0};
+static SerialController _controller = {0};
 
 
 static circ_buf_t* getCircularBuffer()
@@ -99,6 +108,12 @@ int SerialRegisterWaiter(OnBytesAvailable callback, size_t forSize, char until, 
     return 0;
 }
 
+int SerialRegisterController(OnControlChar callback, void* ptr)
+{
+    _controller.waitCtl = callback;
+    _controller.ptr = ptr;
+}
+
 size_t SerialCopyAvailableChar(char* dest, size_t maxSize)
 {
     size_t copied = 0;
@@ -124,6 +139,16 @@ void handleSerialInput(KernelTaskContext* env)
         data = ps_cdev_getchar(&env->comDev);
         if(data > 0)
         {
+            if(data == '\03')
+            {
+                if(_controller.waitCtl)
+                {
+                    _controller.waitCtl(data, _controller.ptr);
+                    continue;
+                }
+
+
+            }
             if(data == '\r')
                 data = '\n';
 

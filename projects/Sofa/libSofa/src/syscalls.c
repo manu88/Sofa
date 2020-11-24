@@ -42,6 +42,11 @@ int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options)
 
     info = seL4_Call(endpoint, info);
 
+    if(pid == -EINTR)
+    {
+        return -EINTR;
+    }
+
     if (wstatus)
     {
         *wstatus = (int) seL4_GetMR(2);
@@ -79,6 +84,10 @@ ssize_t sc_read(seL4_CPtr endpoint, char* data, size_t dataSize, char until)
     if(readSize == -EAGAIN)
     {
         effectiveSize = dataSize;
+    }
+    else if(readSize < 0)
+    {
+        return readSize;
     }
     memcpy(data, TLSGet()->buffer, effectiveSize );
 

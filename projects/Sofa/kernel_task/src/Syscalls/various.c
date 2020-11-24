@@ -24,6 +24,18 @@ void RequestCapTCB(Thread* caller, seL4_MessageInfo_t info)
     seL4_Reply(info);
 }
 
+void RequestIPCBuff(Thread* caller, seL4_MessageInfo_t info)
+{
+    Process* process = caller->process;
+    KernelTaskContext* env = getKernelTaskContext();
+    seL4_CPtr *buf;
+    void* bufAddr = vspace_new_ipc_buffer(&caller->process->native.vspace, &buf);
+
+    seL4_SetMR(1, bufAddr);
+    seL4_Reply(info);
+
+}
+
 void RequestMap(Thread* caller, seL4_MessageInfo_t info)
 {
     Process* process = caller->process;
@@ -38,12 +50,9 @@ void RequestMap(Thread* caller, seL4_MessageInfo_t info)
     newThread->stack = p;
     newThread->stackSize = 1;
 
-    //  vspace_new_pages(&env->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(p);
 
-    void* p_addr = p;// vspace_share_mem(&env->vspace, &caller->process->native.vspace, p, 1, PAGE_BITS_4K,seL4_AllRights, 1);
-    assert(p_addr);
-    seL4_SetMR(1, p_addr);
+    seL4_SetMR(1, p);
     seL4_Reply(info);
 }
 
@@ -59,6 +68,9 @@ void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info)
         break;    
     case SofaRequestCap_MAP:
         RequestMap(caller, info);
+        break;
+    case SofaRequestCap_IPCBuff:
+        RequestIPCBuff(caller, info);
         break;
 
     default:

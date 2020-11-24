@@ -46,6 +46,8 @@ static sel4utils_thread_t netThread;
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
     printf("RECV from %s:%i '%s'\n",ipaddr_ntoa(addr), port, p->payload);
+
+    udp_sendto(pcb, p, addr, port);
     pbuf_free(p);
 }
 

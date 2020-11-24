@@ -91,15 +91,15 @@ void processCommand(const char* cmd)
     {
         const char *strApp = cmd + strlen("spawn ");
         int pid = SofaSpawn(strApp);
-        return;
+
         int appStatus = 0;
-        pid_t ret = SofaWait(&appStatus);
+        int ret = SofaWait(&appStatus);
         SofaPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
     }
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
-        pid_t ret = SofaWait(&appStatus);
+        int ret = SofaWait(&appStatus);
         SofaPrintf("wait returned pid %i status %i\n", ret, appStatus);
     }
     else if(startsWith("sleep", cmd))
@@ -145,6 +145,10 @@ int main(int argc, char *argv[])
         {
             const size_t sizeToRead = 16;
             readSize = SofaReadLine(data + bufferIndex, sizeToRead);
+            if(readSize == -EINTR)
+            {
+                SofaPrintf("[Shell] got ctl-c\n");
+            }
             if(readSize == -EAGAIN)
             {
                 bufferIndex += sizeToRead;

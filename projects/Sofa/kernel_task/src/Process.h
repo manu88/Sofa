@@ -104,7 +104,10 @@ static inline Process* ProcessGetChildren(Process* p)
 // Thread methods
 
 void ThreadCleanupTimer(Thread* t);
-
+static inline uint8_t ThreadIsWaiting(const Thread* t)
+{
+    return t->replyCap != 0;
+}
 // Process List methods
 Process* getProcessList(void);
 void ProcessListAdd(Process* p);
