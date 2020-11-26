@@ -96,7 +96,6 @@ struct virtqueue *virtq_create(uint32_t len)
 	}
 */
 	KernelTaskContext* env = getKernelTaskContext();
-
 	dma_addr_t alloc_dma = dma_alloc_pin(&env->ops.dma_manager, memsize, 1, VIRTIO_PCI_VRING_ALIGN);
 	
 	page_phys =  alloc_dma.phys;// alloc_pages(phys_allocator, PAGE_SIZE, 0);
@@ -424,7 +423,6 @@ static int virtio_blk_cmd(struct virtio_blk *blk, uint32_t type, uint32_t sector
 	hdr->sector = sector;
 
 	d1 = virtq_alloc_desc(blk->virtq, hdr, VIRTIO_BLK_REQ_HEADER_SIZE);
-
 	blk->virtq->desc[d1].len = VIRTIO_BLK_REQ_HEADER_SIZE;
 	blk->virtq->desc[d1].flags = VIRTQ_DESC_F_NEXT;
 
@@ -432,7 +430,6 @@ static int virtio_blk_cmd(struct virtio_blk *blk, uint32_t type, uint32_t sector
 		datamode = VIRTQ_DESC_F_WRITE; /* mark page writeable */
 
 	d2 = virtq_alloc_desc(blk->virtq, data, VIRTIO_BLK_SECTOR_SIZE);
-
 	blk->virtq->desc[d2].len = VIRTIO_BLK_SECTOR_SIZE;
 	blk->virtq->desc[d2].flags = datamode | VIRTQ_DESC_F_NEXT;
 

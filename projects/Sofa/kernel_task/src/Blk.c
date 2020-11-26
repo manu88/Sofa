@@ -274,6 +274,7 @@ static int raw_tx(VirtioDevice *dev, unsigned int num, uintptr_t *phys, unsigned
     for (i = 0; i < num; i++) 
     {
         unsigned int desc = (dev->rdt + i + 1) % dev->queueSize;
+        printf("raw_tx add buf %i/%i at %i\n", i, num,desc);
         unsigned int next_desc = (desc + 1) % dev->queueSize;
 
         uint8_t isLast = (i+1) == num;
@@ -412,6 +413,9 @@ void BlkInit(uint32_t iobase)
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER);
 
     uint32_t feats = get_features(&dev);
+    set_features(&dev, feats);
+
+    add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
 
 #define VIRTIO_F_VERSION_1              1 << 32
 #define VIRTIO_F_RING_EVENT_IDX         1<<29
