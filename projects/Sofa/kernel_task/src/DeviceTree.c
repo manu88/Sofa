@@ -10,6 +10,7 @@
 
 #include "Net.h"
 #include "Blk.h"
+#include "Virtio.h"
 
 
 static int _startDevice(AMLDecompiler* decomp,const ParserContext* context, const ACPIDevice* dev)
@@ -198,7 +199,8 @@ int DeviceTreeInit()
         libpci_device_iocfg_debug_print(&iocfg, false);
         uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
 
-        BlkInit(iobase0);
+        //BlkInit(iobase0);
+        virtio_blk_init(iobase0);
     }
 
 //NET virtio: vid 0x1af4 did 0x1000
