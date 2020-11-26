@@ -8,6 +8,19 @@
 #include "Environ.h"
 
 
+typedef struct 
+{
+#define VIRTIO_BLK_T_IN       0
+#define VIRTIO_BLK_T_OUT      1
+#define VIRTIO_BLK_T_SCSI     2
+#define VIRTIO_BLK_T_FLUSH    4
+	uint32_t type;
+	uint32_t reserved;
+	uint64_t sector;
+	uint8_t status;
+} __attribute__((packed)) virtio_blk_req;
+
+
 typedef struct
 {
     uint32_t iobase;
@@ -41,22 +54,17 @@ typedef struct
     int num_free_bufs;
     dma_addr_t **bufs;
     int dma_alignment;
+
+
+    /* preallocated header. Since we do not actually use any features
+     * in the header we put the same one before every send/receive packet */
+    uintptr_t hdr_phys;
+    virtio_blk_req* headerReq;
 } VirtioDevice;
 
 
 
 
-typedef struct 
-{
-#define VIRTIO_BLK_T_IN       0
-#define VIRTIO_BLK_T_OUT      1
-#define VIRTIO_BLK_T_SCSI     2
-#define VIRTIO_BLK_T_FLUSH    4
-	uint32_t type;
-	uint32_t reserved;
-	uint64_t sector;
-	uint8_t status;
-} __attribute__((packed)) virtio_blk_req;
 
 /* An 8-bit device status register.  */
 #define VIRTIO_PCI_STATUS		18
@@ -69,10 +77,21 @@ typedef struct
 
 #define VIRTIO_PCI_HOST_FEATURES	0
 
+#define VIRTIO_CONFIG_S_DRIVER_FEATURES_OK 8
+
 
 #define BLK_NUM_PREALLOCATED_BUFFERS 512
 #define BLK_PREALLOCATED_BUF_SIZE 2048
 
+#define VIRTIO_BLK_SECTOR_SIZE 512
+
+#define VIRTIO_BLK_REQ_HEADER_SIZE 16
+#define VIRTIO_BLK_REQ_FOOTER_SIZE 1
+
+
+/* An alignment of 128 bytes is required for most structures by the hardware, except for actual packets */
+// This is X86_64 specific!
+#define DMA_ALIGN 128
 
 
 static void write_reg8(VirtioDevice *dev, uint16_t port, uint8_t val) 
@@ -97,6 +116,10 @@ static uint16_t read_reg16(VirtioDevice *dev, uint16_t port) {
     return (uint16_t)val;
 }
 
+static void write_reg32(VirtioDevice *dev, uint16_t port, uint32_t val) {
+    ps_io_port_out(&dev->ioops, dev->iobase + port, 4, val);
+}
+
 static uint32_t read_reg32(VirtioDevice *dev, uint16_t port) {
     uint32_t val;
     ps_io_port_in(&dev->ioops, dev->iobase + port, 4, &val);
@@ -119,6 +142,10 @@ static void add_status(VirtioDevice *dev, uint8_t status) {
 
 static uint32_t get_features(VirtioDevice *dev) {
     return read_reg32(dev, VIRTIO_PCI_HOST_FEATURES);
+}
+
+static void set_features(VirtioDevice *dev, uint32_t features) {
+    write_reg32(dev, VIRTIO_PCI_GUEST_FEATURES, features);
 }
 
 
@@ -228,25 +255,28 @@ static int raw_tx(VirtioDevice *dev, unsigned int num, uintptr_t *phys, unsigned
         }
     }
     /* install the header */
-    /*
+    printf("add header at %i\n",dev->rdt);
     dev->rx_ring.desc[dev->rdt] = (struct vring_desc) 
     {
-        .addr = dev->virtio_net_hdr_phys,
-        .len = sizeof(struct virtio_net_hdr),
+        .addr = dev->hdr_phys,
+        .len = VIRTIO_BLK_REQ_HEADER_SIZE,
         .flags = VRING_DESC_F_NEXT,
-        .next = (dev->tdt + 1) % dev->tx_size
+        .next = (dev->rdt + 1) % dev->queueSize
     };
-    */
+
+
     /* now all the buffers */
     unsigned int i;
-    for (i = 0; i < num; i++) {
+    for (i = 0; i < num; i++) 
+    {
         unsigned int desc = (dev->rdt + i + 1) % dev->queueSize;
+        printf("raw_tx add buf %i/%i at %i\n", i, num,desc);
         unsigned int next_desc = (desc + 1) % dev->queueSize;
         dev->rx_ring.desc[desc] = (struct vring_desc) 
         {
             .addr = phys[i],
             .len = len[i],
-            .flags = (i + 1 == num ? 0 : VRING_DESC_F_NEXT),
+            .flags = (i + 1 == num ? VRING_DESC_F_WRITE : VRING_DESC_F_NEXT),
             .next = next_desc
         };
     }
@@ -260,32 +290,36 @@ static int raw_tx(VirtioDevice *dev, unsigned int num, uintptr_t *phys, unsigned
     dev->rx_ring.avail->idx++;
     /* ensure index update visible before notifying */
     asm volatile("mfence" ::: "memory");
+    printf("NOTIFY queue %i\n", dev->queueID);
     write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
     return 0;
 }
-
 
 static void send_cmd(VirtioDevice* dev)
 {
     printf("Send cmd test\n");
 
 
-    dev->num_free_bufs--;
-    printf("Add dma buffer %i\n", dev->num_free_bufs);
-    dma_addr_t *orig_buf = dev->bufs[dev->num_free_bufs];
-    dma_addr_t buf = *orig_buf;
+    dev->headerReq->type == VIRTIO_BLK_T_IN; 
+    dev->headerReq->sector = 1;
 
-    virtio_blk_req* req = (virtio_blk_req*) buf.virt;
-    memset(req, 0, sizeof(virtio_blk_req));
-    req->type == VIRTIO_BLK_T_IN; 
-    req->sector = 0;
+    dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, 1024,1, dev->dma_alignment);
 
-    size_t dataSize = sizeof(virtio_blk_req);
-    ps_dma_cache_clean(&dev->dma_man, buf.virt, dataSize);
+    uintptr_t phys[] = {
+        dma_data.phys,// ps_dma_pin(&dev->dma_man, p, 512),
+        dma_data.phys + 512//ps_dma_pin(&dev->dma_man, p + 512, 1)
+    };
 
+    unsigned int len[] = {
+        512,
+        1
+    };
 
+    assert(phys[0]);
+    assert(phys[1]);
+    int err = raw_tx(dev,  2, phys, len, NULL);
 
-    printf("End cmd test\n");
+    printf("End cmd test err=%i\n", err);
 }
 
 void BlkInit(uint32_t iobase)
@@ -307,14 +341,17 @@ void BlkInit(uint32_t iobase)
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER);
 
     uint32_t feats = get_features(&dev);
+    set_features(&dev, feats);
+
+    add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
 
     uint32_t totSectorCount = read_reg32(&dev, 0x14);
-    uint8_t maxSegSize      = read_reg8(&dev, 0x1C);
-    uint8_t maxSegCount     = read_reg8(&dev, 0x20);
-    uint8_t cylinderCount   = read_reg8(&dev, 0x24);
-    uint8_t headCount       = read_reg8(&dev, 0x26);
-    uint8_t sectorCount     = read_reg8(&dev, 0x27);
-    uint8_t blockLen        = read_reg8(&dev, 0x28);
+    uint8_t maxSegSize      =  read_reg8(&dev, 0x1C);
+    uint8_t maxSegCount     =  read_reg8(&dev, 0x20);
+    uint8_t cylinderCount   =  read_reg8(&dev, 0x24);
+    uint8_t headCount       =  read_reg8(&dev, 0x26);
+    uint8_t sectorCount     =  read_reg8(&dev, 0x27);
+    uint8_t blockLen        =  read_reg8(&dev, 0x28);
 
 
     printf("totSectorCount %u\n", totSectorCount);
@@ -349,8 +386,28 @@ void BlkInit(uint32_t iobase)
     err = initialize_free_bufs(&dev);
     assert(err == 0);
     printf("Init free buffers OK\n");
+
+    dma_addr_t packet = dma_alloc_pin(&env->ops.dma_manager, VIRTIO_BLK_REQ_HEADER_SIZE, 1, DMA_ALIGN);
+    if (!packet.virt) 
+    {
+        printf("ERROR : unable to alloc DMA for Virtio BLK request\n");
+        assert(0);
+    }
+    memset(packet.virt, 0, sizeof(virtio_blk_req));
+    dev.hdr_phys = packet.phys;
+    dev.headerReq = packet.virt;
+    assert(dev.hdr_phys);
+    assert(dev.headerReq);
+
+    assert(dev.rx_ring_phys);
+    /* write the virtqueue locations */
+    write_reg16(&dev, VIRTIO_PCI_QUEUE_SEL, 0);
+    write_reg32(&dev, VIRTIO_PCI_QUEUE_PFN, ((uintptr_t)dev.rx_ring_phys) / 4096);
+
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_OK);
 
+    
+    printf("Dev status %u\n", get_status(&dev));
 
     send_cmd(&dev);
     int irq_num = 11;
@@ -376,11 +433,21 @@ void BlkInit(uint32_t iobase)
 
     printf("<== End Init Blk virtio storage\n");
 
+
+    printf("BEFORE SEND remain %i\n", dev.rx_remain);
+
+//    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
+//    seL4_Send(irq_aep, msg);
+
+
     while(1)
     {
 	    seL4_Wait(irq_aep,NULL);
         seL4_IRQHandler_Ack(irq);
-        printf("blk irq\n");
+        uint8_t isr = read_reg8(&dev, VIRTIO_PCI_ISR);
+        printf("blk irq ISR %u remain %i\n", isr, dev.rx_remain);
+
+        
          //_driver.handle_irq_fn(_driver.driver, _driver.irq_num);
     }
 
