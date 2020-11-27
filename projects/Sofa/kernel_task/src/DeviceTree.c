@@ -216,7 +216,7 @@ int DeviceTreeInit()
             libpci_device_iocfg_debug_print(&iocfg, false);
             uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
             printf("IOBASE0 is %X\n", iobase0);
-            NetInit(iobase0);
+            //NetInit(iobase0);
         }
         else
         {
