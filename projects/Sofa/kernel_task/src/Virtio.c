@@ -72,9 +72,6 @@ struct virtio_blk
 	uint32_t intid;
 } blkdev;
 
-static void maybe_init_blkreq_slab(void)
-{
-}
 
 struct virtqueue *virtq_create(uint32_t len)
 {
@@ -142,12 +139,10 @@ uint32_t virtq_alloc_desc(struct virtqueue *virtq, void *addr, size_t size)
 		puts("ERROR: ran out of virtqueue descriptors\n");
 	virtq->free_desc = next;
 
-	printf("do dma_pin\n");
 
 	virtq->desc[desc].addr = ps_dma_pin(&env->ops.dma_manager, addr, size);//  kmem_lookup_phys(addr);
 	assert(virtq->desc[desc].addr);
 	virtq->desc_virt[desc] = addr;
-	printf("virtq_alloc_desc OK\n");
 	return desc;
 }
 
@@ -336,14 +331,14 @@ int virtio_blk_init(uint32_t iobase)
     uint8_t sectorCount     =  ReadReg8(&blkdev._dev, 0x27);
     uint8_t blockLen        =  ReadReg8(&blkdev._dev, 0x28);
 
-
-    printf("totSectorCount %u\n", totSectorCount);
-    printf("maxSegSize %u\n", maxSegSize);
-    printf("maxSegCount %u\n", maxSegCount);
-    printf("cylinderCount %u\n", cylinderCount);
-    printf("headCount %u\n", headCount);
-    printf("sectorCount %u\n", sectorCount);
-    printf("blockLen %u\n", blockLen);
+	printf("Some BLK features\n");
+    printf("->totSectorCount %u\n", totSectorCount);
+    printf("->maxSegSize %u\n", maxSegSize);
+    printf("->maxSegCount %u\n", maxSegCount);
+    printf("->cylinderCount %u\n", cylinderCount);
+    printf("->headCount %u\n", headCount);
+    printf("->sectorCount %u\n", sectorCount);
+    printf("->blockLen %u\n", blockLen);
 
     uint8_t numQueues = 0;
     for(int index = 0;index<16;index++)
@@ -432,7 +427,7 @@ static int virtio_blk_cmd(struct virtio_blk *blk, uint32_t type, uint32_t sector
 	hdr->sector = sector;
 
 	d1 = virtq_alloc_desc(blk->virtq, hdr, VIRTIO_BLK_REQ_HEADER_SIZE);
-	printf("HEADER OK\n");
+
 	blk->virtq->desc[d1].len = VIRTIO_BLK_REQ_HEADER_SIZE;
 	blk->virtq->desc[d1].flags = VIRTQ_DESC_F_NEXT;
 
@@ -440,12 +435,11 @@ static int virtio_blk_cmd(struct virtio_blk *blk, uint32_t type, uint32_t sector
 		datamode = VIRTQ_DESC_F_WRITE; /* mark page writeable */
 
 	d2 = virtq_alloc_desc(blk->virtq, data, VIRTIO_BLK_SECTOR_SIZE);
-	printf("DATA OK\n");	
+
 	blk->virtq->desc[d2].len = VIRTIO_BLK_SECTOR_SIZE;
 	blk->virtq->desc[d2].flags = datamode | VIRTQ_DESC_F_NEXT;
 
 	d3 = virtq_alloc_desc(blk->virtq, (void*)hdr + VIRTIO_BLK_REQ_HEADER_SIZE, VIRTIO_BLK_REQ_FOOTER_SIZE);
-	printf("FOOTER OK\n");	
 
 	blk->virtq->desc[d3].len = VIRTIO_BLK_REQ_FOOTER_SIZE;
 	blk->virtq->desc[d3].flags = VIRTQ_DESC_F_WRITE;
