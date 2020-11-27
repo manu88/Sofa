@@ -148,8 +148,8 @@ static void threadStart(void *arg0, void *arg1, void *ipc_buf)
     int irq = (int) arg1;
 
     
-    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
-    seL4_Send(irq_aep, msg);
+    //seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
+    //seL4_Send(irq_aep, msg);
 
 
     while(1)
