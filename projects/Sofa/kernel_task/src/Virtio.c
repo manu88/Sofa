@@ -96,6 +96,7 @@ struct virtqueue *virtq_create(uint32_t len)
 	}
 */
 	KernelTaskContext* env = getKernelTaskContext();
+
 	dma_addr_t alloc_dma = dma_alloc_pin(&env->ops.dma_manager, memsize, 1, VIRTIO_PCI_VRING_ALIGN);
 	
 	page_phys =  alloc_dma.phys;// alloc_pages(phys_allocator, PAGE_SIZE, 0);

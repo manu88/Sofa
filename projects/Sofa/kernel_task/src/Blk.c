@@ -274,7 +274,6 @@ static int raw_tx(VirtioDevice *dev, unsigned int num, uintptr_t *phys, unsigned
     for (i = 0; i < num; i++) 
     {
         unsigned int desc = (dev->rdt + i + 1) % dev->queueSize;
-        printf("raw_tx add buf %i/%i at %i\n", i, num,desc);
         unsigned int next_desc = (desc + 1) % dev->queueSize;
 
         uint8_t isLast = (i+1) == num;
@@ -413,9 +412,45 @@ void BlkInit(uint32_t iobase)
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER);
 
     uint32_t feats = get_features(&dev);
+
+#define VIRTIO_F_VERSION_1              1 << 32
+#define VIRTIO_F_RING_EVENT_IDX         1<<29
+
+    printf("BEFORE Features %X\n", feats);
+    if(!(feats & VIRTIO_F_VERSION_1))
+    {
+        printf("VIRTIO_F_VERSION_1 NOT PRESENT\n");
+    }
+
+    if(!(feats & VIRTIO_F_RING_EVENT_IDX))
+    {
+        printf("VIRTIO_F_RING_EVENT_IDX NOT PRESENT\n");
+    }
+    else
+    {
+        printf("VIRTIO_F_RING_EVENT_IDX set\n");
+    }
+    printf("feats 1 %X\n", feats);
+    //feats &= ~(VIRTIO_F_RING_EVENT_IDX);
+    printf("feats 2 %X\n", feats);
     set_features(&dev, feats);
 
+    feats = get_features(&dev);
+    printf("AFTER Features %X\n", feats);
+
+
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
+    asm volatile("mfence" ::: "memory");
+    if(!(get_status(&dev) & VIRTIO_CONFIG_S_DRIVER_FEATURES_OK))
+	{
+		printf("HOST REFUSED OUR FEATURES\n");
+        assert(0);
+    }
+	else
+	{
+		printf("HOST is ok with our features\n");
+	}
+
 
 #define VIRTIO_F_VERSION_1              1 << 32
 #define VIRTIO_F_RING_EVENT_IDX         1<<29
