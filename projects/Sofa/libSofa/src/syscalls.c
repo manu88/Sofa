@@ -124,3 +124,17 @@ pid_t sc_getppid(seL4_CPtr endpoint)
     seL4_Call(endpoint, info);
     return seL4_GetMR(1);
 }
+
+
+seL4_CPtr sc_regservice(seL4_CPtr endpoint, const char* serviceName)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, SofaSysCall_RegisterService);
+
+    const size_t nameSize = strlen(serviceName);
+    memcpy(TLSGet()->buffer, serviceName, nameSize);
+    TLSGet()->buffer[nameSize] = 0;
+
+    seL4_Call(endpoint, info);
+    return seL4_GetMR(1);
+}

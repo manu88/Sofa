@@ -86,7 +86,19 @@ void processCommand(const char* cmd)
         pid_t pidToKill = atol(strPid);
         SFPrintf("Kill pid %i\n", pidToKill);
         SFKill(pidToKill, SIGKILL);
-    } 
+    }
+    else if(startsWith("register", cmd))
+    {
+        const char* serviceName = cmd + strlen("register ");
+        if(strlen(serviceName) == 0)
+        {
+            SFPrintf("register takes a Name argument\n");
+            return;
+        }
+        SFPrintf("register arg is '%s'\n", serviceName);
+        uint32_t ret =  SFRegisterServer(serviceName);
+        SFPrintf("Service is at %u\n", ret);
+    }
     else if(startsWith("spawn", cmd))
     {
         const char *strApp = cmd + strlen("spawn ");

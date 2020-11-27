@@ -87,3 +87,17 @@ int SFPrintf(const char *format, ...)
     seL4_Send(TLSGet()->ep, info);
     return length;
 }
+
+
+uint32_t SFRegisterServer(const char* name)
+{
+    if(!name)
+    {
+        return 0;
+    }
+    if(strlen(name) == 0)
+    {
+        return 0;
+    }
+    return sc_regservice(TLSGet()->ep, name);
+}

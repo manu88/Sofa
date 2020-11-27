@@ -23,6 +23,10 @@ typedef enum
 
     SyscallID_RequestCap,
 
+    SofaSysCall_RegisterService, // Register a 
+//    SofaSysCall_GetService,
+
+
     SyscallID_Last // Not a real ID, just here to count ids
 }SyscallID;
 
@@ -63,7 +67,9 @@ int SFPrintf(const char *format, ...);
 // simply issue the call again to get the rest. 
 ssize_t SFReadLine(char* data, size_t dataSize);
 
+// Name server
 
+uint32_t SFRegisterServer(const char* name);
 
 // temp/debug syscall
 
