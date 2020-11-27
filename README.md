@@ -25,6 +25,8 @@ ninja
 ### Create a qcow2 image
 from [here](https://serverfault.com/questions/246835/convert-directory-to-qemu-kvm-virtual-disk-image):
 
+*Note*: to mount and edit the volume on the host: see https://gist.github.com/shamil/62935d9b456a6f9877b5.
+
 
 ## Test the UDP stack:
 You can send udp messages using:
