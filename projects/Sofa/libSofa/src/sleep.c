@@ -2,7 +2,7 @@
 #include "syscalls.h"
 #include "runtime.h"
 
-int SofaSleep(int ms)
+int SFSleep(int ms)
 {
     if(ms == 0)
     {

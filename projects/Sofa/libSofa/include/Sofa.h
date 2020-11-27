@@ -40,31 +40,31 @@ typedef enum
     SofaRequestCap_IPCBuff,
 }SofaRequestCap;
 
-int SofaSleep(int ms);
+int SFSleep(int ms);
 
 
-int SofaSpawn(const char* path);
+int SFSpawn(const char* path);
 
-pid_t SofaGetPid(void);
-pid_t SofaGetPPid(void);
+pid_t SFGetPid(void);
+pid_t SFGetPPid(void);
 
-pid_t SofaWaitPid(pid_t pid, int *wstatus, int options);
-pid_t SofaWait(int *wstatus);
+pid_t SFWaitPid(pid_t pid, int *wstatus, int options);
+pid_t SFWait(int *wstatus);
 
-int SofaKill(pid_t pid, int sig);
+int SFKill(pid_t pid, int sig);
 
-ssize_t SofaRead(char* data, size_t dataSize);
-ssize_t SofaWrite(const char* data, size_t dataSize);
+ssize_t SFRead(char* data, size_t dataSize);
+ssize_t SFWrite(const char* data, size_t dataSize);
 
-int SofaPrintf(const char *format, ...);
+int SFPrintf(const char *format, ...);
 
 
 // if returns -EAGAIN, it means that no endline was found in dataSize, BUT data was written.
 // simply issue the call again to get the rest. 
-ssize_t SofaReadLine(char* data, size_t dataSize);
+ssize_t SFReadLine(char* data, size_t dataSize);
 
 
 
 // temp/debug syscall
 
-void SofaDebug(SofaDebugCode code);
+void SFDebug(SofaDebugCode code);

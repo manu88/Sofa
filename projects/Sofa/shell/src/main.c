@@ -57,8 +57,8 @@ static int startsWith(const char *pre, const char *str)
 
 void cmdHelp()
 {
-    SofaPrintf("Sofa shell\n");
-    SofaPrintf("Available commands are: exit help ps kill spawn sleep\n");
+    SFPrintf("Sofa shell\n");
+    SFPrintf("Available commands are: exit help ps kill spawn sleep\n");
 }
 
 void processCommand(const char* cmd)
@@ -69,7 +69,7 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("ps", cmd))
     {
-        SofaDebug(SofaDebugCode_ListProcesses);
+        SFDebug(SofaDebugCode_ListProcesses);
     }
     else if(startsWith("help", cmd))
     {
@@ -80,49 +80,49 @@ void processCommand(const char* cmd)
         const char *strPid = cmd + strlen("kill ");
         if(strlen(strPid) == 0)
         {
-            SofaPrintf("Kill usage: kill pid signal\n");
+            SFPrintf("Kill usage: kill pid signal\n");
             return;
         }
         pid_t pidToKill = atol(strPid);
-        SofaPrintf("Kill pid %i\n", pidToKill);
-        SofaKill(pidToKill, SIGKILL);
+        SFPrintf("Kill pid %i\n", pidToKill);
+        SFKill(pidToKill, SIGKILL);
     } 
     else if(startsWith("spawn", cmd))
     {
         const char *strApp = cmd + strlen("spawn ");
-        int pid = SofaSpawn(strApp);
+        int pid = SFSpawn(strApp);
 
         int appStatus = 0;
-        int ret = SofaWait(&appStatus);
-        SofaPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+        int ret = SFWait(&appStatus);
+        SFPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
     }
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
-        int ret = SofaWait(&appStatus);
-        SofaPrintf("wait returned pid %i status %i\n", ret, appStatus);
+        int ret = SFWait(&appStatus);
+        SFPrintf("wait returned pid %i status %i\n", ret, appStatus);
     }
     else if(startsWith("sleep", cmd))
     {
         const char *strMS = cmd + strlen("sleep ");
         int ms = atol(strMS);
-        SofaSleep(ms);
+        SFSleep(ms);
     }
     else if(startsWith("pid", cmd))
     {
-        SofaPrintf("PID=%i\n", SofaGetPid());
+        SFPrintf("PID=%i\n", SFGetPid());
     }
     else if(startsWith("ppid", cmd))
     {
-        SofaPrintf("PPID=%i\n", SofaGetPPid());
+        SFPrintf("PPID=%i\n", SFGetPPid());
     }
     else if(startsWith("dump", cmd))
     {
-        SofaDebug(SofaDebugCode_DumpSched);
+        SFDebug(SofaDebugCode_DumpSched);
     }
     else
     {
-        SofaPrintf("Unknown command '%s'\n", cmd);
+        SFPrintf("Unknown command '%s'\n", cmd);
     }
 
 }
@@ -130,11 +130,11 @@ void processCommand(const char* cmd)
 int main(int argc, char *argv[])
 {
     RuntimeInit2(argc, argv);
-    SofaPrintf("[%i] Shell \n", SofaGetPid());
+    SFPrintf("[%i] Shell \n", SFGetPid());
 
     while (1)
     {
-        SofaPrintf(">:");
+        SFPrintf(">:");
         fflush(stdout);
 
         char data[128] = "";
@@ -144,10 +144,10 @@ int main(int argc, char *argv[])
         while (gotCmd == 0)
         {
             const size_t sizeToRead = 16;
-            readSize = SofaReadLine(data + bufferIndex, sizeToRead);
+            readSize = SFReadLine(data + bufferIndex, sizeToRead);
             if(readSize == -EINTR)
             {
-                SofaPrintf("[Shell] got ctl-c\n");
+                SFPrintf("[Shell] got ctl-c\n");
             }
             if(readSize == -EAGAIN)
             {

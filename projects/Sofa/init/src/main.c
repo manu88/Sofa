@@ -8,22 +8,22 @@ int main(int argc, char *argv[])
 {
     RuntimeInit2(argc, argv);
 
-    if(SofaGetPid() != 1)
+    if(SFGetPid() != 1)
     {
         return EXIT_FAILURE;
     }
-    int shellPid = SofaSpawn("shell");
+    int shellPid = SFSpawn("shell");
     printf("[init] shell pid is %i\n", shellPid);
 
     int appStatus = 0;
 
     while (1)
     {
-        pid_t retPid = SofaWait(&appStatus);
+        pid_t retPid = SFWait(&appStatus);
         printf("[init] Wait returned pid %i status %i\n", retPid, appStatus);
         if(retPid == shellPid)
         {
-            shellPid = SofaSpawn("shell");
+            shellPid = SFSpawn("shell");
             printf("[init] shell pid is %i\n", shellPid);
         }
     }

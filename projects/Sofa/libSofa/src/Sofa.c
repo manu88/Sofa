@@ -3,7 +3,7 @@
 #include <runtime.h>
 #include <stdarg.h>
 
-int SofaSpawn(const char* path)
+int SFSpawn(const char* path)
 {
     if(!path)
     {
@@ -15,48 +15,48 @@ int SofaSpawn(const char* path)
     return ret;
 }
 
-pid_t SofaGetPid()
+pid_t SFGetPid()
 {
     return getProcessEnv()->pid;
 }
 
-pid_t SofaGetPPid()
+pid_t SFGetPPid()
 {
     return sc_getppid(TLSGet()->ep);
 }
 
 
-pid_t SofaWaitPid(pid_t pid, int *wstatus, int options)
+pid_t SFWaitPid(pid_t pid, int *wstatus, int options)
 {
     return sc_wait(TLSGet()->ep, pid, wstatus, options);
 }
 
-pid_t SofaWait(int *wstatus)
+pid_t SFWait(int *wstatus)
 {
-    return SofaWaitPid(-1, wstatus, 0);
+    return SFWaitPid(-1, wstatus, 0);
 }
 
-int SofaKill(pid_t pid, int sig)
+int SFKill(pid_t pid, int sig)
 {
     return sc_kill(TLSGet()->ep, pid, sig);
 }
 
-ssize_t SofaRead(char* data, size_t dataSize)
+ssize_t SFRead(char* data, size_t dataSize)
 {
     return sc_read(TLSGet()->ep, data, dataSize, 0);
 }
 
-ssize_t SofaWrite(const char* data, size_t dataSize)
+ssize_t SFWrite(const char* data, size_t dataSize)
 {
     return sc_write(TLSGet()->ep, data, dataSize);
 }
 
-ssize_t SofaReadLine(char* data, size_t dataSize)
+ssize_t SFReadLine(char* data, size_t dataSize)
 {
     return sc_read(TLSGet()->ep, data, dataSize, '\n');
 }
 
-void SofaDebug(SofaDebugCode code)
+void SFDebug(SofaDebugCode code)
 {
     sc_debug(TLSGet()->ep, code);
 }
@@ -70,7 +70,7 @@ void exit(int code)
 
 
 
-int SofaPrintf(const char *format, ...)
+int SFPrintf(const char *format, ...)
 {
     va_list args;
 
@@ -86,6 +86,4 @@ int SofaPrintf(const char *format, ...)
 
     seL4_Send(TLSGet()->ep, info);
     return length;
-
-
 }

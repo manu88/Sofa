@@ -36,28 +36,28 @@ int main(int argc, char *argv[])
     
     RuntimeInit2(argc, argv);
 
-    SofaPrintf("cnode cap %ld\n", init_data->root_cnode);
-    SofaPrintf("vspace root cap %ld\n", init_data->vspace_root);
+    SFPrintf("cnode cap %ld\n", init_data->root_cnode);
+    SFPrintf("vspace root cap %ld\n", init_data->vspace_root);
 
     seL4_CPtr tcb = requestcap(endpoint, SofaRequestCap_TCB);
-    SofaPrintf("TCB cap %ld\n", tcb);
+    SFPrintf("TCB cap %ld\n", tcb);
 
     seL4_Word data = api_make_guard_skip_word(seL4_WordBits - TEST_PROCESS_CSPACE_SIZE_BITS);
-    SofaPrintf("Guard is %lX\n", data);
+    SFPrintf("Guard is %lX\n", data);
 
     seL4_CPtr faultEP = endpoint;
     seL4_Error err = seL4_TCB_Configure(tcb, faultEP, init_data->root_cnode, data, init_data->vspace_root, 0, 0, seL4_CapNull);
-    SofaPrintf("seL4_TCB_Configure:err=%i\n", err);
+    SFPrintf("seL4_TCB_Configure:err=%i\n", err);
 
     seL4_CPtr ipcBuff = requestcap(endpoint, SofaRequestCap_IPCBuff);
-    SofaPrintf("IPC buffer %ld\n", ipcBuff);
+    SFPrintf("IPC buffer %ld\n", ipcBuff);
 
     err = seL4_TCB_SetPriority(tcb, init_data->tcb, 254);
-    SofaPrintf("seL4_TCB_SetPriority:err=%i\n", err);
+    SFPrintf("seL4_TCB_SetPriority:err=%i\n", err);
 
     seL4_UserContext regs = {0};
     err = seL4_TCB_ReadRegisters(tcb, 0, 0, sizeof(regs)/sizeof(seL4_Word), &regs);
-    SofaPrintf("seL4_TCB_ReadRegisters:err=%i\n", err);
+    SFPrintf("seL4_TCB_ReadRegisters:err=%i\n", err);
 
     size_t context_size = sizeof(seL4_UserContext) / sizeof(seL4_Word);
     seL4_CPtr stackTop = requestcap(endpoint, SofaRequestCap_MAP);
@@ -81,13 +81,13 @@ int main(int argc, char *argv[])
 
 
     err = seL4_TCB_WriteRegisters(tcb, 1, 0, sizeof(regs)/sizeof(seL4_Word), &regs);
-    SofaPrintf("seL4_TCB_WriteRegisters:err=%i\n", err);    
+    SFPrintf("seL4_TCB_WriteRegisters:err=%i\n", err);    
 //    err = seL4_TCB_Resume(tcb);
 //    printf("seL4_TCB_Resume:err=%i\n", err);
 
     err = seL4_TCB_Resume(tcb);
-    SofaPrintf("seL4_TCB_Resume:err=%i\n", err);        
-    SofaDebug(SofaDebugCode_DumpSched);
+    SFPrintf("seL4_TCB_Resume:err=%i\n", err);        
+    SFDebug(SofaDebugCode_DumpSched);
     while (1)
     {}
     
