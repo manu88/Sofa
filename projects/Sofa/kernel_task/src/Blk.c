@@ -51,8 +51,8 @@ typedef struct
 
 
     ps_dma_man_t dma_man;
-    int num_free_bufs;
-    dma_addr_t **bufs;
+//    int num_free_bufs;
+//    dma_addr_t **bufs;
     int dma_alignment;
 
 
@@ -151,7 +151,9 @@ static void set_features(VirtioDevice *dev, uint32_t features) {
 
 static int initialize_desc_ring(VirtioDevice *dev, ps_dma_man_t *dma_man) {
 
-    dma_addr_t rx_ring = dma_alloc_pin(dma_man, vring_size(dev->queueSize, VIRTIO_PCI_VRING_ALIGN), 1, VIRTIO_PCI_VRING_ALIGN);
+    unsigned sizeVRing = vring_size(dev->queueSize, VIRTIO_PCI_VRING_ALIGN);
+    printf("vring_size=%u\n", sizeVRing);
+    dma_addr_t rx_ring = dma_alloc_pin(dma_man, sizeVRing, 1, VIRTIO_PCI_VRING_ALIGN);
     if (!rx_ring.phys) {
         LOG_ERROR("Failed to allocate rx_ring");
         return -1;
@@ -177,6 +179,8 @@ static int initialize_desc_ring(VirtioDevice *dev, ps_dma_man_t *dma_man) {
 
     return 0;
 }
+
+#if 0
 
 static int initialize_free_bufs(VirtioDevice *dev)
 {
@@ -223,7 +227,7 @@ error:
     dev->bufs = NULL;
     return -1;
 }
-
+#endif
 static void complete_tx(VirtioDevice *dev) 
 {
     while (dev->ruh != dev->rx_ring.used->idx) 
@@ -270,13 +274,23 @@ static int raw_tx(VirtioDevice *dev, unsigned int num, uintptr_t *phys, unsigned
     for (i = 0; i < num; i++) 
     {
         unsigned int desc = (dev->rdt + i + 1) % dev->queueSize;
-        printf("raw_tx add buf %i/%i at %i\n", i, num,desc);
         unsigned int next_desc = (desc + 1) % dev->queueSize;
+
+        uint8_t isLast = (i+1) == num;
+
+        uint16_t flags = VRING_DESC_F_WRITE | VRING_DESC_F_NEXT;
+        if(isLast)
+        {
+            flags = VRING_DESC_F_WRITE;
+        }
+
+        printf("raw_tx add buf %i/%i at %i : len %zi flags %i\n", i, num,desc, len[i], flags);
+
         dev->rx_ring.desc[desc] = (struct vring_desc) 
         {
             .addr = phys[i],
             .len = len[i],
-            .flags = (i + 1 == num ? VRING_DESC_F_WRITE : VRING_DESC_F_NEXT),
+            .flags = flags,//(i + 1 == num ? VRING_DESC_F_WRITE : VRING_DESC_F_NEXT),
             .next = next_desc
         };
     }
@@ -290,9 +304,66 @@ static int raw_tx(VirtioDevice *dev, unsigned int num, uintptr_t *phys, unsigned
     dev->rx_ring.avail->idx++;
     /* ensure index update visible before notifying */
     asm volatile("mfence" ::: "memory");
-    printf("NOTIFY queue %i\n", dev->queueID);
+    printf("NOTIFY queue %i, remains %i\n", dev->queueID, dev->rx_remain);
     write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
     return 0;
+}
+
+
+static void send_cmd2(VirtioDevice* dev, int sector)
+{
+        memset(dev->headerReq, 0, sizeof(virtio_blk_req));
+        dev->headerReq->type == VIRTIO_BLK_T_IN; 
+        dev->headerReq->sector = sector;
+
+        assert(dev->hdr_phys);
+
+        /* request a buffer */
+        void *cookie;
+        dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, 1024,1, dev->dma_alignment);
+
+        uintptr_t phys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
+        if (!phys) 
+        {
+            assert(0);
+            return;
+        }
+        unsigned int rdt_data = (dev->rdt + 1) % dev->queueSize;
+        unsigned int rdt_footer = (dev->rdt + 2) % dev->queueSize;
+
+        printf("%i %i %i\n", dev->rdt, rdt_data, rdt_footer);
+
+        dev->rx_ring.desc[dev->rdt] = (struct vring_desc) {
+            .addr = dev->hdr_phys,
+            .len = VIRTIO_BLK_REQ_HEADER_SIZE,
+            .flags = VRING_DESC_F_NEXT,
+            .next = rdt_data
+        };
+
+        dev->rx_cookies[rdt_data] = cookie;
+        dev->rx_ring.desc[rdt_data] = (struct vring_desc) {
+            .addr = phys,
+            .len = 512,
+            .flags = VRING_DESC_F_NEXT |VRING_DESC_F_WRITE,
+            .next = rdt_footer
+        };
+
+        dev->rx_cookies[rdt_footer] = cookie;
+        dev->rx_ring.desc[rdt_footer] = (struct vring_desc) {
+            .addr = phys + VIRTIO_BLK_REQ_HEADER_SIZE,
+            .len = 1,
+            .flags = VRING_DESC_F_WRITE,
+            .next = 0
+        };
+
+
+        dev->rx_ring.avail->ring[dev->rx_ring.avail->idx % dev->queueSize] = dev->rdt;
+        asm volatile("sfence" ::: "memory");
+        dev->rx_ring.avail->idx+3;
+        asm volatile("sfence" ::: "memory");
+        write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
+        dev->rdt = (dev->rdt + 3) % dev->queueSize;
+        dev->rx_remain-=3;
 }
 
 static void send_cmd(VirtioDevice* dev)
@@ -303,11 +374,11 @@ static void send_cmd(VirtioDevice* dev)
     dev->headerReq->type == VIRTIO_BLK_T_IN; 
     dev->headerReq->sector = 1;
 
-    dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, 1024,1, dev->dma_alignment);
+    dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, 512,1, dev->dma_alignment);
 
     uintptr_t phys[] = {
         dma_data.phys,// ps_dma_pin(&dev->dma_man, p, 512),
-        dma_data.phys + 512//ps_dma_pin(&dev->dma_man, p + 512, 1)
+        dev->hdr_phys + 16//ps_dma_pin(&dev->dma_man, p + 512, 1)
     };
 
     unsigned int len[] = {
@@ -341,9 +412,45 @@ void BlkInit(uint32_t iobase)
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER);
 
     uint32_t feats = get_features(&dev);
+
+#define VIRTIO_F_VERSION_1              1 << 32
+#define VIRTIO_F_RING_EVENT_IDX         1<<29
+
+    printf("BEFORE Features %X\n", feats);
+    if(!(feats & VIRTIO_F_VERSION_1))
+    {
+        printf("VIRTIO_F_VERSION_1 NOT PRESENT\n");
+    }
+
+    if(!(feats & VIRTIO_F_RING_EVENT_IDX))
+    {
+        printf("VIRTIO_F_RING_EVENT_IDX NOT PRESENT\n");
+    }
+    else
+    {
+        printf("VIRTIO_F_RING_EVENT_IDX set\n");
+    }
+    printf("feats 1 %X\n", feats);
+    //feats &= ~(VIRTIO_F_RING_EVENT_IDX);
+    printf("feats 2 %X\n", feats);
     set_features(&dev, feats);
 
+    feats = get_features(&dev);
+    printf("AFTER Features %X\n", feats);
+
+
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
+    asm volatile("mfence" ::: "memory");
+    if(!(get_status(&dev) & VIRTIO_CONFIG_S_DRIVER_FEATURES_OK))
+	{
+		printf("HOST REFUSED OUR FEATURES\n");
+        assert(0);
+    }
+	else
+	{
+		printf("HOST is ok with our features\n");
+	}
+
 
     uint32_t totSectorCount = read_reg32(&dev, 0x14);
     uint8_t maxSegSize      =  read_reg8(&dev, 0x1C);
@@ -382,12 +489,14 @@ void BlkInit(uint32_t iobase)
     int err = initialize_desc_ring(&dev, &env->ops.dma_manager);
     assert(err == 0);
 
+#if 0
     printf("Init free buffers\n");
     err = initialize_free_bufs(&dev);
     assert(err == 0);
     printf("Init free buffers OK\n");
-
-    dma_addr_t packet = dma_alloc_pin(&env->ops.dma_manager, VIRTIO_BLK_REQ_HEADER_SIZE, 1, DMA_ALIGN);
+#endif
+    printf("%zi %zi\n", sizeof(virtio_blk_req), VIRTIO_BLK_REQ_HEADER_SIZE);
+    dma_addr_t packet = dma_alloc_pin(&env->ops.dma_manager, sizeof(virtio_blk_req), 1, DMA_ALIGN);
     if (!packet.virt) 
     {
         printf("ERROR : unable to alloc DMA for Virtio BLK request\n");
@@ -409,8 +518,24 @@ void BlkInit(uint32_t iobase)
     
     printf("Dev status %u\n", get_status(&dev));
 
-    send_cmd(&dev);
+
+
+    if(!(get_status(&dev) & VIRTIO_CONFIG_S_DRIVER_OK))
+	{
+		printf("DEV status not driver ok\n");
+        assert(0);
+    }
+	else
+	{
+		printf("Dev good to go\n");
+	}
+
+    for (int i=0;i<1;i++)
+    {
+        send_cmd2(&dev, i);
+    }
     int irq_num = 11;
+
     /**/
     cspacepath_t irq_path = { 0 };
     seL4_CPtr irq;
@@ -436,9 +561,8 @@ void BlkInit(uint32_t iobase)
 
     printf("BEFORE SEND remain %i\n", dev.rx_remain);
 
-//    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
-//    seL4_Send(irq_aep, msg);
-
+    //seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
+    //seL4_Send(irq_aep, msg);
 
     while(1)
     {
