@@ -184,7 +184,7 @@ void *main_continued(void *arg UNUSED)
     assert(error == 0);
 
     ProcessInit(&initProcess);
-    spawnApp(&initProcess, "shell", NULL);
+    spawnApp(&initProcess, "init", NULL);
 /*
     for(int i=0;i<40;i++)
     {

@@ -7,7 +7,7 @@ project(init C)
 
 add_executable(init src/main.c)
 
-target_link_libraries(init sel4 sel4runtime muslc sel4muslcsys sofa)
+target_link_libraries(init sel4 sel4runtime sofa)
 
 
 

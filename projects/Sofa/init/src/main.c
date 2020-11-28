@@ -13,18 +13,18 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     int shellPid = SFSpawn("shell");
-    printf("[init] shell pid is %i\n", shellPid);
+    SFPrintf("[init] shell pid is %i\n", shellPid);
 
     int appStatus = 0;
 
     while (1)
     {
         pid_t retPid = SFWait(&appStatus);
-        printf("[init] Wait returned pid %i status %i\n", retPid, appStatus);
+        SFPrintf("[init] Wait returned pid %i status %i\n", retPid, appStatus);
         if(retPid == shellPid)
         {
             shellPid = SFSpawn("shell");
-            printf("[init] shell pid is %i\n", shellPid);
+            SFPrintf("[init] shell pid is %i\n", shellPid);
         }
     }
     return 1;
