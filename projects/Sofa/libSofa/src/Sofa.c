@@ -99,5 +99,11 @@ ssize_t SFRegisterServer(const char* name)
     {
         return 0;
     }
-    return sc_regservice(TLSGet()->ep, name);
+    int err = 0;
+    seL4_CPtr cap = sc_regservice(TLSGet()->ep, name, &err);
+    if(err != 0)
+    {
+        return err;
+    }
+    return cap;
 }

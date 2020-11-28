@@ -21,6 +21,7 @@
 #include "utils.h"
 #include "Panic.h"
 #include "Log.h"
+#include "NameServer.h"
 
 extern Process initProcess;
 
@@ -101,6 +102,22 @@ void doExit(Process* process, int retCode)
     }
 
     int pidToFree = process->init->pid;
+
+
+    // any Services owned?
+    Service* s = NULL;
+    Service* t = NULL;
+    FOR_EACH_SERVICE(s, t)
+    {
+        if(s->owner == process)
+        {
+            NameServerUnregister(s);
+            assert(s->endpoint != seL4_CapNull);
+            free(s->name);
+            free(s);
+        }
+    }
+
 
     process_tear_down(process);
 //    UnypedsGiveBack(&process->untypedRange);

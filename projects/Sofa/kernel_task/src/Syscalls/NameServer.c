@@ -33,7 +33,16 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
         return;
     }
 
+    KernelTaskContext* ctx = getKernelTaskContext();
+
+    vka_object_t tcb_obj;
+    vka_alloc_endpoint(&ctx->vka, &tcb_obj);
+    cspacepath_t res;
+    vka_cspace_make_path(&ctx->vka, tcb_obj.cptr, &res);
+    seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->process->native, res, &ctx->vka);
+    newService->endpoint = ret;
+
     seL4_SetMR(1, 0);
-    seL4_SetMR(2, 12345);
+    seL4_SetMR(2, ret);
     seL4_Reply(info);
 }

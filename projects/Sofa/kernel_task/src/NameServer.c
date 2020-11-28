@@ -1,4 +1,5 @@
 #include "NameServer.h"
+#include "Process.h"
 
 static Service* _services = NULL;
 

@@ -16,15 +16,17 @@ static void* on_thread(void*args)
 
 int main(int argc, char *argv[])
 {   
-    while (1)
-    {
-        /* code */
-    }
     
-    RuntimeInit(argc, argv);
-    printf("\n\n");
-    fflush(stdout);
-    printf("[%i] started\n", SFGetPid());
+    RuntimeInit2(argc, argv);
+    SFPrintf("\n\n");
+    SFPrintf("[%i] started\n", SFGetPid());
+
+
+    seL4_CPtr serv = SFRegisterServer("com.test.app");
+
+    seL4_Word sender;
+    seL4_Recv(serv, &sender);
+    SFPrintf("App received something\n");
     return 10 + SFGetPid();
     Thread th;
     ThreadInit(&th, on_thread, NULL);

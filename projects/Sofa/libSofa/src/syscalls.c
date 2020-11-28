@@ -126,7 +126,7 @@ pid_t sc_getppid(seL4_CPtr endpoint)
 }
 
 
-ssize_t sc_regservice(seL4_CPtr endpoint, const char* serviceName)
+seL4_CPtr sc_regservice(seL4_CPtr endpoint, const char* serviceName, int *err)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
     seL4_SetMR(0, SofaSysCall_RegisterService);
@@ -138,5 +138,14 @@ ssize_t sc_regservice(seL4_CPtr endpoint, const char* serviceName)
     TLSGet()->buffer[nameSize] = 0;
 
     seL4_Call(endpoint, info);
-    return seL4_GetMR(1);
+
+    if(err)
+    {
+        *err = seL4_GetMR(1); 
+    }
+    if(seL4_GetMR(1) == 0)
+    {
+        return seL4_GetMR(2);
+    }
+    return seL4_CapNull;
 }
