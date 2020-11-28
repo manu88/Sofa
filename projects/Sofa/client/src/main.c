@@ -21,13 +21,13 @@ int main(int argc, char *argv[])
 
     if(capOrErr > 0)
     {
-        for (int i=0;i< 10;i++)
+        while(1)
         {
-            seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-            seL4_SetMR(0, i);
-            seL4_SetMR(1, 10-i);
-            seL4_Call((seL4_CPtr) capOrErr, info);
-            SFPrintf("Service returned!\n");
+            seL4_Word sender = 0;
+            seL4_MessageInfo_t info = seL4_Recv(capOrErr, &sender);
+            seL4_Word acc = seL4_GetMR(0);
+
+            SFPrintf("[client %i] got %lu from %lu\n", SFGetPid(), acc, sender);
         }
     }
 

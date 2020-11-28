@@ -29,29 +29,16 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    seL4_Word acc = 0;
     while(1)
     {
         seL4_CPtr serv = servOrErr;
         seL4_Word sender;
-        seL4_MessageInfo_t info = seL4_Recv(serv, &sender);
-        seL4_Word m0 = seL4_GetMR(0);
-        seL4_Word m1 = seL4_GetMR(1);
-        SFPrintf("App received something from %lX len %li\n", sender, seL4_MessageInfo_get_length(info));
-
-        seL4_Reply(info);
-        SFPrintf("MR0 %li\n", m0);
-        SFPrintf("MR1 %li\n", m1);
-
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+        seL4_SetMR(0, acc++);
+        seL4_Send(serv, info);
+        SFSleep(1000);
     }
-    return 10 + SFGetPid();
-    Thread th;
-    ThreadInit(&th, on_thread, NULL);
-
-    int retThread = 0;
-    ThreadJoin(&th, (void**)&retThread);
-    printf("[%i] thread returned %i\n", getProcessEnv()->pid, retThread);
-    SFSleep(2000);
-    //cleanup_helper(getProcessEnv(), &thread1);
 
     return 1;
 }

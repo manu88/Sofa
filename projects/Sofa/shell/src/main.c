@@ -123,13 +123,27 @@ void processCommand(const char* cmd)
         }
         int appStatus = 0;
         int ret = SFWait(&appStatus);
-        SFPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+        if(ret < 0)
+        {
+            SFPrintf("Wait interupted\n");
+        }
+        else
+        {
+            SFPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+        }
     }
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
         int ret = SFWait(&appStatus);
-        SFPrintf("wait returned pid %i status %i\n", ret, appStatus);
+        if(ret < 0)
+        {
+            SFPrintf("Wait interupted\n");
+        }
+        else
+        {
+            SFPrintf("wait returned pid %i status %i\n", ret, appStatus);
+        }
     }
     else if(startsWith("sleep", cmd))
     {
