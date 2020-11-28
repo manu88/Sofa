@@ -24,7 +24,7 @@ typedef enum
     SyscallID_RequestCap,
 
     SofaSysCall_RegisterService, // Register a 
-//    SofaSysCall_GetService,
+    SofaSysCall_GetService,
 
 
     SyscallID_Last // Not a real ID, just here to count ids
@@ -43,6 +43,7 @@ typedef enum
     SofaRequestCap_TCB,
     SofaRequestCap_MAP,
     SofaRequestCap_IPCBuff,
+    SofaRequestCap_Endpoint,
 }SofaRequestCap;
 
 int SFSleep(int ms);
@@ -61,7 +62,7 @@ int SFKill(pid_t pid, int sig);
 ssize_t SFRead(char* data, size_t dataSize);
 ssize_t SFWrite(const char* data, size_t dataSize);
 
-int SFPrintf(const char *format, ...);
+int SFPrintf(const char *format, ...) __attribute__((format(printf,1,2)));
 
 
 // if returns -EAGAIN, it means that no endline was found in dataSize, BUT data was written.
@@ -70,7 +71,8 @@ ssize_t SFReadLine(char* data, size_t dataSize);
 
 // Name server
 
-ssize_t SFRegisterServer(const char* name);
+ssize_t SFRegisterService(const char* name);
+ssize_t SFGetService(const char* name);
 
 // temp/debug syscall
 

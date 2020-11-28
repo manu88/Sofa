@@ -125,6 +125,31 @@ pid_t sc_getppid(seL4_CPtr endpoint)
     return seL4_GetMR(1);
 }
 
+seL4_CPtr sc_getservice(seL4_CPtr endpoint, const char* serviceName, int *err)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, SofaSysCall_GetService);
+    // 1 status
+    // 2 endpoint
+
+    const size_t nameSize = strlen(serviceName);
+    memcpy(TLSGet()->buffer, serviceName, nameSize);
+    TLSGet()->buffer[nameSize] = 0;
+
+    seL4_Call(endpoint, info);
+
+    if(err)
+    {
+        *err = seL4_GetMR(1); 
+    }
+    if(seL4_GetMR(1) == 0)
+    {
+        return seL4_GetMR(2);
+    }
+    return seL4_CapNull;
+
+
+}
 
 seL4_CPtr sc_regservice(seL4_CPtr endpoint, const char* serviceName, int *err)
 {

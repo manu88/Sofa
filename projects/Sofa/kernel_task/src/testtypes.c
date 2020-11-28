@@ -113,8 +113,8 @@ void doExit(Process* process, int retCode)
         {
             NameServerUnregister(s);
             assert(s->endpoint != seL4_CapNull);
-            free(s->name);
-            free(s);
+            kfree(s->name);
+            kfree(s);
         }
     }
 

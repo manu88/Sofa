@@ -14,6 +14,7 @@ typedef struct _Service
     UT_hash_handle hh;
 
     seL4_CPtr endpoint;
+    seL4_CPtr baseEndpoint;
 } Service;
 
 

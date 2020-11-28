@@ -22,11 +22,24 @@ int main(int argc, char *argv[])
     SFPrintf("[%i] started\n", SFGetPid());
 
 
-    seL4_CPtr serv = SFRegisterServer("com.test.app");
+    ssize_t servOrErr = SFRegisterService("com.test.app");
+    if(servOrErr <= 0)
+    {
+        SFPrintf("[APP] error unable to register service. error %i\n", servOrErr);
+        return EXIT_FAILURE;
+    }
+    while(1)
+    {
+        seL4_CPtr serv = servOrErr;
+        seL4_Word sender;
+        seL4_MessageInfo_t info = seL4_Recv(serv, &sender);
+        SFPrintf("App received something from %lX len %li\n", sender, seL4_MessageInfo_get_length(info));
+        SFPrintf("MR0 %li\n", seL4_GetMR(0));
+        SFPrintf("MR1 %li\n", seL4_GetMR(1));
 
-    seL4_Word sender;
-    seL4_Recv(serv, &sender);
-    SFPrintf("App received something\n");
+        seL4_Reply(info);
+
+    }
     return 10 + SFGetPid();
     Thread th;
     ThreadInit(&th, on_thread, NULL);
