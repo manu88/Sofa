@@ -25,13 +25,11 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
 
     seL4_CPtr capMint = get_free_slot(&env->vka);
     int err = cnode_mint(&env->vka, service->baseEndpoint, capMint, seL4_AllRights, caller);
-    printf("MINT value %X\n", (seL4_Word) caller);
     assert(err == 0);
     cspacepath_t path;
     vka_cspace_make_path(&env->vka, capMint, &path);
 
     seL4_CPtr cap = sel4utils_move_cap_to_process(&caller->process->native, path, &env->vka);
-    printf("Create a client cap : %lu\n", cap);
 
     seL4_SetMR(1, 0);
     seL4_SetMR(2, cap);
@@ -76,7 +74,6 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
     vka_cspace_make_path(&ctx->vka, tcb_obj.cptr, &res);
 
     seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->process->native, &ctx->vka, res.capPtr);
-    //seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->process->native, res, &ctx->vka);
     newService->endpoint = ret;
     newService->baseEndpoint = res.capPtr;
     seL4_SetMR(1, 0);

@@ -25,8 +25,7 @@ int main(int argc, char *argv[])
         {
             seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
             seL4_SetMR(0, i);
-            seL4_SetMR(1, 10-i);        
-            SFPrintf("Call service\n");
+            seL4_SetMR(1, 10-i);
             seL4_Call((seL4_CPtr) capOrErr, info);
             SFPrintf("Service returned!\n");
         }

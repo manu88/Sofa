@@ -13,8 +13,8 @@ typedef struct _Service
 
     UT_hash_handle hh;
 
-    seL4_CPtr endpoint;
-    seL4_CPtr baseEndpoint;
+    seL4_CPtr endpoint;     // endpoint in the context of the process
+    seL4_CPtr baseEndpoint; // endpoint kernel_task side
 } Service;
 
 
