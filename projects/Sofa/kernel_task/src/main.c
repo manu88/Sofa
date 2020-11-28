@@ -56,6 +56,7 @@
 #include "Timer.h"
 #include "Serial.h"
 #include "DeviceTree.h"
+#include "NameServer.h"
 #include <sel4platsupport/arch/io.h>
 
 
@@ -168,6 +169,9 @@ void *main_continued(void *arg UNUSED)
         error = vka_alloc_reply(&env->vka, &env->reply);
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
+
+    error = NameServerInit();
+    assert(error == 0);
 
 
     error = IOInit();

@@ -3,6 +3,7 @@
 #include "../testtypes.h"
 #include "../utils.h"
 #include "../Panic.h"
+#include "../NameServer.h"
 
 static char getProcessStateStr(ProcessState s)
 {
@@ -28,6 +29,16 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
     {
     case SofaDebugCode_DumpSched:
         seL4_DebugDumpScheduler();
+        break;
+    case SofaDebugCode_ListServices:
+    {
+        Service* s = NULL;
+        Service* tmp = NULL;
+        FOR_EACH_SERVICE(s, tmp)
+        {
+            printf("'%s' owner %i %s\n", s->name, ProcessGetPID(s->owner), ProcessGetName(s->owner));
+        }
+    }
         break;
     case SofaDebugCode_ListProcesses:
         {

@@ -24,4 +24,4 @@ void sc_debug(seL4_CPtr endpoint, SofaDebugCode code);
 pid_t sc_getppid(seL4_CPtr endpoint);
 
 
-seL4_CPtr sc_regservice(seL4_CPtr endpoint, const char* serviceName);
+ssize_t sc_regservice(seL4_CPtr endpoint, const char* serviceName);

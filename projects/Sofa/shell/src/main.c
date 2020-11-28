@@ -87,6 +87,10 @@ void processCommand(const char* cmd)
         SFPrintf("Kill pid %i\n", pidToKill);
         SFKill(pidToKill, SIGKILL);
     }
+    else if(startsWith("services", cmd))
+    {
+        SFDebug(SofaDebugCode_ListServices);
+    }
     else if(startsWith("register", cmd))
     {
         const char* serviceName = cmd + strlen("register ");
@@ -96,8 +100,17 @@ void processCommand(const char* cmd)
             return;
         }
         SFPrintf("register arg is '%s'\n", serviceName);
-        uint32_t ret =  SFRegisterServer(serviceName);
-        SFPrintf("Service is at %u\n", ret);
+        ssize_t ret =  SFRegisterServer(serviceName);
+        if (ret <= 0)
+        {
+            SFPrintf("Error registering service '%s' %i\n", serviceName, ret);
+
+        }
+        else
+        {
+            SFPrintf("Service is at %i\n", ret);
+        }
+        
     }
     else if(startsWith("spawn", cmd))
     {

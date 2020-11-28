@@ -89,7 +89,7 @@ int SFPrintf(const char *format, ...)
 }
 
 
-uint32_t SFRegisterServer(const char* name)
+ssize_t SFRegisterServer(const char* name)
 {
     if(!name)
     {

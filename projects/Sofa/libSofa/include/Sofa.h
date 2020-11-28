@@ -33,6 +33,7 @@ typedef enum
 typedef enum
 {
     SofaDebugCode_ListProcesses,
+    SofaDebugCode_ListServices,
     SofaDebugCode_DumpSched,
 }SofaDebugCode;
 
@@ -69,7 +70,7 @@ ssize_t SFReadLine(char* data, size_t dataSize);
 
 // Name server
 
-uint32_t SFRegisterServer(const char* name);
+ssize_t SFRegisterServer(const char* name);
 
 // temp/debug syscall
 
