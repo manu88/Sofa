@@ -12,6 +12,17 @@ void Syscall_PPID(Thread* caller, seL4_MessageInfo_t info)
 //SofaRequestCap_VSpaceRoot vka_alloc_vspace_root
 
 
+void RequestCapEndoint(Thread* caller, seL4_MessageInfo_t info)
+{
+    vka_object_t endpoint_obj;
+    vka_alloc_endpoint(&getKernelTaskContext()->vka, &endpoint_obj);
+    cspacepath_t res;
+    vka_cspace_make_path(&getKernelTaskContext()->vka, endpoint_obj.cptr, &res);
+    seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->process->native, res, &getKernelTaskContext()->vka);
+    seL4_SetMR(1, ret);
+    seL4_Reply(info);
+}
+
 
 void RequestCapTCB(Thread* caller, seL4_MessageInfo_t info)
 {
@@ -71,6 +82,9 @@ void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info)
         break;
     case SofaRequestCap_IPCBuff:
         RequestIPCBuff(caller, info);
+        break;
+    case SofaRequestCap_Endpoint:
+        RequestCapEndoint(caller, info);
         break;
 
     default:

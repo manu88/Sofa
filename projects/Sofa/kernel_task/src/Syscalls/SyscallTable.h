@@ -24,6 +24,9 @@ void Syscall_PPID(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info);
 
+void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info);
+void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info);
+
 
 static SyscallMethod syscallTable[] =
 {
@@ -45,6 +48,8 @@ static SyscallMethod syscallTable[] =
     Syscall_PPID,
     Syscall_Debug,
     Syscall_RequestCap,
+    Syscall_RegisterService,
+    Syscall_GetService,
 };
 
 

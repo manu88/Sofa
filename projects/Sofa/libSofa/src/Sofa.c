@@ -87,3 +87,41 @@ int SFPrintf(const char *format, ...)
     seL4_Send(TLSGet()->ep, info);
     return length;
 }
+
+ssize_t SFGetService(const char* name)
+{
+    if(!name)
+    {
+        return -EINVAL;
+    }
+    if(strlen(name) == 0)
+    {
+        return -EINVAL;
+    }
+    int err = 0;
+    seL4_CPtr cap = sc_getservice(TLSGet()->ep, name, &err);
+    if(err != 0)
+    {
+        return err;
+    }
+    return cap;
+}
+
+ssize_t SFRegisterService(const char* name)
+{
+    if(!name)
+    {
+        return -EINVAL;
+    }
+    if(strlen(name) == 0)
+    {
+        return -EINVAL;
+    }
+    int err = 0;
+    seL4_CPtr cap = sc_regservice(TLSGet()->ep, name, &err);
+    if(err != 0)
+    {
+        return err;
+    }
+    return cap;
+}

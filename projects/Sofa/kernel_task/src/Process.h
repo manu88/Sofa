@@ -39,6 +39,7 @@ typedef struct _Thread
     void *stack;
     size_t stackSize;
 
+
 } Thread;
 
 
@@ -116,3 +117,4 @@ void ProcessListRemove(Process* p);
 Process* ProcessListGetByPid(pid_t pid);
 
 #define FOR_EACH_PROCESS(p) LL_FOREACH(getProcessList(),p)
+

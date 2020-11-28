@@ -86,21 +86,64 @@ void processCommand(const char* cmd)
         pid_t pidToKill = atol(strPid);
         SFPrintf("Kill pid %i\n", pidToKill);
         SFKill(pidToKill, SIGKILL);
-    } 
+    }
+    else if(startsWith("services", cmd))
+    {
+        SFDebug(SofaDebugCode_ListServices);
+    }
+    else if(startsWith("register", cmd))
+    {
+        const char* serviceName = cmd + strlen("register ");
+        if(strlen(serviceName) == 0)
+        {
+            SFPrintf("register takes a Name argument\n");
+            return;
+        }
+        SFPrintf("register arg is '%s'\n", serviceName);
+        ssize_t ret =  SFRegisterService(serviceName);
+        if (ret <= 0)
+        {
+            SFPrintf("Error registering service '%s' %i\n", serviceName, ret);
+
+        }
+        else
+        {
+            SFPrintf("Service is at %i\n", ret);
+        }
+        
+    }
     else if(startsWith("spawn", cmd))
     {
         const char *strApp = cmd + strlen("spawn ");
         int pid = SFSpawn(strApp);
-
+        if(pid <= 0)
+        {
+            SFPrintf("Spawn error %i\n", pid);
+            return;
+        }
         int appStatus = 0;
         int ret = SFWait(&appStatus);
-        SFPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+        if(ret < 0)
+        {
+            SFPrintf("Wait interupted\n");
+        }
+        else
+        {
+            SFPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+        }
     }
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
         int ret = SFWait(&appStatus);
-        SFPrintf("wait returned pid %i status %i\n", ret, appStatus);
+        if(ret < 0)
+        {
+            SFPrintf("Wait interupted\n");
+        }
+        else
+        {
+            SFPrintf("wait returned pid %i status %i\n", ret, appStatus);
+        }
     }
     else if(startsWith("sleep", cmd))
     {

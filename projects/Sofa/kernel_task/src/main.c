@@ -56,6 +56,7 @@
 #include "Timer.h"
 #include "Serial.h"
 #include "DeviceTree.h"
+#include "NameServer.h"
 #include <sel4platsupport/arch/io.h>
 
 
@@ -169,6 +170,9 @@ void *main_continued(void *arg UNUSED)
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
+    error = NameServerInit();
+    assert(error == 0);
+
 
     error = IOInit();
     assert(error == 0);
@@ -180,7 +184,7 @@ void *main_continued(void *arg UNUSED)
     assert(error == 0);
 
     ProcessInit(&initProcess);
-    spawnApp(&initProcess, "shell", NULL);
+    spawnApp(&initProcess, "init", NULL);
 /*
     for(int i=0;i<40;i++)
     {

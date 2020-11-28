@@ -42,6 +42,7 @@ for now I'm trying to understand more the [sel4test](https://github.com/seL4/sel
 * sleep
 * wait/waitpid
 * kill
+* Name server: register service, get service by name
 
 ## Applications
 * init

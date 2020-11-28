@@ -16,24 +16,29 @@ static void* on_thread(void*args)
 
 int main(int argc, char *argv[])
 {   
-    while (1)
-    {
-        /* code */
-    }
     
-    RuntimeInit(argc, argv);
-    printf("\n\n");
-    fflush(stdout);
-    printf("[%i] started\n", SFGetPid());
-    return 10 + SFGetPid();
-    Thread th;
-    ThreadInit(&th, on_thread, NULL);
+    RuntimeInit2(argc, argv);
+    SFPrintf("\n\n");
+    SFPrintf("[%i] started\n", SFGetPid());
 
-    int retThread = 0;
-    ThreadJoin(&th, (void**)&retThread);
-    printf("[%i] thread returned %i\n", getProcessEnv()->pid, retThread);
-    SFSleep(2000);
-    //cleanup_helper(getProcessEnv(), &thread1);
+
+    ssize_t servOrErr = SFRegisterService("com.test.app");
+    if(servOrErr <= 0)
+    {
+        SFPrintf("[APP] error unable to register service. error %i\n", servOrErr);
+        return EXIT_FAILURE;
+    }
+
+    seL4_Word acc = 0;
+    while(1)
+    {
+        seL4_CPtr serv = servOrErr;
+        seL4_Word sender;
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+        seL4_SetMR(0, acc++);
+        seL4_Send(serv, info);
+        SFSleep(1000);
+    }
 
     return 1;
 }
