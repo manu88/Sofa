@@ -5,8 +5,8 @@
 #include <ethdrivers/virtio/virtio_pci.h>
 #include <ethdrivers/helpers.h>
 #include "Blk.h"
-#include "Environ.h"
-#include "DeviceTree.h"
+#include "../Environ.h"
+#include "../DeviceTree.h"
 
 #define VIRTIO_BLK_S_OK       0
 #define VIRTIO_BLK_S_IOERR    1
