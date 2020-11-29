@@ -32,7 +32,7 @@ typedef struct
     uint8_t queueID;
     unsigned int rx_remain;
     struct vring rx_ring;
-    uint32_t seen_used;
+
     uintptr_t rx_ring_phys;
     void **rx_cookies;
 
@@ -184,139 +184,10 @@ static int initialize_desc_ring(VirtioDevice *dev, ps_dma_man_t *dma_man) {
     return 0;
 }
 
-#if 0
-
-static int initialize_free_bufs(VirtioDevice *dev)
-{
-    dma_addr_t *dma_bufs = NULL;
-    dma_bufs = malloc(sizeof(dma_addr_t) * BLK_NUM_PREALLOCATED_BUFFERS);
-    if (!dma_bufs) 
-    {
-        printf("Unable to malloc blk dma_bufs\n");
-        goto error;
-    }
-    memset(dma_bufs, 0, sizeof(dma_addr_t) * BLK_NUM_PREALLOCATED_BUFFERS);
-    dev->bufs = malloc(sizeof(dma_addr_t *) * BLK_NUM_PREALLOCATED_BUFFERS);
-    if (!dev->bufs) 
-    {
-        printf("Unable to malloc blk dev->bufs\n");
-        goto error;
-    }
-    for (int i = 0; i < BLK_NUM_PREALLOCATED_BUFFERS; i++) {
-        dma_bufs[i] = dma_alloc_pin(&dev->dma_man, BLK_PREALLOCATED_BUF_SIZE, 1,
-                                    dev->dma_alignment);
-        if (!dma_bufs[i].phys) 
-        {
-            printf("No phys addr for dma buf %i\n", i);
-            goto error;
-        }
-        ps_dma_cache_clean_invalidate(&dev->dma_man, dma_bufs[i].virt, BLK_PREALLOCATED_BUF_SIZE);
-        dev->bufs[i] = &dma_bufs[i];
-    }
-    dev->num_free_bufs = BLK_NUM_PREALLOCATED_BUFFERS;
-    return 0;  
-error:
-    if (dev->bufs) 
-    {
-        free(dev->bufs);
-    }
-    if (dma_bufs) {
-        for (int i = 0; i < BLK_NUM_PREALLOCATED_BUFFERS; i++) {
-            if (dma_bufs[i].virt) {
-                dma_unpin_free(&dev->dma_man, dma_bufs[i].virt, BLK_PREALLOCATED_BUF_SIZE);
-            }
-        }
-        free(dma_bufs);
-    }
-    dev->bufs = NULL;
-    return -1;
-}
-#endif
-static void complete_tx(VirtioDevice *dev) 
-{
-    while (dev->ruh != dev->rx_ring.used->idx) 
-    {
-        uint16_t ring = dev->ruh % dev->queueSize;
-        unsigned int UNUSED desc = dev->rx_ring.used->ring[ring].id;
-        assert(desc == dev->rdh);
-        void *cookie = dev->rx_cookies[dev->rdh];
-        /* add 1 to the length we stored to account for the extra descriptor
-         * we used for the virtio header */
-        unsigned int used = dev->tx_lengths[dev->rdh] + 1;
-        dev->rx_remain += used;
-        dev->rdh = (dev->rdh + used) % dev->queueSize;
-        dev->ruh++;
-        /* give the buffer back */
-        //driver->i_cb.tx_complete(driver->cb_cookie, cookie);
-    }
-}
-
-
-static int raw_tx(VirtioDevice *dev, unsigned int num, uintptr_t *phys, unsigned int *len, void *cookie) 
-{
-    /* we need to num + 1 free descriptors. The + 1 is for the virtio header */
-    if (dev->rx_remain < num + 1) {
-        complete_tx(dev);
-        if (dev->rx_remain < num + 1) 
-        {
-            return -1;
-        }
-    }
-    /* install the header */
-    printf("add header at %i\n",dev->rdt);
-    dev->rx_ring.desc[dev->rdt] = (struct vring_desc) 
-    {
-        .addr = dev->hdr_phys,
-        .len = VIRTIO_BLK_REQ_HEADER_SIZE,
-        .flags = VRING_DESC_F_NEXT,
-        .next = (dev->rdt + 1) % dev->queueSize
-    };
-
-
-    /* now all the buffers */
-    unsigned int i;
-    for (i = 0; i < num; i++) 
-    {
-        unsigned int desc = (dev->rdt + i + 1) % dev->queueSize;
-        unsigned int next_desc = (desc + 1) % dev->queueSize;
-
-        uint8_t isLast = (i+1) == num;
-
-        uint16_t flags = VRING_DESC_F_WRITE | VRING_DESC_F_NEXT;
-        if(isLast)
-        {
-            flags = VRING_DESC_F_WRITE;
-        }
-
-        printf("raw_tx add buf %i/%i at %i : len %zi flags %i\n", i, num,desc, len[i], flags);
-
-        dev->rx_ring.desc[desc] = (struct vring_desc) 
-        {
-            .addr = phys[i],
-            .len = len[i],
-            .flags = flags,//(i + 1 == num ? VRING_DESC_F_WRITE : VRING_DESC_F_NEXT),
-            .next = next_desc
-        };
-    }
-    dev->rx_ring.avail->ring[dev->rx_ring.avail->idx% dev->queueSize] = dev->rdt;
-    dev->rx_cookies[dev->rdt] = cookie;
-    dev->tx_lengths[dev->rdt] = num;
-    /* ensure update to descriptors visible before updating the index */
-    asm volatile("mfence" ::: "memory");
-    dev->rdt = (dev->rdt + num + 1) % dev->queueSize;
-    dev->rx_remain -= (num + 1);
-    dev->rx_ring.avail->idx++;
-    /* ensure index update visible before notifying */
-    asm volatile("mfence" ::: "memory");
-    printf("NOTIFY queue %i, remains %i\n", dev->queueID, dev->rx_remain);
-    write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
-    return 0;
-}
-
 
 static void* test_data = NULL;
 
-static void send_cmd2(VirtioDevice* dev, int sector)
+static void send_cmd(VirtioDevice* dev, int sector)
 {
         memset(dev->headerReq, 0, sizeof(virtio_blk_req));
         dev->headerReq->type == VIRTIO_BLK_T_IN; 
@@ -385,33 +256,6 @@ static void send_cmd2(VirtioDevice* dev, int sector)
         dev->rx_remain-=3;
 
         printf("After send idx=%i remain=%i rdt=%i\n", dev->rx_ring.avail->idx, dev->rx_remain, dev->rdt);
-}
-
-static void send_cmd(VirtioDevice* dev)
-{
-    printf("Send cmd test\n");
-
-
-    dev->headerReq->type == VIRTIO_BLK_T_IN; 
-    dev->headerReq->sector = 1;
-
-    dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, 512,1, dev->dma_alignment);
-
-    uintptr_t phys[] = {
-        dma_data.phys,// ps_dma_pin(&dev->dma_man, p, 512),
-        dev->hdr_phys + 16//ps_dma_pin(&dev->dma_man, p + 512, 1)
-    };
-
-    unsigned int len[] = {
-        512,
-        1
-    };
-
-    assert(phys[0]);
-    assert(phys[1]);
-    int err = raw_tx(dev,  2, phys, len, NULL);
-
-    printf("End cmd test err=%i\n", err);
 }
 
 void BlkInit(uint32_t iobase)
@@ -535,120 +379,56 @@ void BlkInit(uint32_t iobase)
 	{
 		printf("Dev good to go\n");
 	}
-    dev.seen_used = 0;
-    printf("BEFORE SEND  used/idx=%i\n", dev.rx_ring.used->idx);
 
-    for (int i=0;i<1;i++)
-    {
-        send_cmd2(&dev, 2);
-    }
-    int irq_num = 11;
-
-    /**/
-    cspacepath_t irq_path = { 0 };
-    seL4_CPtr irq;
-
-    int error = vka_cspace_alloc(&env->vka, &irq);
-    assert(error == 0);
-    vka_cspace_make_path(&env->vka, irq, &irq_path);
-
-    error = simple_get_IRQ_handler(&env->simple, irq_num, irq_path);
-    assert(error == 0);
-
-    vka_object_t irq_aep_obj = { 0 };
-
-    error = vka_alloc_notification(&env->vka, &irq_aep_obj);
-    assert(error == 0);
-
-    seL4_CPtr irq_aep = irq_aep_obj.cptr;
-    error = seL4_IRQHandler_SetNotification(irq_path.capPtr, irq_aep);
-    assert(error == 0);
-
-    printf("<== End Init Blk virtio storage\n");
-
-    printf("AFTER SEND remain %i used/idx=%i %i\n", dev.rx_remain, dev.rx_ring.used->idx, dev.rx_ring.num);
-
-    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
-    seL4_Send(irq_aep, msg);
-
-    while(1)
-    {
-	    seL4_Wait(irq_aep,NULL);
-        printf("IRQ\n");
-        seL4_IRQHandler_Ack(irq);
-        uint8_t isr = read_reg8(&dev, VIRTIO_PCI_ISR);
-        printf("blk irq ISR %u remain %i\n", isr, dev.rx_remain);
-
-#define wrap(x, len) ((x) & ~(len))
-        int len = dev.rx_ring.num;// virtq->len;
-        //for (int i = dev.seen_used; i != dev.rx_ring.used->idx; i = wrap(i + 1, len)) 
-	    int i = dev.seen_used;
-        {
-            printf("handle used %i/%i\n", i, dev.rx_ring.used->idx);
-
-            uint32_t desc1 = dev.rx_ring.used->ring[i].id;
-            uint32_t desc2 = 0;
-            uint32_t desc3 = 0;
-            if(!(dev.rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
-            {
-                printf("desc1 is missing the Next desc flag!\n");
-                continue;
-            }
-            desc2 = dev.rx_ring.desc[desc1].next;
-            if(!(dev.rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
-            {
-                printf("desc2 is missing the Next desc flag!\n");
-                continue;
-            }
-            desc3 = dev.rx_ring.desc[desc2].next;
-            /*if((dev.rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
-            {
-                printf("desc3 HAS the Next desc flag!\n");
-                continue;
-            }*/
-            printf("Rq addr is %u\n", dev.rx_ring.desc[desc1].addr);
-            virtio_blk_req *req = dev.headerReq;// .rx_ring.desc[desc1].addr;
-            if(req->status != VIRTIO_BLK_S_OK)
-            {
-                printf("Error status not OK\n");
-                continue;
-            }
-            if(dev.rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
-            {
-                printf("desc2' size is not VIRTIO_BLK_SECTOR_SIZE\n");
-                continue;
-            }
-            if(dev.rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
-            {
-                printf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE\n");
-                continue;
-            }
-/*            
-            for (int a=0;a<512;a++)
-            {
-                if(a%8==0)
-                    printf("\n");
-                printf(" %X ", ((uint8_t*)test_data)[a]);
-            }
-*/
-            struct ext2_superblock* sb = test_data;
-            printf("'%s'\n", sb->name);
-            printf("'%s'\n", sb->path_last_mounted_to); 
-
-            for (int j=0;j<16;j++)
-            {
-                printf("%X ", sb->fsid[j]);
-            }
-            printf("\n"); 
-
-
-        }
-        printf("Set seen used to %i (prev=%i)\n", dev.rx_ring.used->idx, dev.seen_used);
-
-        dev.seen_used = dev.rx_ring.used->idx;
+    send_cmd(&dev, 2);
 
         
-         //_driver.handle_irq_fn(_driver.driver, _driver.irq_num);
+    int i =0;
+    uint32_t desc1 = dev.rx_ring.used->ring[i].id;
+    uint32_t desc2 = 0;
+    uint32_t desc3 = 0;
+    if(!(dev.rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
+    {
+        printf("desc1 is missing the Next desc flag!\n");
+        return;
+    }
+    desc2 = dev.rx_ring.desc[desc1].next;
+    if(!(dev.rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
+    {
+        printf("desc2 is missing the Next desc flag!\n");
+        return;
+    }
+    desc3 = dev.rx_ring.desc[desc2].next;
+    /*if((dev.rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
+    {
+        printf("desc3 HAS the Next desc flag!\n");
+        continue;
+    }*/
+    printf("Rq addr is %u\n", dev.rx_ring.desc[desc1].addr);
+    virtio_blk_req *req = dev.headerReq;// .rx_ring.desc[desc1].addr;
+    if(req->status != VIRTIO_BLK_S_OK)
+    {
+        printf("Error status not OK\n");
+        return;
+    }
+    if(dev.rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
+    {
+        printf("desc2' size is not VIRTIO_BLK_SECTOR_SIZE\n");
+        return;
+    }
+    if(dev.rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
+    {
+        printf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE\n");
+        return;
     }
 
+    struct ext2_superblock* sb = test_data;
+    printf("'%s'\n", sb->name);
+    printf("'%s'\n", sb->path_last_mounted_to); 
+
+    for (int j=0;j<16;j++)
+    {
+        printf("%X ", sb->fsid[j]);
+    }
+    printf("\n"); 
 }
