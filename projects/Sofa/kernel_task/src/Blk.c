@@ -7,6 +7,9 @@
 #include "Blk.h"
 #include "Environ.h"
 
+#define VIRTIO_BLK_S_OK       0
+#define VIRTIO_BLK_S_IOERR    1
+#define VIRTIO_BLK_S_UNSUPP   2
 
 typedef struct 
 {
@@ -29,6 +32,7 @@ typedef struct
     uint8_t queueID;
     unsigned int rx_remain;
     struct vring rx_ring;
+    uint32_t seen_used;
     uintptr_t rx_ring_phys;
     void **rx_cookies;
 
@@ -152,7 +156,7 @@ static void set_features(VirtioDevice *dev, uint32_t features) {
 static int initialize_desc_ring(VirtioDevice *dev, ps_dma_man_t *dma_man) {
 
     unsigned sizeVRing = vring_size(dev->queueSize, VIRTIO_PCI_VRING_ALIGN);
-    printf("vring_size=%u\n", sizeVRing);
+
     dma_addr_t rx_ring = dma_alloc_pin(dma_man, sizeVRing, 1, VIRTIO_PCI_VRING_ALIGN);
     if (!rx_ring.phys) {
         LOG_ERROR("Failed to allocate rx_ring");
@@ -171,7 +175,7 @@ static int initialize_desc_ring(VirtioDevice *dev, ps_dma_man_t *dma_man) {
     }
     /* Remaining needs to be 2 less than size as we cannot actually enqueue size many descriptors,
      * since then the head and tail pointers would be equal, indicating empty. */
-    dev->rx_remain = dev->queueSize - 2;
+    dev->rx_remain = dev->queueSize;
 
     dev->rdh = 0;
     dev->rdt = 0;
@@ -310,6 +314,8 @@ static int raw_tx(VirtioDevice *dev, unsigned int num, uintptr_t *phys, unsigned
 }
 
 
+static void* test_data = NULL;
+
 static void send_cmd2(VirtioDevice* dev, int sector)
 {
         memset(dev->headerReq, 0, sizeof(virtio_blk_req));
@@ -319,7 +325,7 @@ static void send_cmd2(VirtioDevice* dev, int sector)
         assert(dev->hdr_phys);
 
         /* request a buffer */
-        void *cookie;
+        void *cookie = 1234;
         dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, 1024,1, dev->dma_alignment);
 
         uintptr_t phys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
@@ -328,10 +334,22 @@ static void send_cmd2(VirtioDevice* dev, int sector)
             assert(0);
             return;
         }
+        memset(dma_data.virt, 0, 1024);
+        test_data = dma_data.virt;
+        assert(phys % dev->dma_alignment == 0);
+
+        uintptr_t footerPhys = phys + 512;
+        if(footerPhys % dev->dma_alignment !=0)
+        {
+            footerPhys += dev->dma_alignment - footerPhys % dev->dma_alignment;
+        }
+
+        assert(footerPhys % dev->dma_alignment == 0);
+
         unsigned int rdt_data = (dev->rdt + 1) % dev->queueSize;
         unsigned int rdt_footer = (dev->rdt + 2) % dev->queueSize;
 
-        printf("%i %i %i\n", dev->rdt, rdt_data, rdt_footer);
+        printf("rdt=%i rdt_data=%i rdt_footer=%i\n", dev->rdt, rdt_data, rdt_footer);
 
         dev->rx_ring.desc[dev->rdt] = (struct vring_desc) {
             .addr = dev->hdr_phys,
@@ -344,13 +362,13 @@ static void send_cmd2(VirtioDevice* dev, int sector)
         dev->rx_ring.desc[rdt_data] = (struct vring_desc) {
             .addr = phys,
             .len = 512,
-            .flags = VRING_DESC_F_NEXT |VRING_DESC_F_WRITE,
+            .flags = VRING_DESC_F_NEXT | VRING_DESC_F_WRITE,
             .next = rdt_footer
         };
 
         dev->rx_cookies[rdt_footer] = cookie;
         dev->rx_ring.desc[rdt_footer] = (struct vring_desc) {
-            .addr = phys + VIRTIO_BLK_REQ_HEADER_SIZE,
+            .addr = footerPhys,
             .len = 1,
             .flags = VRING_DESC_F_WRITE,
             .next = 0
@@ -359,11 +377,14 @@ static void send_cmd2(VirtioDevice* dev, int sector)
 
         dev->rx_ring.avail->ring[dev->rx_ring.avail->idx % dev->queueSize] = dev->rdt;
         asm volatile("sfence" ::: "memory");
-        dev->rx_ring.avail->idx+3;
+        dev->rx_ring.avail->idx += 3;
         asm volatile("sfence" ::: "memory");
+        assert(dev->queueID == 0);
         write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
         dev->rdt = (dev->rdt + 3) % dev->queueSize;
         dev->rx_remain-=3;
+
+        printf("After send idx=%i remain=%i rdt=%i\n", dev->rx_ring.avail->idx, dev->rx_remain, dev->rdt);
 }
 
 static void send_cmd(VirtioDevice* dev)
@@ -413,30 +434,8 @@ void BlkInit(uint32_t iobase)
 
     uint32_t feats = get_features(&dev);
 
-#define VIRTIO_F_VERSION_1              1 << 32
-#define VIRTIO_F_RING_EVENT_IDX         1<<29
-
-    printf("BEFORE Features %X\n", feats);
-    if(!(feats & VIRTIO_F_VERSION_1))
-    {
-        printf("VIRTIO_F_VERSION_1 NOT PRESENT\n");
-    }
-
-    if(!(feats & VIRTIO_F_RING_EVENT_IDX))
-    {
-        printf("VIRTIO_F_RING_EVENT_IDX NOT PRESENT\n");
-    }
-    else
-    {
-        printf("VIRTIO_F_RING_EVENT_IDX set\n");
-    }
-    printf("feats 1 %X\n", feats);
-    //feats &= ~(VIRTIO_F_RING_EVENT_IDX);
-    printf("feats 2 %X\n", feats);
     set_features(&dev, feats);
 
-    feats = get_features(&dev);
-    printf("AFTER Features %X\n", feats);
 
 
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
@@ -452,44 +451,9 @@ void BlkInit(uint32_t iobase)
 	}
 
 
-#define VIRTIO_F_VERSION_1              1 << 32
-#define VIRTIO_F_RING_EVENT_IDX         1<<29
-
-    printf("BEFORE Features %X\n", feats);
-    if(!(feats & VIRTIO_F_VERSION_1))
-    {
-        printf("VIRTIO_F_VERSION_1 NOT PRESENT\n");
-    }
-
-    if(!(feats & VIRTIO_F_RING_EVENT_IDX))
-    {
-        printf("VIRTIO_F_RING_EVENT_IDX NOT PRESENT\n");
-    }
-    else
-    {
-        printf("VIRTIO_F_RING_EVENT_IDX set\n");
-    }
-    printf("feats 1 %X\n", feats);
-    //feats &= ~(VIRTIO_F_RING_EVENT_IDX);
-    printf("feats 2 %X\n", feats);
-    set_features(&dev, feats);
-
-    feats = get_features(&dev);
-    printf("AFTER Features %X\n", feats);
-
 
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
     asm volatile("mfence" ::: "memory");
-    if(!(get_status(&dev) & VIRTIO_CONFIG_S_DRIVER_FEATURES_OK))
-	{
-		printf("HOST REFUSED OUR FEATURES\n");
-        assert(0);
-    }
-	else
-	{
-		printf("HOST is ok with our features\n");
-	}
-
 
     uint32_t totSectorCount = read_reg32(&dev, 0x14);
     uint8_t maxSegSize      =  read_reg8(&dev, 0x1C);
@@ -549,6 +513,9 @@ void BlkInit(uint32_t iobase)
 
     assert(dev.rx_ring_phys);
     /* write the virtqueue locations */
+
+    assert(dev.rx_ring_phys % 4096 == 0);
+
     write_reg16(&dev, VIRTIO_PCI_QUEUE_SEL, 0);
     write_reg32(&dev, VIRTIO_PCI_QUEUE_PFN, ((uintptr_t)dev.rx_ring_phys) / 4096);
 
@@ -568,10 +535,12 @@ void BlkInit(uint32_t iobase)
 	{
 		printf("Dev good to go\n");
 	}
+    dev.seen_used = 0;
+    printf("BEFORE SEND  used/idx=%i\n", dev.rx_ring.used->idx);
 
     for (int i=0;i<1;i++)
     {
-        send_cmd2(&dev, i);
+        send_cmd2(&dev, 2);
     }
     int irq_num = 11;
 
@@ -597,18 +566,86 @@ void BlkInit(uint32_t iobase)
 
     printf("<== End Init Blk virtio storage\n");
 
+    printf("AFTER SEND remain %i used/idx=%i %i\n", dev.rx_remain, dev.rx_ring.used->idx, dev.rx_ring.num);
 
-    printf("BEFORE SEND remain %i\n", dev.rx_remain);
-
-    //seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
-    //seL4_Send(irq_aep, msg);
+    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
+    seL4_Send(irq_aep, msg);
 
     while(1)
     {
 	    seL4_Wait(irq_aep,NULL);
+        printf("IRQ\n");
         seL4_IRQHandler_Ack(irq);
         uint8_t isr = read_reg8(&dev, VIRTIO_PCI_ISR);
         printf("blk irq ISR %u remain %i\n", isr, dev.rx_remain);
+
+#define wrap(x, len) ((x) & ~(len))
+        int len = dev.rx_ring.num;// virtq->len;
+        //for (int i = dev.seen_used; i != dev.rx_ring.used->idx; i = wrap(i + 1, len)) 
+	    int i = dev.seen_used;
+        {
+            printf("handle used %i/%i\n", i, dev.rx_ring.used->idx);
+
+            uint32_t desc1 = dev.rx_ring.used->ring[i].id;
+            uint32_t desc2 = 0;
+            uint32_t desc3 = 0;
+            if(!(dev.rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
+            {
+                printf("desc1 is missing the Next desc flag!\n");
+                continue;
+            }
+            desc2 = dev.rx_ring.desc[desc1].next;
+            if(!(dev.rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
+            {
+                printf("desc2 is missing the Next desc flag!\n");
+                continue;
+            }
+            desc3 = dev.rx_ring.desc[desc2].next;
+            /*if((dev.rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
+            {
+                printf("desc3 HAS the Next desc flag!\n");
+                continue;
+            }*/
+            printf("Rq addr is %u\n", dev.rx_ring.desc[desc1].addr);
+            virtio_blk_req *req = dev.headerReq;// .rx_ring.desc[desc1].addr;
+            if(req->status != VIRTIO_BLK_S_OK)
+            {
+                printf("Error status not OK\n");
+                continue;
+            }
+            if(dev.rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
+            {
+                printf("desc2' size is not VIRTIO_BLK_SECTOR_SIZE\n");
+                continue;
+            }
+            if(dev.rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
+            {
+                printf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE\n");
+                continue;
+            }
+/*            
+            for (int a=0;a<512;a++)
+            {
+                if(a%8==0)
+                    printf("\n");
+                printf(" %X ", ((uint8_t*)test_data)[a]);
+            }
+*/
+            struct ext2_superblock* sb = test_data;
+            printf("'%s'\n", sb->name);
+            printf("'%s'\n", sb->path_last_mounted_to); 
+
+            for (int j=0;j<16;j++)
+            {
+                printf("%X ", sb->fsid[j]);
+            }
+            printf("\n"); 
+
+
+        }
+        printf("Set seen used to %i (prev=%i)\n", dev.rx_ring.used->idx, dev.seen_used);
+
+        dev.seen_used = dev.rx_ring.used->idx;
 
         
          //_driver.handle_irq_fn(_driver.driver, _driver.irq_num);
