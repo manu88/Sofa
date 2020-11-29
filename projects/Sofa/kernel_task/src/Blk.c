@@ -6,6 +6,7 @@
 #include <ethdrivers/helpers.h>
 #include "Blk.h"
 #include "Environ.h"
+#include "DeviceTree.h"
 
 #define VIRTIO_BLK_S_OK       0
 #define VIRTIO_BLK_S_IOERR    1
@@ -97,6 +98,8 @@ typedef struct
 // This is X86_64 specific!
 #define DMA_ALIGN 128
 
+
+static IODevice _blk = IODeviceInit("virtio-pci-blk", IODevice_BlockDev);
 
 static void write_reg8(VirtioDevice *dev, uint16_t port, uint8_t val) 
 {
@@ -368,7 +371,7 @@ void BlkInit(uint32_t iobase)
     
     printf("Dev status %u\n", get_status(&dev));
 
-
+    DeviceTreeAddDevice(&_blk);
 
     if(!(get_status(&dev) & VIRTIO_CONFIG_S_DRIVER_OK))
 	{

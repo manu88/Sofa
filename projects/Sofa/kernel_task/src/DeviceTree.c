@@ -10,7 +10,6 @@
 
 #include "Net.h"
 #include "Blk.h"
-#include "Virtio.h"
 
 
 static IODevice *_deviceList = NULL;

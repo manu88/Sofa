@@ -6,6 +6,7 @@ typedef enum
 {
     IODevice_Unknown = 0,
     IODevice_Net,
+    IODevice_BlockDev,
 
 } IODeviceType;
 
@@ -18,7 +19,7 @@ typedef struct _IODevice
     struct _IODevice *next;
     struct _IODevice *prev;
 
-} IODevice;
+}IODevice;
 
 
 #define IODeviceInit(name_, type_) {.name = name_ ,.type = type_}
