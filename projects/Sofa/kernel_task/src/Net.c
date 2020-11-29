@@ -6,7 +6,9 @@
 #include "Environ.h"
 #include "Net.h"
 #include <sel4utils/thread.h>
+#include "DeviceTree.h"
 
+IODevice _netDevice = IODeviceInit("Virtio-pci", IODevice_Net);
 
 static int
 native_ethdriver_init(
@@ -137,6 +139,8 @@ void NetInit(uint32_t iobase0)
     error = sel4utils_start_thread(&netThread , threadStart , irq_aep , irq , 1);
     assert(error == 0);
 
+    DeviceTreeAddDevice(&_netDevice);
+
     printf("<----NetInit\n");
 
 }
@@ -148,8 +152,8 @@ static void threadStart(void *arg0, void *arg1, void *ipc_buf)
     int irq = (int) arg1;
 
     
-    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
-    seL4_Send(irq_aep, msg);
+    //seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
+    //seL4_Send(irq_aep, msg);
 
 
     while(1)

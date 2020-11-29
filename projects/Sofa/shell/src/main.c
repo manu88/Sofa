@@ -163,6 +163,10 @@ void processCommand(const char* cmd)
     {
         SFDebug(SofaDebugCode_DumpSched);
     }
+    else if(startsWith("dev", cmd))
+    {
+        SFDebug(SofaDebugCode_ListDevices);
+    }
     else
     {
         SFPrintf("Unknown command '%s'\n", cmd);

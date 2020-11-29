@@ -3,11 +3,27 @@
 #include <AMLDecompiler.h>
 #include "DeviceTree.h"
 #include "Environ.h"
-#include "Net.h"
+
 #include <pci/pci.h>
 #include <ctype.h>
 
 
+#include "Net.h"
+#include "Blk.h"
+
+
+static IODevice *_deviceList = NULL;
+
+IODevice* DeviceTreeGetDevices()
+{
+    return _deviceList;
+}
+
+int DeviceTreeAddDevice( IODevice* dev)
+{
+    DL_APPEND(_deviceList, dev);
+    return 0;
+}
 
 static int _startDevice(AMLDecompiler* decomp,const ParserContext* context, const ACPIDevice* dev)
 {
@@ -184,16 +200,34 @@ int DeviceTreeInit()
 
     printf("Got %u pci devices\n", libpci_num_devices);
 
-    //vid 0x1af4 did 0x1000
-    libpci_device_t *virtioDev = libpci_find_device(0x1af4, 0x1000);
-
-    if(virtioDev)
+//Storage virtio 
+    libpci_device_t *virtioBlkDev = libpci_find_device(0x1af4, 0x1001);
+    if(virtioBlkDev)
     {
-        printf("Got Virtio device '%s' from '%s' subsystem %i\n", virtioDev->vendor_name, virtioDev->device_name, virtioDev->subsystem_id);
-        if(virtioDev->subsystem_id == 1) // network card
+        printf("Got Virtio Blk device '%s' from '%s' subsystem %i\n", virtioBlkDev->vendor_name, virtioBlkDev->device_name, virtioBlkDev->subsystem_id);
+
+        if(virtioBlkDev->subsystem_id == 2)
         {
             libpci_device_iocfg_t iocfg;
-            libpci_read_ioconfig(&iocfg, virtioDev->bus, virtioDev->dev, virtioDev->fun);
+            libpci_read_ioconfig(&iocfg, virtioBlkDev->bus, virtioBlkDev->dev, virtioBlkDev->fun);
+            libpci_device_iocfg_debug_print(&iocfg, false);
+            uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
+
+            BlkInit(iobase0);
+            //virtio_blk_init(iobase0);
+        }
+    }
+
+//NET virtio: vid 0x1af4 did 0x1000
+    libpci_device_t *virtioNetDev = libpci_find_device(0x1af4, 0x1000);
+
+    if(virtioNetDev)
+    {
+        printf("Got Virtio Net device '%s' from '%s' subsystem %i\n", virtioNetDev->vendor_name, virtioNetDev->device_name, virtioNetDev->subsystem_id);
+        if(virtioNetDev->subsystem_id == 1) // network card
+        {
+            libpci_device_iocfg_t iocfg;
+            libpci_read_ioconfig(&iocfg, virtioNetDev->bus, virtioNetDev->dev, virtioNetDev->fun);
             libpci_device_iocfg_debug_print(&iocfg, false);
             uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
             printf("IOBASE0 is %X\n", iobase0);
@@ -201,7 +235,7 @@ int DeviceTreeInit()
         }
         else
         {
-            printf("Virtio device subsystem is %i\n", virtioDev->subsystem_id);
+            printf("Virtio device subsystem is %i\n", virtioNetDev->subsystem_id);
         }
     }
 
