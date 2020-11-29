@@ -13,6 +13,19 @@
 #include "Virtio.h"
 
 
+static IODevice *_deviceList = NULL;
+
+IODevice* DeviceTreeGetDevices()
+{
+    return _deviceList;
+}
+
+int DeviceTreeAddDevice( IODevice* dev)
+{
+    DL_APPEND(_deviceList, dev);
+    return 0;
+}
+
 static int _startDevice(AMLDecompiler* decomp,const ParserContext* context, const ACPIDevice* dev)
 {
     char* realName  = AMLNameConstructNormalized(&dev->name);

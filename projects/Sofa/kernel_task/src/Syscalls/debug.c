@@ -4,6 +4,7 @@
 #include "../utils.h"
 #include "../Panic.h"
 #include "../NameServer.h"
+#include "../DeviceTree.h"
 
 static char getProcessStateStr(ProcessState s)
 {
@@ -29,6 +30,16 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
     {
     case SofaDebugCode_DumpSched:
         seL4_DebugDumpScheduler();
+        break;
+    case SofaDebugCode_ListDevices:
+    {
+        IODevice* dev = NULL;
+        printf("Start device list\n");
+        FOR_EACH_DEVICE(dev)
+        {
+            printf("'%s' type %i\n", dev->name, dev->type);
+        }
+    }    
         break;
     case SofaDebugCode_ListServices:
     {
