@@ -3,10 +3,10 @@
 #include <ethdrivers/virtio_pci.h>
 #include <netif/etharp.h>
 #include <lwip/udp.h>
-#include "../Environ.h"
+#include "Environ.h"
 #include "Net.h"
 #include <sel4utils/thread.h>
-#include "../DeviceTree.h"
+#include "DeviceTree.h"
 
 IODevice _netDevice = IODeviceInit("Virtio-pci", IODevice_Net);
 

@@ -55,7 +55,7 @@
 #include "Allocator.h"
 #include "Timer.h"
 #include "Serial.h"
-#include "DeviceTree.h"
+#include "DeviceKit/DeviceTree.h"
 #include "NameServer.h"
 #include <sel4platsupport/arch/io.h>
 
