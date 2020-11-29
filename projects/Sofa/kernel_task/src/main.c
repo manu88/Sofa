@@ -54,7 +54,7 @@
 #include "Syscalls/SyscallTable.h"
 #include "Allocator.h"
 #include "Timer.h"
-#include "Serial.h"
+#include "Drivers/Serial.h"
 #include "DeviceKit/DeviceTree.h"
 #include "NameServer.h"
 #include <sel4platsupport/arch/io.h>

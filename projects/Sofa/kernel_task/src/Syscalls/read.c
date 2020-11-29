@@ -1,6 +1,6 @@
 #include "SyscallTable.h"
 #include "../utils.h"
-#include "../Serial.h"
+#include "Serial.h"
 #include <platsupport/time_manager.h>
 #include <Sofa.h>
 
