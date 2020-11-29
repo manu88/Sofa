@@ -8,8 +8,8 @@
 #include <ctype.h>
 
 
-#include "Net.h"
-#include "Blk.h"
+#include "Drivers/Net.h"
+#include "Drivers/Blk.h"
 
 
 static IODevice *_deviceList = NULL;

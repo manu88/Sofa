@@ -1,10 +1,10 @@
 #include <Sofa.h>
 #include "SyscallTable.h"
-#include "../testtypes.h"
-#include "../utils.h"
-#include "../Panic.h"
-#include "../NameServer.h"
-#include "../DeviceTree.h"
+#include "testtypes.h"
+#include "utils.h"
+#include "Panic.h"
+#include "NameServer.h"
+#include "DeviceTree.h"
 
 static char getProcessStateStr(ProcessState s)
 {
