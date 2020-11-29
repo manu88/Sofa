@@ -190,17 +190,20 @@ int DeviceTreeInit()
 
 //Storage virtio 
     libpci_device_t *virtioBlkDev = libpci_find_device(0x1af4, 0x1001);
-    printf("Got Virtio Blk device '%s' from '%s' subsystem %i\n", virtioBlkDev->vendor_name, virtioBlkDev->device_name, virtioBlkDev->subsystem_id);
-
-    if(virtioBlkDev->subsystem_id == 2)
+    if(virtioBlkDev)
     {
-        libpci_device_iocfg_t iocfg;
-        libpci_read_ioconfig(&iocfg, virtioBlkDev->bus, virtioBlkDev->dev, virtioBlkDev->fun);
-        libpci_device_iocfg_debug_print(&iocfg, false);
-        uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
+        printf("Got Virtio Blk device '%s' from '%s' subsystem %i\n", virtioBlkDev->vendor_name, virtioBlkDev->device_name, virtioBlkDev->subsystem_id);
 
-        BlkInit(iobase0);
-        //virtio_blk_init(iobase0);
+        if(virtioBlkDev->subsystem_id == 2)
+        {
+            libpci_device_iocfg_t iocfg;
+            libpci_read_ioconfig(&iocfg, virtioBlkDev->bus, virtioBlkDev->dev, virtioBlkDev->fun);
+            libpci_device_iocfg_debug_print(&iocfg, false);
+            uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
+
+            BlkInit(iobase0);
+            //virtio_blk_init(iobase0);
+        }
     }
 
 //NET virtio: vid 0x1af4 did 0x1000
@@ -216,7 +219,7 @@ int DeviceTreeInit()
             libpci_device_iocfg_debug_print(&iocfg, false);
             uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
             printf("IOBASE0 is %X\n", iobase0);
-            //NetInit(iobase0);
+            NetInit(iobase0);
         }
         else
         {
