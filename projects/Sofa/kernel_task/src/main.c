@@ -58,6 +58,7 @@
 #include "DeviceKit/DeviceTree.h"
 #include "NameServer.h"
 #include <sel4platsupport/arch/io.h>
+#include "VFS.h"
 
 
 
@@ -173,7 +174,6 @@ void *main_continued(void *arg UNUSED)
     error = NameServerInit();
     assert(error == 0);
 
-
     error = IOInit();
     assert(error == 0);
 
@@ -182,6 +182,20 @@ void *main_continued(void *arg UNUSED)
 
     error = SerialInit();
     assert(error == 0);
+
+
+    error = VFSInit();
+    assert(error == 0);
+
+    IODevice* dev = NULL;
+    FOR_EACH_DEVICE(dev)
+    {
+        if(dev->type == IODevice_BlockDev)
+        {
+            VFSAddDEvice(dev);
+        }
+    }
+
 
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init", NULL);
