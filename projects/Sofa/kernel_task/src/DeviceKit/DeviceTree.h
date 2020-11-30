@@ -1,28 +1,7 @@
 #pragma once
-#include "utlist.h"
 
+#include "IODevice.h"
 
-typedef enum
-{
-    IODevice_Unknown = 0,
-    IODevice_Net,
-    IODevice_BlockDev,
-
-} IODeviceType;
-
-typedef struct _IODevice
-{
-    char* name;
-
-    IODeviceType type;
-
-    struct _IODevice *next;
-    struct _IODevice *prev;
-
-}IODevice;
-
-
-#define IODeviceInit(name_, type_) {.name = name_ ,.type = type_}
 
 
 int DeviceTreeInit(void);
