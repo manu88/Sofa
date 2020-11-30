@@ -7,6 +7,7 @@
 #include "Blk.h"
 #include "Environ.h"
 #include "DeviceTree.h"
+#include "ext2.h"
 
 #define VIRTIO_BLK_S_OK       0
 #define VIRTIO_BLK_S_IOERR    1
