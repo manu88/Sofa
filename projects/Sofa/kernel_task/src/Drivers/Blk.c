@@ -100,7 +100,22 @@ typedef struct
 #define DMA_ALIGN 128
 
 
-static IODevice _blk = IODeviceInit("virtio-pci-blk", IODevice_BlockDev);
+static ssize_t _blkRead(struct _IODevice* dev, size_t sector, char* buf, size_t bufSize);
+
+
+static IODeviceOperations blkOps = 
+{
+    .read = _blkRead,
+    .write = NULL
+};
+
+
+VirtioDevice dev;
+
+
+static IODevice _blk = IODeviceInit("virtio-pci-blk", IODevice_BlockDev, &blkOps);
+
+
 
 static void write_reg8(VirtioDevice *dev, uint16_t port, uint8_t val) 
 {
@@ -189,85 +204,222 @@ static int initialize_desc_ring(VirtioDevice *dev, ps_dma_man_t *dma_man) {
 }
 
 
+static ssize_t _blkRead(struct _IODevice* device, size_t sector, char* buf, size_t bufSize)
+{
+    if (bufSize > VIRTIO_BLK_SECTOR_SIZE)
+    {
+        printf("[BLK] Warning: read only supported for 1 sector max (ie 512). setting bufSize to 512 ");
+        bufSize = VIRTIO_BLK_SECTOR_SIZE; // FIXME only one sector for now
+    }
+
+
+    VirtioDevice *dev = device->impl;
+    assert(dev);
+
+    memset(dev->headerReq, 0, sizeof(virtio_blk_req));
+    dev->headerReq->type == VIRTIO_BLK_T_IN; 
+    dev->headerReq->sector = sector;
+
+    assert(dev->hdr_phys);
+
+
+    /* request a buffer */
+    void *cookie = 1234;
+    dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, bufSize,1, dev->dma_alignment);
+
+    uintptr_t phys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
+    if (!phys) 
+    {
+        assert(0);
+        return;
+    }
+    memset(dma_data.virt, 0, bufSize);
+
+    assert(phys % dev->dma_alignment == 0);
+
+    uintptr_t footerPhys = dev->hdr_phys + VIRTIO_BLK_REQ_HEADER_SIZE;
+    if(footerPhys % dev->dma_alignment !=0)
+    {
+        footerPhys += dev->dma_alignment - footerPhys % dev->dma_alignment;
+    }
+
+    assert(footerPhys % dev->dma_alignment == 0);
+
+    unsigned int rdt_data = (dev->rdt + 1) % dev->queueSize;
+    unsigned int rdt_footer = (dev->rdt + 2) % dev->queueSize;
+
+
+        dev->rx_ring.desc[dev->rdt] = (struct vring_desc) {
+        .addr = dev->hdr_phys,
+        .len = VIRTIO_BLK_REQ_HEADER_SIZE,
+        .flags = VRING_DESC_F_NEXT,
+        .next = rdt_data
+    };
+
+    dev->rx_cookies[rdt_data] = cookie;
+    dev->rx_ring.desc[rdt_data] = (struct vring_desc) {
+        .addr = phys,
+        .len = VIRTIO_BLK_SECTOR_SIZE,
+        .flags = VRING_DESC_F_NEXT | VRING_DESC_F_WRITE,
+        .next = rdt_footer
+    };
+
+    dev->rx_cookies[rdt_footer] = cookie;
+    dev->rx_ring.desc[rdt_footer] = (struct vring_desc) {
+        .addr = footerPhys,
+        .len = 1,
+        .flags = VRING_DESC_F_WRITE,
+        .next = 0
+    };
+
+
+    dev->rx_ring.avail->ring[dev->rx_ring.avail->idx % dev->queueSize] = dev->rdt;
+    asm volatile("sfence" ::: "memory");
+    dev->rx_ring.avail->idx += 3;
+    asm volatile("sfence" ::: "memory");
+    assert(dev->queueID == 0);
+    write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
+    dev->rdt = (dev->rdt + 3) % dev->queueSize;
+    dev->rx_remain-=3;
+
+    printf("After send idx=%i remain=%i rdt=%i\n", dev->rx_ring.avail->idx, dev->rx_remain, dev->rdt);
+
+    // RECEIVE PART
+    int i =0;
+    uint32_t desc1 = dev->rx_ring.used->ring[i].id;
+    uint32_t desc2 = 0;
+    uint32_t desc3 = 0;
+    if(!(dev->rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
+    {
+        printf("desc1 is missing the Next desc flag!\n");
+        dma_unpin_free(&dev->dma_man, dma_data.virt, bufSize);
+        return -1;
+    }
+    desc2 = dev->rx_ring.desc[desc1].next;
+    if(!(dev->rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
+    {
+        printf("desc2 is missing the Next desc flag!\n");
+        dma_unpin_free(&dev->dma_man, dma_data.virt, bufSize);        
+        return -1;
+    }
+    desc3 = dev->rx_ring.desc[desc2].next;
+    /*if((dev.rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
+    {
+        printf("desc3 HAS the Next desc flag!\n");
+        continue;
+    }*/
+    printf("Rq addr is %u\n", dev->rx_ring.desc[desc1].addr);
+    virtio_blk_req *req = dev->headerReq;// .rx_ring.desc[desc1].addr;
+    if(req->status != VIRTIO_BLK_S_OK)
+    {
+        printf("Error status not OK\n");
+        dma_unpin_free(&dev->dma_man, dma_data.virt, bufSize);        
+        return -1;
+    }
+    if(dev->rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
+    {
+        printf("desc2' size is not VIRTIO_BLK_SECTOR_SIZE\n");
+        dma_unpin_free(&dev->dma_man, dma_data.virt, bufSize);        
+        return -1;
+    }
+    if(dev->rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
+    {
+        printf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE\n");
+        dma_unpin_free(&dev->dma_man, dma_data.virt, bufSize);        
+        return -1;
+    }
+
+
+    printf("READ OK\n");
+    memcpy(buf, dma_data.virt, bufSize);
+
+    dma_unpin_free(&dev->dma_man, dma_data.virt, bufSize);        
+
+    return bufSize;
+}
+
 static void* test_data = NULL;
 
 static void send_cmd(VirtioDevice* dev, int sector)
 {
-        memset(dev->headerReq, 0, sizeof(virtio_blk_req));
-        dev->headerReq->type == VIRTIO_BLK_T_IN; 
-        dev->headerReq->sector = sector;
+    memset(dev->headerReq, 0, sizeof(virtio_blk_req));
+    dev->headerReq->type == VIRTIO_BLK_T_IN; 
+    dev->headerReq->sector = sector;
 
-        assert(dev->hdr_phys);
+    assert(dev->hdr_phys);
 
-        /* request a buffer */
-        void *cookie = 1234;
-        dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, 1024,1, dev->dma_alignment);
+    /* request a buffer */
+    void *cookie = 1234;
+    dma_addr_t dma_data = dma_alloc_pin(&dev->dma_man, 512,1, dev->dma_alignment);
 
-        uintptr_t phys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
-        if (!phys) 
-        {
-            assert(0);
-            return;
-        }
-        memset(dma_data.virt, 0, 1024);
-        test_data = dma_data.virt;
-        assert(phys % dev->dma_alignment == 0);
+    uintptr_t phys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
+    if (!phys) 
+    {
+        assert(0);
+        return;
+    }
+    memset(dma_data.virt, 0, 1024);
+    test_data = dma_data.virt;
+    assert(phys % dev->dma_alignment == 0);
 
-        uintptr_t footerPhys = phys + 512;
-        if(footerPhys % dev->dma_alignment !=0)
-        {
-            footerPhys += dev->dma_alignment - footerPhys % dev->dma_alignment;
-        }
+    uintptr_t footerPhys = dev->hdr_phys + VIRTIO_BLK_REQ_HEADER_SIZE;
+    if(footerPhys % dev->dma_alignment !=0)
+    {
+        footerPhys += dev->dma_alignment - footerPhys % dev->dma_alignment;
+    }
 
-        assert(footerPhys % dev->dma_alignment == 0);
+    assert(footerPhys % dev->dma_alignment == 0);
 
-        unsigned int rdt_data = (dev->rdt + 1) % dev->queueSize;
-        unsigned int rdt_footer = (dev->rdt + 2) % dev->queueSize;
+    unsigned int rdt_data = (dev->rdt + 1) % dev->queueSize;
+    unsigned int rdt_footer = (dev->rdt + 2) % dev->queueSize;
 
-        printf("rdt=%i rdt_data=%i rdt_footer=%i\n", dev->rdt, rdt_data, rdt_footer);
+    printf("rdt=%i rdt_data=%i rdt_footer=%i\n", dev->rdt, rdt_data, rdt_footer);
 
-        dev->rx_ring.desc[dev->rdt] = (struct vring_desc) {
-            .addr = dev->hdr_phys,
-            .len = VIRTIO_BLK_REQ_HEADER_SIZE,
-            .flags = VRING_DESC_F_NEXT,
-            .next = rdt_data
-        };
+    dev->rx_ring.desc[dev->rdt] = (struct vring_desc) {
+        .addr = dev->hdr_phys,
+        .len = VIRTIO_BLK_REQ_HEADER_SIZE,
+        .flags = VRING_DESC_F_NEXT,
+        .next = rdt_data
+    };
 
-        dev->rx_cookies[rdt_data] = cookie;
-        dev->rx_ring.desc[rdt_data] = (struct vring_desc) {
-            .addr = phys,
-            .len = 512,
-            .flags = VRING_DESC_F_NEXT | VRING_DESC_F_WRITE,
-            .next = rdt_footer
-        };
+    dev->rx_cookies[rdt_data] = cookie;
+    dev->rx_ring.desc[rdt_data] = (struct vring_desc) {
+        .addr = phys,
+        .len = 512,
+        .flags = VRING_DESC_F_NEXT | VRING_DESC_F_WRITE,
+        .next = rdt_footer
+    };
 
-        dev->rx_cookies[rdt_footer] = cookie;
-        dev->rx_ring.desc[rdt_footer] = (struct vring_desc) {
-            .addr = footerPhys,
-            .len = 1,
-            .flags = VRING_DESC_F_WRITE,
-            .next = 0
-        };
+    dev->rx_cookies[rdt_footer] = cookie;
+    dev->rx_ring.desc[rdt_footer] = (struct vring_desc) {
+        .addr = footerPhys,
+        .len = 1,
+        .flags = VRING_DESC_F_WRITE,
+        .next = 0
+    };
 
 
-        dev->rx_ring.avail->ring[dev->rx_ring.avail->idx % dev->queueSize] = dev->rdt;
-        asm volatile("sfence" ::: "memory");
-        dev->rx_ring.avail->idx += 3;
-        asm volatile("sfence" ::: "memory");
-        assert(dev->queueID == 0);
-        write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
-        dev->rdt = (dev->rdt + 3) % dev->queueSize;
-        dev->rx_remain-=3;
+    dev->rx_ring.avail->ring[dev->rx_ring.avail->idx % dev->queueSize] = dev->rdt;
+    asm volatile("sfence" ::: "memory");
+    dev->rx_ring.avail->idx += 3;
+    asm volatile("sfence" ::: "memory");
+    assert(dev->queueID == 0);
+    write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
+    dev->rdt = (dev->rdt + 3) % dev->queueSize;
+    dev->rx_remain-=3;
 
-        printf("After send idx=%i remain=%i rdt=%i\n", dev->rx_ring.avail->idx, dev->rx_remain, dev->rdt);
+    printf("After send idx=%i remain=%i rdt=%i\n", dev->rx_ring.avail->idx, dev->rx_remain, dev->rdt);
+    printf("HELLO?\n");
+
+
 }
 
-void BlkInit(uint32_t iobase)
+int BlkInit(uint32_t iobase)
 {
     printf("==> Init Blk virtio storage\n");
     KernelTaskContext* env = getKernelTaskContext();
 
-    VirtioDevice dev;
+    _blk.impl = &dev;
     dev.iobase = iobase;
     dev.ioops = env->ops.io_port_ops;
 
@@ -340,13 +492,6 @@ void BlkInit(uint32_t iobase)
     int err = initialize_desc_ring(&dev, &env->ops.dma_manager);
     assert(err == 0);
 
-#if 0
-    printf("Init free buffers\n");
-    err = initialize_free_bufs(&dev);
-    assert(err == 0);
-    printf("Init free buffers OK\n");
-#endif
-    printf("%zi %zi\n", sizeof(virtio_blk_req), VIRTIO_BLK_REQ_HEADER_SIZE);
     dma_addr_t packet = dma_alloc_pin(&env->ops.dma_manager, sizeof(virtio_blk_req), 1, DMA_ALIGN);
     if (!packet.virt) 
     {
@@ -384,6 +529,8 @@ void BlkInit(uint32_t iobase)
 		printf("Dev good to go\n");
 	}
 
+    return 0;
+#if 0
     send_cmd(&dev, 2);
 
         
@@ -435,4 +582,5 @@ void BlkInit(uint32_t iobase)
         printf("%X ", sb->fsid[j]);
     }
     printf("\n"); 
+#endif
 }
