@@ -14,7 +14,7 @@ typedef enum
 struct _IODevice;
 
 typedef ssize_t (*ReadDevice)(struct _IODevice* dev, size_t sector, char* buf, size_t bufSize);
-typedef ssize_t (*WriteDevice)(struct _IODevice* dev, const char* buf, size_t bufSize);
+typedef ssize_t (*WriteDevice)(struct _IODevice* dev, size_t sector, const char* buf, size_t bufSize);
 
 typedef struct
 {
@@ -42,5 +42,5 @@ typedef struct _IODevice
 #define IODeviceInit(name_, type_, ops_) {.name = name_ ,.type = type_, .ops = ops_ }
 
 ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize);
-
+ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize);
 

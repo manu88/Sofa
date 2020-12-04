@@ -8,7 +8,7 @@
 #include <sel4utils/thread.h>
 #include "DeviceTree.h"
 
-IODevice _netDevice = IODeviceInit("Virtio-pci", IODevice_Net, NULL);
+IODevice _netDevice = IODeviceInit("Virtio-net-pci", IODevice_Net, NULL);
 
 static int
 native_ethdriver_init(
