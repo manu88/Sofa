@@ -38,10 +38,15 @@ static void testBlk(IODevice* dev, int sector)
 static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
 {
     assert(fsType);
-    ext2_superblock_t sb;
 
-    ssize_t ret = IODeviceRead(dev, 2, &sb, sizeof(ext2_superblock_t));
-    printf("Superblock size %zi\n" ,sizeof(ext2_superblock_t));
+
+    ext2_probe(dev);
+    ext2_mount(dev, NULL);
+    return -1;
+    superblock_t sb;
+
+    ssize_t ret = IODeviceRead(dev, 2, &sb, sizeof(superblock_t));
+    printf("Superblock size %zi\n" ,sizeof(superblock_t));
     if(ret <=0)
     {
         printf("UNable to read super block on device '%s' error = %i\n", dev->name, ret);
@@ -92,15 +97,16 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
     }
     *fsType = VFSSupported_EXT2;
 
-    uint32_t block_bgdt = sb.superblock_id + (sizeof(ext2_superblock_t) / blocksize);
-    printf("block_bgdt %u\n", block_bgdt);
+    uint32_t block_bgdt = sb.superblock_id + (sizeof(superblock_t) / blocksize);
 
     uint8_t buff[512];
     const uint32_t block_bgdt_sector = sectorPerBlock * (block_bgdt+1);
+    printf("block_bgdt %u sector %u\n", block_bgdt, block_bgdt_sector);
+
     ret = IODeviceRead(dev, block_bgdt_sector, &buff, 512);
 
     printf("ret for bgdt %zi\n", ret);
-    ext2_block_group_desc_t *bgdt = buff;
+    block_group_desc_t *bgdt = buff;
     printf("Starting block addr %zi \n", bgdt->block_of_inode_table);
     printf("Num of dirs %i\n", bgdt->num_of_dirs);
 
