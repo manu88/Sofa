@@ -167,6 +167,10 @@ uint32_t ext2_get_inode_block(uint32_t inode, uint32_t *b, uint32_t *ioff, devic
 
 uint32_t ext2_read_directory(char *filename, ext2_dir *dir, device_t *dev, ext2_priv_data *priv)
 {
+	if(priv == NULL)
+	{
+		priv == &__ext2_data;
+	}
     assert(filename);
     printf("ext2_read_directory\n");
 	while(dir->inode != 0) 
@@ -238,6 +242,10 @@ uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *
 
 uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_priv_data *priv)
 {
+	if(priv == NULL)
+	{
+		priv == &__ext2_data;
+	}
 	char *filename = malloc(strlen(ff) + 1);
 	memcpy(filename, ff, strlen(ff) +1);
 	size_t n = strsplit(filename, '/');
@@ -697,6 +705,10 @@ uint8_t ext2_writefile(char *fn, char *buf, uint32_t len, device_t *dev, ext2_pr
 
 uint8_t ext2_exist(char *file, device_t *dev, ext2_priv_data *priv)
 {
+	if(priv == NULL)
+	{
+		priv = &__ext2_data;
+	}
 	return ext2_read_file(file, 0, dev, priv);
 }
 
@@ -775,6 +787,9 @@ uint8_t ext2_mount(device_t *dev, void *privd)
 	printf("Mounting ext2 on device %s\n", dev->name);
 	ext2_priv_data *priv = privd;
 	if(ext2_read_root_directory(/*(char *)1*/ "/", dev, priv))
+	{
+		printf("ext2_read_root_directory is ok\n");
 		return 1;
+	}
 	return 0;
 }

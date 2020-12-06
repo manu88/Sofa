@@ -103,6 +103,21 @@ void sc_debug(seL4_CPtr endpoint, SofaDebugCode code)
     seL4_Send(endpoint, info);
 }
 
+void sc_vfs(seL4_CPtr endpoint, VFSRequest code, const char* data, size_t dataSize)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+
+    seL4_SetMR(0, SofaSysCall_VFS);
+    seL4_SetMR(1, code);
+    seL4_SetMR(2, dataSize);
+
+    size_t effectiveSize = dataSize; 
+    memcpy(TLSGet()->buffer, data, effectiveSize);
+    TLSGet()->buffer[effectiveSize] = 0;
+
+
+    seL4_Send(endpoint, info);
+}
 
 int sc_kill(seL4_CPtr endpoint, pid_t pid, int sig)
 {
