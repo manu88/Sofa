@@ -1,3 +1,6 @@
+/*
+For a list of VID/PID : https://github.com/openbsd/src/blob/master/sys/dev/pci/pcidevs.h
+*/
 #include <platsupport/io.h>
 #include <platsupport/plat/acpi/acpi.h>
 #include <AMLDecompiler.h>
