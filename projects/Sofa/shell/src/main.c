@@ -112,6 +112,11 @@ void processCommand(const char* cmd)
         }
         
     }
+    else if(startsWith("ls", cmd))
+    {
+        const char *path = cmd + strlen("ls ");
+        SFVFS(VFSRequest_ListDir, path, strlen(path));
+    }
     else if(startsWith("spawn", cmd))
     {
         const char *strApp = cmd + strlen("spawn ");

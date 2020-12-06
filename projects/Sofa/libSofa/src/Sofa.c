@@ -61,6 +61,11 @@ void SFDebug(SofaDebugCode code)
     sc_debug(TLSGet()->ep, code);
 }
 
+void SFVFS(VFSRequest code, const char* data, size_t dataSize)
+{
+    sc_vfs(TLSGet()->ep, code, data, dataSize);
+}
+
 void exit(int code)
 {
     sc_exit(getProcessEndpoint(), code);

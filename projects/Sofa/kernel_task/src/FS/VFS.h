@@ -11,3 +11,6 @@ typedef enum
 int VFSInit(void);
 
 int VFSAddDEvice(IODevice *dev);
+
+
+void VFSLs(const char* path);
