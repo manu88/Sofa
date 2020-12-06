@@ -228,9 +228,9 @@ static int initialize_desc_ring(VirtioDevice *dev, ps_dma_man_t *dma_man) {
 
 static void blk_debug(VirtioDevice *dev)
 {
-    for(int i=0;i<8;i++)
+    for(int i=0;i<32000;i++)
     {
-        printf("%i %i %c\n",i, dev->rx_ring.desc[i].len, i==dev->rdt?'*': ' ');
+        //printf("%i %i %c\n",i, dev->rx_ring.desc[i].len, i==dev->rdt?'*': ' ');
     }
 }
 
