@@ -31,7 +31,6 @@ typedef struct _Thread
     uint8_t* ipcBuffer_vaddr;
     uint8_t* ipcBuffer;
 //    seL4_Word replyCap;
-    Process* process;
 
     ThreadState state;
     struct _Thread *next;
@@ -45,6 +44,7 @@ typedef struct _Process
     Thread main;
     sel4utils_process_t native;
     
+    const char* name; // pointer to init->name
     void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
 
@@ -66,16 +66,20 @@ typedef struct _Process
 static inline void ProcessInit(Process* p)
 {
     memset(p, 0, sizeof(Process));
-    p->main.process = p;
+    p->main._base.process = p;
 }
 
 static inline const char* ProcessGetName(const Process* p)
 {
-    return p->init->name;
+    return p->name;
 }
 
 static inline int ProcessGetPID(const Process* p)
 {
+    if(p == getKernelTaskProcess())
+    {
+        return 0;
+    }
     return p->init->pid;
 }
 
@@ -85,8 +89,6 @@ int ProcessCountExtraThreads(const Process* p);
 Thread* ProcessGetWaitingThread(Process*p);
 
 #define PROCESS_FOR_EACH_EXTRA_THREAD(proc, t) LL_FOREACH(proc->threads,t)
-
-
 
 void ProcessAddChild(Process* parent, Process* child);
 void ProcessRemoveChild(Process* parent, Process* child);

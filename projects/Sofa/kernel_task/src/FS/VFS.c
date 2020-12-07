@@ -4,11 +4,17 @@
 #include "ext2.h"
 #include "KThread.h"
 #include "DeviceTree.h"
+#include "NameServer.h"
+#include "Environ.h"
 
 static KThread _vfsThread;
-
+static Service _vfsService;
+static char _vfsName[] = "VFS";
 int VFSInit()
 {
+    ServiceInit(&_vfsService, getKernelTaskProcess() );
+    _vfsService.name = _vfsName;
+    NameServerRegister(&_vfsService);
     return 0;
 }
 

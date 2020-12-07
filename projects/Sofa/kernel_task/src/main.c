@@ -58,6 +58,7 @@ extern KThread _mainThread;
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
+static char kernelTaskName[] = "kernel_task";
 
 Process initProcess;
 
@@ -110,8 +111,8 @@ static void process_messages()
         else if (label == seL4_CapFault)
         {
             Thread* sender = (Thread*) badge;
-            Process* process = sender->process;
-            printf("Got cap fault from '%s' %i\n", process->init->name, process->init->pid);
+            Process* process = sender->_base.process;
+            printf("Got cap fault from '%s' %i\n", ProcessGetName(process), process->init->pid);
         }
         else if (label == seL4_VMFault)
         {
@@ -122,7 +123,7 @@ static void process_messages()
                 continue;
             }
             Thread* sender = (Thread*) badge;
-            Process* process = sender->process;
+            Process* process = sender->_base.process;
             printf("Got VM fault from %i %s in thread %p\n",
                    ProcessGetPID(process),
                    ProcessGetName(process),
@@ -251,6 +252,8 @@ int main(void)
 {
     seL4_SetUserData(&_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
+
+    getKernelTaskProcess()->name = kernelTaskName;
     int error;
 
     error = sel4platsupport_new_io_ops(&env->vspace, &env->vka, &env->simple, &env->ops);

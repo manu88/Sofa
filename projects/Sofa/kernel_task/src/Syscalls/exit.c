@@ -17,6 +17,6 @@ void Syscall_exit(Thread* caller, seL4_MessageInfo_t info)
     }
     KernelTaskContext* env = getKernelTaskContext();
 
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
     doExit(process, retCode);
 }

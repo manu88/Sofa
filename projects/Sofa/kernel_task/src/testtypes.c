@@ -242,6 +242,7 @@ void process_run(const char *name, Process* process)
     strncpy(process->init->name, name, TEST_NAME_MAX);
 
     process->init->name[TEST_NAME_MAX - 1] = '\0';
+    process->name = process->init->name;
 
 #ifdef CONFIG_DEBUG_BUILD
     seL4_DebugNameThread(process->native.thread.tcb.cptr, process->init->name);

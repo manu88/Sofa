@@ -4,7 +4,7 @@
 
 void Syscall_PPID(Thread* caller, seL4_MessageInfo_t info)
 {
-    int ppid = ProcessGetPID(caller->process->parent);
+    int ppid = ProcessGetPID(caller->_base.process->parent);
 
     seL4_SetMR(1, ppid);
     seL4_Reply(info);
@@ -18,7 +18,7 @@ void RequestCapEndoint(Thread* caller, seL4_MessageInfo_t info)
     vka_alloc_endpoint(&getKernelTaskContext()->vka, &endpoint_obj);
     cspacepath_t res;
     vka_cspace_make_path(&getKernelTaskContext()->vka, endpoint_obj.cptr, &res);
-    seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->process->native, res, &getKernelTaskContext()->vka);
+    seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, &getKernelTaskContext()->vka);
     seL4_SetMR(1, ret);
     seL4_Reply(info);
 }
@@ -30,17 +30,17 @@ void RequestCapTCB(Thread* caller, seL4_MessageInfo_t info)
     vka_alloc_tcb(&getKernelTaskContext()->vka, &tcb_obj);
     cspacepath_t res;
     vka_cspace_make_path(&getKernelTaskContext()->vka, tcb_obj.cptr, &res);
-    seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->process->native, res, &getKernelTaskContext()->vka);
+    seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, &getKernelTaskContext()->vka);
     seL4_SetMR(1, ret);
     seL4_Reply(info);
 }
 
 void RequestIPCBuff(Thread* caller, seL4_MessageInfo_t info)
 {
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
     KernelTaskContext* env = getKernelTaskContext();
     seL4_CPtr *buf;
-    void* bufAddr = vspace_new_ipc_buffer(&caller->process->native.vspace, &buf);
+    void* bufAddr = vspace_new_ipc_buffer(&caller->_base.process->native.vspace, &buf);
 
     seL4_SetMR(1, bufAddr);
     seL4_Reply(info);
@@ -49,14 +49,14 @@ void RequestIPCBuff(Thread* caller, seL4_MessageInfo_t info)
 
 void RequestMap(Thread* caller, seL4_MessageInfo_t info)
 {
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
     KernelTaskContext* env = getKernelTaskContext();
-    void* p = vspace_new_sized_stack(&caller->process->native.vspace, 1);
+    void* p = vspace_new_sized_stack(&caller->_base.process->native.vspace, 1);
 
     Thread* newThread = kmalloc(sizeof(Thread));
     assert(newThread);
     memset(newThread, 0, sizeof(Thread));
-    newThread->process = process;
+    newThread->_base.process = process;
     LL_APPEND(process->threads, newThread);
     newThread->stack = p;
     newThread->stackSize = 1;

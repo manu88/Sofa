@@ -6,7 +6,7 @@
 
 void Syscall_wait(Thread* caller, seL4_MessageInfo_t info)
 {
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
     KernelTaskContext* env = getKernelTaskContext();
 
     pid_t pidToWait = seL4_GetMR(1);

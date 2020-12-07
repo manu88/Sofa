@@ -6,7 +6,7 @@
 
 void Syscall_VFS(Thread* caller, seL4_MessageInfo_t info)
 {
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
     KernelTaskContext* env = getKernelTaskContext();
 
 

@@ -1,6 +1,7 @@
 #include "KThread.h"
 #include "Environ.h"
 #include "utils.h"
+#include "Process.h"
 #include <string.h>
 #include <vka/capops.h>
 #include <Sofa.h>
@@ -9,10 +10,12 @@
 Calls to KSleep will ensure that they are never called from main*/
 KThread _mainThread;
 
+
 void KThreadInit(KThread* t)
 {
     memset(t, 0, sizeof(KThread));
     t->_base.kernTaskThread = 1;
+    t->_base.process = getKernelTaskProcess();
 }
 
 

@@ -108,4 +108,6 @@ seL4_SlotRegion arch_copy_iospace_caps_to_process(sel4utils_process_t *process, 
 int IOInit(void);
 KernelTaskContext* getKernelTaskContext(void);
 
+typedef struct _Process Process;
+Process* getKernelTaskProcess(void);
 

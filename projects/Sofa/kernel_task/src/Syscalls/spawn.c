@@ -11,7 +11,7 @@ extern char _cpio_archive_end[];
 void Syscall_spawn(Thread* caller, seL4_MessageInfo_t info)
 {
     KernelTaskContext* env = getKernelTaskContext();
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
 
     const char* dataBuf = caller->ipcBuffer;
 

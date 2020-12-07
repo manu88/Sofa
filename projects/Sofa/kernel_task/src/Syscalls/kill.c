@@ -5,7 +5,7 @@
 void Syscall_Kill(Thread* caller, seL4_MessageInfo_t info)
 {
     KernelTaskContext* env = getKernelTaskContext();
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
 
     pid_t pidToKill = seL4_GetMR(1);
 

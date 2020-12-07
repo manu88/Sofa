@@ -8,37 +8,7 @@
 #include <sel4platsupport/io.h>
 
 #include <muslcsys/vsyscall.h>
-
-#if 0
-/* dimensions of virtual memory for the allocator to use */
-#define ALLOCATOR_VIRTUAL_POOL_SIZE 67108864//((1 << seL4_PageBits) * 1024)
-#define SEL4OSAPI_SYSTEM_VMEM_SIZE 67108864
-/* static memory for the allocator to bootstrap with */
-#define ALLOCATOR_STATIC_POOL_SIZE 40960//((1 << seL4_PageBits) * 20)
-static char allocator_mem_pool[ALLOCATOR_STATIC_POOL_SIZE];
-
-#define SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE  40960
-UNUSED static char malloc_static_mem_pool[SEL4OSAPI_BOOTSTRAP_MEM_POOL_SIZE];
-
-
-sel4utils_res_t muslc_brk_reservation_memory;
-
-extern vspace_t *muslc_this_vspace;
-extern reservation_t muslc_brk_reservation;
-extern void *muslc_brk_reservation_start;
-
-extern char *morecore_area;
-extern size_t morecore_size;
-
-
-// TO KEEP
-
-/* static memory for virtual memory bootstrapping */
-static sel4utils_alloc_data_t vspace_data;
-static char allocator_mempool[8886080];
-#define ALLOCMAN_VIRTUAL_SIZE 400000000
-#define BRK_VIRTUAL_SIZE ((1 << seL4_PageBits) * 200)
-#endif
+#include "Process.h"
 
 /* dimensions of virtual memory for the allocator to use */
 #define ALLOCATOR_VIRTUAL_POOL_SIZE ((1 << seL4_PageBits) * 400)
@@ -57,6 +27,14 @@ uint8_t _env_set = 0;
 KernelTaskContext* getKernelTaskContext(void)
 {
     return &_ctx;
+}
+
+
+static Process _kernelTask = {0};
+
+Process* getKernelTaskProcess()
+{
+    return &_kernelTask;
 }
 
 

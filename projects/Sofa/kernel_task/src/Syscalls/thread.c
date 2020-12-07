@@ -5,13 +5,13 @@
 void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info)
 {
     KernelTaskContext* env = getKernelTaskContext();
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
     assert(process);
 
     Thread* newThread = kmalloc(sizeof(Thread));
     assert(newThread);
     memset(newThread, 0, sizeof(Thread));
-    newThread->process = process;
+    newThread->_base.process = process;
 // create per thread endpoint
     cspacepath_t badged_ep_path;
     int error = vka_cspace_alloc_path(&env->vka, &badged_ep_path);
@@ -42,7 +42,7 @@ void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info)
 
 void Syscall_ThreadExit(Thread* caller, seL4_MessageInfo_t info)
 {
-    Process* process = caller->process;
+    Process* process = caller->_base.process;
     assert(process);
     LL_DELETE(process->threads, caller);
     kfree(caller);

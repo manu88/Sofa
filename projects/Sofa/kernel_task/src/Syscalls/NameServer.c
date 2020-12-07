@@ -29,7 +29,7 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
     cspacepath_t path;
     vka_cspace_make_path(&env->vka, capMint, &path);
 
-    seL4_CPtr cap = sel4utils_move_cap_to_process(&caller->process->native, path, &env->vka);
+    seL4_CPtr cap = sel4utils_move_cap_to_process(&caller->_base.process->native, path, &env->vka);
 
     seL4_SetMR(1, 0);
     seL4_SetMR(2, cap);
@@ -53,7 +53,7 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
         return;
     }
 
-    ServiceInit(newService, caller->process);
+    ServiceInit(newService, caller->_base.process);
     newService->name = serviceName;
 
     int err = NameServerRegister(newService);
@@ -73,7 +73,7 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
     cspacepath_t res;
     vka_cspace_make_path(&ctx->vka, tcb_obj.cptr, &res);
 
-    seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->process->native, &ctx->vka, res.capPtr);
+    seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->_base.process->native, &ctx->vka, res.capPtr);
     newService->endpoint = ret;
     newService->baseEndpoint = res.capPtr;
     seL4_SetMR(1, 0);
