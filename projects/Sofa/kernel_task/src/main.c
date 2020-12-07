@@ -197,6 +197,21 @@ void *main_continued(void *arg UNUSED)
 
     IODevice* dev = NULL;
     FOR_EACH_DEVICE(dev)
+<<<<<<< HEAD
+=======
+    {
+        if(dev->type == IODevice_BlockDev)
+        {
+            VFSAddDEvice(dev);
+        }
+    }
+
+
+    ProcessInit(&initProcess);
+    spawnApp(&initProcess, "init", NULL);
+/*
+    for(int i=0;i<40;i++)
+>>>>>>> 23bee5f82e677dd5cdb69275401f3ba7d99b2556
     {
         if(dev->type == IODevice_BlockDev)
         {
