@@ -8,7 +8,7 @@
 #include "Environ.h"
 #include "DeviceTree.h"
 #include "ext2.h"
-#include "KThread.h"
+
 
 #define VIRTIO_BLK_S_OK       0
 #define VIRTIO_BLK_S_IOERR    1
@@ -482,7 +482,7 @@ static int virtio_check_capabilities(uint32_t *device, uint32_t *request, struct
 	}
 }
 
-int BlkInit(uint32_t iobase)
+int BlkInit(uint32_t iobase, KThread* thread)
 {
     printf("==> Init Blk virtio storage\n");
     KernelTaskContext* env = getKernelTaskContext();

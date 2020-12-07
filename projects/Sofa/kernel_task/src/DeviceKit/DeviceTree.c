@@ -13,8 +13,9 @@ For a list of VID/PID : https://github.com/openbsd/src/blob/master/sys/dev/pci/p
 
 #include "Drivers/Net.h"
 #include "Drivers/Blk.h"
+#include "KThread.h"
 
-
+static KThread _driverThread = {0};
 static IODevice *_deviceList = NULL;
 
 IODevice* DeviceTreeGetDevices()
@@ -216,7 +217,7 @@ int DeviceTreeInit()
             libpci_device_iocfg_debug_print(&iocfg, false);
             uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
 
-            BlkInit(iobase0);
+            BlkInit(iobase0, &_driverThread);
             //virtio_blk_init(iobase0);
         }
     }

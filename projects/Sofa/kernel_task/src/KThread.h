@@ -20,5 +20,10 @@ void KThreadInit(KThread* t);
 
 int KThreadRun(KThread* t, int prio, void* arg);
 void KThreadCleanup(KThread* t);
+
+
 int KThreadSleep(KThread* t, int ms);
 void KThreadExit(KThread* t, int code);
+
+// Works only in threads, so be sure not to call it in main Thread!
+int KSleep(int ms);

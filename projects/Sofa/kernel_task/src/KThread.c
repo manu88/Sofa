@@ -5,6 +5,10 @@
 #include <vka/capops.h>
 #include <Sofa.h>
 
+/* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
+Calls to KSleep will ensure that they are never called from main*/
+KThread _mainThread;
+
 void KThreadInit(KThread* t)
 {
     memset(t, 0, sizeof(KThread));
@@ -16,9 +20,9 @@ static void __entry_fn(void *arg0, void *arg1, void *ipc_buf)
 {
     KThread* t = (KThread*) arg0;
     assert(t);
-
+    seL4_SetUserData(t);
     int ret = t->mainFunction(t, arg1);
-
+    seL4_SetUserData(0);
     KThreadExit(t, ret);
     assert(0);
 }
@@ -89,6 +93,18 @@ int KThreadSleep(KThread* thread, int ms)
     seL4_SetMR(1, 2000);
     seL4_Call(thread->ep, info);
     return seL4_GetMR(1);
+}
+
+int KSleep(int ms)
+{
+    assert(seL4_GetUserData());
+    KThread* t = (KThread*) seL4_GetUserData();
+    if(t == &_mainThread)
+    {
+        printf("KSleep called from the main kernel_task thread, abord\n");
+        assert(0);
+    }
+    return KThreadSleep(seL4_GetUserData(), ms);
 }
 
 void KThreadExit(KThread* thread, int code)
