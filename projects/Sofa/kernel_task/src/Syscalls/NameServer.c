@@ -19,7 +19,7 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
         seL4_Reply(info);
         return;
     }
-    assert(service->endpoint != seL4_CapNull);
+    assert(service->baseEndpoint != seL4_CapNull);
 
     KernelTaskContext* env = getKernelTaskContext();
 

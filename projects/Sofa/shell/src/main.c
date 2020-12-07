@@ -6,6 +6,8 @@
 #include "runtime.h"
 
 
+static seL4_CPtr vfsCap = 0;
+
 static char *trim(char *str)
 {
     size_t len = 0;
@@ -114,8 +116,13 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("ls", cmd))
     {
-        const char *path = cmd + strlen("ls ");
-        SFVFS(VFSRequest_ListDir, path, strlen(path));
+        //const char *path = cmd + strlen("ls ");
+        //SFVFS(VFSRequest_ListDir, path, strlen(path));
+
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+        seL4_SetMR(0, 33);
+        seL4_Send(vfsCap, info);
+
     }
     else if(startsWith("spawn", cmd))
     {
@@ -184,6 +191,13 @@ int main(int argc, char *argv[])
     RuntimeInit2(argc, argv);
     SFPrintf("[%i] Shell \n", SFGetPid());
 
+    ssize_t capOrErr = SFGetService("VFS");
+    SFPrintf("SFGetService returned %li\n", capOrErr);
+
+    if(capOrErr > 0)
+    {
+        vfsCap = capOrErr;
+    }
     while (1)
     {
         SFPrintf(">:");

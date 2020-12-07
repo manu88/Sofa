@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <sel4/sel4.h>
 #include "VFS.h"
 #include "ext2.h"
 #include "KThread.h"
@@ -12,8 +13,14 @@ static Service _vfsService;
 static char _vfsName[] = "VFS";
 int VFSInit()
 {
+    int error = 0;
     ServiceInit(&_vfsService, getKernelTaskProcess() );
     _vfsService.name = _vfsName;
+
+    vka_object_t ep = {0};
+    error = vka_alloc_endpoint(&getKernelTaskContext()->vka, &ep);
+    assert(error == 0);
+    _vfsService.baseEndpoint = ep.cptr;
     NameServerRegister(&_vfsService);
     return 0;
 }
@@ -77,7 +84,10 @@ static int mainVFS(KThread* thread, void *arg)
 
     while (1)
     {
-        /* code */
+        printf("VFSD wait on msg\n");
+        seL4_Word sender;
+        seL4_MessageInfo_t msg = seL4_Recv(_vfsService.baseEndpoint, &sender);
+        printf("VFSD got message from %u\n", sender);
     }
     
     return 42;
