@@ -90,7 +90,7 @@ int KThreadSleep(KThread* thread, int ms)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_NoFault, 0,0,2);
     seL4_SetMR(0, SyscallID_Sleep);
-    seL4_SetMR(1, 2000);
+    seL4_SetMR(1, ms);
     seL4_Call(thread->ep, info);
     return seL4_GetMR(1);
 }

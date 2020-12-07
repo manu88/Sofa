@@ -95,11 +95,6 @@ static void process_messages()
             else 
             {
                 const ThreadBase* base = (ThreadBase*) badge;
-                if(base->kernTaskThread)
-                {
-                    printf("Syscall from kernel_task thread\n");
-//                    continue;
-                }
                 Thread* caller = (Thread*) badge;
                 SyscallID rpcID = seL4_GetMR(0);  
                 if(rpcID > 0 && rpcID < SyscallID_Last)
@@ -157,12 +152,14 @@ static void process_messages()
 static int testMain(KThread* thread, void *arg)
 {
     printf("Test Thread started\n");
-    {    
-        KSleep(2000);
-        printf("KernTask thread did sleep\n");
-        KThreadExit(seL4_GetUserData(), 12);
+    IODevice* dev = NULL;
+    FOR_EACH_DEVICE(dev)
+    {
+        if(dev->type == IODevice_BlockDev)
+        {
+            VFSAddDEvice(dev);
+        }
     }
-
     return 42;
 }
 
@@ -194,19 +191,8 @@ void *main_continued(void *arg UNUSED)
     error = SerialInit();
     assert(error == 0);
 
-
     error = VFSInit();
     assert(error == 0);
-
-    IODevice* dev = NULL;
-    FOR_EACH_DEVICE(dev)
-    {
-        if(dev->type == IODevice_BlockDev)
-        {
-            VFSAddDEvice(dev);
-        }
-    }
-
 
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init", NULL);
@@ -215,7 +201,7 @@ void *main_continued(void *arg UNUSED)
     KThreadInit(&_testThread);
     _testThread.mainFunction = testMain;
     _testThread.name = "TestThread";
-    error = KThreadRun(&_testThread, 254, NULL);
+    error = KThreadRun(&_testThread, 253, NULL);
     assert(error == 0);
     printf("<-- Start test thread\n");
 

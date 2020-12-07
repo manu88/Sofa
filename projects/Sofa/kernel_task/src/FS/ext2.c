@@ -5,13 +5,6 @@
 #include <stdlib.h>
 #include "ext2.h"
 #include "IODevice.h"
-//#include "../../include/display.h"
-//#include "../../include/device.h"
-//#include "../../include/levos.h"
-//#include "../../include/memory.h"
-//#include "../../include/tasking.h"
-
-
 
 static size_t strsplit(char* str, char delim)
 {
@@ -92,29 +85,29 @@ void ext2_read_inode(inode_t *inode_buf, uint32_t inode, device_t *dev, ext2_pri
         block_buf = (uint8_t *)malloc(priv->blocksize);
     }
     assert(block_buf);
-    printf("Size of block_buf=%zi\n", priv->blocksize);
+    //printf("Size of block_buf=%zi\n", priv->blocksize);
 
-    printf("ext2_read_inode, parse priv->first_bgd\n");
+    //printf("ext2_read_inode, parse priv->first_bgd\n");
 	ext2_read_block(block_buf, priv->first_bgd, dev, priv);
 	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
-	printf("We seek BG %d\n", bg);
+	//printf("We seek BG %d\n", bg);
 	/* Seek to the BG's desc */
 	for(i = 0; i < bg; i++)
 		bgd++;
 	/* Find the index and seek to the inode */
 	uint32_t index = (inode - 1) % priv->sb.inodes_in_blockgroup;
-	printf("Index of our inode is %d\n", index);
+	//printf("Index of our inode is %d\n", index);
 	uint32_t block = (index * sizeof(inode_t))/ priv->blocksize;
-	printf("Relative: %d, Absolute: %d\n", block, bgd->block_of_inode_table + block);
+	//printf("Relative: %d, Absolute: %d\n", block, bgd->block_of_inode_table + block);
 	ext2_read_block(block_buf, bgd->block_of_inode_table + block, dev, priv);
-    printf("Did read\n");
+    //printf("Did read\n");
 	inode_t* _inode = (inode_t *)block_buf;
 	index = index % priv->inodes_per_block;
-    printf("Index is %i\n", index);
+    //printf("Index is %i\n", index);
 	for(i = 0; i < index; i++)
 		_inode++;
 	/* We have found the inode! */
-    printf("Found the inode\n");
+    //printf("Found the inode\n");
 	memcpy(inode_buf, _inode, sizeof(inode_t));
 }
 
@@ -126,15 +119,15 @@ void ext2_write_inode(inode_t *inode_buf, uint32_t ii, device_t *dev, ext2_priv_
 	if(!block_buf) block_buf = (uint8_t *)malloc(priv->blocksize);
 	ext2_read_block(block_buf, priv->first_bgd, dev, priv);
 	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
-	printf("We seek BG %d\n", bg);
+	//printf("We seek BG %d\n", bg);
 	/* Seek to the BG's desc */
 	for(i = 0; i < bg; i++)
 		bgd++;
 	/* Find the index and seek to the inode */
 	uint32_t index = (ii - 1) % priv->sb.inodes_in_blockgroup;
-	printf("Index of our inode is %d\n", index);
+	//printf("Index of our inode is %d\n", index);
 	uint32_t block = (index * sizeof(inode_t))/ priv->blocksize;
-	printf("Relative: %d, Absolute: %d\n", block, bgd->block_of_inode_table + block);
+	//printf("Relative: %d, Absolute: %d\n", block, bgd->block_of_inode_table + block);
 	uint32_t final = bgd->block_of_inode_table + block;
 	ext2_read_block(block_buf, final, dev, priv);
 	inode_t* _inode = (inode_t *)block_buf;
@@ -154,7 +147,7 @@ uint32_t ext2_get_inode_block(uint32_t inode, uint32_t *b, uint32_t *ioff, devic
 	if(!block_buf) block_buf = (uint8_t *)malloc(priv->blocksize);
 	ext2_read_block(block_buf, priv->first_bgd, dev, priv);
 	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
-	printf("We seek BG %d\n", bg);
+	//printf("We seek BG %d\n", bg);
 	/* Seek to the BG's desc */
 	for(i = 0; i < bg; i++)
 		bgd++;
@@ -174,7 +167,7 @@ uint32_t ext2_read_directory(char *filename, ext2_dir *dir, device_t *dev, ext2_
 		priv == &__ext2_data;
 	}
     assert(filename);
-    printf("ext2_read_directory\n");
+    //printf("ext2_read_directory\n");
 	while(dir->inode != 0) 
     {
 		char *name = (char *)malloc(dir->namelength + 1);
@@ -219,7 +212,7 @@ uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *
         root_buf = (uint8_t *)malloc(priv->blocksize);
     }
 	ext2_read_inode(inode, 2, dev, priv);
-	printf("ext2_read_inode for root is ok\n");
+	//printf("ext2_read_inode for root is ok\n");
 	if((inode->type & 0xF000) != INODE_TYPE_DIRECTORY)
 	{
 		printf("FATAL: Root directory is not a directory!\n");
@@ -235,13 +228,13 @@ uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *
         {
             break;
         }
-        printf("ext2_read_root_directory: read index %i\n", i);
+        //printf("ext2_read_root_directory: read index %i\n", i);
 		ext2_read_block(root_buf, b, dev, priv);
-		printf("did ext2_read_block\n");
+		//printf("did ext2_read_block\n");
 		/* Now loop through the entries of the directory */
 		if(ext2_read_directory(filename, (ext2_dir*)root_buf, dev, priv))
         {
-            printf("ext2_read_directory OK\n");
+            //printf("ext2_read_directory OK\n");
             return 1;
         }
 	}

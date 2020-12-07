@@ -277,7 +277,7 @@ static void* _blkCmd(VirtioDevice* dev, int op, size_t sector, char* buf, size_t
     unsigned int rdt_data = (dev->rdt + 1) % dev->queueSize;
     unsigned int rdt_footer = (dev->rdt + 2) % dev->queueSize;
 
-    printf("Start CMD at %i, data %i footer %i\n", dev->rdt, rdt_data, rdt_footer);
+    //printf("Start CMD at %i, data %i footer %i\n", dev->rdt, rdt_data, rdt_footer);
 
     dev->rx_ring.desc[dev->rdt] = (struct vring_desc) {
         .addr = dev->hdr_phys,
@@ -313,7 +313,7 @@ static void* _blkCmd(VirtioDevice* dev, int op, size_t sector, char* buf, size_t
     assert(dev->queueID == 0);
     write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
     dev->rdt = (dev->rdt + 1) % dev->queueSize;
-    blk_debug(dev);
+    KSleep(1);
     return dma_data.virt;
 }
 
@@ -470,10 +470,14 @@ static int virtio_check_capabilities(uint32_t *device, uint32_t *request, struct
 {
 	uint32_t i;
 	for (i = 0; i < n; i++) {
-		if (*device & caps[i].bit) {
-			if (caps[i].support) {
+		if (*device & caps[i].bit) 
+        {
+			if (caps[i].support)
+            {
 				*request |= caps[i].bit;
-			} else {
+			}
+            else
+            {
 				printf("virtio supports unsupported option %s (%s)\n",
 						caps[i].name, caps[i].help);
 			}
