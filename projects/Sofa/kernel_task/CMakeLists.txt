@@ -17,7 +17,7 @@ list(SORT deps)
 add_executable(kernel_task ${deps} archive.o)
 
 target_include_directories(kernel_task PRIVATE src)
-target_include_directories(kernel_task PRIVATE src/DeviceKit src/Drivers)
+target_include_directories(kernel_task PRIVATE src/DeviceKit src/Drivers src/FS)
 
 
 target_link_libraries(

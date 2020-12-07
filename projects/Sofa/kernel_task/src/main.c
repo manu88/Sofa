@@ -47,13 +47,17 @@
 #include <sel4platsupport/arch/io.h>
 #include "KThread.h"
 #include <Sofa.h>
+#include "VFS.h"
 
+
+/* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
+Calls to KSleep will ensure that they are never called from main*/
+extern KThread _mainThread;
 
 
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
-static KThread _testThread;
 
 Process initProcess;
 
@@ -90,11 +94,6 @@ static void process_messages()
             else 
             {
                 const ThreadBase* base = (ThreadBase*) badge;
-                if(base->kernTaskThread)
-                {
-                    printf("Syscall from kernel_task thread\n");
-//                    continue;
-                }
                 Thread* caller = (Thread*) badge;
                 SyscallID rpcID = seL4_GetMR(0);  
                 if(rpcID > 0 && rpcID < SyscallID_Last)
@@ -149,24 +148,13 @@ static void process_messages()
     }
 }
 
-static int testMain(KThread* thread, void *arg)
-{
-    printf("Test Thread started\n");
-    {    
-        KThreadSleep(thread, 2000);
-        printf("KernTask thread did sleep\n");
-        KThreadExit(thread, 12);
-    }
-
-    return 42;
-}
 
 void *main_continued(void *arg UNUSED)
 {
     printf("\n------Sofa------\n");
     printf("----------------\n");
     int error;
-
+    seL4_SetUserData(&_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
     error = vka_alloc_endpoint(&env->vka, &env->root_task_endpoint);
@@ -189,16 +177,14 @@ void *main_continued(void *arg UNUSED)
     error = SerialInit();
     assert(error == 0);
 
+    error = VFSInit();
+    assert(error == 0);
+
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init", NULL);
 
-    printf("--> Start test thread\n");
-    KThreadInit(&_testThread);
-    _testThread.mainFunction = testMain;
-    _testThread.name = "TestThread";
-    error = KThreadRun(&_testThread, 254, NULL);
+    error = VFSStart();
     assert(error == 0);
-    printf("<-- Start test thread\n");
 
     seL4_DebugDumpScheduler();
     process_messages();    
@@ -258,13 +244,12 @@ static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4
         args_prev[num_alloc] = a;
         num_alloc++;
         return ret;
-
     }
 }
 
-
 int main(void)
 {
+    seL4_SetUserData(&_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
     int error;
 
