@@ -7,6 +7,8 @@
 #include "DeviceTree.h"
 #include "NameServer.h"
 #include "Environ.h"
+#include "Process.h"
+#include <Sofa.h>
 
 static KThread _vfsThread;
 static Service _vfsService;
@@ -72,6 +74,7 @@ int VFSAddDEvice(IODevice *dev)
 
 static int mainVFS(KThread* thread, void *arg)
 {
+    KernelTaskContext* env = getKernelTaskContext();
     printf("Test Thread started\n");
     IODevice* dev = NULL;
     FOR_EACH_DEVICE(dev)
@@ -81,13 +84,40 @@ static int mainVFS(KThread* thread, void *arg)
             VFSAddDEvice(dev);
         }
     }
-
+    char* buff = NULL;
     while (1)
     {
         printf("VFSD wait on msg\n");
         seL4_Word sender;
         seL4_MessageInfo_t msg = seL4_Recv(_vfsService.baseEndpoint, &sender);
-        printf("VFSD got message from %u\n", sender);
+        ThreadBase* caller =(ThreadBase*) sender;
+        assert(caller->process); 
+        printf("VFSD got message from %s %i\n", ProcessGetName(caller->process), ProcessGetPID(caller->process));
+
+        if(seL4_GetMR(0) == VFSRequest_Register)
+        {
+            buff = vspace_new_pages(&env->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+            assert(buff);
+            void* buffShared = vspace_share_mem(&env->vspace,
+                                                &caller->process->native.vspace,
+                                                buff,
+                                                1,
+                                                PAGE_BITS_4K,
+                                                seL4_ReadWrite,
+                                                1
+                                                );
+            assert(buffShared);
+            seL4_SetMR(1, buffShared);
+            seL4_Reply(msg);
+        }
+        else
+        {
+            printf("Other VFS request %u\n", seL4_GetMR(0));
+            printf("Buf '%s'\n", buff);
+            seL4_Reply(msg);
+        }
+        
+
     }
     
     return 42;

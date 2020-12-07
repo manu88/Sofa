@@ -9,8 +9,6 @@ void Syscall_PPID(Thread* caller, seL4_MessageInfo_t info)
     seL4_SetMR(1, ppid);
     seL4_Reply(info);
 }
-//SofaRequestCap_VSpaceRoot vka_alloc_vspace_root
-
 
 void RequestCapEndoint(Thread* caller, seL4_MessageInfo_t info)
 {
@@ -22,7 +20,6 @@ void RequestCapEndoint(Thread* caller, seL4_MessageInfo_t info)
     seL4_SetMR(1, ret);
     seL4_Reply(info);
 }
-
 
 void RequestCapTCB(Thread* caller, seL4_MessageInfo_t info)
 {
@@ -47,7 +44,7 @@ void RequestIPCBuff(Thread* caller, seL4_MessageInfo_t info)
 
 }
 
-void RequestMap(Thread* caller, seL4_MessageInfo_t info)
+void RequestNewThread(Thread* caller, seL4_MessageInfo_t info)
 {
     Process* process = caller->_base.process;
     KernelTaskContext* env = getKernelTaskContext();
@@ -67,6 +64,12 @@ void RequestMap(Thread* caller, seL4_MessageInfo_t info)
     seL4_Reply(info);
 }
 
+void RequestCapNewPage(Thread* caller, seL4_MessageInfo_t info)
+{
+
+}
+
+
 void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info)
 {
     printf("[Syscall_RequestCap] got a request\n");
@@ -77,14 +80,17 @@ void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info)
     case SofaRequestCap_TCB:
         RequestCapTCB(caller, info);
         break;    
-    case SofaRequestCap_MAP:
-        RequestMap(caller, info);
+    case SofaRequestCap_NewThread:
+        RequestNewThread(caller, info);
         break;
     case SofaRequestCap_IPCBuff:
         RequestIPCBuff(caller, info);
         break;
     case SofaRequestCap_Endpoint:
         RequestCapEndoint(caller, info);
+        break;
+    case SofaRequestCap_NewPage:
+        RequestCapNewPage(caller, info);
         break;
 
     default:

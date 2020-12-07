@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     SFPrintf("seL4_TCB_ReadRegisters:err=%i\n", err);
 
     size_t context_size = sizeof(seL4_UserContext) / sizeof(seL4_Word);
-    seL4_CPtr stackTop = requestcap(endpoint, SofaRequestCap_MAP);
+    seL4_CPtr stackTop = requestcap(endpoint, SofaRequestCap_NewThread);
 
     size_t tls_size = sel4runtime_get_tls_size();
     uintptr_t tls_base = (uintptr_t)stackTop - tls_size;

@@ -43,13 +43,15 @@ typedef enum
 typedef enum
 {
     SofaRequestCap_TCB,
-    SofaRequestCap_MAP,
+    SofaRequestCap_NewThread,
     SofaRequestCap_IPCBuff,
     SofaRequestCap_Endpoint,
+    SofaRequestCap_NewPage,
 }SofaRequestCap;
 
 typedef enum 
 {
+    VFSRequest_Register,
     VFSRequest_ListDir,
 } VFSRequest;
 

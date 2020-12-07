@@ -7,6 +7,7 @@
 
 
 static seL4_CPtr vfsCap = 0;
+char* vfsBuf = NULL;
 
 static char *trim(char *str)
 {
@@ -116,12 +117,24 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("ls", cmd))
     {
-        //const char *path = cmd + strlen("ls ");
-        //SFVFS(VFSRequest_ListDir, path, strlen(path));
+        const char *path = cmd + strlen("ls ");
 
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
-        seL4_SetMR(0, 33);
-        seL4_Send(vfsCap, info);
+        if(vfsCap == 0)
+        {
+            SFPrintf("[shell] VFS client not registered (no cap)\n");
+        }
+        if(vfsBuf == NULL)
+        {
+            SFPrintf("[shell] VFS client not registered(no buff)\n");
+
+        }
+
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+        seL4_SetMR(0, VFSRequest_ListDir);
+        strcpy(vfsBuf, path);
+        vfsBuf[strlen(path)] = 0;
+        seL4_Call(vfsCap, info);
+        SFPrintf("got ls response %X\n", seL4_GetMR(1));
 
     }
     else if(startsWith("spawn", cmd))
@@ -197,6 +210,13 @@ int main(int argc, char *argv[])
     if(capOrErr > 0)
     {
         vfsCap = capOrErr;
+
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+        seL4_SetMR(0, VFSRequest_Register);
+        seL4_Call(vfsCap, info);
+        vfsBuf = (char*) seL4_GetMR(1);
+        SFPrintf("VFS client ok\n");
+
     }
     while (1)
     {
