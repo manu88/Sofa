@@ -99,7 +99,7 @@ typedef struct
 #define DMA_ALIGN 128
 
 
-static IODevice _blk = IODeviceInit("virtio-pci-blk", IODevice_BlockDev);
+static IODevice _blk = IODeviceInit("virtio-pci-blk", IODevice_BlockDev, NULL);
 
 static void write_reg8(VirtioDevice *dev, uint16_t port, uint8_t val) 
 {
