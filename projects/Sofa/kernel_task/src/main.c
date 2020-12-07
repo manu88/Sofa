@@ -1,16 +1,3 @@
-/*
- * Copyright 2017, Data61
- * Commonwealth Scientific and Industrial Research Organisation (CSIRO)
- * ABN 41 687 119 230.
- *
- * This software may be distributed and modified according to the terms of
- * the BSD 2-Clause license. Note that NO WARRANTY is provided.
- * See "LICENSE_BSD2.txt" for details.
- *
- * @TAG(DATA61_BSD)
- */
-
-/* Include Kconfig variables. */
 #include <autoconf.h>
 #define CONFIG_HAVE_TIMER 1
 #include <regex.h>
@@ -58,13 +45,14 @@
 #include "DeviceKit/DeviceTree.h"
 #include "NameServer.h"
 #include <sel4platsupport/arch/io.h>
-
+#include "KThread.h"
 
 
 
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
+static KThread _testThread;
 
 Process initProcess;
 
@@ -100,8 +88,13 @@ static void process_messages()
             }
             else 
             {
+                const ThreadBase* base = (ThreadBase*) badge;
+                if(base->kernTaskThread)
+                {
+                    printf("Syscall from kernel_task thread\n");
+//                    continue;
+                }
                 Thread* caller = (Thread*) badge;
-                Process* process = caller->process;
                 SyscallID rpcID = seL4_GetMR(0);  
                 if(rpcID > 0 && rpcID < SyscallID_Last)
                 {
@@ -122,6 +115,12 @@ static void process_messages()
         }
         else if (label == seL4_VMFault)
         {
+            const ThreadBase* base = (ThreadBase*) badge;
+            if(base->kernTaskThread)
+            {
+                printf("Fault in kernel_task thread\n");
+                continue;
+            }
             Thread* sender = (Thread*) badge;
             Process* process = sender->process;
             printf("Got VM fault from %i %s in thread %p\n",
@@ -141,8 +140,6 @@ static void process_messages()
             printf("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
 
             doExit(process, -1);
-
-
         }
         else 
         {
@@ -153,6 +150,19 @@ static void process_messages()
 
 
 
+
+static void testMain(KThread* thread, void *arg)
+{
+    printf("Test Thread started\n");
+    while (1)
+    {    
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_NoFault, 0,0,2);
+        seL4_SetMR(0, SyscallID_Sleep);
+        seL4_SetMR(1, 2000);
+        seL4_Call(thread->ep, info);
+        printf("KernTask thread did sleep\n");
+    }
+}
 
 void *main_continued(void *arg UNUSED)
 {
@@ -173,7 +183,6 @@ void *main_continued(void *arg UNUSED)
     error = NameServerInit();
     assert(error == 0);
 
-
     error = IOInit();
     assert(error == 0);
 
@@ -185,16 +194,14 @@ void *main_continued(void *arg UNUSED)
 
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init", NULL);
-/*
-    for(int i=0;i<40;i++)
-    {
-        Process* p = malloc(sizeof(Process));
-        assert(p);
-        ProcessInit(p);
-        spawnApp(p, "app", &initProcess);
-    }
-    seL4_DebugDumpScheduler();
-*/
+
+    printf("--> Start test thread\n");
+    KThreadInit(&_testThread);
+    _testThread.mainFunction = testMain;
+    _testThread.name = "TestThread";
+    error = KThreadRun(&_testThread, 254, NULL);
+    assert(error == 0);
+    printf("<-- Start test thread\n");
 
     seL4_DebugDumpScheduler();
     process_messages();    

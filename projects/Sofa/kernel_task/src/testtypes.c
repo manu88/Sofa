@@ -58,9 +58,9 @@ static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
     seL4_SetMR(0, SyscallID_Wait);
     seL4_SetMR(1, pid);
     seL4_SetMR(2, retCode);
-    seL4_Send(onThread->replyCap, tag);
-    cnode_delete(&getKernelTaskContext()->vka, onThread->replyCap);
-    onThread->replyCap = 0;
+    seL4_Send(onThread->_base.replyCap, tag);
+    cnode_delete(&getKernelTaskContext()->vka, onThread->_base.replyCap);
+    onThread->_base.replyCap = 0;
 }
 
 void doExit(Process* process, int retCode)
@@ -87,7 +87,7 @@ void doExit(Process* process, int retCode)
     uint8_t freeProcess = 0;
     if(waitingThread)
     {
-        assert(waitingThread->replyCap != 0);
+        assert(waitingThread->_base.replyCap != 0);
         freeProcess = 1;
 
         
@@ -132,32 +132,6 @@ void doExit(Process* process, int retCode)
         kfree(process);
     }
 }
-
-
-/* Basic test type. Each test is launched as its own process. */
-/* copy untyped caps into a processes cspace, return the cap range they can be found in */
-seL4_SlotRegion copy_untypeds_to_process(sel4utils_process_t *process, vka_object_t *untypeds, int numUntypeds)
-{
-    KernelTaskContext* env = getKernelTaskContext();
-    seL4_SlotRegion range = {0};
-
-    int realNumUntypeds = numUntypeds;
-    int availableUntypeds = 0;
-    for (int i = 0; i < realNumUntypeds; i++) {
-        seL4_CPtr slot = sel4utils_copy_cap_to_process(process, &env->vka, untypeds[i].cptr);
-        /* set up the cap range */
-        if (i == 0) 
-        {
-            range.start = slot;
-        }
-        range.end = slot;
-    }
-//    printf("Range start %li end %li realNumUntypeds %i numUntypeds %i\n", range.start, range.end, realNumUntypeds, numUntypeds);
-    assert((range.end - range.start) + 1 == realNumUntypeds);
-
-    return range;
-}
-
 
 int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
 {
@@ -223,19 +197,13 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
 
 /* setup data about untypeds */
     int num_untyped_per_process = 0;
-#if 0
-    int num_untyped_per_process = UNTYPEDS_PER_PROCESS_BASE;// env->num_untypeds;
-    process->init->untypeds = copy_untypeds_to_process(&process->native,
-                                                       getUntypeds() + process->untypedRange.start,
-                                                       num_untyped_per_process);
 
-    memcpy(process->init->untyped_size_bits_list, untyped_size_bits_list + process->untypedRange.start, num_untyped_per_process);
-#endif
     process->init->vspace_root = sel4utils_copy_cap_to_process(&process->native, &env->vka, vspace_get_root(&process->native.vspace));
 
     // create a minted enpoint for the process
     cspacepath_t path;
     vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr/* test_process.fault_endpoint.cptr*/, &path);
+    
     process->main.process_endpoint = sel4utils_mint_cap_to_process(&process->native, path, seL4_AllRights, badge );
 
 
@@ -304,7 +272,7 @@ void process_tear_down(Process* process)
     LL_FOREACH_SAFE(process->threads,elt,tmp) 
     {
         LL_DELETE(process->threads,elt);
-        if(elt->replyCap != 0)
+        if(elt->_base.replyCap != 0)
         {
             ThreadCleanupTimer(elt);
             if(elt->ipcBuffer_vaddr)
@@ -322,7 +290,7 @@ void process_tear_down(Process* process)
         kfree(elt);
     }
 
-    if(process->main.replyCap)
+    if(process->main._base.replyCap)
     {
         ThreadCleanupTimer(&process->main);
     }

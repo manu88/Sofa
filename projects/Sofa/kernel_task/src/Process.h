@@ -5,7 +5,7 @@
 #include "test_init_data.h"
 #include "Environ.h"
 #include "Allocator.h"
-
+#include "Thread.h"
 
 typedef enum
 {
@@ -25,21 +25,18 @@ typedef struct _Process Process;
 
 typedef struct _Thread
 {
+    ThreadBase _base; // needs to remain fisrt!!
     seL4_CPtr process_endpoint;
 
     uint8_t* ipcBuffer_vaddr;
     uint8_t* ipcBuffer;
-    seL4_Word replyCap;
+//    seL4_Word replyCap;
     Process* process;
-
-    unsigned int timerID;
 
     ThreadState state;
     struct _Thread *next;
     void *stack;
     size_t stackSize;
-
-
 } Thread;
 
 
@@ -107,7 +104,7 @@ static inline Process* ProcessGetChildren(Process* p)
 void ThreadCleanupTimer(Thread* t);
 static inline uint8_t ThreadIsWaiting(const Thread* t)
 {
-    return t->replyCap != 0;
+    return t->_base.replyCap != 0;
 }
 // Process List methods
 Process* getProcessList(void);
