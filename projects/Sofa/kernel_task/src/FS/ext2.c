@@ -49,24 +49,25 @@ void ext2_read_block(uint8_t *buf, uint32_t block, device_t *dev, ext2_priv_data
 
     uint32_t startSect = block*sectors_per_block;
     uint32_t numSectors = block*sectors_per_block + sectors_per_block - startSect;
-	printf("we want to read block %d which is sectors [%d; %d]\n", block, startSect , numSectors);
+	//printf("we want to read block %d which is sectors [%d; %d]\n", block, startSect , numSectors);
 
-    printf("Input buffer should have size %zi\n", numSectors*512);
+    //printf("Input buffer should have size %zi\n", numSectors*512);
     buf[(numSectors*512)-1] = 0;
-    printf("Test touch input buffer\n");
+    //printf("Test touch input buffer OK\n");
 
 
     uint8_t *bufPos = buf;
     size_t acc = 0;
     for(uint32_t i=0;i<numSectors;i++)
     {
+		//printf("Read sector %i\n", startSect+i);
         ssize_t ret = IODeviceRead(dev, startSect+i, bufPos, 512);
         assert(ret >= 0);
         bufPos += ret;
         acc += ret;
-        printf("Buf pos %zi\n", acc);
+        //printf("Buf pos %zi\n", acc);
     }
-    printf("--->ext2_read_block return\n");
+    //printf("--->ext2_read_block return\n");
 	//dev->read(buf, block*sectors_per_block, sectors_per_block, dev);
 
 }
@@ -87,11 +88,12 @@ void ext2_read_inode(inode_t *inode_buf, uint32_t inode, device_t *dev, ext2_pri
 	/* Now we have which BG the inode is in, load that desc */
 	if(!block_buf) 
     {
-        printf("Size of block_buf=%zi\n", priv->blocksize);
 
         block_buf = (uint8_t *)malloc(priv->blocksize);
     }
     assert(block_buf);
+    printf("Size of block_buf=%zi\n", priv->blocksize);
+
     printf("ext2_read_inode, parse priv->first_bgd\n");
 	ext2_read_block(block_buf, priv->first_bgd, dev, priv);
 	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
@@ -202,6 +204,11 @@ uint32_t ext2_read_directory(char *filename, ext2_dir *dir, device_t *dev, ext2_
 
 uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *priv)
 {
+	if(priv == NULL)
+	{
+		priv = &__ext2_data;
+	}
+
 	/* The root directory is always inode#2, so find BG and read the block. */
 	if(!inode)
     {
@@ -212,6 +219,7 @@ uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *
         root_buf = (uint8_t *)malloc(priv->blocksize);
     }
 	ext2_read_inode(inode, 2, dev, priv);
+	printf("ext2_read_inode for root is ok\n");
 	if((inode->type & 0xF000) != INODE_TYPE_DIRECTORY)
 	{
 		printf("FATAL: Root directory is not a directory!\n");
@@ -229,6 +237,7 @@ uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *
         }
         printf("ext2_read_root_directory: read index %i\n", i);
 		ext2_read_block(root_buf, b, dev, priv);
+		printf("did ext2_read_block\n");
 		/* Now loop through the entries of the directory */
 		if(ext2_read_directory(filename, (ext2_dir*)root_buf, dev, priv))
         {

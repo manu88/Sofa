@@ -13,8 +13,7 @@ static IODevice* _dev = NULL;
 void VFSLs(const char* path)
 {
     printf("ls request '%s'\n", path);
-
-    uint8_t ret = ext2_exist(path, _dev, NULL);
+    uint8_t ret = ext2_read_root_directory(path, _dev, NULL);
     printf("Ret %u\n", ret);
 }
 
@@ -44,6 +43,7 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
 int VFSAddDEvice(IODevice *dev)
 {
     printf("[VFS] add device '%s'\n", dev->name);
+    _dev = dev;
 
     VFSSupported type = VFSSupported_Unknown;
     int test = _VFSCheckSuperBlock(dev, &type);
@@ -52,5 +52,4 @@ int VFSAddDEvice(IODevice *dev)
         return test;
     }
     printf("[VFS] device  '%s' added with FS type %i\n", dev->name, type);
-    _dev = dev;
 }
