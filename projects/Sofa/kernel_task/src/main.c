@@ -149,9 +149,6 @@ static void process_messages()
     }
 }
 
-
-
-
 static int testMain(KThread* thread, void *arg)
 {
     printf("Test Thread started\n");
