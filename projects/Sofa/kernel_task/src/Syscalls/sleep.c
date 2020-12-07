@@ -12,7 +12,7 @@ static int sleep_callback(uintptr_t token)
     seL4_SetMR(0, SyscallID_Sleep);
     seL4_SetMR(1, 0); // sucess
 
-    seL4_Send(caller->replyCap, tag);
+    seL4_Send(caller->_base.replyCap, tag);
 
     ThreadCleanupTimer(caller);
     return 0;
@@ -22,9 +22,7 @@ static int sleep_callback(uintptr_t token)
 void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
 {
     KernelTaskContext* env = getKernelTaskContext();
-    assert(caller->replyCap == 0);
-    Process* callingProcess = caller->process;
-    assert(callingProcess);
+    assert(caller->_base.replyCap == 0);
 
     unsigned int timerID = 0;
     int error = tm_alloc_id(&env->tm, &timerID);
@@ -50,7 +48,6 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
         return;
     }
 
-
     error = tm_register_cb(&env->tm, TIMEOUT_RELATIVE, seL4_GetMR(1) * NS_IN_MS, 0, timerID , sleep_callback, (uintptr_t) caller);
     if(error)
     {
@@ -62,7 +59,7 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
         return;
     }
 
-    caller->timerID = timerID;
-    caller->replyCap = slot;
+    caller->_base.timerID = timerID;
+    caller->_base.replyCap = slot;
 
 }

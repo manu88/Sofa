@@ -5,8 +5,8 @@
 void ThreadCleanupTimer(Thread* t)
 {
     KernelTaskContext* env = getKernelTaskContext();
-    tm_deregister_cb(&env->tm, t->timerID);
-    tm_free_id(&env->tm, t->timerID);
-    cnode_delete(&env->vka, t->replyCap);
-    t->replyCap = 0;
+    tm_deregister_cb(&env->tm, t->_base.timerID);
+    tm_free_id(&env->tm, t->_base.timerID);
+    cnode_delete(&env->vka, t->_base.replyCap);
+    t->_base.replyCap = 0;
 }

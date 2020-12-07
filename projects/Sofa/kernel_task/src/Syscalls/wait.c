@@ -54,7 +54,7 @@ void Syscall_wait(Thread* caller, seL4_MessageInfo_t info)
         seL4_Reply(info);
         return;
     }
-    caller->replyCap = slot;
+    caller->_base.replyCap = slot;
     caller->state = ThreadState_Waiting;
 
 }
