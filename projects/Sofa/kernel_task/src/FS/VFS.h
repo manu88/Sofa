@@ -10,6 +10,9 @@ typedef enum
 
 int VFSInit(void);
 
+
+int VFSStart(void);
+
 int VFSAddDEvice(IODevice *dev);
 
 

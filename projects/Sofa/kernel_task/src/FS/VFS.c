@@ -2,7 +2,10 @@
 #include <string.h>
 #include "VFS.h"
 #include "ext2.h"
+#include "KThread.h"
+#include "DeviceTree.h"
 
+static KThread _vfsThread;
 
 int VFSInit()
 {
@@ -52,4 +55,41 @@ int VFSAddDEvice(IODevice *dev)
         return test;
     }
     printf("[VFS] device  '%s' added with FS type %i\n", dev->name, type);
+}
+
+static int mainVFS(KThread* thread, void *arg)
+{
+    printf("Test Thread started\n");
+    IODevice* dev = NULL;
+    FOR_EACH_DEVICE(dev)
+    {
+        if(dev->type == IODevice_BlockDev)
+        {
+            VFSAddDEvice(dev);
+        }
+    }
+
+    while (1)
+    {
+        /* code */
+    }
+    
+    return 42;
+}
+
+int VFSStart()
+{
+    printf("--> Start VFSD thread\n");
+    KThreadInit(&_vfsThread);
+    _vfsThread.mainFunction = mainVFS;
+    _vfsThread.name = "VFSD";
+    int error = KThreadRun(&_vfsThread, 254, NULL);
+    if( error != 0)
+    {
+        return error;
+    }
+    assert(error == 0);
+    printf("<-- Start VFSD thread\n");
+
+    return 0;
 }
