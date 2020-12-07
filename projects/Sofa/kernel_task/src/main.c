@@ -47,7 +47,7 @@
 #include <sel4platsupport/arch/io.h>
 #include "KThread.h"
 #include <Sofa.h>
-#include "VFS.h"
+#include "VFSService.h"
 
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.

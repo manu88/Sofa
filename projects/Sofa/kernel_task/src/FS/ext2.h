@@ -114,4 +114,4 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, IODevice *dev, ext2_p
 uint32_t ext2_read_directory(char *filename, ext2_dir *dir, IODevice *dev, ext2_priv_data *priv);
 uint8_t ext2_exist(char *file, IODevice *dev, ext2_priv_data *priv);
 uint8_t ext2_read_root_directory(char *filename, IODevice *dev, ext2_priv_data *priv);
-
+void ext2_list_directory(char *dd, char *buffer, IODevice *dev, ext2_priv_data *priv);

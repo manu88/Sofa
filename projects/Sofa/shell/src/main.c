@@ -106,12 +106,12 @@ void processCommand(const char* cmd)
         ssize_t ret =  SFRegisterService(serviceName);
         if (ret <= 0)
         {
-            SFPrintf("Error registering service '%s' %i\n", serviceName, ret);
+            SFPrintf("Error registering service '%s' %li\n", serviceName, ret);
 
         }
         else
         {
-            SFPrintf("Service is at %i\n", ret);
+            SFPrintf("Service is at %li\n", ret);
         }
         
     }
@@ -134,7 +134,7 @@ void processCommand(const char* cmd)
         strcpy(vfsBuf, path);
         vfsBuf[strlen(path)] = 0;
         seL4_Call(vfsCap, info);
-        SFPrintf("got ls response %X\n", seL4_GetMR(1));
+        SFPrintf("got ls response %lX\n", seL4_GetMR(1));
 
     }
     else if(startsWith("spawn", cmd))
