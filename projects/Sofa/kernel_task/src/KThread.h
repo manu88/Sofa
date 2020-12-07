@@ -4,7 +4,7 @@
 
 typedef struct _KThread KThread;
 
-typedef void (*KThreadMain)(KThread* thread, void *arg);
+typedef int (*KThreadMain)(KThread* thread, void *arg);
 
 typedef struct _KThread
 {
@@ -19,3 +19,6 @@ typedef struct _KThread
 void KThreadInit(KThread* t);
 
 int KThreadRun(KThread* t, int prio, void* arg);
+void KThreadCleanup(KThread* t);
+int KThreadSleep(KThread* t, int ms);
+void KThreadExit(KThread* t, int code);

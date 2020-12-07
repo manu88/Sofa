@@ -37,7 +37,7 @@
 #include "Environ.h"
 #include "testtypes.h"
 
-#include <Sofa.h>
+
 #include "Syscalls/SyscallTable.h"
 #include "Allocator.h"
 #include "Timer.h"
@@ -46,6 +46,7 @@
 #include "NameServer.h"
 #include <sel4platsupport/arch/io.h>
 #include "KThread.h"
+#include <Sofa.h>
 
 
 
@@ -151,17 +152,16 @@ static void process_messages()
 
 
 
-static void testMain(KThread* thread, void *arg)
+static int testMain(KThread* thread, void *arg)
 {
     printf("Test Thread started\n");
-    while (1)
     {    
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_NoFault, 0,0,2);
-        seL4_SetMR(0, SyscallID_Sleep);
-        seL4_SetMR(1, 2000);
-        seL4_Call(thread->ep, info);
+        KThreadSleep(thread, 2000);
         printf("KernTask thread did sleep\n");
+        KThreadExit(thread, 12);
     }
+
+    return 42;
 }
 
 void *main_continued(void *arg UNUSED)

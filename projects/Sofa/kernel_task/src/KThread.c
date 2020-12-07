@@ -3,6 +3,7 @@
 #include "utils.h"
 #include <string.h>
 #include <vka/capops.h>
+#include <Sofa.h>
 
 void KThreadInit(KThread* t)
 {
@@ -16,7 +17,10 @@ static void __entry_fn(void *arg0, void *arg1, void *ipc_buf)
     KThread* t = (KThread*) arg0;
     assert(t);
 
-    t->mainFunction(t, arg1);
+    int ret = t->mainFunction(t, arg1);
+
+    KThreadExit(t, ret);
+    assert(0);
 }
 
 int KThreadRun(KThread* t, int prio, void* arg)
@@ -70,3 +74,29 @@ int KThreadRun(KThread* t, int prio, void* arg)
     return 0;
 }
 
+void KThreadCleanup(KThread* t)
+{
+    KernelTaskContext* env = getKernelTaskContext();
+
+    sel4utils_clean_up_thread(&env->vka, &env->vspace, &t->native);
+    
+}
+
+int KThreadSleep(KThread* thread, int ms)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_NoFault, 0,0,2);
+    seL4_SetMR(0, SyscallID_Sleep);
+    seL4_SetMR(1, 2000);
+    seL4_Call(thread->ep, info);
+    return seL4_GetMR(1);
+}
+
+void KThreadExit(KThread* thread, int code)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_NoFault, 0,0,2);
+    seL4_SetMR(0, SyscallID_Exit);
+    seL4_SetMR(1, code);
+    seL4_Call(thread->ep, info);
+    assert(0);
+    while(1);
+}
