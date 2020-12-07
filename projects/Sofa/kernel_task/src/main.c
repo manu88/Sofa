@@ -58,7 +58,7 @@ extern KThread _mainThread;
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
-static KThread _testThread;
+static KThread _vfsThread;
 
 Process initProcess;
 
@@ -149,7 +149,7 @@ static void process_messages()
     }
 }
 
-static int testMain(KThread* thread, void *arg)
+static int mainVFS(KThread* thread, void *arg)
 {
     printf("Test Thread started\n");
     IODevice* dev = NULL;
@@ -160,6 +160,12 @@ static int testMain(KThread* thread, void *arg)
             VFSAddDEvice(dev);
         }
     }
+
+    while (1)
+    {
+        /* code */
+    }
+    
     return 42;
 }
 
@@ -197,13 +203,13 @@ void *main_continued(void *arg UNUSED)
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init", NULL);
 
-    printf("--> Start test thread\n");
-    KThreadInit(&_testThread);
-    _testThread.mainFunction = testMain;
-    _testThread.name = "TestThread";
-    error = KThreadRun(&_testThread, 253, NULL);
+    printf("--> Start VFSD thread\n");
+    KThreadInit(&_vfsThread);
+    _vfsThread.mainFunction = mainVFS;
+    _vfsThread.name = "VFSD";
+    error = KThreadRun(&_vfsThread, 254, NULL);
     assert(error == 0);
-    printf("<-- Start test thread\n");
+    printf("<-- Start VFSD thread\n");
 
     seL4_DebugDumpScheduler();
     process_messages();    
