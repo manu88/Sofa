@@ -62,10 +62,8 @@ static IODevice* _dev = NULL;
 
 static int VFSServiceLs(Client* client, const char* path)
 {
-    printf("VFSServiceLs request '%s'\n", path);
     VFS_File_Stat st;
     return VFSStat(path, &st);
-
 }
 
 static int VFSServiceOpen(Client* client, const char* path, int mode)
@@ -73,7 +71,6 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
     File ff;
 
     int ret =  VFSOpen(path, mode,&ff);
-    printf("VFSOpen ret %i\n", ret);
     if(ret != 0)
     {
         return -ret;
@@ -197,7 +194,6 @@ static int mainVFS(KThread* thread, void *arg)
             HASH_FIND_PTR(_clients, &caller, clt );
             assert(clt);
             const char* path = clt->buff;
-            printf("List request for path '%s'\n", path);
             int ret = VFSServiceLs(clt, path);
             seL4_SetMR(1, ret);
             seL4_Reply(msg);
@@ -211,7 +207,6 @@ static int mainVFS(KThread* thread, void *arg)
             int ret = VFSServiceOpen(clt, path, seL4_GetMR(1));
             int handle = ret>=0?ret:0;
             int err = ret <0? -ret:0;
-            printf("VFSServiceOpen ret %i err %i handle %i\n", ret, err, handle);
             seL4_SetMR(1, err);
             seL4_SetMR(2, handle);            
             seL4_Reply(msg);
@@ -227,7 +222,6 @@ static int mainVFS(KThread* thread, void *arg)
             int ret = VFSServiceClose(clt, handle);
             seL4_SetMR(1, ret);            
             seL4_Reply(msg);
-
         }
         else if(seL4_GetMR(0) == VFSRequest_Read)
         {
@@ -242,8 +236,6 @@ static int mainVFS(KThread* thread, void *arg)
             seL4_SetMR(1, err);
             seL4_SetMR(2, size);            
             seL4_Reply(msg);
-
-
         }
         else
         {
@@ -254,8 +246,6 @@ static int mainVFS(KThread* thread, void *arg)
             assert(clt);
             seL4_Reply(msg);
         }
-        
-
     }
     
     return 42;

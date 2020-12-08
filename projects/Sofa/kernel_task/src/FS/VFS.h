@@ -43,6 +43,8 @@ typedef struct _FileOps {
 typedef struct _File
 {
     int mode;
+    size_t readPos;
+    size_t size;
     FileOps* ops;
 
     void* impl;

@@ -130,16 +130,30 @@ void processCommand(const char* cmd)
             SFPrintf("open error %i\n", handle);
             return;
         }
-        char buf[128];
-        ssize_t ret = VFSRead(handle, buf, 128);
-        if(ret > 0)
+        uint8_t done = 0;
+        while (done == 0)
         {
-            SFPrintf("%li :'%s'\n", ret, buf);
+            char buf[11];
+            
+            ssize_t ret = VFSRead(handle, buf, 10);
+            if(ret > 0)
+            {
+                buf[ret] = 0;
+                SFPrintf("%s", buf);
+            }
+            else if(ret == -1) // EOF
+            {
+                done = 1;
+            }
+            else
+            {
+                SFPrintf("Read error %li\n", ret);
+                done = 1;
+            }
+
         }
-        else
-        {
-            SFPrintf("Read error %li\n", ret);
-        }
+        SFPrintf("\n");
+        
 
         VFSClose(handle);
     }
@@ -171,6 +185,10 @@ void processCommand(const char* cmd)
         if(ret > 0)
         {
             SFPrintf("%li :'%s'\n", ret, buf);
+        }
+        else if(ret == -1)
+        {
+            SFPrintf("-- End of file --\n");
         }
         else
         {

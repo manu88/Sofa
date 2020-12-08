@@ -83,7 +83,6 @@ ssize_t VFSRead(int handle, char* data, size_t size)
     {
         SFPrintf("[shell] VFS client not registered(no buff)\n");
     }
-    SFPrintf("Read request handle=%i, size=%i\n", handle, size);
 
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
     seL4_SetMR(0, VFSRequest_Read);
@@ -96,10 +95,6 @@ ssize_t VFSRead(int handle, char* data, size_t size)
     {
         memcpy(data, vfsBuf, readSize);
         return readSize;
-    }
-    else
-    {
-        SFPrintf("got read response err=%i size=%i\n", err, readSize);        
     }
 
     return -1;

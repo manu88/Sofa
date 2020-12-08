@@ -22,8 +22,6 @@ static uint8_t Unpack_Path(const char *path, char *prefix, const char **pSuffix)
     char *slash;
     size_t pfxLen;
 
-    printf("path=%s\n", path);
-
     /* Path must start with '/' */
     if (*path != '/')
 	    return 0;
@@ -130,10 +128,8 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
     VFSFileSystem* fs =  _GetFileSystem(prefix);
     if(fs == NULL)
     {
-        printf("No fs for '%s'\n", path);
         return ENOENT;
     }
-    printf("Got FS for '%s' forward req\n", path);
     fs->ops->Stat(fs, suffix, stat);
 
     return 0;
@@ -154,7 +150,7 @@ int VFSOpen(const char* path, int mode, File* file)
     {
         return ENOENT;
     }
-    printf("Got FS for '%s' forward req\n", path);
+    memset(file, 0, sizeof(File));
     return fs->ops->Open(fs, suffix, mode, file);
 }
 
@@ -165,5 +161,15 @@ int VFSClose(File* file)
 
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
 {
-    return file->ops->Read(file, buf, sizeToRead);
+//    printf("VFSRead offset %i/%i\n", file->readPos, file->size);
+    if(file->readPos == file->size)
+    {
+        return -1; // EOF
+    }
+    ssize_t ret = file->ops->Read(file, buf, sizeToRead);
+    if(ret > 0)
+    {
+        file->readPos += ret;
+    }
+    return ret;
 }

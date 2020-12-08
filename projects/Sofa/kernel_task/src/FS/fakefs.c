@@ -68,7 +68,6 @@ static int fakeFSStat(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat)
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
     const char* p = path+1;
-    printf("FakeFS open request for '%s'\n", p);
 
     for(int i=0;i<NumFiles;i++)
     {
@@ -76,16 +75,16 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
         {
             file->ops = &_fileOps;
             file->impl = &files[i];
+
+            file->size = strlen(files[i].content);
             return 0;
         }
     }
-
-    return -1;
+    return ENOENT;
 }
 
 static int fakeFSClose(File *file)
 {
-    printf("FakeFS close request\n");
     return 0;
 }
 
@@ -93,20 +92,19 @@ static int fakeFSClose(File *file)
 
 static int fakeFSRead(File *file, void *buf, size_t numBytes)
 {
-    printf("FakeFS read req for %zi bytes\n", numBytes);
-
     FakeFile* f = file->impl;
     if(!f)
     {
         return -1;
     }
 
-    size_t effectiveSize = strlen(f->content);
+    size_t effectiveSize = strlen(f->content) - file->readPos;
+//    printf("numBytes %zi, effective %zi\n", numBytes, effectiveSize);
     if(numBytes < effectiveSize)
     {
         effectiveSize = numBytes;
     } 
-    memcpy(buf, f->content, effectiveSize);
+    memcpy(buf, f->content + file->readPos, effectiveSize);
 
     return effectiveSize;
 }
