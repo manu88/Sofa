@@ -4,7 +4,7 @@
 #include <signal.h>
 #include <ctype.h>
 #include "runtime.h"
-
+#include "files.h"
 
 static seL4_CPtr vfsCap = 0;
 char* vfsBuf = NULL;

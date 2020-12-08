@@ -5,7 +5,7 @@ project(shell C)
 
 
 
-add_executable(shell src/main.c)
+add_executable(shell src/main.c src/files.c)
 
 target_link_libraries(shell sel4 sel4runtime muslc sofa)
 
