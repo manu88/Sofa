@@ -143,13 +143,13 @@ int VFSAddDEvice(IODevice *dev)
         return test;
     }
     printf("[VFS] device  '%s' added with FS type %i\n", dev->name, type);
+
 }
 
 static int mainVFS(KThread* thread, void *arg)
 {
     KernelTaskContext* env = getKernelTaskContext();
 
-    /*
     printf("Test Thread started\n");
     IODevice* dev = NULL;
     FOR_EACH_DEVICE(dev)
@@ -159,7 +159,6 @@ static int mainVFS(KThread* thread, void *arg)
             VFSAddDEvice(dev);
         }
     }
-    */
     while (1)
     {
         seL4_Word sender;

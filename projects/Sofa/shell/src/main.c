@@ -220,7 +220,10 @@ void processCommand(const char* cmd)
         strcpy(vfsBuf, path);
         vfsBuf[strlen(path)] = 0;
         seL4_Call(vfsCap, info);
-        SFPrintf("got ls response %lX\n", seL4_GetMR(1));
+        if(seL4_GetMR(1) != 0)
+        {
+            SFPrintf("got ls response %lX\n", seL4_GetMR(1));
+        }
 
     }
     else if(startsWith("spawn", cmd))

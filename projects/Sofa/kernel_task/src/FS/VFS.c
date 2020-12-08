@@ -130,9 +130,8 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
     {
         return ENOENT;
     }
-    fs->ops->Stat(fs, suffix, stat);
+    return fs->ops->Stat(fs, suffix, stat);
 
-    return 0;
 }
 
 int VFSOpen(const char* path, int mode, File* file)
@@ -161,11 +160,13 @@ int VFSClose(File* file)
 
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
 {
-//    printf("VFSRead offset %i/%i\n", file->readPos, file->size);
+    assert(file->readPos <= file->size);
+
     if(file->readPos == file->size)
     {
         return -1; // EOF
     }
+
     ssize_t ret = file->ops->Read(file, buf, sizeToRead);
     if(ret > 0)
     {

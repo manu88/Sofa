@@ -313,7 +313,7 @@ static void* _blkCmd(VirtioDevice* dev, int op, size_t sector, char* buf, size_t
     assert(dev->queueID == 0);
     write_reg16(dev, VIRTIO_PCI_QUEUE_NOTIFY, dev->queueID);
     dev->rdt = (dev->rdt + 1) % dev->queueSize;
-    KSleep(1);
+    KSleep(3);
     return dma_data.virt;
 }
 

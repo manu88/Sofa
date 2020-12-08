@@ -40,7 +40,7 @@ static const FakeFile const files[] =
     },
     {
         .name = "file2",
-        .content = "Hello this is the content of file2"
+        .content = "Hello this is the content of file2, wich is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2"
 
     },
 };
@@ -59,11 +59,10 @@ static int fakeFSStat(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat)
         {
             printf("%s\n", files[i].name);
         }
-        
+        return 0;   
     }
-    return 0;
+    return ENOENT;
 }
-
 
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
@@ -88,8 +87,6 @@ static int fakeFSClose(File *file)
     return 0;
 }
 
-
-
 static int fakeFSRead(File *file, void *buf, size_t numBytes)
 {
     FakeFile* f = file->impl;
@@ -99,7 +96,6 @@ static int fakeFSRead(File *file, void *buf, size_t numBytes)
     }
 
     size_t effectiveSize = strlen(f->content) - file->readPos;
-//    printf("numBytes %zi, effective %zi\n", numBytes, effectiveSize);
     if(numBytes < effectiveSize)
     {
         effectiveSize = numBytes;
