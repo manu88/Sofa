@@ -7,6 +7,7 @@ static int fakeFSStat(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat);
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
 static int fakeFSRead(File *file, void *buf, size_t numBytes);
+static int fakeFSClose(File *file);
 
 static VFSFileSystemOps _ops =
 {
@@ -18,7 +19,8 @@ static VFSFileSystemOps _ops =
 
 static FileOps _fileOps = 
 {
-    .Read = fakeFSRead
+    .Read = fakeFSRead,
+    .Close = fakeFSClose
 };
 
 VFSFileSystem _fs = {.ops = &_ops};
@@ -54,6 +56,11 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     return 0;
 }
 
+static int fakeFSClose(File *file)
+{
+    printf("FakeFS close request\n");
+    return 0;
+}
 
 
 

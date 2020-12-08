@@ -50,3 +50,4 @@ int VFSMount(VFSFileSystem* fs, const char* mntPoint);
 
 int VFSStat(const char *path, VFS_File_Stat *stat);
 int VFSOpen(const char* path, int mode, File* file);
+int VFSClose(File* file);

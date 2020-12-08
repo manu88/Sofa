@@ -157,3 +157,8 @@ int VFSOpen(const char* path, int mode, File* file)
     printf("Got FS for '%s' forward req\n", path);
     return fs->ops->Open(fs, suffix, mode, file);
 }
+
+int VFSClose(File* file)
+{
+    return file->ops->Close(file);
+}

@@ -115,6 +115,34 @@ void processCommand(const char* cmd)
         }
         
     }
+    else if(startsWith("close", cmd))
+    {
+        const char *strArg = cmd + strlen("close ");
+        if(strlen(strArg) == 0)
+        {
+            SFPrintf("close usage: close file handle\n");
+            return;
+        }
+        int handle = atoi(strArg);
+
+        if(vfsCap == 0)
+        {
+            SFPrintf("[shell] VFS client not registered (no cap)\n");
+        }
+        if(vfsBuf == NULL)
+        {
+            SFPrintf("[shell] VFS client not registered(no buff)\n");
+        }
+
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+        seL4_SetMR(0, VFSRequest_Close);
+        seL4_SetMR(1, handle);
+        seL4_Call(vfsCap, info);
+        int err = seL4_GetMR(1);
+        SFPrintf("Close returned %i\n", err);
+
+
+    }
     else if(startsWith("open", cmd))
     {
         const char *path = cmd + strlen("open ");

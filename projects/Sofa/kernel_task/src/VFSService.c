@@ -87,6 +87,20 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
     return f->index;
 }
 
+static int VFSServiceClose(Client* client, int handle)
+{
+    FileHandle* file = NULL;
+    HASH_FIND_INT(client->files, &handle, file);
+    if(file == NULL)
+    {
+        return EINVAL;
+    }
+    HASH_DEL(client->files, file);
+    int ret = VFSClose(&file->file);
+    free(file);
+    return ret;
+}
+
 static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
 {
     assert(fsType);
@@ -139,13 +153,10 @@ static int mainVFS(KThread* thread, void *arg)
     */
     while (1)
     {
-        printf("VFSD wait on msg\n");
         seL4_Word sender;
         seL4_MessageInfo_t msg = seL4_Recv(_vfsService.baseEndpoint, &sender);
         ThreadBase* caller =(ThreadBase*) sender;
         assert(caller->process); 
-        printf("VFSD got message from %s %i\n", ProcessGetName(caller->process), ProcessGetPID(caller->process));
-
         if(seL4_GetMR(0) == VFSRequest_Register)
         {
             char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
@@ -191,6 +202,18 @@ static int mainVFS(KThread* thread, void *arg)
             printf("VFSServiceOpen ret %i err %i handle %i\n", ret, err, handle);
             seL4_SetMR(1, err);
             seL4_SetMR(2, handle);            
+            seL4_Reply(msg);
+
+        }
+        else if(seL4_GetMR(0) == VFSRequest_Close)
+        {
+            Client* clt = NULL;
+            HASH_FIND_PTR(_clients, &caller, clt );
+            assert(clt);
+
+            int handle = seL4_GetMR(1);
+            int ret = VFSServiceClose(clt, handle);
+            seL4_SetMR(1, ret);            
             seL4_Reply(msg);
 
         }
