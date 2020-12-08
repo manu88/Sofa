@@ -140,6 +140,37 @@ void processCommand(const char* cmd)
         seL4_Call(vfsCap, info);
         int err = seL4_GetMR(1);
         SFPrintf("Close returned %i\n", err);
+    }
+    else if(startsWith("read", cmd))
+    {
+        const char *strArg = cmd + strlen("read ");
+        int handle = -1;
+        int size = -1;
+        if(sscanf(strArg, "%i %i", &handle, &size) != 2)
+        {
+            SFPrintf("read usage: read file handle\n");
+            return;
+
+        }
+
+        if(vfsCap == 0)
+        {
+            SFPrintf("[shell] VFS client not registered (no cap)\n");
+        }
+        if(vfsBuf == NULL)
+        {
+            SFPrintf("[shell] VFS client not registered(no buff)\n");
+        }
+        SFPrintf("Read request handle=%i, size=%i\n", handle, size);
+
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+        seL4_SetMR(0, VFSRequest_Read);
+        seL4_SetMR(1, handle);
+        seL4_SetMR(2, size);
+        seL4_Call(vfsCap, info);
+        int err = seL4_GetMR(1);
+        int readSize = seL4_GetMR(2);
+        SFPrintf("got read response err=%i size=%i\n", err, readSize);
 
 
     }
