@@ -89,7 +89,14 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
 
 static ssize_t VFSServiceRead(Client* client, int handle, int size)
 {
-    return -1;
+    FileHandle* file = NULL;
+    HASH_FIND_INT(client->files, &handle, file);
+    if(file == NULL)
+    {
+        return -EINVAL;
+    }
+
+    return VFSRead(&file->file, client->buff, size);
 }
 
 static int VFSServiceClose(Client* client, int handle)

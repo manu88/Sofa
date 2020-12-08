@@ -162,3 +162,8 @@ int VFSClose(File* file)
 {
     return file->ops->Close(file);
 }
+
+ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
+{
+    return file->ops->Read(file, buf, sizeToRead);
+}

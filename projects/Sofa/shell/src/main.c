@@ -170,9 +170,14 @@ void processCommand(const char* cmd)
         seL4_Call(vfsCap, info);
         int err = seL4_GetMR(1);
         int readSize = seL4_GetMR(2);
-        SFPrintf("got read response err=%i size=%i\n", err, readSize);
-
-
+        if(err == 0)
+        {
+            SFPrintf("%s\n", vfsBuf);
+        }
+        else
+        {
+            SFPrintf("got read response err=%i size=%i\n", err, readSize);        
+        }
     }
     else if(startsWith("open", cmd))
     {

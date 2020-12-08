@@ -1,5 +1,6 @@
 #pragma once
 #include <utils/uthash.h>
+#include <sys/types.h>
 
 typedef struct _VFS_File_Stat
 {
@@ -43,6 +44,8 @@ typedef struct _File
 {
     int mode;
     FileOps* ops;
+
+    void* impl;
 }File;
 
 int VFSInit(void);
@@ -50,4 +53,6 @@ int VFSMount(VFSFileSystem* fs, const char* mntPoint);
 
 int VFSStat(const char *path, VFS_File_Stat *stat);
 int VFSOpen(const char* path, int mode, File* file);
+
+ssize_t VFSRead(File* file, char* buf, size_t sizeToRead);
 int VFSClose(File* file);
