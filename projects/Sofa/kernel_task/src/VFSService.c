@@ -14,11 +14,26 @@
 #include <utils/uthash.h>
 #include "VFS.h"
 
+
+typedef struct
+{
+    File file;
+
+    UT_hash_handle hh; /* makes this structure hashable */
+    int index;
+
+}FileHandle;
+
 typedef struct
 {
     ThreadBase* caller;
     UT_hash_handle hh; /* makes this structure hashable */
     char* buff;
+
+    FileHandle* files;
+    int fileIndex;
+
+
 }Client;
 
 static KThread _vfsThread;
@@ -43,12 +58,33 @@ int VFSServiceInit()
 }
 
 static IODevice* _dev = NULL;
-static int VFSServiceLs(const char* path)
+
+
+static int VFSServiceLs(Client* client, const char* path)
 {
     printf("VFSServiceLs request '%s'\n", path);
     VFS_File_Stat st;
     return VFSStat(path, &st);
 
+}
+
+static int VFSServiceOpen(Client* client, const char* path, int mode)
+{
+    File ff;
+
+    int ret =  VFSOpen(path, mode,&ff);
+    printf("VFSOpen ret %i\n", ret);
+    if(ret != 0)
+    {
+        return -ret;
+    }
+    FileHandle* f = malloc(sizeof(FileHandle));
+    assert(f);
+    f->file = ff;
+    f->index = client->fileIndex++;
+    HASH_ADD_INT(client->files, index, f);
+
+    return f->index;
 }
 
 static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
@@ -124,6 +160,8 @@ static int mainVFS(KThread* thread, void *arg)
                                                 );
             assert(buffShared);
             Client* client = malloc(sizeof(Client));
+            assert(client);
+            memset(client, 0, sizeof(Client));
             client->caller = caller;
             client->buff = buff;
             HASH_ADD_PTR(_clients, caller, client);
@@ -137,9 +175,24 @@ static int mainVFS(KThread* thread, void *arg)
             assert(clt);
             const char* path = clt->buff;
             printf("List request for path '%s'\n", path);
-            int ret = VFSServiceLs(path);
+            int ret = VFSServiceLs(clt, path);
             seL4_SetMR(1, ret);
             seL4_Reply(msg);
+        }
+        else if(seL4_GetMR(0) == VFSRequest_Open)
+        {
+            Client* clt = NULL;
+            HASH_FIND_PTR(_clients, &caller, clt );
+            assert(clt);
+            const char* path = clt->buff;
+            int ret = VFSServiceOpen(clt, path, seL4_GetMR(1));
+            int handle = ret>=0?ret:0;
+            int err = ret <0? -ret:0;
+            printf("VFSServiceOpen ret %i err %i handle %i\n", ret, err, handle);
+            seL4_SetMR(1, err);
+            seL4_SetMR(2, handle);            
+            seL4_Reply(msg);
+
         }
         else
         {

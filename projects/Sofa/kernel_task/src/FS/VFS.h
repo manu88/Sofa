@@ -7,10 +7,11 @@ typedef struct _VFS_File_Stat
 }VFS_File_Stat;
 
 typedef struct _VFSFileSystem VFSFileSystem;
+typedef struct _File File;
 /* Operations that can be performed on a mounted filesystem. */
 typedef struct _VFSFileSystemOps 
 {
-    int (*Open)(VFSFileSystem *fs, const char *path, int mode);
+    int (*Open)(VFSFileSystem *fs, const char *path, int mode, File *file);
     //int (*Create_Directory)(VFSFileSystem *fs, const char *path);
     //int (*Open_Directory)(VFSFileSystem *fs, const char *path, struct File **pDir);
     int (*Stat)(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat);
@@ -26,7 +27,26 @@ typedef struct _VFSFileSystem
     VFSFileSystemOps *ops;
 }VFSFileSystem;
 
+typedef struct _File File;
+
+/* Operations that can be performed on a File. */
+typedef struct _FileOps {
+    //int (*FStat)(struct File *file, struct VFS_File_Stat *stat);
+    int (*Read)(File *file, void *buf, size_t numBytes);
+    //int (*Write)(struct File *file, void *buf, ulong_t numBytes);
+    //int (*Seek)(struct File *file, ulong_t pos);
+    int (*Close)(File *file);
+    //int (*Read_Entry)(struct File *dir, struct VFS_Dir_Entry *entry);  /* Read next directory entry. */
+}FileOps;
+
+typedef struct _File
+{
+    int mode;
+    FileOps* ops;
+}File;
+
 int VFSInit(void);
 int VFSMount(VFSFileSystem* fs, const char* mntPoint);
 
 int VFSStat(const char *path, VFS_File_Stat *stat);
+int VFSOpen(const char* path, int mode, File* file);

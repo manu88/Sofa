@@ -115,10 +115,9 @@ void processCommand(const char* cmd)
         }
         
     }
-    else if(startsWith("ls", cmd))
+    else if(startsWith("open", cmd))
     {
-        const char *path = cmd + strlen("ls ");
-
+        const char *path = cmd + strlen("open ");
         if(vfsCap == 0)
         {
             SFPrintf("[shell] VFS client not registered (no cap)\n");
@@ -126,7 +125,28 @@ void processCommand(const char* cmd)
         if(vfsBuf == NULL)
         {
             SFPrintf("[shell] VFS client not registered(no buff)\n");
+        }
 
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+        seL4_SetMR(0, VFSRequest_Open);
+        seL4_SetMR(1, 1); // mode
+        strcpy(vfsBuf, path);
+        vfsBuf[strlen(path)] = 0;
+        seL4_Call(vfsCap, info);
+        int err = seL4_GetMR(1);
+        int handle = seL4_GetMR(2);
+        SFPrintf("got Open response err=%i handle=%i\n", err, handle);
+    }
+    else if(startsWith("ls", cmd))
+    {
+        const char *path = cmd + strlen("ls ");
+        if(vfsCap == 0)
+        {
+            SFPrintf("[shell] VFS client not registered (no cap)\n");
+        }
+        if(vfsBuf == NULL)
+        {
+            SFPrintf("[shell] VFS client not registered(no buff)\n");
         }
 
         seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);

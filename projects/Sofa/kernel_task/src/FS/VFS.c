@@ -107,9 +107,6 @@ int VFSInit()
 
 int VFSStat(const char *path, VFS_File_Stat *stat)
 {
-    char prefix[MAX_PREFIX_LEN + 1];
-    const char *suffix;
-
     if(strcmp(path, "/") == 0)
     {
         VFSFileSystem* fs = NULL;
@@ -122,11 +119,13 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
         return 0;
     }
     
+    char prefix[MAX_PREFIX_LEN + 1];
+    const char *suffix;
+
     if (!Unpack_Path(path, prefix, &suffix))
     {
 	    return ENOENT;
     }
-
 
     VFSFileSystem* fs =  _GetFileSystem(prefix);
     if(fs == NULL)
@@ -138,4 +137,23 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
     fs->ops->Stat(fs, suffix, stat);
 
     return 0;
+}
+
+int VFSOpen(const char* path, int mode, File* file)
+{
+    char prefix[MAX_PREFIX_LEN + 1];
+    const char *suffix;
+
+    if (!Unpack_Path(path, prefix, &suffix))
+    {
+	    return ENOENT;
+    }
+
+    VFSFileSystem* fs = _GetFileSystem(prefix);
+    if(fs == NULL)
+    {
+        return ENOENT;
+    }
+    printf("Got FS for '%s' forward req\n", path);
+    return fs->ops->Open(fs, suffix, mode, file);
 }

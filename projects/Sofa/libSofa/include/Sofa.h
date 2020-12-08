@@ -51,6 +51,8 @@ typedef enum
 {
     VFSRequest_Register,
     VFSRequest_ListDir,
+    VFSRequest_Open,
+    
 } VFSRequest;
 
 int SFSleep(int ms);
