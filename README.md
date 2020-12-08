@@ -19,10 +19,15 @@ Sofa is build atop SeL4 microkernel and provides a set of userland servers and a
 * kill,
 * Name server: register service, get service by name,
 * threads
+* VFS: mount, open, close
 
 ## Applications
 * init
 * shell
+
+## Services
+* VFS
+* net
 
 ## Build
 You should have all the tools and external deps required to build seL4 (some info [here](https://docs.sel4.systems/projects/buildsystem/host-dependencies.html)).
