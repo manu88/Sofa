@@ -43,11 +43,12 @@ int VFSServiceInit()
 }
 
 static IODevice* _dev = NULL;
-static void VFSServiceLs(const char* path)
+static int VFSServiceLs(const char* path)
 {
     printf("VFSServiceLs request '%s'\n", path);
     VFS_File_Stat st;
-    VFSStat(path, &st);
+    return VFSStat(path, &st);
+
 }
 
 static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
@@ -88,6 +89,8 @@ int VFSAddDEvice(IODevice *dev)
 static int mainVFS(KThread* thread, void *arg)
 {
     KernelTaskContext* env = getKernelTaskContext();
+
+    /*
     printf("Test Thread started\n");
     IODevice* dev = NULL;
     FOR_EACH_DEVICE(dev)
@@ -97,7 +100,7 @@ static int mainVFS(KThread* thread, void *arg)
             VFSAddDEvice(dev);
         }
     }
-
+    */
     while (1)
     {
         printf("VFSD wait on msg\n");
@@ -134,7 +137,8 @@ static int mainVFS(KThread* thread, void *arg)
             assert(clt);
             const char* path = clt->buff;
             printf("List request for path '%s'\n", path);
-            VFSServiceLs(path);
+            int ret = VFSServiceLs(path);
+            seL4_SetMR(1, ret);
             seL4_Reply(msg);
         }
         else

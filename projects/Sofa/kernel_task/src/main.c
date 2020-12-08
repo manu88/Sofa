@@ -48,7 +48,7 @@
 #include "KThread.h"
 #include <Sofa.h>
 #include "VFSService.h"
-
+#include "VFS.h"
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
 Calls to KSleep will ensure that they are never called from main*/
@@ -177,6 +177,12 @@ void *main_continued(void *arg UNUSED)
 
     error = SerialInit();
     assert(error == 0);
+
+    error = VFSInit();
+    assert(error == 0);
+
+    VFSMount(getFakeFS(), "/fake");
+
 
     error = VFSServiceInit();
     assert(error == 0);
