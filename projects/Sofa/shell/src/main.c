@@ -6,8 +6,8 @@
 #include "runtime.h"
 #include "files.h"
 
-static seL4_CPtr vfsCap = 0;
-char* vfsBuf = NULL;
+extern seL4_CPtr vfsCap;
+extern char* vfsBuf;
 
 static char *trim(char *str)
 {
@@ -61,7 +61,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     SFPrintf("Sofa shell\n");
-    SFPrintf("Available commands are: exit help ps kill spawn sleep\n");
+    SFPrintf("Available commands are: exit help ps kill spawn sleep cat\n");
 }
 
 void processCommand(const char* cmd)
@@ -115,6 +115,34 @@ void processCommand(const char* cmd)
         }
         
     }
+    else if(startsWith("cat", cmd))
+    {
+        const char *path = cmd + strlen("cat ");
+        if(strlen(path) == 0)
+        {
+            SFPrintf("cat usage: cat file\n");
+            return;
+        }
+
+        int handle = VFSOpen(path, 1);
+        if(handle <0)
+        {
+            SFPrintf("open error %i\n", handle);
+            return;
+        }
+        char buf[128];
+        ssize_t ret = VFSRead(handle, buf, 128);
+        if(ret > 0)
+        {
+            SFPrintf("%li :'%s'\n", ret, buf);
+        }
+        else
+        {
+            SFPrintf("Read error %li\n", ret);
+        }
+
+        VFSClose(handle);
+    }
     else if(startsWith("close", cmd))
     {
         const char *strArg = cmd + strlen("close ");
@@ -124,22 +152,8 @@ void processCommand(const char* cmd)
             return;
         }
         int handle = atoi(strArg);
-
-        if(vfsCap == 0)
-        {
-            SFPrintf("[shell] VFS client not registered (no cap)\n");
-        }
-        if(vfsBuf == NULL)
-        {
-            SFPrintf("[shell] VFS client not registered(no buff)\n");
-        }
-
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-        seL4_SetMR(0, VFSRequest_Close);
-        seL4_SetMR(1, handle);
-        seL4_Call(vfsCap, info);
-        int err = seL4_GetMR(1);
-        SFPrintf("Close returned %i\n", err);
+        int ret = VFSClose(handle);
+        SFPrintf("%i\n", ret);
     }
     else if(startsWith("read", cmd))
     {
@@ -152,54 +166,24 @@ void processCommand(const char* cmd)
             return;
 
         }
-
-        if(vfsCap == 0)
+        char buf[128];
+        ssize_t ret = VFSRead(handle, buf, size);
+        if(ret > 0)
         {
-            SFPrintf("[shell] VFS client not registered (no cap)\n");
-        }
-        if(vfsBuf == NULL)
-        {
-            SFPrintf("[shell] VFS client not registered(no buff)\n");
-        }
-        SFPrintf("Read request handle=%i, size=%i\n", handle, size);
-
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
-        seL4_SetMR(0, VFSRequest_Read);
-        seL4_SetMR(1, handle);
-        seL4_SetMR(2, size);
-        seL4_Call(vfsCap, info);
-        int err = seL4_GetMR(1);
-        int readSize = seL4_GetMR(2);
-        if(err == 0)
-        {
-            SFPrintf("%s\n", vfsBuf);
+            SFPrintf("%li :'%s'\n", ret, buf);
         }
         else
         {
-            SFPrintf("got read response err=%i size=%i\n", err, readSize);        
+            SFPrintf("Read error %li\n", ret);
         }
+        
     }
     else if(startsWith("open", cmd))
     {
         const char *path = cmd + strlen("open ");
-        if(vfsCap == 0)
-        {
-            SFPrintf("[shell] VFS client not registered (no cap)\n");
-        }
-        if(vfsBuf == NULL)
-        {
-            SFPrintf("[shell] VFS client not registered(no buff)\n");
-        }
 
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
-        seL4_SetMR(0, VFSRequest_Open);
-        seL4_SetMR(1, 1); // mode
-        strcpy(vfsBuf, path);
-        vfsBuf[strlen(path)] = 0;
-        seL4_Call(vfsCap, info);
-        int err = seL4_GetMR(1);
-        int handle = seL4_GetMR(2);
-        SFPrintf("got Open response err=%i handle=%i\n", err, handle);
+        int ret = VFSOpen(path, 1);
+        SFPrintf("%i\n",ret);
     }
     else if(startsWith("ls", cmd))
     {
@@ -288,20 +272,7 @@ int main(int argc, char *argv[])
     RuntimeInit2(argc, argv);
     SFPrintf("[%i] Shell \n", SFGetPid());
 
-    ssize_t capOrErr = SFGetService("VFS");
-    SFPrintf("SFGetService returned %li\n", capOrErr);
-
-    if(capOrErr > 0)
-    {
-        vfsCap = capOrErr;
-
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-        seL4_SetMR(0, VFSRequest_Register);
-        seL4_Call(vfsCap, info);
-        vfsBuf = (char*) seL4_GetMR(1);
-        SFPrintf("VFS client ok\n");
-
-    }
+    VFSClientInit();
     while (1)
     {
         SFPrintf(">:");

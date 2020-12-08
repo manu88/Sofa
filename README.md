@@ -19,7 +19,7 @@ Sofa is build atop SeL4 microkernel and provides a set of userland servers and a
 * kill,
 * Name server: register service, get service by name,
 * threads
-* VFS: mount, open, close
+* VFS: mount, open, close, read
 
 ## Applications
 * init
