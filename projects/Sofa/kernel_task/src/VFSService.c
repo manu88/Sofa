@@ -12,6 +12,7 @@
 #include "Process.h"
 #include <Sofa.h>
 #include <utils/uthash.h>
+#include "VFS.h"
 
 typedef struct
 {
@@ -26,7 +27,7 @@ static char _vfsName[] = "VFS";
 
 static Client* _clients = NULL;
 
-int VFSInit()
+int VFSServiceInit()
 {
     
     int error = 0;
@@ -42,17 +43,11 @@ int VFSInit()
 }
 
 static IODevice* _dev = NULL;
-void VFSLs(const char* path)
+static void VFSServiceLs(const char* path)
 {
-    printf("ls request '%s'\n", path);
-    inode_t ino;
-    ext2_find_file_inode(path, &ino, _dev, NULL);
-    //ext2_list_directory(path, &ino, _dev, NULL);
-    return;
-    //uint8_t ret = ext2_read_root_directory(path, _dev, NULL);
-    ext2_dir dir;
-    uint32_t ret =  ext2_read_directory(path, &dir, _dev, NULL);
-    printf("Ret %u\n", ret);
+    printf("VFSServiceLs request '%s'\n", path);
+    VFS_File_Stat st;
+    VFSStat(path, &st);
 }
 
 static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
@@ -139,7 +134,7 @@ static int mainVFS(KThread* thread, void *arg)
             assert(clt);
             const char* path = clt->buff;
             printf("List request for path '%s'\n", path);
-            VFSLs(path);
+            VFSServiceLs(path);
             seL4_Reply(msg);
         }
         else
@@ -158,7 +153,7 @@ static int mainVFS(KThread* thread, void *arg)
     return 42;
 }
 
-int VFSStart()
+int VFSServiceStart()
 {
     printf("--> Start VFSD thread\n");
     KThreadInit(&_vfsThread);

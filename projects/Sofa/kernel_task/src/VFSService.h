@@ -8,12 +8,10 @@ typedef enum
     VFSSupported_EXT2,
 }VFSSupported;
 
-int VFSInit(void);
+int VFSServiceInit(void);
 
 
-int VFSStart(void);
+int VFSServiceStart(void);
 
-int VFSAddDEvice(IODevice *dev);
+//int VFSAddDEvice(IODevice *dev);
 
-
-void VFSLs(const char* path);

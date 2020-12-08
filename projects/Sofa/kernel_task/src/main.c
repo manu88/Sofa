@@ -178,13 +178,13 @@ void *main_continued(void *arg UNUSED)
     error = SerialInit();
     assert(error == 0);
 
-    error = VFSInit();
+    error = VFSServiceInit();
     assert(error == 0);
 
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init", NULL);
 
-    error = VFSStart();
+    error = VFSServiceStart();
     assert(error == 0);
 
     seL4_DebugDumpScheduler();

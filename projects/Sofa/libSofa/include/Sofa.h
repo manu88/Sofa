@@ -26,8 +26,6 @@ typedef enum
     SofaSysCall_RegisterService, // Register a 
     SofaSysCall_GetService,
 
-    SofaSysCall_VFS,
-
     SyscallID_Last // Not a real ID, just here to count ids
 }SyscallID;
 
@@ -84,5 +82,4 @@ ssize_t SFRegisterService(const char* name);
 ssize_t SFGetService(const char* name);
 
 // temp/debug syscall
-void SFVFS(VFSRequest code, const char* data, size_t dataSize);
 void SFDebug(SofaDebugCode code);
