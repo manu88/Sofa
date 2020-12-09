@@ -44,7 +44,12 @@ static int ext2FSStat(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat)
         ext2_read_root_directory("hello", dev, NULL);
         return 0;   
     }
-    return ENOENT;
+
+    const char* pp = path + 1;// skip '/'
+
+    uint8_t ret = ext2_read_root_directory(pp, dev, NULL);
+
+    return ret == 0? ENOENT : 0;
 
 }
 static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)

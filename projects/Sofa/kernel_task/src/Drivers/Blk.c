@@ -334,7 +334,6 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
         return -1;
     }
 
-
     uint32_t desc1 = dev->rx_ring.used->ring[i].id;
     uint32_t desc2 = 0;
     uint32_t desc3 = 0;
@@ -353,6 +352,7 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
+
     desc3 = dev->rx_ring.desc[desc2].next;
     if(dev->rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
     {
@@ -369,7 +369,6 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
     }
     memcpy(buf, dma_virt, bufSize);
 
-
     dma_unpin_free(&dev->dma_man, dma_virt, bufSize);      
 
     dev->rx_ring.desc[desc1].addr = 0;
@@ -381,7 +380,6 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
     dev->rx_ring.desc[desc2].len = 0;
     dev->rx_ring.desc[desc2].next = 0;
     dev->rx_ring.desc[desc2].flags = 0;
-
 
     dev->rx_ring.desc[desc3].addr = 0;
     dev->rx_ring.desc[desc3].len = 0;
@@ -462,7 +460,6 @@ static ssize_t _blkWrite(IODevice* device, size_t sector, const char* buf, size_
         return -1;
     }
 
-
     dma_unpin_free(&dev->dma_man, dma_virt, bufSize);
 }
 
@@ -535,8 +532,6 @@ int BlkInit(uint32_t iobase, KThread* thread)
 */
     set_features(&dev, request_features);
 
-
-
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
     asm volatile("mfence" ::: "memory");
     if(!(get_status(&dev) & VIRTIO_CONFIG_S_DRIVER_FEATURES_OK))
@@ -549,8 +544,6 @@ int BlkInit(uint32_t iobase, KThread* thread)
 		printf("HOST is ok with our features\n");
 	}
 
-
-
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
     asm volatile("mfence" ::: "memory");
 
@@ -561,7 +554,6 @@ int BlkInit(uint32_t iobase, KThread* thread)
     uint8_t headCount       =  read_reg8(&dev, 0x26);
     uint8_t sectorCount     =  read_reg8(&dev, 0x27);
     uint8_t blockLen        =  read_reg8(&dev, 0x28);
-
 
     printf("totSectorCount %u\n", totSectorCount);
     printf("maxSegSize %u\n", maxSegSize);
@@ -586,8 +578,7 @@ int BlkInit(uint32_t iobase, KThread* thread)
         printf("Queue %i size %i\n",index, queueSize);
     }
     printf("Virtio blk has %i available queues\n", numQueues);
-    
-        
+ 
     int err = initialize_desc_ring(&dev, &env->ops.dma_manager);
     assert(err == 0);
 
@@ -613,11 +604,9 @@ int BlkInit(uint32_t iobase, KThread* thread)
 
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_OK);
 
-    
     printf("Dev status %u\n", get_status(&dev));
 
     DeviceTreeAddDevice(&_blk);
-    
 
     return 0;
 }

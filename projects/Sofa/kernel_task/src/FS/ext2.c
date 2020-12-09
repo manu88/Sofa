@@ -32,7 +32,7 @@ static ext2_priv_data __ext2_data;
 
 typedef IODevice device_t;
 
-void ext2_read_block(uint8_t *buf, uint32_t block, device_t *dev, ext2_priv_data *priv)
+uint8_t ext2_read_block(uint8_t *buf, uint32_t block, device_t *dev, ext2_priv_data *priv)
 {
 	uint32_t sectors_per_block = priv->sectors_per_block;
 	if(!sectors_per_block)
@@ -55,14 +55,15 @@ void ext2_read_block(uint8_t *buf, uint32_t block, device_t *dev, ext2_priv_data
     {
 		//printf("Read sector %i\n", startSect+i);
         ssize_t ret = IODeviceRead(dev, startSect+i, bufPos, 512);
-        assert(ret >= 0);
+		if(ret <= 0)
+		{
+			return 0;// error
+		}
         bufPos += ret;
         acc += ret;
         //printf("Buf pos %zi\n", acc);
     }
-    //printf("--->ext2_read_block return\n");
-	//dev->read(buf, block*sectors_per_block, sectors_per_block, dev);
-
+	return 1;
 }
 
 void ext2_write_block(uint8_t *buf, uint32_t block, device_t *dev, ext2_priv_data *priv)
@@ -74,7 +75,8 @@ void ext2_write_block(uint8_t *buf, uint32_t block, device_t *dev, ext2_priv_dat
 
 //	dev->write(buf, block*sectors_per_block, sectors_per_block, dev);
 }
-void ext2_read_inode(inode_t *inode_buf, uint32_t inode, device_t *dev, ext2_priv_data *priv)
+
+uint8_t ext2_read_inode(inode_t *inode_buf, uint32_t inode, device_t *dev, ext2_priv_data *priv)
 {
 	uint32_t bg = (inode - 1) / priv->sb.inodes_in_blockgroup;
 	uint32_t i = 0;
@@ -84,10 +86,12 @@ void ext2_read_inode(inode_t *inode_buf, uint32_t inode, device_t *dev, ext2_pri
         block_buf = (uint8_t *)malloc(priv->blocksize);
     }
     assert(block_buf);
-    //printf("Size of block_buf=%zi\n", priv->blocksize);
 
-    //printf("ext2_read_inode, parse priv->first_bgd\n");
-	ext2_read_block(block_buf, priv->first_bgd, dev, priv);
+	uint8_t ret = ext2_read_block(block_buf, priv->first_bgd, dev, priv);
+	if(ret == 0)
+	{
+		return 0;
+	}
 	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
 	//printf("We seek BG %d\n", bg);
 	/* Seek to the BG's desc */
@@ -98,16 +102,23 @@ void ext2_read_inode(inode_t *inode_buf, uint32_t inode, device_t *dev, ext2_pri
 	//printf("Index of our inode is %d\n", index);
 	uint32_t block = (index * sizeof(inode_t))/ priv->blocksize;
 	//printf("Relative: %d, Absolute: %d\n", block, bgd->block_of_inode_table + block);
-	ext2_read_block(block_buf, bgd->block_of_inode_table + block, dev, priv);
+	ret = ext2_read_block(block_buf, bgd->block_of_inode_table + block, dev, priv);
+	if(ret == 0)
+	{
+		return 0;
+	}
     //printf("Did read\n");
 	inode_t* _inode = (inode_t *)block_buf;
 	index = index % priv->inodes_per_block;
     //printf("Index is %i\n", index);
 	for(i = 0; i < index; i++)
+	{
 		_inode++;
+	}
 	/* We have found the inode! */
     //printf("Found the inode\n");
 	memcpy(inode_buf, _inode, sizeof(inode_t));
+	return 1;
 }
 
 void ext2_write_inode(inode_t *inode_buf, uint32_t ii, device_t *dev, ext2_priv_data *priv)
@@ -179,7 +190,12 @@ uint32_t ext2_read_directory(char *filename, ext2_dir *dir, device_t *dev, ext2_
 		if(filename && strcmp(filename, name) == 0)
 		{
 			/* If we are looking for a file, we had found it */
-			ext2_read_inode(inode, dir->inode, dev, priv);
+			uint8_t r = ext2_read_inode(inode, dir->inode, dev, priv);
+			if(r == 0)
+			{
+				free(name);
+				return 0;
+			}
 			printf("Found inode %s! %d\n", filename, dir->inode);
 			free(name);
 			return dir->inode;
@@ -211,8 +227,11 @@ uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *
     { 
         root_buf = (uint8_t *)malloc(priv->blocksize);
     }
-	ext2_read_inode(inode, 2, dev, priv);
-	//printf("ext2_read_inode for root is ok\n");
+	if(ext2_read_inode(inode, 2, dev, priv) == 0)
+	{
+		return 0;
+	}
+
 	if((inode->type & 0xF000) != INODE_TYPE_DIRECTORY)
 	{
 		printf("FATAL: Root directory is not a directory!\n");
@@ -259,7 +278,10 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 	if(n > 1)
 	{ 
 		/* Read inode#2 (Root dir) into inode */
-		ext2_read_inode(inode, 2, dev, priv);
+		if(ext2_read_inode(inode, 2, dev, priv) == 0)
+		{
+			return 0;
+		}
 		/* Now, loop through the DPB's and see if it contains this filename */
 		n--;
 		while(n--)
@@ -639,10 +661,16 @@ uint8_t ext2_writefile(char *fn, char *buf, uint32_t len, device_t *dev, ext2_pr
 	/* Locate and load the inode */
 	uint32_t inode_id = ext2_find_file_inode(fn, inode, dev, priv);
 	inode_id ++;
-	if(inode_id == 1) return 0;
+	if(inode_id == 1)
+	{
+		return 0;
+	}
 	printf("%s's inode is %d\n", fn, inode_id);
 	if(!inode) inode = (inode_t *)malloc(sizeof(inode_t));
-	ext2_read_inode(inode, inode_id, dev, priv);
+	if(ext2_read_inode(inode, inode_id, dev, priv) == 0)
+	{
+		return 0;
+	}
 	/* Check if it is of type INODE_TYPE_FILE */
 	/*if(! (inode->type & INODE_TYPE_FILE))
 	{
@@ -803,7 +831,10 @@ uint8_t ext2_mount(device_t *dev, void *privd)
 	ext2_priv_data *priv = privd;
 
 	inode_t ino;
-	ext2_read_inode(&ino, 2, dev, priv);
+	if(ext2_read_inode(&ino, 2, dev, priv) == 0)
+	{
+		return 0;
+	}
 
 	if((ino.type & 0xF000) != INODE_TYPE_DIRECTORY)
 	{
