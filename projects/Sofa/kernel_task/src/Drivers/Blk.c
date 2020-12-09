@@ -229,9 +229,9 @@ static int initialize_desc_ring(VirtioDevice *dev, ps_dma_man_t *dma_man) {
 
 static void blk_debug(VirtioDevice *dev)
 {
-    for(int i=0;i<32000;i++)
+    for(int i=0;i<dev->queueSize;i++)
     {
-        //printf("%i %i %c\n",i, dev->rx_ring.desc[i].len, i==dev->rdt?'*': ' ');
+        printf("%i %i %c\n",i, dev->rx_ring.desc[i].len, i==dev->rdt?'*': ' ');
     }
 }
 
@@ -323,9 +323,9 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
 {
     VirtioDevice *dev = device->impl;
 
-    int i = dev->rx_ring.used->idx;
+    int i = dev->rx_ring.used->idx % dev->queueSize;
     void* dma_virt = _blkCmd(dev, VIRTIO_BLK_T_IN, sector, buf, bufSize);
-
+    //blk_debug(dev);
     virtio_blk_req *req = dev->headerReq;// .rx_ring.desc[desc1].addr;
     if(req->status != VIRTIO_BLK_S_OK)
     {
@@ -334,29 +334,31 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
         return -1;
     }
 
-    uint32_t desc1 = dev->rx_ring.used->ring[i].id;
+    uint32_t desc1 = dev->rx_ring.used->ring[i].id % dev->queueSize;
     uint32_t desc2 = 0;
     uint32_t desc3 = 0;
 
     if(!(dev->rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
     {
-        printf("desc1 is missing the Next desc flag!\n");
+        printf("desc1 (%i) is missing the Next desc flag!\n", desc1);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);
         return -1;
     }
-    desc2 = dev->rx_ring.desc[desc1].next;
+    desc2 = dev->rx_ring.desc[desc1].next % dev->queueSize;
 
     if(!(dev->rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
     {
-        printf("desc2 is missing the Next desc flag!\n");
+        printf("desc2 (%i) is missing the Next desc flag!\n", desc2);
+        printf("Desc1 is %i\n", desc1);
+        blk_debug(dev);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
 
-    desc3 = dev->rx_ring.desc[desc2].next;
+    desc3 = dev->rx_ring.desc[desc2].next % dev->queueSize;
     if(dev->rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
     {
-        printf("desc2' size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", dev->rx_ring.desc[desc2].len);
+        printf("desc2' (%i) size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", desc3, dev->rx_ring.desc[desc2].len);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
@@ -386,7 +388,6 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
     dev->rx_ring.desc[desc3].next = 0;
     dev->rx_ring.desc[desc3].flags = 0;
   
-
     return bufSize;
 }
 

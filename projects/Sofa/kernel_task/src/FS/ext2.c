@@ -72,8 +72,6 @@ void ext2_write_block(uint8_t *buf, uint32_t block, device_t *dev, ext2_priv_dat
 	if(!sectors_per_block) sectors_per_block = 1;
 
     assert(0 && "Implement me :)");
-
-//	dev->write(buf, block*sectors_per_block, sectors_per_block, dev);
 }
 
 uint8_t ext2_read_inode(inode_t *inode_buf, uint32_t inode, device_t *dev, ext2_priv_data *priv)
