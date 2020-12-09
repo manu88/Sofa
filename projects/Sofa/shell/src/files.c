@@ -88,6 +88,32 @@ int VFSClose(int handle)
     return -err;
 }
 
+int VFSSeek(int handle, size_t pos)
+{
+    if(vfsCap == 0)
+    {
+        SFPrintf("[shell] VFS client not registered (no cap)\n");
+    }
+    if(vfsBuf == NULL)
+    {
+        SFPrintf("[shell] VFS client not registered(no buff)\n");
+    }
+
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, VFSRequest_Seek);
+    seL4_SetMR(1, handle);
+    seL4_SetMR(2, pos);
+    seL4_Call(vfsCap, info);
+    int err = seL4_GetMR(1);
+    int offset = seL4_GetMR(2);
+
+    if(err == 0)
+    {
+        return offset;
+    }
+    return -err;
+}
+
 ssize_t VFSRead(int handle, char* data, size_t size)
 {
     if(vfsCap == 0)
@@ -112,5 +138,5 @@ ssize_t VFSRead(int handle, char* data, size_t size)
         return readSize;
     }
 
-    return -1;
+    return -err;
 }

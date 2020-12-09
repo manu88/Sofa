@@ -69,7 +69,6 @@ static int VFSServiceLs(Client* client, const char* path)
 static int VFSServiceOpen(Client* client, const char* path, int mode)
 {
     File ff;
-
     int ret =  VFSOpen(path, mode,&ff);
     if(ret != 0)
     {
@@ -82,6 +81,18 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
     HASH_ADD_INT(client->files, index, f);
 
     return f->index;
+}
+
+static int VFSServiceSeek(Client* client, int handle, size_t pos)
+{
+    FileHandle* file = NULL;
+    HASH_FIND_INT(client->files, &handle, file);
+    if(file == NULL)
+    {
+        return EINVAL;
+    }
+
+    return VFSSeek(file, pos);
 }
 
 static ssize_t VFSServiceRead(Client* client, int handle, int size)
@@ -234,6 +245,17 @@ static int mainVFS(KThread* thread, void *arg)
             size = ret >=0? ret:0; 
             seL4_SetMR(1, err);
             seL4_SetMR(2, size);            
+            seL4_Reply(msg);
+        }
+        else if(seL4_GetMR(0) == VFSRequest_Seek)
+        {
+            Client* clt = NULL;
+            HASH_FIND_PTR(_clients, &caller, clt );
+            assert(clt);
+            int handle = seL4_GetMR(1);
+            size_t offset = seL4_GetMR(2);
+            int ret = VFSServiceSeek(clt, handle, offset);
+            seL4_SetMR(1, ret);
             seL4_Reply(msg);
         }
         else if(seL4_GetMR(0) == VFSRequest_Debug)

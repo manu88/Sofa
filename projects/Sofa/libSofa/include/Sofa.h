@@ -54,6 +54,7 @@ typedef enum
     VFSRequest_Open,
     VFSRequest_Close,
     VFSRequest_Read,
+    VFSRequest_Seek,
     VFSRequest_Debug
     
 } VFSRequest;

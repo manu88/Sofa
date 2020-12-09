@@ -35,7 +35,7 @@ typedef struct _FileOps {
     //int (*FStat)(struct File *file, struct VFS_File_Stat *stat);
     int (*Read)(File *file, void *buf, size_t numBytes);
     //int (*Write)(struct File *file, void *buf, ulong_t numBytes);
-    //int (*Seek)(struct File *file, ulong_t pos);
+    int (*Seek)(File *file, size_t pos);
     int (*Close)(File *file);
     //int (*Read_Entry)(struct File *dir, struct VFS_Dir_Entry *entry);  /* Read next directory entry. */
 }FileOps;
@@ -58,3 +58,4 @@ int VFSOpen(const char* path, int mode, File* file);
 
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead);
 int VFSClose(File* file);
+int VFSSeek(File* file, size_t pos);

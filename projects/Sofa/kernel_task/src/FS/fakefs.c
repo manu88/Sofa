@@ -8,11 +8,12 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 
 static int fakeFSRead(File *file, void *buf, size_t numBytes);
 static int fakeFSClose(File *file);
+static int fakeFSSeek(File* file, size_t pos);
 
 static VFSFileSystemOps _ops =
 {
     .Stat = fakeFSStat,
-    .Open = fakeFSOpen
+    .Open = fakeFSOpen,
     
 };
 
@@ -20,7 +21,9 @@ static VFSFileSystemOps _ops =
 static FileOps _fileOps = 
 {
     .Read = fakeFSRead,
-    .Close = fakeFSClose
+    .Close = fakeFSClose,
+  //  .Seek = fakeFSSeek,
+
 };
 
 VFSFileSystem _fs = {.ops = &_ops};
@@ -85,6 +88,11 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 static int fakeFSClose(File *file)
 {
     return 0;
+}
+
+static int fakeFSSeek(File* file, size_t pos)
+{
+    return -1;
 }
 
 static int fakeFSRead(File *file, void *buf, size_t numBytes)

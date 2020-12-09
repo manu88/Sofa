@@ -158,6 +158,21 @@ int VFSClose(File* file)
     return file->ops->Close(file);
 }
 
+int VFSSeek(File* file, size_t pos)
+{
+    if(file->ops->Seek == NULL)
+    {
+        size_t effectiveOffset = pos;
+        if(effectiveOffset > file->size)
+        {
+            effectiveOffset = file->size;
+        }
+        file->readPos = effectiveOffset;
+        return 0;
+    }
+    return file->ops->Seek(file, pos);
+}
+
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
 {
     assert(file->readPos <= file->size);

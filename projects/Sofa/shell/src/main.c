@@ -173,6 +173,19 @@ void processCommand(const char* cmd)
         int ret = VFSClose(handle);
         SFPrintf("%i\n", ret);
     }
+    else if(startsWith("seek", cmd))
+    {
+        const char *strArg = cmd + strlen("seek ");
+        int handle = -1;
+        int offset = -1;
+        if(sscanf(strArg, "%i %i", &handle, &offset) != 2)
+        {
+            SFPrintf("seek usage: seek handle offset\n");
+            return;
+        }
+        int ret = VFSSeek(handle, offset);
+        SFPrintf("%i\n", ret);
+    }
     else if(startsWith("read", cmd))
     {
         const char *strArg = cmd + strlen("read ");
