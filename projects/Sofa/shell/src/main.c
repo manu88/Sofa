@@ -78,6 +78,10 @@ void processCommand(const char* cmd)
     {
         cmdHelp();
     }
+    else if(startsWith("vfs", cmd))
+    {
+        VFSDebug();
+    }
     else if(startsWith("kill", cmd))
     {
         const char *strPid = cmd + strlen("kill ");

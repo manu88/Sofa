@@ -236,6 +236,20 @@ static int mainVFS(KThread* thread, void *arg)
             seL4_SetMR(2, size);            
             seL4_Reply(msg);
         }
+        else if(seL4_GetMR(0) == VFSRequest_Debug)
+        {
+            Client* clt = NULL;
+            HASH_FIND_PTR(_clients, &caller, clt );
+            assert(clt);
+            printf("VFS Client Debug\n");
+            FileHandle* f = NULL;
+            FileHandle* tmp = NULL;
+            printf("Current index %i\n", clt->fileIndex);
+            HASH_ITER(hh, clt->files, f, tmp)
+            {
+                printf("File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
+            }
+        }
         else
         {
             printf("Other VFS request %u\n", seL4_GetMR(0));
