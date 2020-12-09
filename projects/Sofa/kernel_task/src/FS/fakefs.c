@@ -118,7 +118,8 @@ static int fakeFSClose(File *file)
 
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes)
 {
-    printf("FakeFS: request to write %zi '%s'\n", numBytes, buf);
+    printf("%s",(const char*) buf);
+    fflush(stdout);
     return 0;
 }
 

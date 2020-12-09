@@ -13,3 +13,5 @@ ssize_t VFSWrite(int handle, const char* data, size_t size);
 int VFSSeek(int handle, size_t pos);
 
 void VFSDebug(void);
+
+int Printf(const char *format, ...);

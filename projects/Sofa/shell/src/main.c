@@ -3,11 +3,14 @@
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include "runtime.h"
 #include "files.h"
 
 extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
+
+int fOut = -1;
 
 static char *trim(char *str)
 {
@@ -60,8 +63,8 @@ static int startsWith(const char *pre, const char *str)
 
 void cmdHelp()
 {
-    SFPrintf("Sofa shell\n");
-    SFPrintf("Available commands are: exit help ps kill spawn sleep cat\n");
+    Printf("Sofa shell\n");
+    Printf("Available commands are: exit help ps kill spawn sleep cat\n");
 }
 
 void processCommand(const char* cmd)
@@ -87,11 +90,11 @@ void processCommand(const char* cmd)
         const char *strPid = cmd + strlen("kill ");
         if(strlen(strPid) == 0)
         {
-            SFPrintf("Kill usage: kill pid signal\n");
+            Printf("Kill usage: kill pid signal\n");
             return;
         }
         pid_t pidToKill = atol(strPid);
-        SFPrintf("Kill pid %i\n", pidToKill);
+        Printf("Kill pid %i\n", pidToKill);
         SFKill(pidToKill, SIGKILL);
     }
     else if(startsWith("services", cmd))
@@ -103,19 +106,19 @@ void processCommand(const char* cmd)
         const char* serviceName = cmd + strlen("register ");
         if(strlen(serviceName) == 0)
         {
-            SFPrintf("register takes a Name argument\n");
+            Printf("register takes a Name argument\n");
             return;
         }
-        SFPrintf("register arg is '%s'\n", serviceName);
+        Printf("register arg is '%s'\n", serviceName);
         ssize_t ret =  SFRegisterService(serviceName);
         if (ret <= 0)
         {
-            SFPrintf("Error registering service '%s' %li\n", serviceName, ret);
+            Printf("Error registering service '%s' %li\n", serviceName, ret);
 
         }
         else
         {
-            SFPrintf("Service is at %li\n", ret);
+            Printf("Service is at %li\n", ret);
         }
         
     }
@@ -124,14 +127,14 @@ void processCommand(const char* cmd)
         const char *path = cmd + strlen("cat ");
         if(strlen(path) == 0)
         {
-            SFPrintf("cat usage: cat file\n");
+            Printf("cat usage: cat file\n");
             return;
         }
 
         int handle = VFSOpen(path, 1);
         if(handle <0)
         {
-            SFPrintf("open error %i\n", handle);
+            Printf("open error %i\n", handle);
             return;
         }
         uint8_t done = 0;
@@ -143,7 +146,7 @@ void processCommand(const char* cmd)
             if(ret > 0)
             {
                 buf[ret] = 0;
-                SFPrintf("%s", buf);
+                Printf("%s", buf);
             }
             else if(ret == -1) // EOF
             {
@@ -151,12 +154,12 @@ void processCommand(const char* cmd)
             }
             else
             {
-                SFPrintf("Read error %li\n", ret);
+                Printf("Read error %li\n", ret);
                 done = 1;
             }
 
         }
-        SFPrintf("\n");
+        Printf("\n");
         
 
         VFSClose(handle);
@@ -166,12 +169,12 @@ void processCommand(const char* cmd)
         const char *strArg = cmd + strlen("close ");
         if(strlen(strArg) == 0)
         {
-            SFPrintf("close usage: close file handle\n");
+            Printf("close usage: close file handle\n");
             return;
         }
         int handle = atoi(strArg);
         int ret = VFSClose(handle);
-        SFPrintf("%i\n", ret);
+        Printf("%i\n", ret);
     }
     else if(startsWith("seek", cmd))
     {
@@ -180,11 +183,11 @@ void processCommand(const char* cmd)
         int offset = -1;
         if(sscanf(strArg, "%i %i", &handle, &offset) != 2)
         {
-            SFPrintf("seek usage: seek handle offset\n");
+            Printf("seek usage: seek handle offset\n");
             return;
         }
         int ret = VFSSeek(handle, offset);
-        SFPrintf("%i\n", ret);
+        Printf("%i\n", ret);
     }
     else if(startsWith("write", cmd))
     {
@@ -193,12 +196,12 @@ void processCommand(const char* cmd)
         int size = -1;
         if(sscanf(strArg, "%i %i", &handle, &size) != 2)
         {
-            SFPrintf("write usage: write file handle data\n");
+            Printf("write usage: write file handle data\n");
             return;
         }
         char data[] = "Hello this is some content";
         int ret = VFSWrite(handle, data, strlen(data));
-        SFPrintf("%i\n", ret);
+        Printf("%i\n", ret);
     }
     else if(startsWith("read", cmd))
     {
@@ -207,22 +210,22 @@ void processCommand(const char* cmd)
         int size = -1;
         if(sscanf(strArg, "%i %i", &handle, &size) != 2)
         {
-            SFPrintf("read usage: read file handle\n");
+            Printf("read usage: read file handle\n");
             return;
         }
         char buf[128];
         ssize_t ret = VFSRead(handle, buf, size);
         if(ret > 0)
         {
-            SFPrintf("%li :'%s'\n", ret, buf);
+            Printf("%li :'%s'\n", ret, buf);
         }
         else if(ret == -1)
         {
-            SFPrintf("-- End of file --\n");
+            Printf("-- End of file --\n");
         }
         else
         {
-            SFPrintf("Read error %li\n", ret);
+            Printf("Read error %li\n", ret);
         }
         
     }
@@ -233,23 +236,23 @@ void processCommand(const char* cmd)
         char path[512] = "0";
         if(sscanf(args, "%i %s", &mode, path) !=2)
         {
-            SFPrintf("usage open Mode path\n");
+            Printf("usage open Mode path\n");
             return;
         }
 
         int ret = VFSOpen(path, mode);
-        SFPrintf("%i\n",ret);
+        Printf("%i\n",ret);
     }
     else if(startsWith("ls", cmd))
     {
         const char *path = cmd + strlen("ls ");
         if(vfsCap == 0)
         {
-            SFPrintf("[shell] VFS client not registered (no cap)\n");
+            Printf("[shell] VFS client not registered (no cap)\n");
         }
         if(vfsBuf == NULL)
         {
-            SFPrintf("[shell] VFS client not registered(no buff)\n");
+            Printf("[shell] VFS client not registered(no buff)\n");
         }
 
         seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
@@ -259,7 +262,7 @@ void processCommand(const char* cmd)
         seL4_Call(vfsCap, info);
         if(seL4_GetMR(1) != 0)
         {
-            SFPrintf("got ls response %lX\n", seL4_GetMR(1));
+            Printf("got ls response %lX\n", seL4_GetMR(1));
         }
 
     }
@@ -269,18 +272,18 @@ void processCommand(const char* cmd)
         int pid = SFSpawn(strApp);
         if(pid <= 0)
         {
-            SFPrintf("Spawn error %i\n", pid);
+            Printf("Spawn error %i\n", pid);
             return;
         }
         int appStatus = 0;
         int ret = SFWait(&appStatus);
         if(ret < 0)
         {
-            SFPrintf("Wait interupted\n");
+            Printf("Wait interupted\n");
         }
         else
         {
-            SFPrintf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
+            Printf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
         }
     }
     else if(startsWith("wait", cmd))
@@ -289,11 +292,11 @@ void processCommand(const char* cmd)
         int ret = SFWait(&appStatus);
         if(ret < 0)
         {
-            SFPrintf("Wait interupted\n");
+            Printf("Wait interupted\n");
         }
         else
         {
-            SFPrintf("wait returned pid %i status %i\n", ret, appStatus);
+            Printf("wait returned pid %i status %i\n", ret, appStatus);
         }
     }
     else if(startsWith("sleep", cmd))
@@ -304,11 +307,11 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("pid", cmd))
     {
-        SFPrintf("PID=%i\n", SFGetPid());
+        Printf("PID=%i\n", SFGetPid());
     }
     else if(startsWith("ppid", cmd))
     {
-        SFPrintf("PPID=%i\n", SFGetPPid());
+        Printf("PPID=%i\n", SFGetPPid());
     }
     else if(startsWith("dump", cmd))
     {
@@ -320,7 +323,7 @@ void processCommand(const char* cmd)
     }
     else
     {
-        SFPrintf("Unknown command '%s'\n", cmd);
+        Printf("Unknown command '%s'\n", cmd);
     }
 
 }
@@ -328,13 +331,16 @@ void processCommand(const char* cmd)
 int main(int argc, char *argv[])
 {
     RuntimeInit2(argc, argv);
-    SFPrintf("[%i] Shell \n", SFGetPid());
 
     VFSClientInit();
+
+    fOut = VFSOpen("/fake/cons", O_WRONLY);
+
+    Printf("[%i] Shell \n", SFGetPid());
+
     while (1)
     {
-        SFPrintf(">:");
-        fflush(stdout);
+        Printf(">:");
 
         char data[128] = "";
         uint8_t gotCmd = 0;
@@ -346,7 +352,7 @@ int main(int argc, char *argv[])
             readSize = SFReadLine(data + bufferIndex, sizeToRead);
             if(readSize == -EINTR)
             {
-                SFPrintf("[Shell] got ctl-c\n");
+                Printf("[Shell] got ctl-c\n");
             }
             if(readSize == -EAGAIN)
             {
