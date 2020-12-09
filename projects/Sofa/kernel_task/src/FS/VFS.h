@@ -15,7 +15,7 @@ typedef struct _VFSFileSystemOps
     int (*Open)(VFSFileSystem *fs, const char *path, int mode, File *file);
     //int (*Create_Directory)(VFSFileSystem *fs, const char *path);
     //int (*Open_Directory)(VFSFileSystem *fs, const char *path, struct File **pDir);
-    int (*Stat)(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat);
+    int (*Stat)(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
     //int (*Sync)(struct Mount_Point *mountPoint);
     //int (*Delete)(struct Mount_Point *mountPoint, const char *path);
 }VFSFileSystemOps;
@@ -36,7 +36,7 @@ typedef struct _File File;
 typedef struct _FileOps {
     //int (*FStat)(struct File *file, struct VFS_File_Stat *stat);
     int (*Read)(File *file, void *buf, size_t numBytes);
-    //int (*Write)(struct File *file, void *buf, ulong_t numBytes);
+    int (*Write)(File *file, const void *buf, size_t numBytes);
     int (*Seek)(File *file, size_t pos);
     int (*Close)(File *file);
     //int (*Read_Entry)(struct File *dir, struct VFS_Dir_Entry *entry);  /* Read next directory entry. */
@@ -59,5 +59,7 @@ int VFSStat(const char *path, VFS_File_Stat *stat);
 int VFSOpen(const char* path, int mode, File* file);
 
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead);
+ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite);
+
 int VFSClose(File* file);
 int VFSSeek(File* file, size_t pos);

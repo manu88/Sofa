@@ -3,10 +3,12 @@
 #include <errno.h>
 
 
-static int fakeFSStat(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat);
+static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
 static int fakeFSRead(File *file, void *buf, size_t numBytes);
+static int fakeFSWrite(File *file, const void *buf, size_t numBytes);
+
 static int fakeFSClose(File *file);
 
 static VFSFileSystemOps _ops =
@@ -19,6 +21,7 @@ static FileOps _fileOps =
 {
     .Read = fakeFSRead,
     .Close = fakeFSClose,
+    .Write = fakeFSWrite
 };
 
 static VFSFileSystem _fs = {.ops = &_ops};
@@ -49,15 +52,21 @@ VFSFileSystem* getFakeFS()
     return &_fs;
 }
 
-static int fakeFSStat(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat)
+static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat)
 {
-    if (strcmp(path, "/") == 0)
+    if(numPathSegments == 0) // root
     {
         for(int i=0;i<NumFiles;i++)
         {
             printf("%s\n", files[i].name);
         }
         return 0;   
+
+    }
+    printf("fakeStat request %i\n", numPathSegments);
+    for (int i=0;i<numPathSegments;i++)
+    {
+        printf("%s\n", path[i]);
     }
     return ENOENT;
 }
@@ -82,6 +91,12 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 
 static int fakeFSClose(File *file)
 {
+    return 0;
+}
+
+static int fakeFSWrite(File *file, const void *buf, size_t numBytes)
+{
+    printf("FakeFS: request to write %zi '%s'\n", numBytes, buf);
     return 0;
 }
 

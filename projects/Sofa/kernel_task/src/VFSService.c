@@ -96,6 +96,17 @@ static int VFSServiceSeek(Client* client, int handle, size_t pos)
     return VFSSeek(file, pos);
 }
 
+static ssize_t VFSServiceWrite(Client* client, int handle, int size)
+{
+    FileHandle* file = NULL;
+    HASH_FIND_INT(client->files, &handle, file);
+    if(file == NULL)
+    {
+        return -EINVAL;
+    }
+    return VFSWrite(&file->file, client->buff, size);
+}
+
 static ssize_t VFSServiceRead(Client* client, int handle, int size)
 {
     FileHandle* file = NULL;
@@ -238,6 +249,22 @@ static int mainVFS(KThread* thread, void *arg)
             int ret = VFSServiceClose(clt, handle);
             seL4_SetMR(1, ret);            
             seL4_Reply(msg);
+        }
+        else if(seL4_GetMR(0) == VFSRequest_Write)
+        {
+            Client* clt = NULL;
+            HASH_FIND_PTR(_clients, &caller, clt );
+            assert(clt);
+            int handle = seL4_GetMR(1);
+            int size = seL4_GetMR(2);
+
+            ssize_t ret = VFSServiceWrite(clt, handle, size);
+            int err = ret<0? -ret:0;
+            size = ret >=0? ret:0; 
+            seL4_SetMR(1, err);
+            seL4_SetMR(2, size);            
+            seL4_Reply(msg);
+
         }
         else if(seL4_GetMR(0) == VFSRequest_Read)
         {

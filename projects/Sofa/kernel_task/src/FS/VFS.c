@@ -106,6 +106,31 @@ int VFSInit()
     return 0;
 }
 
+
+static char** _splitPath(const char* _path, int* numSegs)
+{
+    char delim[] = "/";
+
+    char* path = strdup(_path);
+    char *ptr = strtok(path, delim);
+    int num = 0;
+
+    char** segments = NULL;
+    while(ptr != NULL)
+	{
+//		printf("%i '%s'\n", num, ptr);
+
+        segments = realloc(segments, (num+1)*sizeof(char*));
+        assert(segments);
+        segments[num] = strdup(ptr);
+        num++;
+		ptr = strtok(NULL, delim);        
+	}
+    *numSegs = num;
+    free(path);
+    return segments;
+}
+
 int VFSStat(const char *path, VFS_File_Stat *stat)
 {
     if(strcmp(path, "/") == 0)
@@ -119,22 +144,45 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 
         return 0;
     }
-    
+
+    int numPathSegs = -1;
+    char** segments = _splitPath(path, &numPathSegs);
+    if(numPathSegs == 0)
+    {
+        return EINVAL;
+    }
     char prefix[MAX_PREFIX_LEN + 1];
     const char *suffix;
 
     if (!Unpack_Path(path, prefix, &suffix))
     {
+        for(int i=0;i<numPathSegs;i++)
+        {
+            free(segments[i]);
+        }
+        free(segments);
 	    return ENOENT;
     }
 
-    VFSFileSystem* fs =  _GetFileSystem(prefix);
+    VFSFileSystem* fs =  _GetFileSystem(segments[0]);
     if(fs == NULL)
     {
         printf("[VFS] fs not found for '%s'\n", prefix);
+        for(int i=0;i<numPathSegs;i++)
+        {
+            free(segments[i]);
+        }
+        free(segments);
         return ENOENT;
     }
-    return fs->ops->Stat(fs, suffix, stat);
+    int ret = fs->ops->Stat(fs, segments + 1, numPathSegs-1, stat);
+    
+    for(int i=0;i<numPathSegs;i++)
+    {
+        free(segments[i]);
+    }
+    free(segments);
+    return ret;
 
 }
 
@@ -175,6 +223,11 @@ int VFSSeek(File* file, size_t pos)
         return 0;
     }
     return file->ops->Seek(file, pos);
+}
+
+ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
+{
+    return file->ops->Write(file, buf, sizeToWrite);
 }
 
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)

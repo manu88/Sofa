@@ -186,6 +186,20 @@ void processCommand(const char* cmd)
         int ret = VFSSeek(handle, offset);
         SFPrintf("%i\n", ret);
     }
+    else if(startsWith("write", cmd))
+    {
+        const char *strArg = cmd + strlen("write ");
+        int handle = -1;
+        int size = -1;
+        if(sscanf(strArg, "%i %i", &handle, &size) != 2)
+        {
+            SFPrintf("write usage: write file handle data\n");
+            return;
+        }
+        char data[] = "Hello this is some content";
+        int ret = VFSWrite(handle, data, strlen(data));
+        SFPrintf("%i\n", ret);
+    }
     else if(startsWith("read", cmd))
     {
         const char *strArg = cmd + strlen("read ");
@@ -195,7 +209,6 @@ void processCommand(const char* cmd)
         {
             SFPrintf("read usage: read file handle\n");
             return;
-
         }
         char buf[128];
         ssize_t ret = VFSRead(handle, buf, size);

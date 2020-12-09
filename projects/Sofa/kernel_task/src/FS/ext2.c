@@ -34,6 +34,10 @@ typedef IODevice device_t;
 
 uint8_t ext2_read_block(uint8_t *buf, uint32_t block, device_t *dev, ext2_priv_data *priv)
 {
+	if(priv == NULL)
+	{
+		priv = &__ext2_data;
+	}
 	uint32_t sectors_per_block = priv->sectors_per_block;
 	if(!sectors_per_block)
     {
@@ -149,6 +153,10 @@ void ext2_write_inode(inode_t *inode_buf, uint32_t ii, device_t *dev, ext2_priv_
 
 uint32_t ext2_get_inode_block(uint32_t inode, uint32_t *b, uint32_t *ioff, device_t *dev, ext2_priv_data *priv)
 {
+	if(priv == NULL)
+	{
+		priv = &__ext2_data;
+	}
 	uint32_t bg = (inode - 1) / priv->sb.inodes_in_blockgroup;
 	uint32_t i = 0;
 	/* Now we have which BG the inode is in, load that desc */
@@ -271,7 +279,7 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 	char *filename = malloc(strlen(ff) + 1);
 	memcpy(filename, ff, strlen(ff) +1);
 	size_t n = strsplit(filename, '/');
-	filename ++; // skip the first crap
+//	filename ++; // skip the first crap
 	uint32_t retnode = 0;
 	if(n > 1)
 	{ 
@@ -281,6 +289,7 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 			return 0;
 		}
 		/* Now, loop through the DPB's and see if it contains this filename */
+
 		n--;
 		while(n--)
 		{
@@ -288,7 +297,10 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 			for(int i = 0; i < 12; i++)
 			{
 				uint32_t b = inode->dbp[i];
-				if(!b) break;
+				if(!b)
+				{
+					break;
+				}
 				ext2_read_block(root_buf, b, dev, priv);
 				uint32_t rc = ext2_read_directory(filename, (ext2_dir *)root_buf, dev, priv);
 				if(!rc)
@@ -314,7 +326,9 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 			filename += s + 1;
 		}
 		memcpy(inode_buf, inode, sizeof(inode_t));
-	} else {
+	}
+	else
+	{
 		/* This means the file is in the root directory */
 		ext2_read_root_directory(filename, dev, priv);
 		memcpy(inode_buf, inode, sizeof(inode_t));

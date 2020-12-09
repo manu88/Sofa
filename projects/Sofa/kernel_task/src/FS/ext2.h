@@ -115,3 +115,6 @@ uint32_t ext2_read_directory(char *filename, ext2_dir *dir, IODevice *dev, ext2_
 uint8_t ext2_exist(char *file, IODevice *dev, ext2_priv_data *priv);
 uint8_t ext2_read_root_directory(char *filename, IODevice *dev, ext2_priv_data *priv);
 void ext2_list_directory(char *dd, char *buffer, IODevice *dev, ext2_priv_data *priv);
+
+uint32_t ext2_get_inode_block(uint32_t inode, uint32_t *b, uint32_t *ioff, IODevice *dev, ext2_priv_data *priv);
+uint8_t ext2_read_block(uint8_t *buf, uint32_t block, IODevice *dev, ext2_priv_data *priv);
