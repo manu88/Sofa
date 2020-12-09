@@ -26,6 +26,8 @@ typedef struct _VFSFileSystem
     UT_hash_handle hh;
 
     VFSFileSystemOps *ops;
+
+    void* data;
 }VFSFileSystem;
 
 typedef struct _File File;

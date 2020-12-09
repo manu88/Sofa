@@ -190,9 +190,7 @@ uint32_t ext2_read_directory(char *filename, ext2_dir *dir, device_t *dev, ext2_
 			printf("%s\n", name);
 		}
 		dir = (ext2_dir *)((uint32_t)dir + dir->size);
-		printf("Free\n");
 		free(name);
-		printf("did Free\n");
 	}
 	return 0;
 }

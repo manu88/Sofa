@@ -172,14 +172,15 @@ void *main_continued(void *arg UNUSED)
     error = IOInit();
     assert(error == 0);
 
+    error = VFSInit();
+    assert(error == 0);
+
     error = DeviceTreeInit();
     assert(error == 0);
 
     error = SerialInit();
     assert(error == 0);
 
-    error = VFSInit();
-    assert(error == 0);
 
     VFSMount(getFakeFS(), "/fake");
 
@@ -187,11 +188,13 @@ void *main_continued(void *arg UNUSED)
     error = VFSServiceInit();
     assert(error == 0);
 
+    error = VFSServiceStart();
+    assert(error == 0);
+
+
     ProcessInit(&initProcess);
     spawnApp(&initProcess, "init", NULL);
 
-    error = VFSServiceStart();
-    assert(error == 0);
 
     seL4_DebugDumpScheduler();
     process_messages();    

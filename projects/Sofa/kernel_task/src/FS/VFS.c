@@ -84,11 +84,14 @@ int VFSMount(VFSFileSystem* fs, const char* mntPoint)
 
     if (strlen(mntPoint) > MAX_PREFIX_LEN)
     {
+        printf("[VFSMount] name too long '%s'\n", mntPoint);
 	    return ENAMETOOLONG;
     }
 
     if(_GetFileSystem(mntPoint))
     {
+        printf("[VFSMount] mount point already exists '%s'\n", mntPoint);
+
         return EEXIST;
     }
     fs->mountPath = strdup(mntPoint);
@@ -128,6 +131,7 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
     VFSFileSystem* fs =  _GetFileSystem(prefix);
     if(fs == NULL)
     {
+        printf("[VFS] fs not found for '%s'\n", prefix);
         return ENOENT;
     }
     return fs->ops->Stat(fs, suffix, stat);

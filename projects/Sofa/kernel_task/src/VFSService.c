@@ -14,6 +14,8 @@
 #include <utils/uthash.h>
 #include "VFS.h"
 
+#include "ext2FS.h"
+
 
 typedef struct
 {
@@ -44,7 +46,6 @@ static Client* _clients = NULL;
 
 int VFSServiceInit()
 {
-    
     int error = 0;
     ServiceInit(&_vfsService, getKernelTaskProcess() );
     _vfsService.name = _vfsName;
@@ -129,7 +130,9 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
     {
         if(ext2_mount(dev, NULL))
         {
-            return 0;
+            printf("[VFSMount] ext2\n");
+            getExt2FS()->data = dev;
+            return VFSMount(getExt2FS(), "/ext");
         }
         printf("ext2_mount error for '%s'\n", dev->name);
     }
@@ -154,6 +157,7 @@ int VFSAddDEvice(IODevice *dev)
         return test;
     }
     printf("[VFS] device  '%s' added with FS type %i\n", dev->name, type);
+    return 0;
 
 }
 
@@ -167,7 +171,9 @@ static int mainVFS(KThread* thread, void *arg)
     {
         if(dev->type == IODevice_BlockDev)
         {
-            VFSAddDEvice(dev);
+            int r = VFSAddDEvice(dev);
+            printf("VFSAddDEvice '%s' retuned %i\n", dev->name, r);
+
         }
     }
     while (1)
