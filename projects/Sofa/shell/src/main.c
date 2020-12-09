@@ -228,9 +228,16 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("open", cmd))
     {
-        const char *path = cmd + strlen("open ");
+        const char *args = cmd + strlen("open ");
+        int mode = -1;
+        char path[512] = "0";
+        if(sscanf(args, "%i %s", &mode, path) !=2)
+        {
+            SFPrintf("usage open Mode path\n");
+            return;
+        }
 
-        int ret = VFSOpen(path, 1);
+        int ret = VFSOpen(path, mode);
         SFPrintf("%i\n",ret);
     }
     else if(startsWith("ls", cmd))

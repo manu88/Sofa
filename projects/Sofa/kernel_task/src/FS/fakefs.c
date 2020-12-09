@@ -1,6 +1,7 @@
 #include "fakefs.h"
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
 
 
 static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
@@ -30,6 +31,8 @@ typedef struct
 {
     const char* name;
     const char* content;
+
+    int mode;
 } FakeFile;
 
 
@@ -37,15 +40,21 @@ static const FakeFile const files[] =
 {
     {
         .name = "file1",
-        .content = "Hello this is the content of file1"
+        .content = "Hello this is the content of file1",
+        .mode = O_RDONLY
     },
     {
         .name = "file2",
-        .content = "Hello this is the content of file2, wich is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2"
-
+        .content = "Hello this is the content of file2, wich is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2",
+        .mode = O_RDONLY
+    },
+    {
+        .name = "cons",
+//        .content = "Hello this is the content of file2, wich is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2",
+        .mode = O_WRONLY
     },
 };
-#define NumFiles 2
+#define NumFiles 3
 
 VFSFileSystem* getFakeFS()
 {
@@ -58,7 +67,7 @@ static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
     {
         for(int i=0;i<NumFiles;i++)
         {
-            printf("%s\n", files[i].name);
+            printf("%s %i\n", files[i].name, files[i].mode);
         }
         return 0;   
 
@@ -82,8 +91,21 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
             file->ops = &_fileOps;
             file->impl = &files[i];
 
-            file->size = strlen(files[i].content);
-            return 0;
+            if(files[i].content)
+            {
+                file->size = strlen(files[i].content);
+            }
+            else
+            {
+                file->size = 0;
+            }
+            printf("file Mode %i request %i\n", file->mode, mode);
+            if(mode == files[i].mode)
+            {
+                file->mode = files[i].mode;
+                return 0;
+            }
+            return EACCES;
         }
     }
     return ENOENT;

@@ -55,7 +55,7 @@ int VFSOpen(const char* path, int mode)
 
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
     seL4_SetMR(0, VFSRequest_Open);
-    seL4_SetMR(1, 1); // mode
+    seL4_SetMR(1, mode); // mode
     strcpy(vfsBuf, path);
     vfsBuf[strlen(path)] = 0;
     seL4_Call(vfsCap, info);

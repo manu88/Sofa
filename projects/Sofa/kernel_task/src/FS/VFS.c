@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
 #define MAX_PREFIX_LEN 16
 
 static VFSFileSystem* _fileSystems = NULL;
@@ -227,11 +228,19 @@ int VFSSeek(File* file, size_t pos)
 
 ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 {
+    if(file->mode != O_WRONLY)
+    {
+        return -EACCES;
+    }
     return file->ops->Write(file, buf, sizeToWrite);
 }
 
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
 {
+    if(file->mode != O_RDONLY)
+    {
+        return -EACCES;
+    }
     assert(file->readPos <= file->size);
 
     if(file->readPos == file->size)
