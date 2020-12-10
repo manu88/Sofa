@@ -707,7 +707,6 @@ uint8_t ext2_writefile(char *fn, char *buf, uint32_t len, device_t *dev, ext2_pr
 			uint32_t bid = 0;
 			ext2_alloc_block(&bid, dev, priv);
 			inode->dbp[i] = bid;
-			//printf("Set dbp[%d] to %d\n", i, inode->dbp[i]);
 		}
 		printf("Allocated %d blocks!\n", blocks_to_alloc);
 		inode->size += len; // UPDATE the size
@@ -769,7 +768,6 @@ uint8_t ext2_exist(char *file, device_t *dev, ext2_priv_data *priv)
 
 uint8_t ext2_probe(device_t *dev)
 {
-	//printf("Probing device %d\n", dev->unique_id);
 	/* Read in supposed superblock location and check sig */
 	if(!dev->ops)
 	{

@@ -2,6 +2,7 @@
 #include "Environ.h"
 #include "utils.h"
 #include "Process.h"
+#include "Panic.h"
 #include <string.h>
 #include <vka/capops.h>
 #include <Sofa.h>
@@ -46,7 +47,6 @@ int KThreadRun(KThread* t, int prio, void* arg)
     vka_cspace_make_path(&env->vka, t->ep, &dstPath);
 
     vka_cnode_mint(&dstPath, &srcPath, seL4_AllRights, (seL4_Word) t);
-    printf("Set the fault ep\n");
     thConf = thread_config_fault_endpoint(thConf, t->ep);
 
     error = sel4utils_configure_thread_config(&env->vka,
@@ -104,8 +104,7 @@ int KSleep(int ms)
     KThread* t = (KThread*) seL4_GetUserData();
     if(t == &_mainThread)
     {
-        printf("KSleep called from the main kernel_task thread, abord\n");
-        assert(0);
+        Panic("KSleep called from the main kernel_task thread, abord\n");
     }
     return KThreadSleep(seL4_GetUserData(), ms);
 }

@@ -24,7 +24,7 @@ void Syscall_spawn(Thread* caller, seL4_MessageInfo_t info)
         seL4_Reply(info);
         return;
     }
-    printf("File '%s' size %lu\n", dataBuf, fileSize);
+
     Process* newProc = kmalloc(sizeof(Process));
     ProcessInit(newProc);
     spawnApp(newProc, dataBuf, process);

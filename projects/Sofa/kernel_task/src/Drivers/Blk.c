@@ -8,6 +8,7 @@
 #include "Environ.h"
 #include "DeviceTree.h"
 #include "ext2.h"
+#include "Log.h"
 
 
 #define VIRTIO_BLK_S_OK       0
@@ -486,7 +487,7 @@ static int virtio_check_capabilities(uint32_t *device, uint32_t *request, struct
 
 int BlkInit(uint32_t iobase, KThread* thread)
 {
-    printf("==> Init Blk virtio storage\n");
+    KLOG_INFO("==> Init Blk virtio storage\n");
     KernelTaskContext* env = getKernelTaskContext();
 
     _blk.impl = &dev;
@@ -508,13 +509,14 @@ int BlkInit(uint32_t iobase, KThread* thread)
     virtio_check_capabilities(&feats, &request_features, blk_caps, 8);
 	virtio_check_capabilities(&feats, &request_features, indp_caps, 2);
 
-    if (feats) {
-		printf("virtio supports undocumented options 0x%x!\n", feats);
+    if (feats)
+    {
+		KLOG_INFO("virtio supports undocumented options 0x%x!\n", feats);
         for (int i=0;i<32;i++)
         {
             if((feats >> i) & 1U)
             {
-            printf("FEATURES: feat %i set\n",i);
+                KLOG_INFO("FEATURES: feat %i set\n",i);
             }
         }
 	}
@@ -537,12 +539,12 @@ int BlkInit(uint32_t iobase, KThread* thread)
     asm volatile("mfence" ::: "memory");
     if(!(get_status(&dev) & VIRTIO_CONFIG_S_DRIVER_FEATURES_OK))
 	{
-		printf("HOST REFUSED OUR FEATURES\n");
+		KLOG_INFO("HOST REFUSED OUR FEATURES\n");
         assert(0);
     }
 	else
 	{
-		printf("HOST is ok with our features\n");
+		KLOG_INFO("HOST is ok with our features\n");
 	}
 
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
@@ -556,13 +558,13 @@ int BlkInit(uint32_t iobase, KThread* thread)
     uint8_t sectorCount     =  read_reg8(&dev, 0x27);
     uint8_t blockLen        =  read_reg8(&dev, 0x28);
 
-    printf("totSectorCount %u\n", totSectorCount);
-    printf("maxSegSize %u\n", maxSegSize);
-    printf("maxSegCount %u\n", maxSegCount);
-    printf("cylinderCount %u\n", cylinderCount);
-    printf("headCount %u\n", headCount);
-    printf("sectorCount %u\n", sectorCount);
-    printf("blockLen %u\n", blockLen);
+    KLOG_INFO("totSectorCount %u\n", totSectorCount);
+    KLOG_INFO("maxSegSize %u\n", maxSegSize);
+    KLOG_INFO("maxSegCount %u\n", maxSegCount);
+    KLOG_INFO("cylinderCount %u\n", cylinderCount);
+    KLOG_INFO("headCount %u\n", headCount);
+    KLOG_INFO("sectorCount %u\n", sectorCount);
+    KLOG_INFO("blockLen %u\n", blockLen);
 
     uint8_t numQueues = 0;
     for(int index = 0;index<16;index++)
@@ -576,9 +578,9 @@ int BlkInit(uint32_t iobase, KThread* thread)
         dev.queueSize = queueSize;
         dev.queueID = index;
         numQueues++;
-        printf("Queue %i size %i\n",index, queueSize);
+        KLOG_INFO("Queue %i size %i\n",index, queueSize);
     }
-    printf("Virtio blk has %i available queues\n", numQueues);
+    KLOG_INFO("Virtio blk has %i available queues\n", numQueues);
  
     int err = initialize_desc_ring(&dev, &env->ops.dma_manager);
     assert(err == 0);
@@ -586,7 +588,7 @@ int BlkInit(uint32_t iobase, KThread* thread)
     dma_addr_t packet = dma_alloc_pin(&env->ops.dma_manager, sizeof(virtio_blk_req), 1, DMA_ALIGN);
     if (!packet.virt) 
     {
-        printf("ERROR : unable to alloc DMA for Virtio BLK request\n");
+        KLOG_INFO("ERROR : unable to alloc DMA for Virtio BLK request. will assert\n");
         assert(0);
     }
     memset(packet.virt, 0, sizeof(virtio_blk_req));
@@ -605,7 +607,7 @@ int BlkInit(uint32_t iobase, KThread* thread)
 
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_OK);
 
-    printf("Dev status %u\n", get_status(&dev));
+    KLOG_INFO("Dev status %u\n", get_status(&dev));
 
     DeviceTreeAddDevice(&_blk);
 

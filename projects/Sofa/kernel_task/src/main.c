@@ -120,11 +120,12 @@ static void process_messages()
             if(base->kernTaskThread)
             {
                 printf("Fault in kernel_task thread\n");
+                assert(0);
                 continue;
             }
             Thread* sender = (Thread*) badge;
             Process* process = sender->_base.process;
-            printf("Got VM fault from %i %s in thread %p\n",
+            KLOG_INFO("Got VM fault from %i %s in thread %p\n",
                    ProcessGetPID(process),
                    ProcessGetName(process),
                    sender == &process->main? 0: sender
@@ -135,16 +136,16 @@ static void process_messages()
             const seL4_Word isPrefetch          = seL4_GetMR(seL4_VMFault_PrefetchFault);
             const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
             
-            printf("[kernel_task] programCounter      0X%lX\n",programCounter);
-            printf("[kernel_task] faultAddr           0X%lX\n",faultAddr);
-            printf("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
-            printf("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
+            KLOG_INFO("[kernel_task] programCounter      0X%lX\n",programCounter);
+            KLOG_INFO("[kernel_task] faultAddr           0X%lX\n",faultAddr);
+            KLOG_INFO("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
+            KLOG_INFO("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
 
             doExit(process, -1);
         }
         else 
         {
-            printf("Received message with label %lu from %lu\n", label, badge);
+            KLOG_TRACE("Received message with label %lu from %lu\n", label, badge);
         }   
     }
 }
@@ -152,8 +153,8 @@ static void process_messages()
 
 void *main_continued(void *arg UNUSED)
 {
-    printf("\n------Sofa------\n");
-    printf("----------------\n");
+    KLOG_INFO("\n------Sofa------\n");
+    KLOG_INFO("----------------\n");
     int error;
     seL4_SetUserData(&_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
@@ -161,7 +162,8 @@ void *main_continued(void *arg UNUSED)
     error = vka_alloc_endpoint(&env->vka, &env->root_task_endpoint);
     assert(error == 0);
 
-    if (config_set(CONFIG_KERNEL_MCS)) {
+    if (config_set(CONFIG_KERNEL_MCS)) 
+    {
         error = vka_alloc_reply(&env->vka, &env->reply);
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }

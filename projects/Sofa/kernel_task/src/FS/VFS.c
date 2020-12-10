@@ -30,38 +30,40 @@ static uint8_t Unpack_Path(const char *path, char *prefix, const char **pSuffix)
 
     /* Look for the initial slash. */
     slash = strchr(path, '/');
-    if (slash == 0) {
-	/*
-	 * Special case: path of the form "/prefix".
-	 * It resolves to the root directory of
-	 * the filesystem mounted on the prefix.
-	 */
-	pfxLen = strlen(path);
-	if (pfxLen == 0 || pfxLen > MAX_PREFIX_LEN)
-	    return 0;
-	strcpy(prefix, path);
-	*pSuffix = "/";
-    } else {
-	/*
-	 * Determine length of file prefix.
-	 * It needs to be non-zero, but less than MAX_PREFIX_LEN.
-	 */
-	pfxLen = slash - path;
-	if (pfxLen == 0 || pfxLen > MAX_PREFIX_LEN)
-	    return 0;
+    if (slash == 0)
+    {
+        /*
+        * Special case: path of the form "/prefix".
+        * It resolves to the root directory of
+        * the filesystem mounted on the prefix.
+        */
+        pfxLen = strlen(path);
+        if (pfxLen == 0 || pfxLen > MAX_PREFIX_LEN)
+            return 0;
+        strcpy(prefix, path);
+        *pSuffix = "/";
+    } 
+    else
+    {
+        /*
+        * Determine length of file prefix.
+        * It needs to be non-zero, but less than MAX_PREFIX_LEN.
+        */
+        pfxLen = slash - path;
+        if (pfxLen == 0 || pfxLen > MAX_PREFIX_LEN)
+            return 0;
 
-	/* Format the path prefix as a string */
-	memcpy(prefix, path, pfxLen);
-	prefix[pfxLen] = '\0';
+        /* Format the path prefix as a string */
+        memcpy(prefix, path, pfxLen);
+        prefix[pfxLen] = '\0';
 
-	/*
-	 * Set pointer to "suffix", i.e., the rest of the path
-	 * after the prefix
-	 */
-	*pSuffix = slash;
+        /*
+        * Set pointer to "suffix", i.e., the rest of the path
+        * after the prefix
+        */
+        *pSuffix = slash;
     }
 
-//    printf("prefix=%s, suffix=%s\n", prefix, *pSuffix);
     assert(**pSuffix == '/');
 
     return 1;

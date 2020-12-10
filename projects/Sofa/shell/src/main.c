@@ -67,11 +67,17 @@ void cmdHelp()
     Printf("Available commands are: exit help ps kill spawn sleep cat\n");
 }
 
+static void doExit(int code)
+{
+    VFSClose(fOut);
+    exit(code);
+}
+
 void processCommand(const char* cmd)
 {
     if(startsWith("exit", cmd))
     {
-        exit(0);
+        doExit(0);
     }
     else if(startsWith("ps", cmd))
     {
@@ -370,6 +376,8 @@ int main(int argc, char *argv[])
         }
 
     }
+
+    doExit(1);
     
     return 1;
 }

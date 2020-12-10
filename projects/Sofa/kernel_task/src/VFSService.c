@@ -13,7 +13,7 @@
 #include <Sofa.h>
 #include <utils/uthash.h>
 #include "VFS.h"
-
+#include "Log.h"
 #include "ext2FS.h"
 
 
@@ -321,7 +321,7 @@ static int mainVFS(KThread* thread, void *arg)
 
 int VFSServiceStart()
 {
-    printf("--> Start VFSD thread\n");
+    KLOG_INFO("--> Start VFSD thread\n");
     KThreadInit(&_vfsThread);
     _vfsThread.mainFunction = mainVFS;
     _vfsThread.name = "VFSD";
@@ -331,7 +331,6 @@ int VFSServiceStart()
         return error;
     }
     assert(error == 0);
-    printf("<-- Start VFSD thread\n");
 
     return 0;
 }
