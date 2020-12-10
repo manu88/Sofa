@@ -2,6 +2,7 @@
 #include "../Process.h"
 #include "../Environ.h"
 #include "../Log.h"
+#include <Sofa.h>
 
 
 typedef void (*SyscallMethod)(Thread* caller, seL4_MessageInfo_t info);

@@ -52,6 +52,8 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     int port = seL4_GetMR(3);
     KLOG_INFO("fam=%i protoc=%i port=%i\n", familly, protoc, port);
 
+    seL4_Reply(msg);
+
 }
 
 
@@ -105,6 +107,7 @@ static int mainNet(KThread* thread, void *arg)
             break;
         
         default:
+            KLOG_TRACE("[NetService] Received unknown code %i from %i\n", req, sender);
             assert(0);
             break;
         }

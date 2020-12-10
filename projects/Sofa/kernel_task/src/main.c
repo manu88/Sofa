@@ -269,6 +269,7 @@ static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4
 
 int main(void)
 {
+    _mainThread._base.process = getKernelTaskProcess();
     seL4_SetUserData(&_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 

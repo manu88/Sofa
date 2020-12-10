@@ -1,7 +1,8 @@
 #include <Sofa.h>
 #include "SyscallTable.h"
 #include "../NameServer.h"
-#include "../utils.h"
+#include "utils.h"
+#include <vka/capops.h>
 
 void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
 {
@@ -70,10 +71,22 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
     cspacepath_t res;
     vka_cspace_make_path(&ctx->vka, tcb_obj.cptr, &res);
 
+// create a minted enpoint for the thread
+
+    vka_object_t tcb_obj2;
+    vka_alloc_endpoint(&ctx->vka, &tcb_obj2);
+    cspacepath_t res2;
+    vka_cspace_make_path(&ctx->vka, tcb_obj2.cptr, &res2);
+
+    assert(vka_cnode_mint(&res2, &res, seL4_AllRights, 0) == 0);
+
+
     seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->_base.process->native, &ctx->vka, res.capPtr);
     newService->endpoint = ret;
     newService->baseEndpoint = res.capPtr;
+    newService->kernTaskEp = res2.capPtr;
     seL4_SetMR(1, 0);
     seL4_SetMR(2, ret);
     seL4_Reply(info);
+
 }
