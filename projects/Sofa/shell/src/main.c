@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include "runtime.h"
 #include "files.h"
+#include "net.h"
 
 extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
@@ -357,6 +358,8 @@ int main(int argc, char *argv[])
     {
         Printf("%i %s\n",i,argv[i]);
     }
+
+    NetInit();
 
     while (1)
     {
