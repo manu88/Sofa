@@ -1,3 +1,6 @@
 #pragma once
 
-#define LOG_TRACE(x, ...) printf((x), __VA_ARGS__)
+#define KLOG_INFO(args...) printf(args)
+#define KLOG_TRACE(args...) printf(args)
+
+

@@ -11,7 +11,7 @@ void Syscall_exit(Thread* caller, seL4_MessageInfo_t info)
     ThreadBase* base = (ThreadBase*) caller;
     if(base->kernTaskThread)
     {
-        printf("Exit from kernel_task thread with status %i\n", retCode);
+        KLOG_INFO("Exit from kernel_task thread with status %i\n", retCode);
         KThreadCleanup((KThread*) caller);
         return;
     }

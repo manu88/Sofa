@@ -72,7 +72,7 @@ void RequestCapNewPage(Thread* caller, seL4_MessageInfo_t info)
 
 void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info)
 {
-    printf("[Syscall_RequestCap] got a request\n");
+    KLOG_INFO("[Syscall_RequestCap] got a request\n");
 
     const SofaRequestCap op = seL4_GetMR(1);
     switch (op)

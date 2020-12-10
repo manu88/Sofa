@@ -48,7 +48,7 @@ void Syscall_wait(Thread* caller, seL4_MessageInfo_t info)
     int error = cnode_savecaller(&env->vka, slot);
     if (error)
     {
-        printf("[Syscall_wait] Unable to save caller err=%i\n", error);
+        KLOG_TRACE("[Syscall_wait] Unable to save caller err=%i\n", error);
         cnode_delete(&env->vka, slot);
         seL4_SetMR(1, -error);
         seL4_Reply(info);

@@ -1,5 +1,6 @@
 #include "SyscallTable.h"
 #include "../utils.h"
+#include "Log.h"
 #include <platsupport/time_manager.h>
 #include <Sofa.h>
 
@@ -28,7 +29,7 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
     int error = tm_alloc_id(&env->tm, &timerID);
     if (error)
     {
-        printf("Unable to alloc timer id err=%i\n", error);
+        KLOG_TRACE("Unable to alloc timer id err=%i\n", error);
 
         seL4_SetMR(1, -error);
         seL4_Reply(info);
@@ -40,7 +41,7 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
     error = cnode_savecaller(&env->vka, slot);
     if (error)
     {
-        printf("Unable to save caller err=%i\n", error);
+        KLOG_TRACE("Unable to save caller err=%i\n", error);
         cnode_delete(&env->vka, slot);
         tm_free_id(&env->tm, timerID);
         seL4_SetMR(1, -error);
@@ -51,7 +52,7 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
     error = tm_register_cb(&env->tm, TIMEOUT_RELATIVE, seL4_GetMR(1) * NS_IN_MS, 0, timerID , sleep_callback, (uintptr_t) caller);
     if(error)
     {
-        printf("tm_register_failed, err=%i\n", error);
+        KLOG_TRACE("tm_register_failed, err=%i\n", error);
         tm_free_id(&env->tm, timerID);
         cnode_delete(&env->vka, slot);
         seL4_SetMR(1, -error);
@@ -61,5 +62,4 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
 
     caller->_base.timerID = timerID;
     caller->_base.replyCap = slot;
-
 }

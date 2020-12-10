@@ -9,12 +9,9 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
     assert(serviceName);
     assert(strlen(serviceName));
 
-    printf("Get Service name %s\n", serviceName);
-
     Service* service = NameServerFind(serviceName);
     if(service == NULL)
     {
-        printf("Not found\n");
         seL4_SetMR(1, -ENOENT);
         seL4_Reply(info);
         return;
@@ -43,7 +40,7 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
     assert(serviceName);
     assert(strlen(serviceName));
 
-    printf("Register Service name %s", serviceName);
+    KLOG_INFO("Register Service name %s", serviceName);
 
     Service* newService = kmalloc(sizeof(Service));
     if(!newService)

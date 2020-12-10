@@ -4,6 +4,7 @@
 #include <sel4platsupport/device.h>
 #include "Timer.h"
 #include "Environ.h"
+#include "Log.h"
 
 
 static ps_irq_register_fn_t irq_register_fn_copy;
@@ -38,7 +39,7 @@ static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, i
     cspacepath_t root_notification_path = {0};
     vka_cspace_make_path(&env->vka, env->timer_notification.cptr, &root_notification_path);
     seL4_Word badge = TIMER_BADGE; // BIT(num_timer_irqs)
-    printf("Mint timer with value %lu\n", BIT(num_timer_irqs));
+    KLOG_INFO("Mint timer with value %lu\n", BIT(num_timer_irqs));
     error = vka_cnode_mint(&env->badged_timer_notifications[num_timer_irqs], &root_notification_path,
                            seL4_AllRights, badge);
     ZF_LOGF_IF(error, "Failed to mint notification for timer");

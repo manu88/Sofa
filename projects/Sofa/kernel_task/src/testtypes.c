@@ -65,7 +65,7 @@ static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
 
 void doExit(Process* process, int retCode)
 {
-    LOG_TRACE("doExit for process %s %i with code %i\n", ProcessGetName(process), ProcessGetPID(process), retCode);
+    KLOG_TRACE("doExit for process %s %i with code %i\n", ProcessGetName(process), ProcessGetPID(process), retCode);
     if(ProcessGetPID(process) == 1)
     {
         Panic("init returned");

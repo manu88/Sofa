@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     ssize_t servOrErr = SFRegisterService("com.test.app");
     if(servOrErr <= 0)
     {
-        SFPrintf("[APP] error unable to register service. error %i\n", servOrErr);
+        SFPrintf("[APP] error unable to register service. error %li\n", servOrErr);
         return EXIT_FAILURE;
     }
 

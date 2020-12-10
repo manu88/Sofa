@@ -14,7 +14,6 @@ static void onControlChar(char ctl, void* ptr)
         printf("CTL-C\n");
         if(ThreadIsWaiting(caller))
         {
-            printf("Caller is waiting\n");
             seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
             seL4_SetMR(0, SyscallID_Read);
             seL4_SetMR(1, -EINTR);
@@ -63,7 +62,7 @@ void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
     int error = cnode_savecaller(&env->vka, slot);
     if (error)
     {
-        printf("Unable to save caller err=%i\n", error);
+        KLOG_TRACE("Unable to save caller err=%i\n", error);
         cnode_delete(&env->vka, slot);
         seL4_SetMR(1, -error);
         seL4_Reply(info);
@@ -75,7 +74,6 @@ void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
     SerialRegisterController(onControlChar, caller);
 
 }
-
 
 void Syscall_Write(Thread* caller, seL4_MessageInfo_t info)
 {
