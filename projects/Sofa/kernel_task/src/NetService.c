@@ -6,7 +6,8 @@
 #include "Process.h"
 #include <Sofa.h>
 #include <utils/uthash.h>
-
+#include "Net.h"
+#include "utils.h"
 
 typedef struct
 {
@@ -38,6 +39,20 @@ int NetServiceInit()
     return 0;
 }
 
+static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    ServiceClient* clt = NULL;
+    HASH_FIND_PTR(_clients, &caller, clt );
+    assert(clt);
+
+    KernelTaskContext* ctx = getKernelTaskContext();
+    seL4_Word slot = get_free_slot(&ctx->vka);
+    int error = cnode_savecaller(&ctx->vka, slot);
+    assert(error == 0);
+
+    NetSetEndpoint(slot, clt->buff, seL4_GetMR(2));
+
+}
 
 static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
@@ -46,14 +61,14 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_SetMR(2, protoc);
     seL4_SetMR(3, port);
 */
-    KLOG_INFO("Net Bind message from %i\n", ProcessGetPID(caller->process));
+    KLOG_DEBUG("Net Bind message from %i\n", ProcessGetPID(caller->process));
     int familly = seL4_GetMR(1);
     int protoc = seL4_GetMR(2);
     int port = seL4_GetMR(3);
     KLOG_INFO("fam=%i protoc=%i port=%i\n", familly, protoc, port);
 
-    seL4_Reply(msg);
 
+    seL4_Reply(msg);
 }
 
 
@@ -105,7 +120,9 @@ static int mainNet(KThread* thread, void *arg)
         case NetRequest_Bind:
             _Bind(caller, msg);
             break;
-        
+        case NetRequest_Read:
+            _Read(caller, msg);
+            break;
         default:
             KLOG_TRACE("[NetService] Received unknown code %i from %i\n", req, sender);
             assert(0);

@@ -57,7 +57,6 @@ int VFSServiceInit()
 
 static IODevice* _dev = NULL;
 
-
 static int VFSServiceLs(Client* client, const char* path)
 {
     VFS_File_Stat st;

@@ -47,18 +47,38 @@ static sel4utils_thread_t netThread;
 
 static seL4_CPtr testEP = 0;
 static void* testBuf = NULL;
+size_t testSizeToRead = 0;
 
-void NetSetEndpoint(seL4_CPtr ep, void* buff)
+void NetSetEndpoint(seL4_CPtr ep, void* buff, size_t sizeToRead)
 {
     testEP = ep;
     testBuf = buff;
+    testSizeToRead = sizeToRead;
 }
 
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
-    printf("RECV from %s:%i '%s'\n",ipaddr_ntoa(addr), port, p->payload);
+//    printf("RECV from %s:%i '%s'\n",ipaddr_ntoa(addr), port, p->payload);
+    if(testEP != 0 && testBuf != NULL)
+    {
+        seL4_MessageInfo_t i = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
 
-    udp_sendto(pcb, p, addr, port);
+        size_t effectiveSize = testSizeToRead;
+        if(p->tot_len < effectiveSize)
+        {
+            effectiveSize = p->tot_len;
+        }
+        seL4_SetMR(0, effectiveSize);
+        memcpy(testBuf, p->payload, effectiveSize);
+        
+        seL4_CPtr ep = testEP;
+
+        testEP = 0;
+        testBuf = NULL;
+        testSizeToRead = 0;
+        seL4_Send(ep, i);
+    }
+    //udp_sendto(pcb, p, addr, port);
     pbuf_free(p);
 }
 

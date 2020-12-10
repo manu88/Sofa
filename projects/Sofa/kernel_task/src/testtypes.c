@@ -86,7 +86,7 @@ void doExit(Process* process, int retCode)
     {
         Panic("init returned");
     }
-
+// Close all client that belong to the process
     _closeThreadClients(&process->main);
     Thread* thread = NULL;
     PROCESS_FOR_EACH_EXTRA_THREAD(process, thread)
@@ -94,8 +94,8 @@ void doExit(Process* process, int retCode)
         _closeThreadClients(thread);
     }
 
+//reap the children to init
     Process* parent = process->parent;
-
     // Do we have soon-to-be orphean children?
     if(ProcessCoundChildren(process))
     {
@@ -106,6 +106,7 @@ void doExit(Process* process, int retCode)
         }
     }
 
+// Is our parent waiting on us?
     Thread* waitingThread = ProcessGetWaitingThread(parent);
     uint8_t freeProcess = 0;
     if(waitingThread)
@@ -113,12 +114,11 @@ void doExit(Process* process, int retCode)
         assert(waitingThread->_base.replyCap != 0);
         freeProcess = 1;
 
-        
         replyToWaitingParent(waitingThread, ProcessGetPID(process), retCode);
         ProcessRemoveChild(parent, process);
         ProcessListRemove(process);        
     }
-    else
+    else // Zombie time
     {
         process->retCode = retCode;
         process->state = ProcessState_Zombie;
@@ -126,8 +126,7 @@ void doExit(Process* process, int retCode)
 
     int pidToFree = process->init->pid;
 
-
-    // any Services owned?
+// any Services owned?
     Service* s = NULL;
     Service* t = NULL;
     FOR_EACH_SERVICE(s, t)
@@ -141,15 +140,10 @@ void doExit(Process* process, int retCode)
         }
     }
 
-
+//remove all except data needeed for the waiting parent
     process_tear_down(process);
-//    UnypedsGiveBack(&process->untypedRange);
 
-
-    if(pidToFree > 1)
-    {
-        freeProcess = 0;
-    }
+// If nobody is waiting on us, release 
     if(freeProcess)
     {
         kfree(process);
