@@ -4,3 +4,6 @@
 
 
 int NetInit(void);
+
+
+int NetBind(int familly, int protoc, int port);

@@ -39,9 +39,25 @@ int NetServiceInit()
 }
 
 
+static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+/*
+    seL4_SetMR(1, familly);
+    seL4_SetMR(2, protoc);
+    seL4_SetMR(3, port);
+*/
+    KLOG_INFO("Net Bind message from %i\n", ProcessGetPID(caller->process));
+    int familly = seL4_GetMR(1);
+    int protoc = seL4_GetMR(2);
+    int port = seL4_GetMR(3);
+    KLOG_INFO("fam=%i protoc=%i port=%i\n", familly, protoc, port);
+
+}
+
+
 static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    KLOG_INFO("Net service message from %i\n", ProcessGetPID(caller->process));
+    KLOG_INFO("Net Register message from %i\n", ProcessGetPID(caller->process));
     KernelTaskContext* env = getKernelTaskContext();
     char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
     assert(buff);
@@ -83,6 +99,9 @@ static int mainNet(KThread* thread, void *arg)
         {
         case NetRequest_Register:
             _Register(caller, msg);
+            break;
+        case NetRequest_Bind:
+            _Bind(caller, msg);
             break;
         
         default:

@@ -64,6 +64,7 @@ typedef enum
 typedef enum 
 {
     NetRequest_Register,
+    NetRequest_Bind,
 } NetRequest;
 
 int SFSleep(int ms);

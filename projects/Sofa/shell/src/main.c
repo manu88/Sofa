@@ -4,6 +4,8 @@
 #include <signal.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "runtime.h"
 #include "files.h"
 #include "net.h"
@@ -346,6 +348,9 @@ int main(int argc, char *argv[])
     Printf("[%i] Shell \n", SFGetPid());
 
     NetInit();
+
+
+    int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
 
     while (1)
     {
