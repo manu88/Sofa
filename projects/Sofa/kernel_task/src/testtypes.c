@@ -63,12 +63,35 @@ static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
     onThread->_base.replyCap = 0;
 }
 
+
+void _closeThreadClients(Thread*t)
+{
+    ServiceClient* clt = NULL;
+    ServiceClient* tmp = NULL;
+
+    LL_FOREACH_SAFE(t->_base.clients, clt, tmp)
+    {
+        LL_DELETE(t->_base.clients, clt);
+
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+        seL4_SetMR(0, clt);
+        seL4_Send(clt->service->kernTaskEp, info);
+    }
+}
+
 void doExit(Process* process, int retCode)
 {
     KLOG_TRACE("doExit for process %s %i with code %i\n", ProcessGetName(process), ProcessGetPID(process), retCode);
     if(ProcessGetPID(process) == 1)
     {
         Panic("init returned");
+    }
+
+    _closeThreadClients(&process->main);
+    Thread* thread = NULL;
+    PROCESS_FOR_EACH_EXTRA_THREAD(process, thread)
+    {
+        _closeThreadClients(thread);
     }
 
     Process* parent = process->parent;

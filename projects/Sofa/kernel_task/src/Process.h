@@ -22,7 +22,6 @@ typedef enum
 
 typedef struct _Process Process;
 
-
 typedef struct _Thread
 {
     ThreadBase _base; // needs to remain fisrt!!
@@ -36,6 +35,7 @@ typedef struct _Thread
     struct _Thread *next;
     void *stack;
     size_t stackSize;
+
 } Thread;
 
 
