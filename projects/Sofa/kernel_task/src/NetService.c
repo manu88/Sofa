@@ -3,7 +3,22 @@
 #include "KThread.h"
 #include "Environ.h"
 #include "Log.h"
+#include "Process.h"
+#include <Sofa.h>
+#include <utils/uthash.h>
 
+
+typedef struct
+{
+    ThreadBase* caller;
+    UT_hash_handle hh; /* makes this structure hashable */
+    char* buff;
+
+
+}Client;
+
+
+static Client* _clients = NULL;
 
 static KThread _netServiceThread;
 static Service _netService;
@@ -24,6 +39,32 @@ int NetServiceInit()
 }
 
 
+static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    KLOG_INFO("Net service message from %i\n", ProcessGetPID(caller->process));
+    KernelTaskContext* env = getKernelTaskContext();
+    char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
+    assert(buff);
+    void* buffShared = vspace_share_mem(&env->vspace,
+                                        &caller->process->native.vspace,
+                                        buff,
+                                        1,
+                                        PAGE_BITS_4K,
+                                        seL4_ReadWrite,
+                                        1
+                                        );
+    assert(buffShared);
+    Client* client = malloc(sizeof(Client));
+    assert(client);
+    memset(client, 0, sizeof(Client));
+    client->caller = caller;
+    client->buff = buff;
+    HASH_ADD_PTR(_clients, caller, client);
+    seL4_SetMR(1, buffShared);
+    seL4_Reply(msg);
+
+}
+
 static int mainNet(KThread* thread, void *arg)
 {
     KernelTaskContext* env = getKernelTaskContext();
@@ -32,6 +73,22 @@ static int mainNet(KThread* thread, void *arg)
 
     while (1)
     {
+        seL4_Word sender;
+        seL4_MessageInfo_t msg = seL4_Recv(_netService.baseEndpoint, &sender);
+        ThreadBase* caller =(ThreadBase*) sender;
+        assert(caller->process);
+
+        NetRequest req = (NetRequest) seL4_GetMR(0);
+        switch (req)
+        {
+        case NetRequest_Register:
+            _Register(caller, msg);
+            break;
+        
+        default:
+            assert(0);
+            break;
+        }
     }
     
 }

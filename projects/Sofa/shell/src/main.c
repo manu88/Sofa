@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include "runtime.h"
 #include "files.h"
+#include "net.h"
 
 extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
@@ -343,6 +344,8 @@ int main(int argc, char *argv[])
     fOut = VFSOpen("/fake/cons", O_WRONLY);
 
     Printf("[%i] Shell \n", SFGetPid());
+
+    NetInit();
 
     while (1)
     {
