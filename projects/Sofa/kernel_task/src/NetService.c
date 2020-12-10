@@ -51,7 +51,6 @@ static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
     assert(error == 0);
 
     NetSetEndpoint(slot, clt->buff, seL4_GetMR(2));
-
 }
 
 static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
@@ -66,7 +65,6 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     int protoc = seL4_GetMR(2);
     int port = seL4_GetMR(3);
     KLOG_INFO("fam=%i protoc=%i port=%i\n", familly, protoc, port);
-
 
     seL4_Reply(msg);
 }
@@ -95,7 +93,6 @@ static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
     HASH_ADD_PTR(_clients, caller, client);
     seL4_SetMR(1, buffShared);
     seL4_Reply(msg);
-
 }
 
 static int mainNet(KThread* thread, void *arg)
@@ -129,7 +126,6 @@ static int mainNet(KThread* thread, void *arg)
             break;
         }
     }
-    
 }
 
 

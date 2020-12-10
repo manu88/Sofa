@@ -38,6 +38,9 @@ Service* NameServerGetServices(void);
 
 #define FOR_EACH_SERVICE(service, tmp) HASH_ITER(hh, NameServerGetServices(), service, tmp)
 
+/*
+Init a service with a given process owner
+*/
 static inline void ServiceInit(Service* s, Process* owner)
 {
     memset(s, 0, sizeof(Service));

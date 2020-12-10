@@ -68,8 +68,18 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
         {
             effectiveSize = p->tot_len;
         }
-        seL4_SetMR(0, effectiveSize);
-        memcpy(testBuf, p->payload, effectiveSize);
+
+
+        void* ptr = pbuf_get_contiguous(p, testBuf, 4096, effectiveSize, 0); 
+        if(ptr== NULL)
+        {
+            effectiveSize = 0;
+        }
+        if(ptr != testBuf)
+        {
+            memcpy(testBuf, ptr, effectiveSize);
+        }
+        seL4_SetMR(0, effectiveSize);        
         
         seL4_CPtr ep = testEP;
 

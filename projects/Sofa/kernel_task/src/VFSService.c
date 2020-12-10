@@ -47,7 +47,7 @@ int VFSServiceInit()
 {
     KernelTaskContext* ctx = getKernelTaskContext();
 
-    ServiceInit(&_vfsService, ctx );
+    ServiceInit(&_vfsService, getKernelTaskProcess());
     _vfsService.name = _vfsName;
     ServiceCreateKernelTask(&_vfsService);
 
