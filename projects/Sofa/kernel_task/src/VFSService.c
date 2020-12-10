@@ -176,7 +176,7 @@ static int mainVFS(KThread* thread, void *arg)
 {
     KernelTaskContext* env = getKernelTaskContext();
 
-    printf("Test Thread started\n");
+    KLOG_INFO("VFS Thread started\n");
     IODevice* dev = NULL;
     FOR_EACH_DEVICE(dev)
     {
@@ -326,11 +326,6 @@ int VFSServiceStart()
     _vfsThread.mainFunction = mainVFS;
     _vfsThread.name = "VFSD";
     int error = KThreadRun(&_vfsThread, 254, NULL);
-    if( error != 0)
-    {
-        return error;
-    }
-    assert(error == 0);
 
-    return 0;
+    return error;
 }

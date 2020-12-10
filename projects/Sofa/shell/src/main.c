@@ -137,7 +137,7 @@ void processCommand(const char* cmd)
             return;
         }
 
-        int handle = VFSOpen(path, 1);
+        int handle = VFSOpen(path, O_RDONLY);
         if(handle <0)
         {
             Printf("open error %i\n", handle);
