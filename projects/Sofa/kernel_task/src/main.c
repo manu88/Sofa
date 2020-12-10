@@ -48,6 +48,7 @@
 #include "KThread.h"
 #include <Sofa.h>
 #include "VFSService.h"
+#include "NetService.h"
 #include "VFS.h"
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
@@ -186,13 +187,19 @@ void *main_continued(void *arg UNUSED)
 
     VFSMount(getFakeFS(), "/fake");
 
-
+    KLOG_INFO("Starting VFSService\n");
     error = VFSServiceInit();
     assert(error == 0);
 
     error = VFSServiceStart();
     assert(error == 0);
 
+    KLOG_INFO("Starting NetService\n");
+    error = NetServiceInit();
+    assert(error == 0);
+
+    error = NetServiceStart();
+    assert(error == 0);
 
     ProcessInit(&initProcess);
     initProcess.argc = 0;
