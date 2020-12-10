@@ -34,12 +34,9 @@ typedef struct _ServiceClient
 
 }ServiceClient;
 
-
 Service* NameServerGetServices(void);
 
-
 #define FOR_EACH_SERVICE(service, tmp) HASH_ITER(hh, NameServerGetServices(), service, tmp)
-
 
 static inline void ServiceInit(Service* s, Process* owner)
 {
@@ -47,6 +44,9 @@ static inline void ServiceInit(Service* s, Process* owner)
     s->owner = owner;
 }
 
+/*
+Helper to create a Service inside kernel_task
+*/
 int ServiceCreateKernelTask(Service* s);
 
 

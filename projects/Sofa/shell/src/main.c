@@ -314,6 +314,13 @@ void processCommand(const char* cmd)
         int ms = atol(strMS);
         SFSleep(ms);
     }
+    else if(strcmp("r", cmd) == 0)
+    {
+        char dats[64];
+        ssize_t rRead = NetRead(0, dats, 64);
+        Printf("rR returned %zi '%s'\n", rRead, dats);
+
+    }
     else if(startsWith("pid", cmd))
     {
         Printf("PID=%i\n", SFGetPid());
@@ -351,6 +358,7 @@ int main(int argc, char *argv[])
 
 
     int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
+
 
     while (1)
     {

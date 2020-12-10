@@ -45,4 +45,34 @@ int NetBind(int familly, int protoc, int port)
     seL4_SetMR(3, port);
     seL4_Call(netCap, info);
 
+    return 0;
+}
+
+ssize_t NetRead(int handle, char* data, size_t size)
+{
+    if(netCap == 0)
+    {
+        Printf("[shell] VFS client not registered (no cap)\n");
+    }
+
+    if(netBuf == NULL)
+    {
+        Printf("[shell] VFS client not registered(no buff)\n");
+    }
+
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, NetRequest_Read);
+    seL4_SetMR(1, handle);
+    seL4_SetMR(2, size);
+    seL4_Call(netCap, info);
+//    int err = seL4_GetMR(1);
+    int readSize = seL4_GetMR(0);
+    if(readSize)
+    {
+        memcpy(data, netBuf, readSize);
+        data[readSize] = 0;
+
+        return readSize;
+    }
+
 }
