@@ -45,6 +45,15 @@ static struct udp_pcb* _udp = &udp;
 
 static sel4utils_thread_t netThread;
 
+static seL4_CPtr testEP = 0;
+static void* testBuf = NULL;
+
+void NetSetEndpoint(seL4_CPtr ep, void* buff)
+{
+    testEP = ep;
+    testBuf = buff;
+}
+
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
     printf("RECV from %s:%i '%s'\n",ipaddr_ntoa(addr), port, p->payload);

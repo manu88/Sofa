@@ -16,3 +16,5 @@ typedef struct
 
 
 void NetInit(uint32_t iobase0);
+
+void NetSetEndpoint(seL4_CPtr ep, void* buff);
