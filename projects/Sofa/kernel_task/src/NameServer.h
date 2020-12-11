@@ -34,6 +34,11 @@ typedef struct _ServiceClient
 
 }ServiceClient;
 
+typedef enum
+{
+    ServiceNotification_ClientExit,
+}ServiceNotification;
+
 Service* NameServerGetServices(void);
 
 #define FOR_EACH_SERVICE(service, tmp) HASH_ITER(hh, NameServerGetServices(), service, tmp)
