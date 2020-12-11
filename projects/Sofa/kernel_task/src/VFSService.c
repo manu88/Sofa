@@ -211,8 +211,12 @@ static int mainVFS(KThread* thread, void *arg)
         // Specific message sent by kernel_task to notify the service about the client killed
         if (caller->process == getKernelTaskProcess())
         {
-            ServiceClient* clt = seL4_GetMR(0);
-            ClientCleanup(clt);
+            ServiceNotification notif = seL4_GetMR(0);
+            if(notif == ServiceNotification_ClientExit)
+            {
+                ServiceClient* clt = seL4_GetMR(1);
+                ClientCleanup(clt);
+            }
         }
         else if(seL4_GetMR(0) == VFSRequest_Register)
         {
