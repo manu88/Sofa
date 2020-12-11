@@ -72,7 +72,7 @@ void _closeThreadClients(Thread*t)
     LL_FOREACH_SAFE(t->_base.clients, clt, tmp)
     {
         LL_DELETE(t->_base.clients, clt);
-
+        KLOG_DEBUG("closeThread client: notify service %s\n", clt->service->name);
         seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
         seL4_SetMR(0, clt);
         seL4_Send(clt->service->kernTaskEp, info);
