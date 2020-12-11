@@ -15,6 +15,8 @@ typedef struct
     Process* process; //process owner
 
     seL4_Word replyCap;
+    seL4_Word currentSyscallID;
+
     unsigned int timerID;
     ServiceClient* clients; // a list of Service clients belonging to this thread.
 

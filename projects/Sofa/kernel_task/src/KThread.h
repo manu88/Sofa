@@ -1,6 +1,7 @@
 #pragma once
 #include <sel4utils/thread.h>
 #include "Thread.h"
+#include <sync/recursive_mutex.h>
 
 typedef struct _KThread KThread;
 
@@ -27,3 +28,13 @@ void KThreadExit(KThread* t, int code);
 
 // Works only in threads, so be sure not to call it in main Thread!
 int KSleep(int ms);
+
+
+typedef sync_recursive_mutex_t KMutex;
+
+
+int KMutexNew(KMutex* mutex);
+int KMutexDelete(KMutex* mutex);
+
+int KMutexLock(KMutex* mutex);
+int KMutexUnlock(KMutex* mutex);

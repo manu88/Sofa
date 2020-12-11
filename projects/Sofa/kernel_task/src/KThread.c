@@ -118,3 +118,25 @@ void KThreadExit(KThread* thread, int code)
     assert(0);
     while(1);
 }
+
+
+
+int KMutexNew(KMutex* mutex)
+{
+    return sync_recursive_mutex_new(&getKernelTaskContext()->vka, mutex);
+}
+
+int KMutexDelete(KMutex* mutex)
+{
+    return sync_recursive_mutex_destroy(&getKernelTaskContext()->vka, mutex);
+}
+
+int KMutexLock(KMutex* mutex)
+{
+    return sync_recursive_mutex_lock(mutex);
+}
+
+int KMutexUnlock(KMutex* mutex)
+{
+    return sync_recursive_mutex_unlock(mutex);
+}
