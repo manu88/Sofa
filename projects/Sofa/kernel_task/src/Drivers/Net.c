@@ -5,7 +5,7 @@
 #include <lwip/udp.h>
 #include "Environ.h"
 #include "Net.h"
-#include <sel4utils/thread.h>
+#include "KThread.h"
 #include "DeviceTree.h"
 
 IODevice _netDevice = IODeviceInit("Virtio-net-pci", IODevice_Net, NULL);
@@ -43,7 +43,7 @@ handle_irq(void *state, int irq_num)
 static struct udp_pcb udp;
 static struct udp_pcb* _udp = &udp; 
 
-static sel4utils_thread_t netThread;
+static KThread netThread;
 
 static ThreadBase* testCaller = NULL;
 static void* testBuf = NULL;
@@ -143,8 +143,7 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
 
 }
 
-static void threadStart(void *arg0, void *arg1, void *ipc_buf);
-
+static int threadStart(KThread* thread, void *arg);
 
 void NetInit(uint32_t iobase0)
 {
@@ -223,16 +222,25 @@ void NetInit(uint32_t iobase0)
 
 
 // New thread
+    KThreadInit(&netThread);
+    netThread.name = "virtio-pci";
+    netThread.mainFunction = threadStart;
+
+    seL4_CPtr *args = malloc(sizeof(seL4_CPtr)*2);
+    args[0] = irq_aep;
+    args[1] = irq;
+    KThreadRun(&netThread, 254, args);
+/*    
     sel4utils_thread_config_t thConf = thread_config_new(&env->simple);
     thConf = thread_config_cspace(thConf, simple_get_cnode(&env->simple), 0);
 
-    error = sel4utils_configure_thread_config(&env->vka , &env->vspace , /*alloc*/&env->vspace , thConf , &netThread);
+    error = sel4utils_configure_thread_config(&env->vka , &env->vspace , &env->vspace , thConf , &netThread);
     assert(error == 0);
 
     seL4_TCB_SetPriority(netThread.tcb.cptr, seL4_CapInitThreadTCB ,  254);
     error = sel4utils_start_thread(&netThread , threadStart , irq_aep , irq , 1);
     assert(error == 0);
-
+*/
     DeviceTreeAddDevice(&_netDevice);
 
     printf("<----NetInit\n");
@@ -240,22 +248,19 @@ void NetInit(uint32_t iobase0)
 }
 
 
-static void threadStart(void *arg0, void *arg1, void *ipc_buf)
+static int threadStart(KThread* thread, void *arg)
 {
-    seL4_CPtr irq_aep = (seL4_CPtr) arg0;
-    int irq = (int) arg1;
-
+    seL4_CPtr *args = arg;
+    seL4_CPtr irq_aep = args[0];
+    seL4_CPtr irq =  args[1];
+    free(args);
     
-    //seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 1);
-    //seL4_Send(irq_aep, msg);
-
 
     while(1)
     {
 	    seL4_Wait(irq_aep,NULL);
         seL4_IRQHandler_Ack(irq);
-
-         _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
+        _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
     }
-
+    return 0;
 }
