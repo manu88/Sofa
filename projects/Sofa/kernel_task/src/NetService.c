@@ -12,15 +12,11 @@
 
 typedef struct
 {
-    ThreadBase* caller;
-    UT_hash_handle hh; /* makes this structure hashable */
-    char* buff;
-
-
+    ServiceClient _clt;
 }Client;
 
 
-static Client* _clients = NULL;
+static ServiceClient* _clients = NULL;
 
 static KThread _netServiceThread;
 static Service _netService;
@@ -32,10 +28,7 @@ int NetServiceInit()
     ServiceInit(&_netService, getKernelTaskProcess() );
     _netService.name = _netName;
 
-    vka_object_t ep = {0};
-    error = vka_alloc_endpoint(&getKernelTaskContext()->vka, &ep);
-    assert(error == 0);
-    _netService.baseEndpoint = ep.cptr;
+    ServiceCreateKernelTask(&_netService);
     NameServerRegister(&_netService);
     return 0;
 }
@@ -126,11 +119,23 @@ static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
     Client* client = malloc(sizeof(Client));
     assert(client);
     memset(client, 0, sizeof(Client));
-    client->caller = caller;
-    client->buff = buff;
-    HASH_ADD_PTR(_clients, caller, client);
+    client->_clt.caller = caller;
+    client->_clt.buff = buff;
+    client->_clt.service = &_netService;
+    HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
     seL4_SetMR(1, buffShared);
     seL4_Reply(msg);
+
+    LL_APPEND(caller->clients, (ServiceClient*) client);
+}
+
+static void ClientCleanup(ServiceClient *clt)
+{
+    HASH_DEL(_clients, clt);
+    Client* c = clt;
+
+
+    free(c);
 }
 
 static int mainNet(KThread* thread, void *arg)
@@ -146,25 +151,33 @@ static int mainNet(KThread* thread, void *arg)
         ThreadBase* caller =(ThreadBase*) sender;
         assert(caller->process);
 
-        NetRequest req = (NetRequest) seL4_GetMR(0);
-        switch (req)
+        if (caller->process == getKernelTaskProcess())
         {
-        case NetRequest_Register:
-            _Register(caller, msg);
-            break;
-        case NetRequest_Bind:
-            _Bind(caller, msg);
-            break;
-        case NetRequest_Read:
-            _Read(caller, msg);
-            break;
-        case NetRequest_Write:
-            _Write(caller, msg);
-            break;
-        default:
-            KLOG_TRACE("[NetService] Received unknown code %i from %i\n", req, sender);
-            assert(0);
-            break;
+            ServiceClient* clt = seL4_GetMR(0);
+            ClientCleanup(clt);
+        }
+        else
+        {        
+            NetRequest req = (NetRequest) seL4_GetMR(0);
+            switch (req)
+            {
+            case NetRequest_Register:
+                _Register(caller, msg);
+                break;
+            case NetRequest_Bind:
+                _Bind(caller, msg);
+                break;
+            case NetRequest_Read:
+                _Read(caller, msg);
+                break;
+            case NetRequest_Write:
+                _Write(caller, msg);
+                break;
+            default:
+                KLOG_TRACE("[NetService] Received unknown code %i from %i\n", req, sender);
+                assert(0);
+                break;
+            }
         }
     }
 }
