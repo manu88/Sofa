@@ -45,12 +45,13 @@ static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
     HASH_FIND_PTR(_clients, &caller, clt );
     assert(clt);
 
+    
     KernelTaskContext* ctx = getKernelTaskContext();
-    seL4_Word slot = get_free_slot(&ctx->vka);
-    int error = cnode_savecaller(&ctx->vka, slot);
+    caller->replyCap = get_free_slot(&ctx->vka);
+    int error = cnode_savecaller(&ctx->vka, caller->replyCap);
     assert(error == 0);
 
-    NetSetEndpoint(slot, clt->buff, seL4_GetMR(2));
+    NetSetEndpoint(caller->replyCap, clt->buff, seL4_GetMR(2));
 }
 
 static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
