@@ -40,6 +40,21 @@ int NetServiceInit()
     return 0;
 }
 
+static void _Write(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    ServiceClient* clt = NULL;
+    HASH_FIND_PTR(_clients, &caller, clt );
+    assert(clt);
+
+    KernelTaskContext* ctx = getKernelTaskContext();
+    size_t sizeToWrite = seL4_GetMR(2);
+    printf("Net Write ret for %zi bytes '%s'\n", sizeToWrite, clt->buff);
+
+    NetSendTo(clt->buff, sizeToWrite);
+
+    seL4_Reply(msg);
+}
+
 static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
     ServiceClient* clt = NULL;
@@ -59,7 +74,6 @@ static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
         struct pbuf *buf = LListPut(&buff->rxList);
         printf("NetService Put a buff %p remains %i\n", buf, LListSize(&buff->rxList));
 
-
         size_t effectiveSize = NetSendPbuf(buf, clt->buff, sizeToRead);
 
         seL4_MessageInfo_t i = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
@@ -69,8 +83,6 @@ static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
         return;
     }
     KMutexUnlock(&buff->rxListMutex);
-
-
 
     caller->replyCap = get_free_slot(&ctx->vka);
     int error = cnode_savecaller(&ctx->vka, caller->replyCap);
@@ -145,6 +157,9 @@ static int mainNet(KThread* thread, void *arg)
             break;
         case NetRequest_Read:
             _Read(caller, msg);
+            break;
+        case NetRequest_Write:
+            _Write(caller, msg);
             break;
         default:
             KLOG_TRACE("[NetService] Received unknown code %i from %i\n", req, sender);

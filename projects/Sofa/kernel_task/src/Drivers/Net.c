@@ -63,6 +63,30 @@ void NetSetEndpoint(ThreadBase *caller, void* buff, size_t sizeToRead)
     testSizeToRead = sizeToRead;
 }
 
+static ip_addr_t __ip;
+static int __port;
+
+void NetSendTo(void* buff, size_t buffSize)
+{
+    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, buffSize, PBUF_RAM);
+    if (p) 
+    {
+        printf("NetSendTo size %i buf '%s'\n", buffSize, buff);
+        //syslog_trace("transmitting msg [len=%d, addr=%s, port=%d]", len, ipaddr_ntoa(&addr), port);
+        memcpy(p->payload, buff, buffSize);
+        err_t lwerr = udp_sendto(_udp, p, &__ip, __port);//, &addr,port);
+        printf("udp_sendto err %i\n", lwerr);
+    //    syslog_trace("udp_sendto=%d",lwerr);
+        pbuf_free(p);
+    }
+    else
+    {
+        printf("NetSendTo unable to alloc pbuf\n");
+    }
+    
+
+}
+
 size_t NetSendPbuf(void* _pbuf, void* cltBuf, size_t size)
 {
     struct pbuf* p = _pbuf;
@@ -86,8 +110,12 @@ size_t NetSendPbuf(void* _pbuf, void* cltBuf, size_t size)
     return effectiveSize;
 }
 
+
+
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
+    __ip = *addr;
+    __port = port;
 
     if(testCaller != NULL && testBuf != NULL)
     {

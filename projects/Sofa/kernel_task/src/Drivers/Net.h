@@ -28,3 +28,5 @@ void NetInit(uint32_t iobase0);
 
 void NetSetEndpoint(ThreadBase *caller, void* buff, size_t sizeToRead);
 size_t NetSendPbuf(void* pbuf, void* cltBuf, size_t size);
+
+void NetSendTo(void* buff, size_t buffSize);
