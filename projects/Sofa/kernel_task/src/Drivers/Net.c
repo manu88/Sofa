@@ -45,51 +45,74 @@ static struct udp_pcb* _udp = &udp;
 
 static sel4utils_thread_t netThread;
 
-static seL4_CPtr testEP = 0;
+static ThreadBase* testCaller = NULL;
 static void* testBuf = NULL;
 size_t testSizeToRead = 0;
 
-void NetSetEndpoint(seL4_CPtr ep, void* buff, size_t sizeToRead)
+static NetBuffer _rxBuff;
+
+NetBuffer *getRXBuffer()
 {
-    testEP = ep;
+    return &_rxBuff;
+}
+
+void NetSetEndpoint(ThreadBase *caller, void* buff, size_t sizeToRead)
+{
+    testCaller = caller;
     testBuf = buff;
     testSizeToRead = sizeToRead;
 }
 
+size_t NetSendPbuf(void* _pbuf, void* cltBuf, size_t size)
+{
+    struct pbuf* p = _pbuf;
+
+    size_t effectiveSize = size;
+    if(p->tot_len < effectiveSize)
+    {
+        effectiveSize = p->tot_len;
+    }
+
+    void* ptr = pbuf_get_contiguous(p, cltBuf, 4096, effectiveSize, 0); 
+    if(ptr== NULL)
+    {
+        effectiveSize = 0;
+    }
+    if(ptr != cltBuf)
+    {
+        memcpy(cltBuf, ptr, effectiveSize);
+    }
+
+    return effectiveSize;
+}
+
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
-//    printf("RECV from %s:%i '%s'\n",ipaddr_ntoa(addr), port, p->payload);
-    if(testEP != 0 && testBuf != NULL)
+
+    if(testCaller != NULL && testBuf != NULL)
     {
         seL4_MessageInfo_t i = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+        size_t effectiveSize = NetSendPbuf(p,  testBuf, testSizeToRead);
+        pbuf_free(p);
 
-        size_t effectiveSize = testSizeToRead;
-        if(p->tot_len < effectiveSize)
-        {
-            effectiveSize = p->tot_len;
-        }
-
-
-        void* ptr = pbuf_get_contiguous(p, testBuf, 4096, effectiveSize, 0); 
-        if(ptr== NULL)
-        {
-            effectiveSize = 0;
-        }
-        if(ptr != testBuf)
-        {
-            memcpy(testBuf, ptr, effectiveSize);
-        }
         seL4_SetMR(0, effectiveSize);        
-        
-        seL4_CPtr ep = testEP;
-
-        testEP = 0;
+        seL4_CPtr ep = testCaller->replyCap;
+        testCaller->replyCap = 0;
+        testCaller = NULL;
         testBuf = NULL;
         testSizeToRead = 0;
         seL4_Send(ep, i);
     }
-    //udp_sendto(pcb, p, addr, port);
-    pbuf_free(p);
+    else
+    {
+        KMutexLock(&_rxBuff.rxListMutex);
+        LListAppend(&_rxBuff.rxList, p);
+        printf("Net RX Buff size %i\n", LListSize(&_rxBuff.rxList));
+        KMutexUnlock(&_rxBuff.rxListMutex);
+
+    }
+    
+
 }
 
 static void threadStart(void *arg0, void *arg1, void *ipc_buf);
@@ -97,6 +120,10 @@ static void threadStart(void *arg0, void *arg1, void *ipc_buf);
 
 void NetInit(uint32_t iobase0)
 {
+    memset(&_rxBuff, 0, sizeof(NetBuffer));
+    KMutexNew(&_rxBuff.rxListMutex);
+    LListList(&_rxBuff.rxList);
+
     lwip_init();
     udp_init();
 

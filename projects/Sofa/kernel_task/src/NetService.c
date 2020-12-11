@@ -6,6 +6,7 @@
 #include "Process.h"
 #include <Sofa.h>
 #include <utils/uthash.h>
+#include <lwip/udp.h>
 #include "Net.h"
 #include "utils.h"
 
@@ -45,13 +46,37 @@ static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
     HASH_FIND_PTR(_clients, &caller, clt );
     assert(clt);
 
-    
     KernelTaskContext* ctx = getKernelTaskContext();
+
+    size_t sizeToRead = seL4_GetMR(2);
+
+    NetBuffer* buff = getRXBuffer();
+    KMutexLock(&buff->rxListMutex);
+    if(LListSize(&buff->rxList))
+    {
+        printf("NetService: take an element\n");
+        
+        struct pbuf *buf = LListPut(&buff->rxList);
+        printf("NetService Put a buff %p remains %i\n", buf, LListSize(&buff->rxList));
+
+
+        size_t effectiveSize = NetSendPbuf(buf, clt->buff, sizeToRead);
+
+        seL4_MessageInfo_t i = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+        seL4_SetMR(0, effectiveSize);
+        KMutexUnlock(&buff->rxListMutex);    
+        seL4_Reply(i);
+        return;
+    }
+    KMutexUnlock(&buff->rxListMutex);
+
+
+
     caller->replyCap = get_free_slot(&ctx->vka);
     int error = cnode_savecaller(&ctx->vka, caller->replyCap);
     assert(error == 0);
 
-    NetSetEndpoint(caller->replyCap, clt->buff, seL4_GetMR(2));
+    NetSetEndpoint(caller, clt->buff, seL4_GetMR(2));
 }
 
 static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
