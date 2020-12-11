@@ -314,6 +314,12 @@ void processCommand(const char* cmd)
         int ms = atol(strMS);
         SFSleep(ms);
     }
+    else if(startsWith("netw", cmd))
+    {
+        const char *str = cmd + strlen("netw ");
+        int r = NetWrite(0, str, strlen(str));
+        Printf("%i\n", r);
+    }
     else if(strcmp("r", cmd) == 0)
     {
         char dats[64];
