@@ -195,6 +195,7 @@ void *main_continued(void *arg UNUSED)
 
 
     ProcessInit(&initProcess);
+    initProcess.argc = 0;
     spawnApp(&initProcess, "init", NULL);
 
 

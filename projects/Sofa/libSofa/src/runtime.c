@@ -38,7 +38,7 @@ static void process_exit(int code)
 
 int RuntimeInit2(int argc, char *argv[])
 {
-    assert(argc == 2);
+    assert(argc >= 2);
     endpoint = (seL4_CPtr) atoi(argv[0]);
     test_init_data_t *init_data = (void *) atol(argv[1]);
 

@@ -56,7 +56,23 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
             Process* p = NULL;
             FOR_EACH_PROCESS(p)
             {
-                printf("%i %s %c %s\n", ProcessGetPID(p), ProcessGetName(p), getProcessStateStr(p->state), proc == p ? "*":"");
+                printf("%i ", ProcessGetPID(p));
+                printf("%c ", getProcessStateStr(p->state));
+                if(p->argv && p->argc)
+                {
+                    for(int i=0;i<p->argc;i++)
+                    {
+                        printf("%s ", p->argv[i]);
+                    }
+                }
+                else
+                {
+                    printf("%s ", ProcessGetName(p));
+                }
+                
+                printf("%s", proc == p ? "*":"");
+
+                printf("\n");
             }
 
         }
