@@ -308,6 +308,14 @@ void processCommand(const char* cmd)
             Printf("wait returned pid %i status %i\n", ret, appStatus);
         }
     }
+    else if(startsWith("bind", cmd))
+    {
+        const char *strPort = cmd + strlen("bind ");
+        int port = atol(strPort);
+
+        int h = NetBind(AF_INET, SOCK_DGRAM, port);
+
+    }
     else if(startsWith("sleep", cmd))
     {
         const char *strMS = cmd + strlen("sleep ");
@@ -320,10 +328,18 @@ void processCommand(const char* cmd)
         int r = NetWrite(0, str, strlen(str));
         Printf("%i\n", r);
     }
-    else if(strcmp("r", cmd) == 0)
+    else if(startsWith("r", cmd))
     {
-        char dats[64];
-        ssize_t rRead = NetRead(0, dats, 64);
+        const char *strSize = cmd + strlen("r ");
+        int size = atol(strSize);
+
+
+        char dats[128];
+        if(size > 128)
+        {
+            size = 128;
+        }
+        ssize_t rRead = NetRead(0, dats, size);
         Printf("rR returned %zi '%s'\n", rRead, dats);
 
     }
@@ -362,9 +378,7 @@ int main(int argc, char *argv[])
 
     NetInit();
 
-
     int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
-
 
     while (1)
     {

@@ -9,7 +9,7 @@ typedef struct
     KMutex rxListMutex;
 } NetBuffer;
 
-NetBuffer *getRXBuffer(void);
+//NetBuffer *getRXBuffer(void);
 
 typedef void (*netif_handle_irq_fn)(void *state, int irq_num);
 
@@ -26,7 +26,6 @@ typedef struct
 
 void NetInit(uint32_t iobase0);
 
-void NetSetEndpoint(ThreadBase *caller, void* buff, size_t sizeToRead);
-size_t NetSendPbuf(void* pbuf, void* cltBuf, size_t size);
+//void NetSetEndpoint(ThreadBase *caller, void* buff, size_t sizeToRead);
+//size_t NetSendPbuf(void* pbuf, void* cltBuf, size_t size);
 
-void NetSendTo(void* buff, size_t buffSize);
