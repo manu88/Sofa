@@ -73,6 +73,28 @@ static void doExit(int code)
     exit(code);
 }
 
+static int doSpawn(const char* cmd)
+{
+    int pid = SFSpawn(cmd);
+    if(pid <= 0)
+    {
+        Printf("Spawn error %i\n", pid);
+        return pid;
+    }
+    int appStatus = 0;
+    int ret = SFWait(&appStatus);
+    if(ret < 0)
+    {
+        Printf("Wait interupted\n");
+    }
+    else
+    {
+        Printf("%s (pid %i) returned %i\n", cmd, pid, appStatus);
+    }
+
+    return 0;
+}
+
 void processCommand(const char* cmd)
 {
     if(startsWith("exit", cmd))
@@ -275,22 +297,8 @@ void processCommand(const char* cmd)
     else if(startsWith("spawn", cmd))
     {
         const char *strApp = cmd + strlen("spawn ");
-        int pid = SFSpawn(strApp);
-        if(pid <= 0)
-        {
-            Printf("Spawn error %i\n", pid);
-            return;
-        }
-        int appStatus = 0;
-        int ret = SFWait(&appStatus);
-        if(ret < 0)
-        {
-            Printf("Wait interupted\n");
-        }
-        else
-        {
-            Printf("%s (pid %i) returned %i\n", strApp, pid, appStatus);
-        }
+        int ret = doSpawn(strApp);
+        Printf("%i\n", ret);
     }
     else if(startsWith("wait", cmd))
     {
@@ -337,12 +345,18 @@ void processCommand(const char* cmd)
 int main(int argc, char *argv[])
 {
     RuntimeInit2(argc, argv);
-
+    argc -=2;
+    argv = &argv[2];
     VFSClientInit();
 
     fOut = VFSOpen("/fake/cons", O_WRONLY);
 
-    Printf("[%i] Shell \n", SFGetPid());
+    Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
+
+    for(int i=0;i<argc;i++)
+    {
+        Printf("%i %s\n",i,argv[i]);
+    }
 
     while (1)
     {

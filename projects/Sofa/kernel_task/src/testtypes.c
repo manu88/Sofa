@@ -251,11 +251,20 @@ void process_run(const char *name, Process* process)
 #endif
 
     /* set up args for the test process */
-    seL4_Word argc = 2;
+    seL4_Word argc = 2 + process->argc;
     char string_args[argc][WORD_STRING_SIZE];
     char *argv[argc];
 
-    sel4utils_create_word_args(string_args, argv, argc, process->main.process_endpoint, process->init_remote_vaddr);
+    argv[0] = string_args[0];
+    argv[1] = string_args[1];    
+    snprintf(argv[0], WORD_STRING_SIZE, "%"PRIuPTR"", process->main.process_endpoint);
+    snprintf(argv[1], WORD_STRING_SIZE, "%"PRIuPTR"", process->init_remote_vaddr);
+    for(int i=0;i<process->argc;i++)
+    {
+        argv[i+2] = process->argv[i];
+    }
+
+//    sel4utils_create_word_args(string_args, argv, argc, process->main.process_endpoint, process->init_remote_vaddr);
 
     /* spawn the process */
     error = sel4utils_spawn_process_v(&process->native, &env->vka, &env->vspace,
@@ -269,6 +278,12 @@ void process_tear_down(Process* process)
 
     Thread* elt = NULL;
     Thread* tmp = NULL;
+
+    for(int i=0;i<process->argc;i++)
+    {
+        kfree(process->argv[i]);
+    }
+    kfree(process->argv);
     
     LL_FOREACH_SAFE(process->threads,elt,tmp) 
     {
