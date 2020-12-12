@@ -394,6 +394,10 @@ int main(int argc, char *argv[])
 
     int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
 
+    NetInit();
+
+    int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
+
     while (1)
     {
         Printf(">:");
