@@ -231,10 +231,19 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
         assert(udp);
         udp_recv(udp, _on_udp, clt);
         err_t error_bind = udp_bind(udp, NULL, port);
-        assert(error_bind == ERR_OK);
+        if(error_bind == ERR_USE)
+        {
+            udp_remove(udp);
+            seL4_Reply(msg);
+            return;
+        }
+        else if(error_bind != 0)
+        {
+            KLOG_DEBUG("bind err %i\n", error_bind);
+            assert(error_bind == ERR_OK);
+        }
 
         LListAppend(&clt->_udps, udp);
-
     }
 
     seL4_Reply(msg);
