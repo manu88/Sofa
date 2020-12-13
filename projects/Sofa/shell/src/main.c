@@ -318,10 +318,18 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("bind", cmd))
     {
-        const char *strPort = cmd + strlen("bind ");
-        int port = atol(strPort);
+        const char *strArgs = cmd + strlen("bind ");
 
-        int h = NetBind(AF_INET, SOCK_DGRAM, port);
+        int port = -1;
+        int handle = -1;
+
+        if(sscanf(strArgs, "%i %i", &handle, &port) != 2)
+        {
+            Printf("bind usage: handle port\n");
+            return;
+        }
+        int h = NetBind(handle, AF_INET, SOCK_DGRAM, port);
+        Printf("%i\n", h);
 
     }
     else if(startsWith("sleep", cmd))

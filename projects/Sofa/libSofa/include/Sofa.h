@@ -67,7 +67,8 @@ typedef enum
     NetRequest_Socket,
     NetRequest_Bind,
     NetRequest_Read,
-    NetRequest_Write
+    NetRequest_Write,
+    NetRequest_Debug,
 } NetRequest;
 
 int SFSleep(int ms);

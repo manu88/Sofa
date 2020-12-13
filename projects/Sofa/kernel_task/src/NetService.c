@@ -48,8 +48,22 @@ int MemBufferPushBack(MemBuffer*b, char* data ,size_t dataSize)
 
 typedef struct
 {
+//    File file;
+
+    UT_hash_handle hh; /* makes this structure hashable */
+    int index;
+
+}SocketHandle;
+
+
+typedef struct
+{
     ServiceClient _clt;
     seL4_CPtr replyCap;
+
+    SocketHandle* sockets;
+    int sockIndex;
+
     LList _udps;
 
     MemBuffer rxBuf;
@@ -206,22 +220,44 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
     }
 }
 
+static int doBind(Client* client, int handle)
+{
+    SocketHandle* sock = NULL;
+    HASH_FIND_INT(client->sockets, &handle, sock);
+    if(sock == NULL)
+    {
+        printf("NetService.doBind socket handle %i not found\n", handle);
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
 static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
 /*
-    seL4_SetMR(1, familly);
-    seL4_SetMR(2, protoc);
-    seL4_SetMR(3, port);
+    (1, handle);
+    (2, familly);
+    (3, protoc);
+    (4, port);
 */
     ServiceClient* _clt = NULL;
     HASH_FIND_PTR(_clients, &caller, _clt );
     assert(_clt);
     Client* clt = _clt;
+    int handle = seL4_GetMR(1);
+
+    int ret = doBind(clt, handle);
+
+    seL4_SetMR(1, ret);
+    seL4_Reply(msg);
+    return;
+
 
     KLOG_DEBUG("Net Bind message from %i\n", ProcessGetPID(caller->process));
-    int familly = seL4_GetMR(1);
-    int protoc = seL4_GetMR(2);
-    int port = seL4_GetMR(3);
+    int familly = seL4_GetMR(2);
+    int protoc = seL4_GetMR(3);
+    int port = seL4_GetMR(4);
     KLOG_INFO("fam=%i protoc=%i port=%i\n", familly, protoc, port);
 
     if (protoc == SOCK_DGRAM)
@@ -256,8 +292,15 @@ static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
     assert(_clt);
     Client* clt = _clt;
 
-    ssize_t ret = 0;
 
+    SocketHandle* sock = malloc(sizeof(SocketHandle));
+    assert(sock);
+//    f->file = ff;
+    sock->index = clt->sockIndex++;
+    HASH_ADD_INT(clt->sockets, index, sock);
+
+    ssize_t ret = sock->index;
+    printf("NetService.Socket ret %i\n", ret);
     int handle = ret>=0?ret:0;
     int err = ret <0? -ret:0;
     seL4_SetMR(1, err);

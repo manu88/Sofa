@@ -46,10 +46,16 @@ int NetSocket(int domain, int type, int protocol)
     seL4_SetMR(3, protocol);
     seL4_Call(netCap, info);
 
-    return 0;
+    int err = seL4_GetMR(1);
+    int handle = seL4_GetMR(2);
+    if(err != 0)
+    {
+        return -err;
+    }
+    return handle;
 }
 
-int NetBind(int familly, int protoc, int port)
+int NetBind(int handle, int familly, int protoc, int port)
 {    
     if(netCap == 0)
     {
@@ -61,14 +67,15 @@ int NetBind(int familly, int protoc, int port)
     }
 
 
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 5);
     seL4_SetMR(0, NetRequest_Bind);
-    seL4_SetMR(1, familly);
-    seL4_SetMR(2, protoc);
-    seL4_SetMR(3, port);
+    seL4_SetMR(1, handle);
+    seL4_SetMR(2, familly);
+    seL4_SetMR(3, protoc);
+    seL4_SetMR(4, port);
     seL4_Call(netCap, info);
 
-    return 0;
+    return seL4_GetMR(1);
 }
 
 
