@@ -20,6 +20,7 @@ Sofa is build atop SeL4 microkernel and provides a set of userland servers and a
 * Name server: register service, get service by name,
 * threads
 * VFS: mount, open, close, read
+* Net: socket, bind, recvfrom, sendto
 
 ## Applications
 * init
@@ -28,7 +29,7 @@ Sofa is build atop SeL4 microkernel and provides a set of userland servers and a
 
 ## Services
 * VFS
-* net
+* net (udp only)
 
 ## Build
 You should have all the tools and external deps required to build seL4 (some info [here](https://docs.sel4.systems/projects/buildsystem/host-dependencies.html)).
@@ -55,11 +56,9 @@ from [here](https://serverfault.com/questions/246835/convert-directory-to-qemu-k
 
 
 ## Test the UDP stack:
-You can send udp messages using:
+start the `udpecho` program and test it by sending messages from the host:
 ```
 nc  -u 127.0.0.1 3000
-# or
-echo "test2" > /dev/udp/127.0.0.1/3000
 ```
 
 
