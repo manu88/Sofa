@@ -29,8 +29,7 @@ native_ethdriver_init(
 
 
 
-static void
-handle_irq(void *state, int irq_num)
+static void handle_irq(void *state, int irq_num)
 {
     ethif_lwip_handle_irq(state, irq_num);
 }
@@ -83,7 +82,7 @@ void NetInit(uint32_t iobase0)
 
     //FIXME: THis needs to be dynamic
     ipaddr_aton("192.168.0.1",   &gw);
-    ipaddr_aton("10.0.2.15", &addr);
+    ipaddr_aton("10.0.2.15",     &addr);
     ipaddr_aton("255.255.255.*", &mask);
 
     assert(lwip_driver.netif == NULL);
