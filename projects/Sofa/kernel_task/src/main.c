@@ -178,6 +178,11 @@ void *main_continued(void *arg UNUSED)
     error = VFSInit();
     assert(error == 0);
 
+    KLOG_INFO("Starting NetService\n");
+    error = NetServiceInit();
+    assert(error == 0);
+
+
     error = DeviceTreeInit();
     assert(error == 0);
 
@@ -194,9 +199,6 @@ void *main_continued(void *arg UNUSED)
     error = VFSServiceStart();
     assert(error == 0);
 
-    KLOG_INFO("Starting NetService\n");
-    error = NetServiceInit();
-    assert(error == 0);
 
     error = NetServiceStart();
     assert(error == 0);

@@ -39,8 +39,6 @@ static int threadStart(KThread* thread, void *arg);
 
 void NetInit(uint32_t iobase0)
 {
-    lwip_init();
-    udp_init();
 
     LWIP_DEBUG_ENABLED(LWIP_DBG_LEVEL_ALL);
     KernelTaskContext* env = getKernelTaskContext();

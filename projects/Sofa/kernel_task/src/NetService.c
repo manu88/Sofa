@@ -5,6 +5,7 @@
 #include "Log.h"
 #include "Process.h"
 #include <lwip/udp.h>
+#include <lwip/init.h>
 #include <Sofa.h>
 #include <utils/uthash.h>
 #include <sys/socket.h>
@@ -66,6 +67,10 @@ static char _netName[] = "NET";
 
 int NetServiceInit()
 {
+    lwip_init();
+    udp_init();
+
+
     int error = 0;
     ServiceInit(&_netService, getKernelTaskProcess() );
     _netService.name = _netName;
