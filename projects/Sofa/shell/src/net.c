@@ -55,7 +55,7 @@ int NetSocket(int domain, int type, int protocol)
     return handle;
 }
 
-int NetBind(int handle, int familly, int protoc, int port)
+int NetBind(int handle, const struct sockaddr *addr, socklen_t addrlen)
 {    
     if(netCap == 0)
     {
@@ -70,9 +70,13 @@ int NetBind(int handle, int familly, int protoc, int port)
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 5);
     seL4_SetMR(0, NetRequest_Bind);
     seL4_SetMR(1, handle);
+    seL4_SetMR(2, addrlen);
+    memcpy(netBuf, addr, addrlen);
+/*    
     seL4_SetMR(2, familly);
     seL4_SetMR(3, protoc);
     seL4_SetMR(4, port);
+*/  
     seL4_Call(netCap, info);
 
     return seL4_GetMR(1);
@@ -111,7 +115,8 @@ ssize_t NetWrite(int handle, const char* data, size_t size)
 
 }
 
-ssize_t NetRead(int handle, char* data, size_t size)
+
+ssize_t NetRecvFrom(int handle, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
 {
     if(netCap == 0)
     {
@@ -124,18 +129,28 @@ ssize_t NetRead(int handle, char* data, size_t size)
     }
 
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
-    seL4_SetMR(0, NetRequest_Read);
+    seL4_SetMR(0, NetRequest_RecvFrom);
     seL4_SetMR(1, handle);
-    seL4_SetMR(2, size);
+    seL4_SetMR(2, len);
     seL4_Call(netCap, info);
-//    int err = seL4_GetMR(1);
-    int readSize = seL4_GetMR(0);
+
+    int readSize = seL4_GetMR(1);
+    size_t addrSize = seL4_GetMR(2);
     if(readSize)
     {
-        memcpy(data, netBuf, readSize);
-        data[readSize] = 0;
+        Printf("Addr size is %zi\n", addrSize);
+        const char* addr = netBuf;
+        memcpy(src_addr, addr, addrSize);
+        *addrlen = addrSize;
+
+        const char* dataPos = netBuf + addrSize;
+
+        memcpy(buf, dataPos, readSize);
+        //((char*)buf)[readSize] = 0;
 
         return readSize;
     }
+
+    return -1;
 
 }

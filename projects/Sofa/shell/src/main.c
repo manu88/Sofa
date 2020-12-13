@@ -328,7 +328,18 @@ void processCommand(const char* cmd)
             Printf("bind usage: handle port\n");
             return;
         }
-        int h = NetBind(handle, AF_INET, SOCK_DGRAM, port);
+        // socket address used for the server
+	    struct sockaddr_in server_address;
+	    memset(&server_address, 0, sizeof(server_address));
+	    server_address.sin_family = AF_INET;
+
+        server_address.sin_port = htons(port);
+
+	    // htons: host to network long: same as htons but to long
+	    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+
+
+        int h = NetBind(handle, (struct sockaddr *)&server_address, sizeof(server_address));
         Printf("%i\n", h);
 
     }
@@ -351,17 +362,32 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("r", cmd))
     {
-        const char *strSize = cmd + strlen("r ");
-        int size = atol(strSize);
+        const char *strArgs = cmd + strlen("r ");
 
+        int size = -1;
+        int handle = -1;
+
+        if(sscanf(strArgs, "%i %i", &handle, &size) != 2)
+        {
+            Printf("bind usage: handle port\n");
+            return;
+        }
 
         char dats[128];
         if(size > 128)
         {
             size = 128;
         }
-        ssize_t rRead = NetRead(0, dats, size);
-        Printf("rR returned %zi '%s'\n", rRead, dats);
+
+        struct sockaddr_in client_address;
+	    int client_address_len = 0;
+
+        ssize_t rRead = NetRecvFrom(0, dats, size, 0, (struct sockaddr *)&client_address, &client_address_len);
+        Printf("NetRecvFrom returned %zi '%s'\n", rRead, dats);
+        if(rRead)
+        {
+            Printf("Received %zi msg from %s on port %i\n", rRead, inet_ntoa(client_address.sin_addr), client_address.sin_port );
+        }
 
     }
     else if(startsWith("pid", cmd))

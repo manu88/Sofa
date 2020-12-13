@@ -7,56 +7,44 @@
 #include <lwip/udp.h>
 #include <Sofa.h>
 #include <utils/uthash.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include <lwip/udp.h>
 #include "Net.h"
 #include "utils.h"
-#include "LList.h"
 
+typedef struct _MsgUDP
+{
+    struct _MsgUDP *next;
+
+    struct pbuf *p;
+    ip_addr_t addr;
+    uint16_t port;
+}MsgUDP;
+
+
+typedef struct _Client Client;
 
 typedef struct
 {
-    char* buf;
-    size_t writePos;
-    size_t readPos;
-    size_t size;
-    size_t allocSize;
-
-}MemBuffer;
-
-void MemBufferInit(MemBuffer* b, size_t preallocSize)
-{
-    memset(b, 0, sizeof(MemBuffer));
-
-    b->buf = malloc(preallocSize);
-    b->allocSize = preallocSize;
-}
-
-int MemBufferPushBack(MemBuffer*b, char* data ,size_t dataSize)
-{
-    if(b->writePos + dataSize > b->allocSize)
-    {
-        b->buf = realloc(b->buf, b->writePos + dataSize);
-    }
-    strncpy(b->buf + b->writePos, data, dataSize);
-    b->writePos += dataSize;
-
-    b->size += dataSize;
-    return 0;
-}
-
-
-typedef struct
-{
-//    File file;
-
     UT_hash_handle hh; /* makes this structure hashable */
     int index;
+
+    int domain;
+    int type;
+    int protocol;
+
+    struct udp_pcb *_udp;
+    struct _Client* client;
+
+    MsgUDP *rxList;
 
 }SocketHandle;
 
 
-typedef struct
+typedef struct _Client
 {
     ServiceClient _clt;
     seL4_CPtr replyCap;
@@ -64,12 +52,8 @@ typedef struct
     SocketHandle* sockets;
     int sockIndex;
 
-    LList _udps;
-
-    MemBuffer rxBuf;
-
     KMutex rxBuffMutex;
-    size_t waitingSize;
+    //size_t waitingSize;
 }Client;
 
 
@@ -104,19 +88,79 @@ static void _Write(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_Reply(msg);
 }
 
-static size_t ClientGetReadBufferLenBytes(Client* clt)
-{
-    return clt->rxBuf.size;
-}
 
 static size_t NetSendPbuf(struct pbuf* p, void* cltBuf, size_t size);
 
-static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
+static ssize_t doRecvFrom(Client* client, int handle, size_t size ,size_t *addrSize)
+{
+    SocketHandle* sock = NULL;
+    HASH_FIND_INT(client->sockets, &handle, sock);
+    if(sock == NULL)
+    {
+        return -EINVAL;
+    }
+    int storedMsgCount = -1;
+    MsgUDP* el = NULL;
+    
+    KMutexLock(&sock->client->rxBuffMutex);
+    LL_COUNT(sock->rxList, el, storedMsgCount);
+
+    ssize_t ret = 0;
+    if(storedMsgCount)
+    {
+        MsgUDP* pck = sock->rxList;
+        LL_DELETE(sock->rxList, pck);
+        LL_COUNT(sock->rxList, el, storedMsgCount);
+
+        *addrSize = sizeof(struct sockaddr_in);
+        KLOG_DEBUG("Net service addr size is %zi\n", *addrSize);
+        struct sockaddr_in *addr =(struct sockaddr_in*)(client->_clt.buff);
+
+        addr->sin_port = pck->port;
+
+        char b[64];
+        const char *strAddr = ipaddr_ntoa_r(&pck->addr, b, 64);
+        assert(inet_pton(AF_INET, strAddr, &addr->sin_addr) == 1); 
+
+        ret = pck->p->tot_len;
+        if(size < ret)
+        {
+            ret = size;
+        }
+
+        char *dataPos = client->_clt.buff + *addrSize;
+        memcpy(dataPos, pck->p->payload, ret);
+        pbuf_free(pck->p);
+        kfree(pck);
+
+    }
+    KMutexUnlock(&sock->client->rxBuffMutex);
+
+    return ret;
+}
+static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
     ServiceClient* _clt = NULL;
     HASH_FIND_PTR(_clients, &caller, _clt );
     assert(_clt);
-    Client* clt = _clt;
+    Client* clt = (Client*)_clt;
+
+    int handle = seL4_GetMR(1);
+    size_t size = seL4_GetMR(2);
+    size_t addrSize = 0;
+    ssize_t ret = doRecvFrom(clt, handle, size, &addrSize);
+
+    seL4_SetMR(1, ret);
+    seL4_SetMR(2, addrSize);
+    seL4_Reply(msg);
+
+
+
+#if 0
+    ServiceClient* _clt = NULL;
+    HASH_FIND_PTR(_clients, &caller, _clt );
+    assert(_clt);
+    Client* clt = (Client*)_clt;
 
     KernelTaskContext* ctx = getKernelTaskContext();
 
@@ -150,17 +194,7 @@ static void _Read(ThreadBase* caller, seL4_MessageInfo_t msg)
 
     }
     KMutexUnlock(&clt->rxBuffMutex);
-}
-
-static size_t ClientAppendReadBuffer(Client* clt, struct pbuf* p)
-{
-    KMutexLock(&clt->rxBuffMutex);
-
-    MemBufferPushBack(&clt->rxBuf, p->payload, p->len);
-
-    KMutexUnlock(&clt->rxBuffMutex);
-
-    return clt->rxBuf.size;    
+#endif
 }
 
 static size_t NetSendPbuf(struct pbuf* p, void* cltBuf, size_t size)
@@ -186,14 +220,23 @@ static size_t NetSendPbuf(struct pbuf* p, void* cltBuf, size_t size)
 
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
-    Client* clt = arg;
-    assert(clt);
-    assert(LListSize(&clt->_udps));
+    /*
+    This is called from an other IRQ thread, not in NetService's thread. Be careful.
+    */
+    SocketHandle* sock = arg;
+    assert(sock);
     printf("_on_udp called\n");
 
-    size_t bufSize = ClientAppendReadBuffer(clt, p);
-    pbuf_free(p);
-    
+    KMutexLock(&sock->client->rxBuffMutex);
+    MsgUDP *msg = malloc(sizeof(MsgUDP));
+    assert(msg);
+    msg->p = p;
+    msg->port = port;
+    msg->addr = *addr;
+    LL_APPEND(sock->rxList, msg);
+    KMutexUnlock(&sock->client->rxBuffMutex);
+    return ;
+#if 0
     KLOG_DEBUG("NetService.OnUDP %zi\n", bufSize);
 
     if (clt->replyCap && bufSize >= clt->waitingSize)
@@ -218,19 +261,78 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
         seL4_SetMR(0, effectiveSize);
         seL4_Send(ep, i);
     }
+#endif
 }
 
-static int doBind(Client* client, int handle)
+static int doUDPBind(Client* client, SocketHandle* sock, const struct sockaddr_in* sockAddr)
+{
+    int port = ntohs(sockAddr->sin_port);
+    KLOG_TRACE("NetServiceBind bind socket to port %i and host '%s'\n",
+            port,
+            inet_ntoa(sockAddr->sin_addr)
+            );
+
+    if(sock->_udp)
+    {
+        KLOG_INFO("NetService.doUDPBind already bound\n");
+        return -EISCONN;
+    }
+
+    KLOG_DEBUG("Create UDP thing\n");
+    struct udp_pcb *udp = udp_new();
+    assert(udp);
+    udp_recv(udp, _on_udp, sock);
+
+    ip_addr_t _addr;
+    assert(ipaddr_aton(inet_ntoa(sockAddr->sin_addr), &_addr));
+    err_t error_bind = udp_bind(udp, &_addr, port);
+    if(error_bind != 0)
+    {
+        udp_remove(udp);
+    }
+    if(error_bind == ERR_USE)
+    {
+        return -EADDRINUSE;
+    }
+    else if(error_bind != 0)
+    {
+        KLOG_TRACE("Other lwip error %i to map to errno. Will assert\n", error_bind);
+        assert(0);
+        return -EINVAL;
+    }
+
+    sock->_udp = udp;
+
+    return 0;
+}
+
+
+static int doBind(Client* client, int handle, const struct sockaddr *addr, socklen_t addrlen)
 {
     SocketHandle* sock = NULL;
     HASH_FIND_INT(client->sockets, &handle, sock);
     if(sock == NULL)
     {
-        printf("NetService.doBind socket handle %i not found\n", handle);
+        KLOG_DEBUG("NetService.doBind socket handle %i not found\n", handle);
         return -EINVAL;
     }
+    if(addrlen != sizeof(struct sockaddr_in))
+    {
+        KLOG_DEBUG("NetService.doBind size of addr do not match sizeof(struct sockaddr_in) (%i vs %zi)\n", addrlen, sizeof(struct sockaddr_in));
+        return -EINVAL;
+    }
+    const struct sockaddr_in* sockAddr = (const struct sockaddr_in*) addr;
 
-    return 0;
+
+    KLOG_TRACE("domain=%i protoc=%i type=%i\n", sock->domain, sock->protocol, sock->type);
+
+    if(sock->type == SOCK_DGRAM)
+    {
+        return doUDPBind(client, sock, sockAddr);
+    }
+
+    KLOG_INFO("NetService.doBind: unsupported protocol %i\n", sock->protocol);
+    return -EPROTONOSUPPORT;
 }
 
 static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
@@ -244,20 +346,18 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     ServiceClient* _clt = NULL;
     HASH_FIND_PTR(_clients, &caller, _clt );
     assert(_clt);
-    Client* clt = _clt;
+    Client* clt = (Client*) _clt;
     int handle = seL4_GetMR(1);
-
-    int ret = doBind(clt, handle);
+    size_t addrLen = seL4_GetMR(2);
+    const struct sockaddr *addr = (const struct sockaddr *) clt->_clt.buff;
+    assert(addr);
+    int ret = doBind(clt, handle, addr, addrLen);
 
     seL4_SetMR(1, ret);
     seL4_Reply(msg);
     return;
 
-
-    KLOG_DEBUG("Net Bind message from %i\n", ProcessGetPID(caller->process));
-    int familly = seL4_GetMR(2);
-    int protoc = seL4_GetMR(3);
-    int port = seL4_GetMR(4);
+#if 0
     KLOG_INFO("fam=%i protoc=%i port=%i\n", familly, protoc, port);
 
     if (protoc == SOCK_DGRAM)
@@ -283,6 +383,7 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     }
 
     seL4_Reply(msg);
+#endif
 }
 
 static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
@@ -290,17 +391,22 @@ static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
     ServiceClient* _clt = NULL;
     HASH_FIND_PTR(_clients, &caller, _clt );
     assert(_clt);
-    Client* clt = _clt;
+    Client* clt = (Client*) _clt;
 
 
     SocketHandle* sock = malloc(sizeof(SocketHandle));
     assert(sock);
-//    f->file = ff;
+    sock->client = clt;
     sock->index = clt->sockIndex++;
     HASH_ADD_INT(clt->sockets, index, sock);
 
+    sock->domain = seL4_GetMR(1);//, domain);
+    sock->type = seL4_GetMR(2);//, type);
+    sock->protocol = seL4_GetMR(3);//, protocol);
+
+
     ssize_t ret = sock->index;
-    printf("NetService.Socket ret %i\n", ret);
+    printf("NetService.Socket ret %li\n", ret);
     int handle = ret>=0?ret:0;
     int err = ret <0? -ret:0;
     seL4_SetMR(1, err);
@@ -332,9 +438,8 @@ static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
     client->_clt.service = &_netService;
     KMutexNew(&client->rxBuffMutex);
 
-    MemBufferInit(&client->rxBuf, 64);
     HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
-    seL4_SetMR(1, buffShared);
+    seL4_SetMR(1, (seL4_Word) buffShared);
     seL4_Reply(msg);
 
     LL_APPEND(caller->clients, (ServiceClient*) client);
@@ -343,7 +448,7 @@ static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
 static void ClientCleanup(ServiceClient *clt)
 {
     HASH_DEL(_clients, clt);
-    Client* c = clt;
+    Client* c = (Client*)clt;
 
 
     free(c);
@@ -367,7 +472,7 @@ static int mainNet(KThread* thread, void *arg)
             ServiceNotification notif = seL4_GetMR(0);
             if(notif == ServiceNotification_ClientExit)
             {
-                ServiceClient* clt = seL4_GetMR(1);
+                ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
                 ClientCleanup(clt);
             }
         }
@@ -385,14 +490,14 @@ static int mainNet(KThread* thread, void *arg)
             case NetRequest_Bind:
                 _Bind(caller, msg);
                 break;
-            case NetRequest_Read:
-                _Read(caller, msg);
+            case NetRequest_RecvFrom:
+                _RecvFrom(caller, msg);
                 break;
             case NetRequest_Write:
                 _Write(caller, msg);
                 break;
             default:
-                KLOG_TRACE("[NetService] Received unknown code %i from %i\n", req, sender);
+                KLOG_TRACE("[NetService] Received unknown code %i from %li\n", req, sender);
                 assert(0);
                 break;
             }
