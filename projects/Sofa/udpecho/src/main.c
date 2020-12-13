@@ -74,8 +74,14 @@ int main(int argc, char *argv[])
 		                   &client_address_len);
 
         buffer[len] = '\0';
-		SFPrintf("received %i: '%s' from client %s\n", len, buffer,
-		       inet_ntoa(client_address.sin_addr));
+		SFPrintf("received %i: '%s' from client %s:%u\n", len, buffer,
+		       inet_ntoa(client_address.sin_addr), client_address.sin_port);
+
+		ssize_t retSend = NetSendTo(sock, buffer, len, 0, (struct sockaddr *)&client_address,
+		       sizeof(client_address));
+
+		SFPrintf("Send to returned %zi\n", retSend);
+
     }
 
     return 0;

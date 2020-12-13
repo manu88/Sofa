@@ -21,13 +21,9 @@ native_ethdriver_init(
     void *config)
 {
     ethif_virtio_pci_config_t *virtio_config = config;
-    printf("Call EthDriver Init iobase 0X%X mmio_base %p\n", virtio_config->io_base, virtio_config->mmio_base);
-//    virtio_config->io_base = 0XC000;
-//    ps_io_ops_t *sys_io_ops = (ps_io_ops_t*) config;
-    int error;
-    error = ethif_virtio_pci_init(eth_driver, io_ops, config);
-//    error = ethif_imx6_init(eth_driver, *sys_io_ops, NULL);
-    printf("Call EthDriver Init returned %i\n", error);
+
+    int error = ethif_virtio_pci_init(eth_driver, io_ops, config);
+
     return error;
 }
 
@@ -48,7 +44,6 @@ void NetInit(uint32_t iobase0)
 
     LWIP_DEBUG_ENABLED(LWIP_DBG_LEVEL_ALL);
     KernelTaskContext* env = getKernelTaskContext();
-    printf("---->NetInit\n");
 
     ethif_virtio_pci_config_t cfg = {0};
     cfg.io_base = iobase0;    
@@ -87,6 +82,8 @@ void NetInit(uint32_t iobase0)
 // add interface
 
     ip_addr_t addr, gw, mask;
+
+    //FIXME: THis needs to be dynamic
     ipaddr_aton("192.168.0.1",   &gw);
     ipaddr_aton("10.0.2.15", &addr);
     ipaddr_aton("255.255.255.*", &mask);
@@ -94,7 +91,7 @@ void NetInit(uint32_t iobase0)
     assert(lwip_driver.netif == NULL);
     lwip_driver.netif = malloc(sizeof(struct netif));
     assert(lwip_driver.netif);
-    //lwip_driver.netif = netif_add_noaddr(lwip_driver.netif, _driver.driver, _driver.init_fn, ethernet_input);
+
     netif_add(lwip_driver.netif, &addr, &mask, &gw, _driver.driver, _driver.init_fn, ethernet_input);
     assert(lwip_driver.netif);
     netif_set_up(lwip_driver.netif);
@@ -112,7 +109,6 @@ void NetInit(uint32_t iobase0)
 
     DeviceTreeAddDevice(&_netDevice);
 
-    printf("<----NetInit\n");
 }
 
 static int threadStart(KThread* thread, void *arg)
@@ -122,7 +118,6 @@ static int threadStart(KThread* thread, void *arg)
     seL4_CPtr irq =  args[1];
     free(args);
     
-
     while(1)
     {
 	    seL4_Wait(irq_aep,NULL);

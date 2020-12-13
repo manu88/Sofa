@@ -464,6 +464,63 @@ static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_Reply(msg);
 }
 
+static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    KLOG_DEBUG("NetService sendTo request\n");
+
+    ServiceClient* _clt = NULL;
+    HASH_FIND_PTR(_clients, &caller, _clt );
+    assert(_clt);
+    Client* client = (Client*) _clt;
+
+    int handle = seL4_GetMR(1);
+
+    SocketHandle* sock = NULL;
+    HASH_FIND_INT(client->sockets, &handle, sock);
+    if(sock == NULL)
+    {
+        KLOG_DEBUG("NetService._SendTo socket handle %i not found\n", handle);
+        //return -EINVAL;
+    }
+
+    size_t dataSize = seL4_GetMR(2);
+    size_t addrSize = seL4_GetMR(3);
+
+    //FIXME: check if udp
+    assert(addrSize == sizeof(struct sockaddr_in));
+    const struct sockaddr_in *addr = (const struct sockaddr_in *) client->_clt.buff;
+    const char* dataPos = client->_clt.buff + addrSize;
+    KLOG_DEBUG("NetService._SendTo %zi bytes to %s %u\n", dataSize, inet_ntoa(addr->sin_addr), addr->sin_port);
+
+    ip_addr_t dst_ip = {0};
+    assert(ipaddr_aton(inet_ntoa(addr->sin_addr), &dst_ip));
+
+    err_t err = ERR_MEM;
+
+    size_t sentSize = 0;
+    struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, dataSize, PBUF_RAM);
+    if(p)
+    {
+        memcpy(p->payload, dataPos, dataSize);
+        err_t err = udp_sendto(sock->_udp, p, &dst_ip, addr->sin_port);
+        pbuf_free(p);
+        sentSize = dataSize;
+    }
+    else
+    {
+        assert(0);
+    }
+
+    //int sentLen = seL4_GetMR(2);
+    //int err = seL4_GetMR(3);
+
+    
+    seL4_SetMR(2, err);
+    seL4_SetMR(3, sentSize);
+    seL4_Reply(msg);
+
+}
+
 
 static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
@@ -545,6 +602,9 @@ static int mainNet(KThread* thread, void *arg)
                 break;
             case NetRequest_Write:
                 _Write(caller, msg);
+                break;
+            case NetRequest_SendTo:
+                _SendTo(caller, msg);
                 break;
             default:
                 KLOG_TRACE("[NetService] Received unknown code %i from %li\n", req, sender);

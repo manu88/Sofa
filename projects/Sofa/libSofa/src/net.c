@@ -114,7 +114,36 @@ ssize_t NetWrite(int handle, const char* data, size_t size)
     return -err; 
 
 }
+ssize_t NetSendTo(int handle, const void *buf, size_t bufLen, int flags, const struct sockaddr *dest_addr, socklen_t addrlen)
+{
+    if(netCap == 0)
+    {
+        Printf("[shell] VFS client not registered (no cap)\n");
+    }
 
+    if(netBuf == NULL)
+    {
+        Printf("[shell] VFS client not registered(no buff)\n");
+    }
+
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
+    seL4_SetMR(0, NetRequest_SendTo);
+    seL4_SetMR(1, handle);
+    seL4_SetMR(2, bufLen);
+    seL4_SetMR(3, addrlen);
+    memcpy(netBuf, dest_addr, addrlen);
+    memcpy(netBuf + addrlen, buf, bufLen);
+    info = seL4_Call(netCap, info);
+
+    int sentLen = seL4_GetMR(2);
+    int err = seL4_GetMR(3);
+
+    if(err == 0)
+    {
+        return sentLen;
+    }
+    return err;
+}
 
 ssize_t NetRecvFrom(int handle, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
 {

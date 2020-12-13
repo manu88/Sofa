@@ -67,6 +67,7 @@ typedef enum
     NetRequest_Socket,
     NetRequest_Bind,
     NetRequest_RecvFrom,
+    NetRequest_SendTo,
     NetRequest_Write,
     NetRequest_Debug,
 } NetRequest;
