@@ -36,6 +36,7 @@ target_link_libraries(
         pci
         lwip
         ethdrivers
+        sel4sync
 )
 
 # Set this image as the rootserver

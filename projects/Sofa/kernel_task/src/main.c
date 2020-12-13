@@ -48,6 +48,7 @@
 #include "KThread.h"
 #include <Sofa.h>
 #include "VFSService.h"
+#include "NetService.h"
 #include "VFS.h"
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
@@ -186,13 +187,19 @@ void *main_continued(void *arg UNUSED)
 
     VFSMount(getFakeFS(), "/fake");
 
-
+    KLOG_INFO("Starting VFSService\n");
     error = VFSServiceInit();
     assert(error == 0);
 
     error = VFSServiceStart();
     assert(error == 0);
 
+    KLOG_INFO("Starting NetService\n");
+    error = NetServiceInit();
+    assert(error == 0);
+
+    error = NetServiceStart();
+    assert(error == 0);
 
     ProcessInit(&initProcess);
     initProcess.argc = 0;
@@ -262,7 +269,8 @@ static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4
 
 int main(void)
 {
-    seL4_SetUserData(&_mainThread);
+    _mainThread._base.process = getKernelTaskProcess();
+    seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
     getKernelTaskProcess()->name = kernelTaskName;

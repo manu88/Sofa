@@ -60,6 +60,7 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
         return;
     }
 
+    caller->_base.currentSyscallID = SyscallID_Sleep;
     caller->_base.timerID = timerID;
     caller->_base.replyCap = slot;
 }

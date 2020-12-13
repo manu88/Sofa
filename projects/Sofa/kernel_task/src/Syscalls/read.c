@@ -15,7 +15,7 @@ static void onControlChar(char ctl, void* ptr)
         if(ThreadIsWaiting(caller))
         {
             seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
-            seL4_SetMR(0, SyscallID_Read);
+            seL4_SetMR(0, caller->_base.currentSyscallID);
             seL4_SetMR(1, -EINTR);
     
             seL4_Send(caller->_base.replyCap, tag);
@@ -70,6 +70,7 @@ void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
     }
 
     caller->_base.replyCap = slot;
+    caller->_base.currentSyscallID = SyscallID_Read;
     SerialRegisterWaiter(onBytesAvailable, sizeToRead, readUntil, caller);
     SerialRegisterController(onControlChar, caller);
 

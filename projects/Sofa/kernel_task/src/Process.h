@@ -22,7 +22,6 @@ typedef enum
 
 typedef struct _Process Process;
 
-
 typedef struct _Thread
 {
     ThreadBase _base; // needs to remain fisrt!!
@@ -36,6 +35,7 @@ typedef struct _Thread
     struct _Thread *next;
     void *stack;
     size_t stackSize;
+
 } Thread;
 
 
@@ -46,7 +46,7 @@ typedef struct _Process
     
     const char* name; // pointer to init->name
 
-    const char **argv;
+    char **argv;
     int argc;
     void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'

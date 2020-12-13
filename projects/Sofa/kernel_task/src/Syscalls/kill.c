@@ -36,6 +36,9 @@ void Syscall_Kill(Thread* caller, seL4_MessageInfo_t info)
         }
     }
 
+    info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, SyscallID_Kill);
+
     seL4_SetMR(1, ret);
     seL4_Reply(info);
 }

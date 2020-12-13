@@ -1,5 +1,8 @@
 #pragma once
 #include <sys/types.h>
+#include <sel4/types.h>
+
+typedef struct _ServiceClient ServiceClient;
 
 typedef struct _Process Process;
 /*
@@ -12,6 +15,10 @@ typedef struct
     Process* process; //process owner
 
     seL4_Word replyCap;
+    seL4_Word currentSyscallID;
+
     unsigned int timerID;
+    ServiceClient* clients; // a list of Service clients belonging to this thread.
+
 
 } ThreadBase;

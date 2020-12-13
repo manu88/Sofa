@@ -63,6 +63,22 @@ static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
     onThread->_base.replyCap = 0;
 }
 
+
+void _closeThreadClients(Thread*t)
+{
+    ServiceClient* clt = NULL;
+    ServiceClient* tmp = NULL;
+
+    LL_FOREACH_SAFE(t->_base.clients, clt, tmp)
+    {
+        LL_DELETE(t->_base.clients, clt);
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+        seL4_SetMR(0, ServiceNotification_ClientExit);
+        seL4_SetMR(1, (seL4_Word) clt);
+        seL4_Send(clt->service->kernTaskEp, info);
+    }
+}
+
 void doExit(Process* process, int retCode)
 {
     KLOG_TRACE("doExit for process %s %i with code %i\n", ProcessGetName(process), ProcessGetPID(process), retCode);
@@ -70,9 +86,16 @@ void doExit(Process* process, int retCode)
     {
         Panic("init returned");
     }
+// Close all client that belong to the process
+    _closeThreadClients(&process->main);
+    Thread* thread = NULL;
+    PROCESS_FOR_EACH_EXTRA_THREAD(process, thread)
+    {
+        _closeThreadClients(thread);
+    }
 
+//reap the children to init
     Process* parent = process->parent;
-
     // Do we have soon-to-be orphean children?
     if(ProcessCoundChildren(process))
     {
@@ -83,6 +106,7 @@ void doExit(Process* process, int retCode)
         }
     }
 
+// Is our parent waiting on us?
     Thread* waitingThread = ProcessGetWaitingThread(parent);
     uint8_t freeProcess = 0;
     if(waitingThread)
@@ -90,12 +114,11 @@ void doExit(Process* process, int retCode)
         assert(waitingThread->_base.replyCap != 0);
         freeProcess = 1;
 
-        
         replyToWaitingParent(waitingThread, ProcessGetPID(process), retCode);
         ProcessRemoveChild(parent, process);
         ProcessListRemove(process);        
     }
-    else
+    else // Zombie time
     {
         process->retCode = retCode;
         process->state = ProcessState_Zombie;
@@ -103,8 +126,7 @@ void doExit(Process* process, int retCode)
 
     int pidToFree = process->init->pid;
 
-
-    // any Services owned?
+// any Services owned?
     Service* s = NULL;
     Service* t = NULL;
     FOR_EACH_SERVICE(s, t)
@@ -118,15 +140,10 @@ void doExit(Process* process, int retCode)
         }
     }
 
-
+//remove all except data needeed for the waiting parent
     process_tear_down(process);
-//    UnypedsGiveBack(&process->untypedRange);
 
-
-    if(pidToFree > 1)
-    {
-        freeProcess = 0;
-    }
+// If nobody is waiting on us, release 
     if(freeProcess)
     {
         kfree(process);
@@ -261,7 +278,7 @@ void process_run(const char *name, Process* process)
     snprintf(argv[1], WORD_STRING_SIZE, "%"PRIuPTR"", process->init_remote_vaddr);
     for(int i=0;i<process->argc;i++)
     {
-        argv[i+2] = process->argv[i];
+        argv[i+2] = (char*) process->argv[i];
     }
 
 //    sel4utils_create_word_args(string_args, argv, argc, process->main.process_endpoint, process->init_remote_vaddr);

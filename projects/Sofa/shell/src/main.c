@@ -4,8 +4,12 @@
 #include <signal.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "runtime.h"
 #include "files.h"
+#include "net.h"
 
 extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
@@ -159,7 +163,7 @@ void processCommand(const char* cmd)
             return;
         }
 
-        int handle = VFSOpen(path, 1);
+        int handle = VFSOpen(path, O_RDONLY);
         if(handle <0)
         {
             Printf("open error %i\n", handle);
@@ -313,11 +317,81 @@ void processCommand(const char* cmd)
             Printf("wait returned pid %i status %i\n", ret, appStatus);
         }
     }
+    else if(startsWith("bind", cmd))
+    {
+        const char *strArgs = cmd + strlen("bind ");
+
+        int port = -1;
+        int handle = -1;
+
+        if(sscanf(strArgs, "%i %i", &handle, &port) != 2)
+        {
+            Printf("bind usage: handle port\n");
+            return;
+        }
+        // socket address used for the server
+	    struct sockaddr_in server_address;
+	    memset(&server_address, 0, sizeof(server_address));
+	    server_address.sin_family = AF_INET;
+
+        server_address.sin_port = htons(port);
+
+	    // htons: host to network long: same as htons but to long
+	    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+
+
+        int h = NetBind(handle, (struct sockaddr *)&server_address, sizeof(server_address));
+        Printf("%i\n", h);
+
+    }
     else if(startsWith("sleep", cmd))
     {
         const char *strMS = cmd + strlen("sleep ");
         int ms = atol(strMS);
         SFSleep(ms);
+    }
+    else if(startsWith("nclose", cmd))
+    {
+        const char *str = cmd + strlen("nclose ");
+        int handle = atol(str);
+
+        int ret = NetClose(handle);
+        Printf("%i\n", ret);
+    }
+    else if(startsWith("socket", cmd))
+    {
+        int r = NetSocket(PF_INET, SOCK_DGRAM, 0);
+        Printf("socket returned %i\n", r);
+    }
+    else if(startsWith("r", cmd))
+    {
+        const char *strArgs = cmd + strlen("r ");
+
+        int size = -1;
+        int handle = -1;
+
+        if(sscanf(strArgs, "%i %i", &handle, &size) != 2)
+        {
+            Printf("bind usage: handle port\n");
+            return;
+        }
+
+        char dats[128];
+        if(size > 128)
+        {
+            size = 128;
+        }
+
+        struct sockaddr_in client_address;
+	    int client_address_len = 0;
+
+        ssize_t rRead = NetRecvFrom(0, dats, size, 0, (struct sockaddr *)&client_address, &client_address_len);
+        Printf("NetRecvFrom returned %zi '%s'\n", rRead, dats);
+        if(rRead)
+        {
+            Printf("Received %zi msg from %s on port %i\n", rRead, inet_ntoa(client_address.sin_addr), client_address.sin_port );
+        }
+
     }
     else if(startsWith("pid", cmd))
     {
@@ -357,6 +431,11 @@ int main(int argc, char *argv[])
     {
         Printf("%i %s\n",i,argv[i]);
     }
+
+    NetInit();
+
+    //int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
+
 
     while (1)
     {

@@ -60,6 +60,18 @@ typedef enum
     
 } VFSRequest;
 
+
+typedef enum 
+{
+    NetRequest_Register,
+    NetRequest_Socket,
+    NetRequest_Close,
+    NetRequest_Bind,
+    NetRequest_RecvFrom,
+    NetRequest_SendTo,
+    NetRequest_Debug,
+} NetRequest;
+
 int SFSleep(int ms);
 
 

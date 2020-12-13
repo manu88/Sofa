@@ -25,7 +25,8 @@ static void thRun(void *arg0, void *arg1, void *ipc_buf)
 {
     //seL4_Word ud = seL4_GetUserData();
     //assert(ud);
-    assert((int) arg0 == 1);
+    int val = (int) arg0;
+    assert(val == 1);
     while(1);
 }
 
