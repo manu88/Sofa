@@ -138,7 +138,6 @@ ssize_t NetRecvFrom(int handle, void *buf, size_t len, int flags, struct sockadd
     size_t addrSize = seL4_GetMR(2);
     if(readSize)
     {
-        Printf("Addr size is %zi\n", addrSize);
         const char* addr = netBuf;
         memcpy(src_addr, addr, addrSize);
         *addrlen = addrSize;

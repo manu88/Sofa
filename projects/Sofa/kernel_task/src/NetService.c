@@ -40,6 +40,7 @@ typedef struct
     struct _Client* client;
 
     MsgUDP *rxList;
+    size_t waitingSize;
 
 }SocketHandle;
 
@@ -91,14 +92,31 @@ static void _Write(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 static size_t NetSendPbuf(struct pbuf* p, void* cltBuf, size_t size);
 
-static ssize_t doRecvFrom(Client* client, int handle, size_t size ,size_t *addrSize)
+
+static size_t CopyMemUDPToUser(const MsgUDP* msg, Client* client, size_t size)
 {
-    SocketHandle* sock = NULL;
-    HASH_FIND_INT(client->sockets, &handle, sock);
-    if(sock == NULL)
+    size_t addrSize = sizeof(struct sockaddr_in);
+    struct sockaddr_in *addr =(struct sockaddr_in*)(client->_clt.buff);
+
+    addr->sin_port = msg->port;
+
+    char b[64];
+    const char *strAddr = ipaddr_ntoa_r(&msg->addr, b, 64);
+    assert(inet_pton(AF_INET, strAddr, &addr->sin_addr) == 1); 
+
+    size_t ret = msg->p->tot_len;
+    if(size < ret)
     {
-        return -EINVAL;
+        ret = size;
     }
+    KLOG_DEBUG("CopyMemUDPToUser will copy %zi bytes\n", ret);
+    char *dataPos = client->_clt.buff + addrSize;
+    memcpy(dataPos, msg->p->payload, ret);
+    return ret;
+}
+static ssize_t doRecvFrom(Client* client, SocketHandle* sock, size_t size ,size_t *addrSize)
+{
+    assert(sock);
     int storedMsgCount = -1;
     MsgUDP* el = NULL;
     
@@ -110,26 +128,8 @@ static ssize_t doRecvFrom(Client* client, int handle, size_t size ,size_t *addrS
     {
         MsgUDP* pck = sock->rxList;
         LL_DELETE(sock->rxList, pck);
-        LL_COUNT(sock->rxList, el, storedMsgCount);
-
         *addrSize = sizeof(struct sockaddr_in);
-        KLOG_DEBUG("Net service addr size is %zi\n", *addrSize);
-        struct sockaddr_in *addr =(struct sockaddr_in*)(client->_clt.buff);
-
-        addr->sin_port = pck->port;
-
-        char b[64];
-        const char *strAddr = ipaddr_ntoa_r(&pck->addr, b, 64);
-        assert(inet_pton(AF_INET, strAddr, &addr->sin_addr) == 1); 
-
-        ret = pck->p->tot_len;
-        if(size < ret)
-        {
-            ret = size;
-        }
-
-        char *dataPos = client->_clt.buff + *addrSize;
-        memcpy(dataPos, pck->p->payload, ret);
+        ret = CopyMemUDPToUser(pck, client, size);
         pbuf_free(pck->p);
         kfree(pck);
 
@@ -146,9 +146,29 @@ static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
     Client* clt = (Client*)_clt;
 
     int handle = seL4_GetMR(1);
+    SocketHandle* sock = NULL;
+    HASH_FIND_INT(clt->sockets, &handle, sock);
+    if(sock == NULL)
+    {
+        seL4_SetMR(2, -EINVAL);
+        seL4_Reply(msg);
+        return ;
+    }
+
     size_t size = seL4_GetMR(2);
     size_t addrSize = 0;
-    ssize_t ret = doRecvFrom(clt, handle, size, &addrSize);
+    ssize_t ret = doRecvFrom(clt, sock, size, &addrSize);
+
+    if(ret == 0)
+    {
+        printf("NetService Wait for more data\n");
+        sock->waitingSize = size;
+
+        KernelTaskContext* ctx = getKernelTaskContext();
+        clt->replyCap = get_free_slot(&ctx->vka);
+        int error = cnode_savecaller(&ctx->vka, clt->replyCap);
+        return;
+    }
 
     seL4_SetMR(1, ret);
     seL4_SetMR(2, addrSize);
@@ -235,6 +255,35 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
     msg->addr = *addr;
     LL_APPEND(sock->rxList, msg);
     KMutexUnlock(&sock->client->rxBuffMutex);
+
+    if(sock->waitingSize)
+    {
+        assert(sock->client->replyCap);
+        KMutexLock(&sock->client->rxBuffMutex);
+        MsgUDP* pck = sock->rxList;
+        assert(pck);
+
+        LL_DELETE(sock->rxList, pck);
+
+        KMutexUnlock(&sock->client->rxBuffMutex);
+
+        size_t addrSize = sizeof(struct sockaddr_in);
+        size_t ret = CopyMemUDPToUser(pck, sock->client, sock->waitingSize);
+        pbuf_free(pck->p);
+        kfree(pck);
+
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0 ,0, 3);
+        seL4_SetMR(1, ret);
+        seL4_SetMR(2, addrSize);
+        seL4_Send(sock->client->replyCap, info);
+        
+        KernelTaskContext* ctx = getKernelTaskContext();
+        cnode_delete(&ctx->vka, sock->client->replyCap);
+        sock->client->replyCap = 0;
+        sock->waitingSize = 0;
+
+
+    }
     return ;
 #if 0
     KLOG_DEBUG("NetService.OnUDP %zi\n", bufSize);
@@ -396,6 +445,7 @@ static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
 
     SocketHandle* sock = malloc(sizeof(SocketHandle));
     assert(sock);
+    memset(sock, 0, sizeof(SocketHandle));
     sock->client = clt;
     sock->index = clt->sockIndex++;
     HASH_ADD_INT(clt->sockets, index, sock);
