@@ -349,6 +349,14 @@ void processCommand(const char* cmd)
         int ms = atol(strMS);
         SFSleep(ms);
     }
+    else if(startsWith("nclose", cmd))
+    {
+        const char *str = cmd + strlen("nclose ");
+        int handle = atol(str);
+
+        int ret = NetClose(handle);
+        Printf("%i\n", ret);
+    }
     else if(startsWith("socket", cmd))
     {
         int r = NetSocket(PF_INET, SOCK_DGRAM, 0);

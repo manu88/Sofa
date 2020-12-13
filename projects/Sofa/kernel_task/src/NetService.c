@@ -371,6 +371,54 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
 #endif
 }
 
+static int closeUdp(SocketHandle* sock)
+{
+    if(sock->_udp)
+    {
+        udp_remove(sock->_udp);
+        sock->_udp = NULL;
+    }
+    MsgUDP* elt = NULL;
+    MsgUDP* tmp = NULL;
+    LL_FOREACH_SAFE(sock->rxList,elt,tmp)
+    {
+      LL_DELETE(sock->rxList, elt);
+      pbuf_free(elt->p);
+      free(elt);
+    }
+}
+
+static ssize_t doClose(Client* client, int handle)
+{
+    SocketHandle* sock = NULL;
+    HASH_FIND_INT(client->sockets, &handle, sock);
+    if(sock == NULL)
+    {
+        KLOG_DEBUG("NetService.doClose socket handle %i not found\n", handle);
+        return -EINVAL;
+    }
+    HASH_DELETE(hh, client->sockets, sock);
+
+    ssize_t ret = closeUdp(sock);
+    free(sock);
+    return ret;
+
+}
+
+static void _Close(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    ServiceClient* _clt = NULL;
+    HASH_FIND_PTR(_clients, &caller, _clt );
+    assert(_clt);
+    Client* clt = (Client*) _clt;
+
+    int handle = seL4_GetMR(1);
+
+    ssize_t ret = doClose(clt, handle);
+    seL4_SetMR(1, ret);
+    seL4_Reply(msg);
+}
+
 static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
     ServiceClient* _clt = NULL;
@@ -410,7 +458,6 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
     Client* client = (Client*) _clt;
 
     int handle = seL4_GetMR(1);
-
     SocketHandle* sock = NULL;
     HASH_FIND_INT(client->sockets, &handle, sock);
     if(sock == NULL)
@@ -493,6 +540,16 @@ static void ClientCleanup(ServiceClient *clt)
     HASH_DEL(_clients, clt);
     Client* c = (Client*)clt;
 
+    SocketHandle* elt = NULL;
+    SocketHandle* tmp = NULL;
+
+    HASH_ITER(hh, c->sockets,elt, tmp )
+    {
+        KLOG_DEBUG("NetService.ClientCleanup remove socket %i\n", elt->index);
+        HASH_DELETE(hh, c->sockets, elt);
+        closeUdp(elt);
+        free(elt);
+    }
 
     free(c);
 }
@@ -538,6 +595,9 @@ static int mainNet(KThread* thread, void *arg)
                 break;
             case NetRequest_SendTo:
                 _SendTo(caller, msg);
+                break;
+            case NetRequest_Close:
+                _Close(caller, msg);
                 break;
             default:
                 KLOG_TRACE("[NetService] Received unknown code %i from %li\n", req, sender);

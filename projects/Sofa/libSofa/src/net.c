@@ -27,7 +27,7 @@ int NetInit()
 }
 
 
-int NetSocket(int domain, int type, int protocol)
+int NetClose(int handle)
 {
     if(netCap == 0)
     {
@@ -38,6 +38,23 @@ int NetSocket(int domain, int type, int protocol)
         Printf("[shell] Net client not registered(no buff)\n");
     }
 
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
+    seL4_SetMR(0, NetRequest_Close);
+    seL4_SetMR(1, handle);
+    seL4_Call(netCap, info);
+    return seL4_GetMR(1);
+}
+
+int NetSocket(int domain, int type, int protocol)
+{
+    if(netCap == 0)
+    {
+        Printf("[shell] Net client not registered (no cap)\n");
+    }
+    if(netBuf == NULL)
+    {
+        Printf("[shell] Net client not registered(no buff)\n");
+    }
 
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
     seL4_SetMR(0, NetRequest_Socket);
