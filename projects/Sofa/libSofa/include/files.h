@@ -14,4 +14,4 @@ int VFSSeek(int handle, size_t pos);
 
 void VFSDebug(void);
 
-int Printf(const char *format, ...);
+int Printf(const char *format, ...) __attribute__((format(printf,1,2)));

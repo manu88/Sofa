@@ -24,7 +24,7 @@ static void __entry_fn(void *arg0, void *arg1, void *ipc_buf)
 {
     KThread* t = (KThread*) arg0;
     assert(t);
-    seL4_SetUserData(t);
+    seL4_SetUserData((seL4_Word) t);
     int ret = t->mainFunction(t, arg1);
     seL4_SetUserData(0);
     KThreadExit(t, ret);
@@ -106,7 +106,7 @@ int KSleep(int ms)
     {
         Panic("KSleep called from the main kernel_task thread, abord\n");
     }
-    return KThreadSleep(seL4_GetUserData(), ms);
+    return KThreadSleep((KThread*) seL4_GetUserData(), ms);
 }
 
 void KThreadExit(KThread* thread, int code)

@@ -72,10 +72,9 @@ void _closeThreadClients(Thread*t)
     LL_FOREACH_SAFE(t->_base.clients, clt, tmp)
     {
         LL_DELETE(t->_base.clients, clt);
-        KLOG_DEBUG("closeThread client: notify service %s\n", clt->service->name);
         seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
         seL4_SetMR(0, ServiceNotification_ClientExit);
-        seL4_SetMR(1, clt);
+        seL4_SetMR(1, (seL4_Word) clt);
         seL4_Send(clt->service->kernTaskEp, info);
     }
 }
@@ -279,7 +278,7 @@ void process_run(const char *name, Process* process)
     snprintf(argv[1], WORD_STRING_SIZE, "%"PRIuPTR"", process->init_remote_vaddr);
     for(int i=0;i<process->argc;i++)
     {
-        argv[i+2] = process->argv[i];
+        argv[i+2] = (char*) process->argv[i];
     }
 
 //    sel4utils_create_word_args(string_args, argv, argc, process->main.process_endpoint, process->init_remote_vaddr);

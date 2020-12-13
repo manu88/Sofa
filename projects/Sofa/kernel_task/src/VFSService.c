@@ -89,7 +89,7 @@ static int VFSServiceSeek(Client* client, int handle, size_t pos)
         return EINVAL;
     }
 
-    return VFSSeek(file, pos);
+    return VFSSeek(&file->file, pos);
 }
 
 static ssize_t VFSServiceWrite(Client* client, int handle, int size)
@@ -172,7 +172,7 @@ int VFSAddDEvice(IODevice *dev)
 static void ClientCleanup(ServiceClient *clt)
 {
     HASH_DEL(_clients, clt);
-    Client* c = clt;
+    Client* c = (Client*) clt;
 
     FileHandle* f = NULL;
     FileHandle* tmp = NULL;
@@ -214,7 +214,7 @@ static int mainVFS(KThread* thread, void *arg)
             ServiceNotification notif = seL4_GetMR(0);
             if(notif == ServiceNotification_ClientExit)
             {
-                ServiceClient* clt = seL4_GetMR(1);
+                ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
                 ClientCleanup(clt);
             }
         }
@@ -238,7 +238,7 @@ static int mainVFS(KThread* thread, void *arg)
             client->_clt.buff = buff;
             client->_clt.service = &_vfsService;
             HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
-            seL4_SetMR(1, buffShared);
+            seL4_SetMR(1, (seL4_Word) buffShared);
             seL4_Reply(msg);
 
             LL_APPEND(caller->clients, (ServiceClient*) client);
@@ -248,7 +248,7 @@ static int mainVFS(KThread* thread, void *arg)
             ServiceClient* _clt = NULL;
             HASH_FIND_PTR(_clients, &caller, _clt );
             assert(_clt);
-            Client* clt = _clt;
+            Client* clt = (Client*) _clt;
             if(seL4_GetMR(0) == VFSRequest_ListDir)
             {
                 const char* path = clt->_clt.buff;
@@ -321,7 +321,7 @@ static int mainVFS(KThread* thread, void *arg)
             }
             else
             {
-                printf("Other VFS request %u\n", seL4_GetMR(0));
+                printf("Other VFS request %lu\n", seL4_GetMR(0));
                 seL4_Reply(msg);
             }
         }

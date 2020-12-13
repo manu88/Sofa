@@ -91,7 +91,6 @@ static size_t CopyMemUDPToUser(const MsgUDP* msg, Client* client, size_t size)
     {
         ret = size;
     }
-    KLOG_DEBUG("CopyMemUDPToUser will copy %zi bytes\n", ret);
     char *dataPos = client->_clt.buff + addrSize;
     memcpy(dataPos, msg->p->payload, ret);
     return ret;
@@ -143,7 +142,6 @@ static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
 
     if(ret == 0)
     {
-        printf("NetService Wait for more data\n");
         sock->waitingSize = size;
 
         KernelTaskContext* ctx = getKernelTaskContext();
@@ -158,47 +156,7 @@ static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 
 
-#if 0
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*)_clt;
-
-    KernelTaskContext* ctx = getKernelTaskContext();
-
-
-    size_t sizeToRead = seL4_GetMR(2);
-
-    KMutexLock(&clt->rxBuffMutex);
-
-    size_t sizeAvail = ClientGetReadBufferLenBytes(clt);
-    printf("NetService read req %i bytes, got %zi avail\n", sizeToRead, sizeAvail);
-
-    if(sizeAvail < sizeToRead)
-    {
-        printf("NetService Wait for more data\n");
-        clt->waitingSize = sizeToRead;
-
-        clt->replyCap = get_free_slot(&ctx->vka);
-        int error = cnode_savecaller(&ctx->vka, clt->replyCap);
-        assert(error == 0);
-    }
-    else
-    {
-        memcpy(clt->_clt.buff, clt->rxBuf.buf + clt->rxBuf.readPos, sizeToRead);
-        clt->rxBuf.readPos += sizeToRead;
-        clt->rxBuf.size -= sizeToRead;
-
-        size_t effectiveSize = sizeToRead;
-
-        seL4_SetMR(0, effectiveSize);
-        seL4_Reply(msg);
-
-    }
-    KMutexUnlock(&clt->rxBuffMutex);
-#endif
 }
-
 
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
@@ -207,7 +165,6 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
     */
     SocketHandle* sock = arg;
     assert(sock);
-    printf("_on_udp called\n");
 
     KMutexLock(&sock->client->rxBuffMutex);
     MsgUDP *msg = malloc(sizeof(MsgUDP));
@@ -252,10 +209,6 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
 static int doUDPBind(Client* client, SocketHandle* sock, const struct sockaddr_in* sockAddr)
 {
     int port = ntohs(sockAddr->sin_port);
-    KLOG_TRACE("NetServiceBind bind socket to port %i and host '%s'\n",
-            port,
-            inet_ntoa(sockAddr->sin_addr)
-            );
 
     if(sock->_udp)
     {
@@ -263,7 +216,6 @@ static int doUDPBind(Client* client, SocketHandle* sock, const struct sockaddr_i
         return -EISCONN;
     }
 
-    KLOG_DEBUG("Create UDP thing\n");
     struct udp_pcb *udp = udp_new();
     assert(udp);
     udp_recv(udp, _on_udp, sock);
@@ -298,18 +250,15 @@ static int doBind(Client* client, int handle, const struct sockaddr *addr, sockl
     HASH_FIND_INT(client->sockets, &handle, sock);
     if(sock == NULL)
     {
-        KLOG_DEBUG("NetService.doBind socket handle %i not found\n", handle);
         return -EINVAL;
     }
     if(addrlen != sizeof(struct sockaddr_in))
     {
-        KLOG_DEBUG("NetService.doBind size of addr do not match sizeof(struct sockaddr_in) (%i vs %zi)\n", addrlen, sizeof(struct sockaddr_in));
         return -EINVAL;
     }
     const struct sockaddr_in* sockAddr = (const struct sockaddr_in*) addr;
 
 
-    KLOG_TRACE("domain=%i protoc=%i type=%i\n", sock->domain, sock->protocol, sock->type);
 
     if(sock->type == SOCK_DGRAM)
     {
@@ -342,33 +291,6 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_Reply(msg);
     return;
 
-#if 0
-    KLOG_INFO("fam=%i protoc=%i port=%i\n", familly, protoc, port);
-
-    if (protoc == SOCK_DGRAM)
-    {
-        KLOG_DEBUG("Create UDP thing\n");
-        struct udp_pcb *udp = udp_new();
-        assert(udp);
-        udp_recv(udp, _on_udp, clt);
-        err_t error_bind = udp_bind(udp, NULL, port);
-        if(error_bind == ERR_USE)
-        {
-            udp_remove(udp);
-            seL4_Reply(msg);
-            return;
-        }
-        else if(error_bind != 0)
-        {
-            KLOG_DEBUG("bind err %i\n", error_bind);
-            assert(error_bind == ERR_OK);
-        }
-
-        LListAppend(&clt->_udps, udp);
-    }
-
-    seL4_Reply(msg);
-#endif
 }
 
 static int closeUdp(SocketHandle* sock)
@@ -394,7 +316,6 @@ static ssize_t doClose(Client* client, int handle)
     HASH_FIND_INT(client->sockets, &handle, sock);
     if(sock == NULL)
     {
-        KLOG_DEBUG("NetService.doClose socket handle %i not found\n", handle);
         return -EINVAL;
     }
     HASH_DELETE(hh, client->sockets, sock);
@@ -440,7 +361,6 @@ static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 
     ssize_t ret = sock->index;
-    printf("NetService.Socket ret %li\n", ret);
     int handle = ret>=0?ret:0;
     int err = ret <0? -ret:0;
     seL4_SetMR(1, err);
@@ -450,7 +370,6 @@ static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    KLOG_DEBUG("NetService sendTo request\n");
 
     ServiceClient* _clt = NULL;
     HASH_FIND_PTR(_clients, &caller, _clt );
@@ -462,8 +381,10 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
     HASH_FIND_INT(client->sockets, &handle, sock);
     if(sock == NULL)
     {
-        KLOG_DEBUG("NetService._SendTo socket handle %i not found\n", handle);
-        //return -EINVAL;
+        seL4_SetMR(2, -EINVAL);
+        seL4_SetMR(3, 0);
+        seL4_Reply(msg);
+        return;
     }
 
     size_t dataSize = seL4_GetMR(2);
@@ -473,7 +394,6 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
     assert(addrSize == sizeof(struct sockaddr_in));
     const struct sockaddr_in *addr = (const struct sockaddr_in *) client->_clt.buff;
     const char* dataPos = client->_clt.buff + addrSize;
-    KLOG_DEBUG("NetService._SendTo %zi bytes to %s %u\n", dataSize, inet_ntoa(addr->sin_addr), addr->sin_port);
 
     ip_addr_t dst_ip = {0};
     assert(ipaddr_aton(inet_ntoa(addr->sin_addr), &dst_ip));
@@ -507,7 +427,6 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    KLOG_INFO("Net Register message from %i\n", ProcessGetPID(caller->process));
     KernelTaskContext* env = getKernelTaskContext();
     char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
     assert(buff);
@@ -545,7 +464,6 @@ static void ClientCleanup(ServiceClient *clt)
 
     HASH_ITER(hh, c->sockets,elt, tmp )
     {
-        KLOG_DEBUG("NetService.ClientCleanup remove socket %i\n", elt->index);
         HASH_DELETE(hh, c->sockets, elt);
         closeUdp(elt);
         free(elt);
@@ -557,8 +475,6 @@ static void ClientCleanup(ServiceClient *clt)
 static int mainNet(KThread* thread, void *arg)
 {
     KernelTaskContext* env = getKernelTaskContext();
-
-    KLOG_INFO("Net Thread started\n");
 
     while (1)
     {
@@ -611,7 +527,6 @@ static int mainNet(KThread* thread, void *arg)
 
 int NetServiceStart()
 {
-    KLOG_INFO("--> Start VFSD thread\n");
     KThreadInit(&_netServiceThread);
     _netServiceThread.mainFunction = mainNet;
     _netServiceThread.name = "NetD";

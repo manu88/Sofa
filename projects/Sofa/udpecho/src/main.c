@@ -80,8 +80,6 @@ int main(int argc, char *argv[])
 		ssize_t retSend = NetSendTo(sock, buffer, len, 0, (struct sockaddr *)&client_address,
 		       sizeof(client_address));
 
-		SFPrintf("Send to returned %zi\n", retSend);
-
     }
 
     return 0;

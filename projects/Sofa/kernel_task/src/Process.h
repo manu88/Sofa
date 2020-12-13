@@ -46,7 +46,7 @@ typedef struct _Process
     
     const char* name; // pointer to init->name
 
-    const char **argv;
+    char **argv;
     int argc;
     void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'

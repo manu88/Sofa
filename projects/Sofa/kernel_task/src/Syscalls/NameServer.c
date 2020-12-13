@@ -22,7 +22,7 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
     KernelTaskContext* env = getKernelTaskContext();
 
     seL4_CPtr capMint = get_free_slot(&env->vka);
-    int err = cnode_mint(&env->vka, service->baseEndpoint, capMint, seL4_AllRights, caller);
+    int err = cnode_mint(&env->vka, service->baseEndpoint, capMint, seL4_AllRights, (seL4_Word) caller);
     assert(err == 0);
     cspacepath_t path;
     vka_cspace_make_path(&env->vka, capMint, &path);
