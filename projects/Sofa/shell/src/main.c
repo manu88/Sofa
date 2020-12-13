@@ -196,6 +196,30 @@ void processCommand(const char* cmd)
 
         VFSClose(handle);
     }
+    else if(startsWith("sendto", cmd))
+    {
+        const char *strArg = cmd + strlen("sendto ");
+        int port = -1;
+        char addr[16]  = "";
+        char data[128] = "";
+        if(sscanf(strArg, "%s %i %s", addr, &port, data) != 3)
+        {
+            Printf("sendto usage: sendto host port data\n");
+            return;
+        }
+        Printf("send '%s' to '%s':%i\n", data, addr, port);
+
+        struct sockaddr_in server_address;
+	    memset(&server_address, 0, sizeof(server_address));
+	    server_address.sin_family = AF_INET;
+        inet_pton(AF_INET, addr, &server_address.sin_addr);
+        server_address.sin_port = htons(port);
+
+        int sock = NetSocket(PF_INET, SOCK_DGRAM, 0);
+        NetSendTo(sock, data, strlen(data), 0, (struct sockaddr*)&server_address, sizeof(server_address));
+        NetClose(sock);
+
+    }
     else if(startsWith("close", cmd))
     {
         const char *strArg = cmd + strlen("close ");
