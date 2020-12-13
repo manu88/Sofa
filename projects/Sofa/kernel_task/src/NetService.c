@@ -75,24 +75,6 @@ int NetServiceInit()
     return 0;
 }
 
-static void _Write(ThreadBase* caller, seL4_MessageInfo_t msg)
-{
-    ServiceClient* clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, clt );
-    assert(clt);
-
-    KernelTaskContext* ctx = getKernelTaskContext();
-    size_t sizeToWrite = seL4_GetMR(2);
-    printf("Net Write ret for %zi bytes '%s'\n", sizeToWrite, clt->buff);
-
-    assert(0);
-    seL4_Reply(msg);
-}
-
-
-static size_t NetSendPbuf(struct pbuf* p, void* cltBuf, size_t size);
-
-
 static size_t CopyMemUDPToUser(const MsgUDP* msg, Client* client, size_t size)
 {
     size_t addrSize = sizeof(struct sockaddr_in);
@@ -217,26 +199,6 @@ static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
 #endif
 }
 
-static size_t NetSendPbuf(struct pbuf* p, void* cltBuf, size_t size)
-{
-    size_t effectiveSize = size;
-    if(p->tot_len < effectiveSize)
-    {
-        effectiveSize = p->tot_len;
-    }
-
-    void* ptr = pbuf_get_contiguous(p, cltBuf, 4096, effectiveSize, 0); 
-    if(ptr== NULL)
-    {
-        effectiveSize = 0;
-    }
-    if(ptr != cltBuf)
-    {
-        memcpy(cltBuf, ptr, effectiveSize);
-    }
-
-    return effectiveSize;
-}
 
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
@@ -285,32 +247,6 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
 
     }
     return ;
-#if 0
-    KLOG_DEBUG("NetService.OnUDP %zi\n", bufSize);
-
-    if (clt->replyCap && bufSize >= clt->waitingSize)
-    {
-        printf("Client is waiting for %zi data to read\n", clt->waitingSize);
-        KMutexLock(&clt->rxBuffMutex);
-
-        memcpy(clt->_clt.buff, clt->rxBuf.buf + clt->rxBuf.readPos, clt->waitingSize);
-        clt->rxBuf.readPos += clt->waitingSize;
-        clt->rxBuf.size -= clt->waitingSize;
-        KMutexUnlock(&clt->rxBuffMutex);
-
-        size_t effectiveSize = clt->waitingSize; //NetSendPbuf(buf, clt->_clt.buff, clt->waitingSize);
-        //pbuf_free(buf);
-
-        seL4_CPtr ep = clt->replyCap;
-        assert(ep);
-        clt->replyCap = 0;
-        clt->waitingSize = 0;
-
-        seL4_MessageInfo_t i = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
-        seL4_SetMR(0, effectiveSize);
-        seL4_Send(ep, i);
-    }
-#endif
 }
 
 static int doUDPBind(Client* client, SocketHandle* sock, const struct sockaddr_in* sockAddr)
@@ -599,9 +535,6 @@ static int mainNet(KThread* thread, void *arg)
                 break;
             case NetRequest_RecvFrom:
                 _RecvFrom(caller, msg);
-                break;
-            case NetRequest_Write:
-                _Write(caller, msg);
                 break;
             case NetRequest_SendTo:
                 _SendTo(caller, msg);

@@ -354,12 +354,6 @@ void processCommand(const char* cmd)
         int r = NetSocket(PF_INET, SOCK_DGRAM, 0);
         Printf("socket returned %i\n", r);
     }
-    else if(startsWith("netw", cmd))
-    {
-        const char *str = cmd + strlen("netw ");
-        int r = NetWrite(0, str, strlen(str));
-        Printf("%i\n", r);
-    }
     else if(startsWith("r", cmd))
     {
         const char *strArgs = cmd + strlen("r ");
