@@ -249,6 +249,22 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_Reply(msg);
 }
 
+static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    ServiceClient* _clt = NULL;
+    HASH_FIND_PTR(_clients, &caller, _clt );
+    assert(_clt);
+    Client* clt = _clt;
+
+    ssize_t ret = 0;
+
+    int handle = ret>=0?ret:0;
+    int err = ret <0? -ret:0;
+    seL4_SetMR(1, err);
+    seL4_SetMR(2, handle);            
+    seL4_Reply(msg);
+}
+
 
 static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
@@ -319,6 +335,9 @@ static int mainNet(KThread* thread, void *arg)
             {
             case NetRequest_Register:
                 _Register(caller, msg);
+                break;
+            case NetRequest_Socket:
+                _Socket(caller, msg);
                 break;
             case NetRequest_Bind:
                 _Bind(caller, msg);

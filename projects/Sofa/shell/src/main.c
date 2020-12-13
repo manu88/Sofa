@@ -330,6 +330,11 @@ void processCommand(const char* cmd)
         int ms = atol(strMS);
         SFSleep(ms);
     }
+    else if(startsWith("socket", cmd))
+    {
+        int r = NetSocket(PF_INET, SOCK_DGRAM, 0);
+        Printf("socket returned %i\n", r);
+    }
     else if(startsWith("netw", cmd))
     {
         const char *str = cmd + strlen("netw ");
@@ -392,7 +397,7 @@ int main(int argc, char *argv[])
 
     NetInit();
 
-    int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
+    //int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
 
 
     while (1)

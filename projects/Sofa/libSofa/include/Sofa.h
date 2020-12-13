@@ -64,6 +64,7 @@ typedef enum
 typedef enum 
 {
     NetRequest_Register,
+    NetRequest_Socket,
     NetRequest_Bind,
     NetRequest_Read,
     NetRequest_Write
