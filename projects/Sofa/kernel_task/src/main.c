@@ -23,7 +23,6 @@
 #include <platsupport/chardev.h>
 
 #include <sel4utils/stack.h>
-#include <sel4utils/process.h>
 
 
 #include <simple/simple.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sel4utils/process.h>
+#include "sel4process.h"
 #include "utlist.h"
 #include "test_init_data.h"
 #include "Environ.h"
