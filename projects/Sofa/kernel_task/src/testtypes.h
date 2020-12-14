@@ -1,7 +1,7 @@
 #pragma once
 
 #include "testtypes.h"
-#include "Process.h"
+#include "ProcessList.h"
 
 #define UNTYPEDS_PER_PROCESS_BASE 1
 
