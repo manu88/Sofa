@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <elf/elf.h>
-#include <cpio/cpio.h>
 #include <sel4/sel4.h>
 #include <vka/object.h>
 #include <vka/capops.h>
@@ -33,9 +32,6 @@
 #include "VFS.h"
 #include "Log.h"
 
-/* This library works with our cpio set up in the build system */
-extern char _cpio_archive[];
-extern char _cpio_archive_end[];
 
 void sel4utils_allocated_object(void *cookie, vka_object_t object)
 {
@@ -500,7 +496,7 @@ static int create_fault_endpoint(vka_t *vka, sel4utils_process_t *process)
     return 0;
 }
 
-static char* VFSGetFile( const char* path, size_t *size)
+static char* GetFileVFS( const char* path, size_t *size)
 {
     File file = {0};
     int ret = VFSOpen(path, 0, &file);
@@ -575,9 +571,8 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
     /* finally elf load */
     if (config.is_elf) {
         unsigned long size;
-        unsigned long cpio_len = _cpio_archive_end - _cpio_archive;
 
-        process->prgData = VFSGetFile(config.image_name, &size);
+        process->prgData = GetFileVFS(config.image_name, &size);
 
         elf_t elf;
         elf_newFile(process->prgData, size, &elf);
