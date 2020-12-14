@@ -56,9 +56,6 @@ Calls to KSleep will ensure that they are never called from main*/
 extern KThread _mainThread;
 
 
-extern char _cpio_archive[];
-extern char _cpio_archive_end[];
-
 static char kernelTaskName[] = "kernel_task";
 
 Process initProcess;
@@ -151,7 +148,6 @@ static void process_messages()
     }
 }
 
-
 void *main_continued(void *arg UNUSED)
 {
     KLOG_INFO("\n------Sofa------\n");
@@ -208,7 +204,7 @@ void *main_continued(void *arg UNUSED)
 
     ProcessInit(&initProcess);
     initProcess.argc = 0;
-    spawnApp(&initProcess, "init", NULL);
+    spawnApp(&initProcess, "/cpio/init", NULL);
 
     seL4_DebugDumpScheduler();
     process_messages();    

@@ -30,6 +30,8 @@
 #include <sel4utils/elf.h>
 #include <sel4utils/mapping.h>
 #include <sel4utils/helpers.h>
+#include "VFS.h"
+#include "Log.h"
 
 /* This library works with our cpio set up in the build system */
 extern char _cpio_archive[];
@@ -498,6 +500,19 @@ static int create_fault_endpoint(vka_t *vka, sel4utils_process_t *process)
     return 0;
 }
 
+static char* VFSGetFile( const char* path, size_t *size)
+{
+    File file = {0};
+    int ret = VFSOpen(path, 0, &file);
+    assert(file.ops);
+    char* prgData = malloc(file.size);
+    assert(prgData);
+    ssize_t readFile = VFSRead(&file, prgData, file.size);
+    *size = file.size;
+    return prgData;
+
+}
+
 int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
                                        vspace_t *spawner_vspace, sel4utils_process_config_t config)
 {
@@ -561,7 +576,9 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
     if (config.is_elf) {
         unsigned long size;
         unsigned long cpio_len = _cpio_archive_end - _cpio_archive;
-        char *file = cpio_get_file(_cpio_archive, cpio_len, config.image_name, &size);
+
+        char *file = VFSGetFile(config.image_name, &size);// cpio_get_file(_cpio_archive, cpio_len, config.image_name, &size);
+
         elf_t elf;
         elf_newFile(file, size, &elf);
 
