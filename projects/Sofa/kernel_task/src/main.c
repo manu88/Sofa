@@ -50,6 +50,7 @@
 #include "VFSService.h"
 #include "NetService.h"
 #include "VFS.h"
+#include "cpio.h"
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
 Calls to KSleep will ensure that they are never called from main*/
@@ -193,6 +194,7 @@ void *main_continued(void *arg UNUSED)
 
 
     VFSMount(getFakeFS(), "/fake");
+    VFSMount(getCpioFS(), "/cpio");
 
     KLOG_INFO("Starting VFSService\n");
     error = VFSServiceInit();
