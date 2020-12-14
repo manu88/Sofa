@@ -26,12 +26,10 @@ static VFSFileSystem _cpioFS  = {.ops = &_ops};
 
 
 static int cpioFSRead(File *file, void *buf, size_t numBytes);
-static int cpioFSClose(File *file);
 
 static FileOps _fileOps = 
 {
     .Read  = cpioFSRead,
-    .Close = cpioFSClose,
 };
 
 
@@ -117,7 +115,6 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     return ENOENT;
 }
 
-
 static int cpioFSRead(File *file, void *buf, size_t numBytes)
 {
     size_t fSize;
@@ -130,9 +127,4 @@ static int cpioFSRead(File *file, void *buf, size_t numBytes)
     } 
     memcpy(buf, fData + file->readPos, effectiveSize);
     return effectiveSize;
-}
-
-static int cpioFSClose(File *file)
-{
-    return 0;
 }

@@ -210,6 +210,10 @@ int VFSOpen(const char* path, int mode, File* file)
 
 int VFSClose(File* file)
 {
+    if(file->ops->Close == NULL)
+    {
+        return 0;
+    }
     return file->ops->Close(file);
 }
 
