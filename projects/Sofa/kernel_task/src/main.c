@@ -207,7 +207,6 @@ void *main_continued(void *arg UNUSED)
     initProcess.argc = 0;
     spawnApp(&initProcess, "init", NULL);
 
-
     seL4_DebugDumpScheduler();
     process_messages();    
 

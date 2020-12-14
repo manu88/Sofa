@@ -26,6 +26,8 @@ typedef enum
     SofaSysCall_RegisterService, // Register a 
     SofaSysCall_GetService,
 
+    SofaSysCall_Reboot,
+
     SyscallID_Last // Not a real ID, just here to count ids
 }SyscallID;
 
@@ -99,6 +101,13 @@ ssize_t SFReadLine(char* data, size_t dataSize);
 
 ssize_t SFRegisterService(const char* name);
 ssize_t SFGetService(const char* name);
+
+typedef enum
+{
+    RebootMode_Shutdown
+} RebootMode;
+int SFShutdown(void);
+
 
 // temp/debug syscall
 void SFDebug(SofaDebugCode code);

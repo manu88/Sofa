@@ -175,3 +175,14 @@ seL4_CPtr sc_regservice(seL4_CPtr endpoint, const char* serviceName, int *err)
     }
     return seL4_CapNull;
 }
+
+
+int sc_reboot(seL4_CPtr endoint, int code)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, SofaSysCall_Reboot);
+    seL4_SetMR(1, code);
+    seL4_Call(endoint, info);
+
+    return seL4_GetMR(1);
+}

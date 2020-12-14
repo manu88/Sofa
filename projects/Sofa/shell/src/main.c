@@ -68,7 +68,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     Printf("Sofa shell\n");
-    Printf("Available commands are: exit help ps kill spawn sleep cat\n");
+    Printf("Available commands are: exit help ps kill spawn sleep cat poweroff\n");
 }
 
 static void doExit(int code)
@@ -108,6 +108,10 @@ void processCommand(const char* cmd)
     else if(startsWith("ps", cmd))
     {
         SFDebug(SofaDebugCode_ListProcesses);
+    }
+    else if(startsWith("poweroff", cmd))
+    {
+        SFShutdown();
     }
     else if(startsWith("help", cmd))
     {
