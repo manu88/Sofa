@@ -103,11 +103,15 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
         if(strcmp(p, _files[i]) == 0)
         {
             file->ops = &_fileOps;
-            file->impl = _files[i];
             file->mode = O_RDONLY;
             size_t fSize;
-            cpio_get_file(_cpio_archive, _cpio_archive_end - _cpio_archive, p, &fSize);
+            file->impl = cpio_get_file(_cpio_archive, _cpio_archive_end - _cpio_archive, p, &fSize);
+            if(file->impl == NULL)
+            {
+                return EFAULT;
+            }
             file->size = fSize;
+
             return 0;
         }
     }
@@ -117,14 +121,16 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 
 static int cpioFSRead(File *file, void *buf, size_t numBytes)
 {
-    size_t fSize;
-    void* fData = cpio_get_file(_cpio_archive, _cpio_archive_end - _cpio_archive, file->impl, &fSize);
+    
+    void* fData = file->impl;
 
-    size_t effectiveSize = fSize - file->readPos;
+    size_t effectiveSize = file->size - file->readPos;
     if(numBytes < effectiveSize)
     {
         effectiveSize = numBytes;
     } 
+
     memcpy(buf, fData + file->readPos, effectiveSize);
+
     return effectiveSize;
 }

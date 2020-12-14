@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 #include "runtime.h"
 #include "files.h"
 #include "net.h"
@@ -176,13 +177,19 @@ void processCommand(const char* cmd)
         uint8_t done = 0;
         while (done == 0)
         {
-            char buf[11];
+            char buf[256];
             
-            ssize_t ret = VFSRead(handle, buf, 10);
+            ssize_t ret = VFSRead(handle, buf, 256);
             if(ret > 0)
             {
-                buf[ret] = 0;
-                Printf("%s", buf);
+                //buf[ret] = 0;
+                for(int i=0;i<ret;i++)
+                {
+                    Printf("%c", isprint(buf[i])? buf[i]:'#');
+                }
+                Printf("\n");
+               // Printf("%s", buf);
+               // Printf("--\n");
             }
             else if(ret == -1) // EOF
             {
