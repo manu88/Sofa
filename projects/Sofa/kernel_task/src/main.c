@@ -35,7 +35,7 @@
 
 #include <vspace/vspace.h>
 #include "Environ.h"
-#include "testtypes.h"
+#include "Process.h"
 
 
 #include "Syscalls/SyscallTable.h"

@@ -1,7 +1,7 @@
 #include <cpio/cpio.h>
 #include "SyscallTable.h"
-#include "../testtypes.h"
-#include "../utils.h"
+#include "Process.h"
+#include "utils.h"
 
 
 

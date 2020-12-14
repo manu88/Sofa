@@ -17,7 +17,7 @@
 #include <vka/capops.h>
 #include <Sofa.h>
 #include "Environ.h"
-#include "testtypes.h"
+#include "Process.h"
 #include "utils.h"
 #include "Panic.h"
 #include "Log.h"
