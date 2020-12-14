@@ -29,10 +29,10 @@ int main(int argc, char *argv[])
 
     NetInit();
 
-    	// create a UDP socket, creation returns -1 on failure
+    // create a UDP socket, creation returns -1 on failure
 	int sock;
 	if ((sock = NetSocket(PF_INET, SOCK_DGRAM, 0)) < 0) 
-    {
+	{
 		SFPrintf("could not create socket\n");
 		return 1;
 	}
