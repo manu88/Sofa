@@ -270,7 +270,7 @@ void process_run(const char *name, Process* process)
     process->name = process->init->name;
 
 #ifdef CONFIG_DEBUG_BUILD
-    seL4_DebugNameThread(process->native.thread.tcb.cptr, process->init->name);
+    seL4_DebugNameThread(process->native.thread.tcb.cptr, ProcessGetName(process));// process->init->name);
 #else
 #error "CONFIG_DEBUG_BUILD not set!"
 #endif

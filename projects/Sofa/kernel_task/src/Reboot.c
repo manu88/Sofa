@@ -46,10 +46,8 @@ void doShutdown(void)
 
     }
 
-
     KLOG_INFO("Did Send will stop msg to services\n");
-//    ps_io_port_out(&ctx->ops.io_port_ops, 0x604, 2, 0x2000);
-
+    ps_io_port_out(&ctx->ops.io_port_ops, 0x604, 2, 0x2000);
     
 }
 
