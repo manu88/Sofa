@@ -217,6 +217,11 @@ static int mainVFS(KThread* thread, void *arg)
                 ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
                 ClientCleanup(clt);
             }
+            else if(notif == ServiceNotification_WillStop)
+            {
+                KLOG_DEBUG("[VFSService] will stop\n");
+            }
+
         }
         else if(seL4_GetMR(0) == VFSRequest_Register)
         {

@@ -28,7 +28,7 @@ void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info);
 
-
+void SysCall_Reboot(Thread* caller, seL4_MessageInfo_t info);
 
 static SyscallMethod syscallTable[] =
 {
@@ -52,6 +52,7 @@ static SyscallMethod syscallTable[] =
     Syscall_RequestCap,
     Syscall_RegisterService,
     Syscall_GetService,
+    SysCall_Reboot,
 };
 
 

@@ -496,6 +496,10 @@ static int mainNet(KThread* thread, void *arg)
                 ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
                 ClientCleanup(clt);
             }
+            else if(notif == ServiceNotification_WillStop)
+            {
+                KLOG_DEBUG("[NetService] will stop\n");
+            }
         }
         else
         {        

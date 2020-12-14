@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.7.2)
 
 project(kernel_task C)
 
+
+# Copy CPIOFiles 
+file(COPY CPIOFiles DESTINATION ".")
+set_property(GLOBAL APPEND PROPERTY apps_property "$<TARGET_FILE_DIR:kernel_task>/CPIOFiles/file")
+
 include(../../util_libs/liblwip/lwip_helpers.cmake)
 set(LibLwip ON CACHE BOOL "" FORCE)
 AddLWIPConfiguration(../../util_libs/liblwip/default_opts)

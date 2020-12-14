@@ -111,10 +111,18 @@ void doExit(Process* process, int retCode)
     uint8_t freeProcess = 0;
     if(waitingThread)
     {
-        assert(waitingThread->_base.replyCap != 0);
+        if(waitingThread->_base.replyCap)
+        {
+            replyToWaitingParent(waitingThread, ProcessGetPID(process), retCode);
+        }
+        else
+        {
+            KLOG_DEBUG("%i is waiting on %i, but no reply cap present\n", ProcessGetPID(parent), ProcessGetPID(process));
+        }
+        
+//        assert(waitingThread->_base.replyCap != 0);
         freeProcess = 1;
 
-        replyToWaitingParent(waitingThread, ProcessGetPID(process), retCode);
         ProcessRemoveChild(parent, process);
         ProcessListRemove(process);        
     }
@@ -262,7 +270,7 @@ void process_run(const char *name, Process* process)
     process->name = process->init->name;
 
 #ifdef CONFIG_DEBUG_BUILD
-    seL4_DebugNameThread(process->native.thread.tcb.cptr, process->init->name);
+    seL4_DebugNameThread(process->native.thread.tcb.cptr, ProcessGetName(process));// process->init->name);
 #else
 #error "CONFIG_DEBUG_BUILD not set!"
 #endif
@@ -339,3 +347,12 @@ void process_tear_down(Process* process)
     sel4utils_destroy_process(&process->native, &env->vka);   
 }
 
+
+void process_suspend(Process*p)
+{
+    seL4_TCB_Suspend(p->native.thread.tcb.cptr);
+}
+void process_resume(Process*p)
+{
+    seL4_TCB_Resume(p->native.thread.tcb.cptr);
+}

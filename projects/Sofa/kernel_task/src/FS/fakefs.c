@@ -8,9 +8,8 @@ static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
 static int fakeFSRead(File *file, void *buf, size_t numBytes);
-static int fakeFSWrite(File *file, const void *buf, size_t numBytes);
-
 static int fakeFSClose(File *file);
+static int fakeFSWrite(File *file, const void *buf, size_t numBytes);
 
 static VFSFileSystemOps _ops =
 {

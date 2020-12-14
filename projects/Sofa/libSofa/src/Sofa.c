@@ -123,3 +123,8 @@ ssize_t SFRegisterService(const char* name)
     }
     return cap;
 }
+
+int SFShutdown(void)
+{
+    return sc_reboot(TLSGet()->ep, RebootMode_Shutdown);
+}

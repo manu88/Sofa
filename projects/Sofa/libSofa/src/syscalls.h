@@ -26,3 +26,5 @@ pid_t sc_getppid(seL4_CPtr endpoint);
 
 seL4_CPtr sc_regservice(seL4_CPtr endpoint, const char* serviceName, int *err);
 seL4_CPtr sc_getservice(seL4_CPtr endpoint, const char* serviceName, int *err);
+
+int sc_reboot(seL4_CPtr endoint, int code);
