@@ -13,3 +13,5 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process, const char
 void process_run(const char *name, Process* process);
 void process_tear_down(Process* process);
 
+void process_suspend(Process*p);
+void process_resume(Process*p);

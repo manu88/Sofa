@@ -27,7 +27,6 @@
 #include "test_init_data.h"
 #include "utlist.h"
 
-#define TESTS_APP "app"
 
 #define MAX_TIMER_IRQS 4
 
@@ -37,15 +36,16 @@ struct timer_callback_info {
 };
 typedef struct timer_callback_info timer_callback_info_t;
 
-typedef struct _FreeRange
+
+typedef enum
 {
-    int start;
-    int size;
+    SystemState_Running,
+    SystemState_Halting
+}SystemState;
 
-    struct _FreeRange *next;
-}FreeRange;
-
-struct _KernelTaskContext {
+struct _KernelTaskContext 
+{
+    SystemState _sysState;
     allocman_t *allocman;
     /* An initialised vka that may be used by the test. */
     vka_t vka;

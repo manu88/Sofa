@@ -169,6 +169,8 @@ void *main_continued(void *arg UNUSED)
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
+    env->_sysState = SystemState_Running;
+    
     error = NameServerInit();
     assert(error == 0);
 

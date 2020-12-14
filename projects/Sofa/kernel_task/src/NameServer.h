@@ -37,6 +37,7 @@ typedef struct _ServiceClient
 typedef enum
 {
     ServiceNotification_ClientExit,
+    ServiceNotification_WillStop,
 }ServiceNotification;
 
 Service* NameServerGetServices(void);
