@@ -1,6 +1,7 @@
 #include "NameServer.h"
-#include "Process.h"
+#include "ProcessList.h"
 #include "KThread.h"
+#include "utils.h"
 
 static Service* _services = NULL;
 
@@ -54,7 +55,7 @@ int ServiceCreateKernelTask(Service* s)
     assert(error == 0);
     
     s->kernTaskEp = get_free_slot(&ctx->vka);
-    cnode_mint(&ctx->vka, ep.cptr, s->kernTaskEp, seL4_CanWrite, &_mainThread);
+    cnode_mint(&ctx->vka, ep.cptr, s->kernTaskEp, seL4_CanWrite, (seL4_Word)&_mainThread);
 
     return 0;
 }

@@ -1,12 +1,7 @@
-#include <cpio/cpio.h>
 #include "SyscallTable.h"
-#include "../testtypes.h"
-#include "../utils.h"
-
-
-
-extern char _cpio_archive[];
-extern char _cpio_archive_end[];
+#include "Process.h"
+#include "utils.h"
+#include "VFS.h"
 
 static char** tokenizeArgs(const char *args, int* numSegs)
 {
@@ -56,13 +51,11 @@ void Syscall_spawn(Thread* caller, seL4_MessageInfo_t info)
         seL4_Reply(info);
         return;
     }
-
-    unsigned long fileSize = 0;
-    void* fileLoc = cpio_get_file(_cpio_archive, _cpio_archive_end - _cpio_archive, args[0], &fileSize);
-
-    if(fileLoc == NULL)
+    VFS_File_Stat stat;
+    int st = VFSStat(args[0], &stat);
+    if(st != 0)
     {
-        seL4_SetMR(1, -ENOENT);
+        seL4_SetMR(1, -st);
         seL4_Reply(info);
         return;
     }

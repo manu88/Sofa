@@ -12,7 +12,8 @@ int main(int argc, char *argv[])
     {
         return EXIT_FAILURE;
     }
-    int shellPid = SFSpawn("shell");
+    const char shellPath[] = "/cpio/shell";
+    int shellPid = SFSpawn(shellPath);
     SFPrintf("[init] shell pid is %i\n", shellPid);
 
     int appStatus = 0;
@@ -23,7 +24,7 @@ int main(int argc, char *argv[])
         SFPrintf("[init] Wait returned pid %i status %i\n", retPid, appStatus);
         if(retPid == shellPid)
         {
-            shellPid = SFSpawn("shell");
+            shellPid = SFSpawn(shellPath);
             SFPrintf("[init] shell pid is %i\n", shellPid);
         }
     }

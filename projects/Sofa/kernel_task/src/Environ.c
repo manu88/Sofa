@@ -8,7 +8,7 @@
 #include <sel4platsupport/io.h>
 
 #include <muslcsys/vsyscall.h>
-#include "Process.h"
+#include "ProcessList.h"
 
 /* dimensions of virtual memory for the allocator to use */
 #define ALLOCATOR_VIRTUAL_POOL_SIZE ((1 << seL4_PageBits) * 400)

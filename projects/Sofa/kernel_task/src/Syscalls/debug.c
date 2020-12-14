@@ -1,6 +1,6 @@
 #include <Sofa.h>
 #include "SyscallTable.h"
-#include "testtypes.h"
+#include "Process.h"
 #include "utils.h"
 #include "Panic.h"
 #include "NameServer.h"

@@ -1,6 +1,6 @@
 #include "SyscallTable.h"
-#include "../testtypes.h"
-#include "../utils.h"
+#include "Process.h"
+#include "utils.h"
 
 void Syscall_Kill(Thread* caller, seL4_MessageInfo_t info)
 {
