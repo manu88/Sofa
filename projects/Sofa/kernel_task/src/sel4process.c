@@ -577,10 +577,10 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
         unsigned long size;
         unsigned long cpio_len = _cpio_archive_end - _cpio_archive;
 
-        char *file = VFSGetFile(config.image_name, &size);// cpio_get_file(_cpio_archive, cpio_len, config.image_name, &size);
+        process->prgData = VFSGetFile(config.image_name, &size);
 
         elf_t elf;
-        elf_newFile(file, size, &elf);
+        elf_newFile(process->prgData, size, &elf);
 
         if (config.do_elf_load) {
             process->entry_point = sel4utils_elf_load(&process->vspace, spawner_vspace, vka, vka, &elf);
@@ -737,6 +737,8 @@ void sel4utils_destroy_process(sel4utils_process_t *process, vka_t *vka)
     if (process->elf_phdrs) {
         free(process->elf_phdrs);
     }
+
+    free(process->prgData);
 }
 
 seL4_CPtr sel4utils_process_init_cap(void *data, seL4_CPtr cap)

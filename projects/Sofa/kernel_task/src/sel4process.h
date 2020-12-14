@@ -60,6 +60,8 @@ typedef struct {
     bool own_vspace;
     bool own_cspace;
     bool own_ep;
+
+    char* prgData;
 } sel4utils_process_t;
 
 /* sel4utils processes start with some caps in their cspace.
