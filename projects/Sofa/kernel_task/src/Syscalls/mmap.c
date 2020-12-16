@@ -26,9 +26,6 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
     off_t offset = seL4_GetMR(6);//, offset);
 
 
-    //KLOG_DEBUG("mmap call with addr=%p length=%zi prot=%i flags=%X fd=%i offset=%i\n",
-    //        addr, length, prot, flags, fd, offset);
-
     if(addr)
     {
         KLOG_INFO("mmap Only support NULL addr for now\n");

@@ -81,7 +81,6 @@ void _closeThreadClients(Thread*t)
 
 void doExit(Process* process, int retCode)
 {
-    KLOG_TRACE("doExit for process %s %i with code %i\n", ProcessGetName(process), ProcessGetPID(process), retCode);
     if(ProcessGetPID(process) == 1)
     {
         Panic("init returned");
@@ -299,7 +298,6 @@ void process_run(const char *name, Process* process)
 
 void process_tear_down(Process* process)
 {
-    KLOG_DEBUG("process_tear_down\n");
     KernelTaskContext* env = getKernelTaskContext();
 
     Thread* elt = NULL;
