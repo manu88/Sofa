@@ -98,7 +98,6 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
             {
                 file->size = 0;
             }
-            printf("file Mode %i request %i\n", file->mode, mode);
             if(mode == files[i].mode)
             {
                 file->mode = files[i].mode;

@@ -27,7 +27,9 @@ struct env* getProcessEnv(void)
 }
 
 
-
+__attribute__ ((__noreturn__))void abort(void) 
+{
+}
 
 static void process_exit(int code)
 {

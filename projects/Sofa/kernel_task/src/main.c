@@ -198,7 +198,6 @@ void *main_continued(void *arg UNUSED)
     error = VFSServiceStart();
     assert(error == 0);
 
-
     error = NetServiceStart();
     assert(error == 0);
 

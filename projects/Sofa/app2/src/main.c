@@ -19,12 +19,10 @@ int main(int argc, char *argv[])
     SFPrintf("App2 started\n");
 
     char* ptr = mmap(NULL, 4096, 0, 0,-1, 0);
-
-
     int ret = munmap(ptr, 4096);
     SFPrintf("munmap ret %i\n", ret);
-#if 0
-    int fd0 = open("/fake/cons", O_WRONLY);
+
+    int fd0 = open("/fake/file1", O_RDONLY);
     int fd1 = open("/fake/cons", O_WRONLY);
     int fd2 = open("/fake/cons", O_WRONLY);
 
@@ -33,9 +31,9 @@ int main(int argc, char *argv[])
     SFPrintf("fd0=%i %i %i\n", fd0, fd1, fd2);
 
     SFPrintf("--> start dlopen\n");
-    void *t = dlopen(/*"file"*/NULL, RTLD_NOW);
+    void *t = dlopen("file", RTLD_NOW);
     SFPrintf("dlopen returned %p err=%i\n", t, errno);
-#endif
+
     return 1;
 }
 
