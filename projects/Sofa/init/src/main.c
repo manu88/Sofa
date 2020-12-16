@@ -12,6 +12,12 @@ int main(int argc, char *argv[])
     {
         return EXIT_FAILURE;
     }
+
+    int unittestsPid = SFSpawn("/cpio/utests");
+    int utestStatus = -1;
+    SFWaitPid(unittestsPid, &utestStatus, 0);
+    SFPrintf("Unit tests returned %i\n", utestStatus);
+
     const char shellPath[] = "/cpio/shell";
     int shellPid = SFSpawn(shellPath);
     SFPrintf("[init] shell pid is %i\n", shellPid);

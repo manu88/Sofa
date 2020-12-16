@@ -458,7 +458,9 @@ int main(int argc, char *argv[])
     argv = &argv[2];
     VFSClientInit();
 
-    fOut = VFSOpen("/fake/cons", O_WRONLY);
+    VFSOpen("/fake/file1", O_RDONLY); // 0
+    VFSOpen("/fake/cons", O_WRONLY);  // 1
+    VFSOpen("/fake/cons", O_WRONLY);  // 2
 
     Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
 

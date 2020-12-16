@@ -59,7 +59,7 @@ static int parseCpio()
         _files[i] = malloc(info.max_path_sz);
     }
     numFiles = info.file_count;
-    cpio_ls(_cpio_archive, archLen, _files, info.max_path_sz );
+    cpio_ls(_cpio_archive, archLen, _files, numFiles );
     return 0;
 }
 

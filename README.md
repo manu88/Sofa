@@ -22,6 +22,10 @@ Sofa is built atop SeL4 microkernel and provides a set of userland servers and a
 * VFS: mount, open, close, read
 * Net: socket, bind, recvfrom, sendto
 
+### POSIX status
+Because we use `musl`, the current goal is to be as much as possible POSIX compliant. Except for:
+* `fork`, that might never be implemented. [here](https://www.microsoft.com/en-us/research/uploads/prod/2019/04/fork-hotos19.pdf)'s why.
+
 ## Applications
 * init
 * shell

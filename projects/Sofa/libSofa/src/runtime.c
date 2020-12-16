@@ -27,7 +27,9 @@ struct env* getProcessEnv(void)
 }
 
 
-
+__attribute__ ((__noreturn__))void abort(void) 
+{
+}
 
 static void process_exit(int code)
 {
@@ -35,6 +37,8 @@ static void process_exit(int code)
     // no return
     assert(0);
 }
+
+void initMuslSysCalls(void);
 
 int RuntimeInit2(int argc, char *argv[])
 {
@@ -49,7 +53,7 @@ int RuntimeInit2(int argc, char *argv[])
 
     TLSSet(&_mainTLSContext);
     sel4runtime_set_exit(process_exit);
-
+    initMuslSysCalls();
     return 0;
 }
 int RuntimeInit(int argc, char *argv[])

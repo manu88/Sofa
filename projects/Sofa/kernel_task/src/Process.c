@@ -81,7 +81,6 @@ void _closeThreadClients(Thread*t)
 
 void doExit(Process* process, int retCode)
 {
-    KLOG_TRACE("doExit for process %s %i with code %i\n", ProcessGetName(process), ProcessGetPID(process), retCode);
     if(ProcessGetPID(process) == 1)
     {
         Panic("init returned");

@@ -37,7 +37,7 @@ void RequestIPCBuff(Thread* caller, seL4_MessageInfo_t info)
     Process* process = caller->_base.process;
     KernelTaskContext* env = getKernelTaskContext();
     seL4_CPtr *buf;
-    void* bufAddr = vspace_new_ipc_buffer(&caller->_base.process->native.vspace, &buf);
+    void* bufAddr = vspace_new_ipc_buffer(&caller->_base.process->native.vspace, buf);
 
     seL4_SetMR(1, (seL4_Word) bufAddr);
     seL4_Reply(info);

@@ -128,3 +128,14 @@ int SFShutdown(void)
 {
     return sc_reboot(TLSGet()->ep, RebootMode_Shutdown);
 }
+
+
+long SFMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    return sc_mmap(TLSGet()->ep, addr, length, prot, flags, fd, offset);
+}
+
+long SFMunmap(void* addr, size_t length)
+{
+    return sc_munmap(TLSGet()->ep, addr, length);
+}

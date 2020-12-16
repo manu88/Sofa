@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include "Log.h"
 #define MAX_PREFIX_LEN 16
 
 static VFSFileSystem* _fileSystems = NULL;
@@ -87,13 +88,13 @@ int VFSMount(VFSFileSystem* fs, const char* mntPoint)
 
     if (strlen(mntPoint) > MAX_PREFIX_LEN)
     {
-        printf("[VFSMount] name too long '%s'\n", mntPoint);
+        KLOG_INFO("[VFSMount] name too long '%s'\n", mntPoint);
 	    return ENAMETOOLONG;
     }
 
     if(_GetFileSystem(mntPoint))
     {
-        printf("[VFSMount] mount point already exists '%s'\n", mntPoint);
+        KLOG_INFO("[VFSMount] mount point already exists '%s'\n", mntPoint);
 
         return EEXIST;
     }
