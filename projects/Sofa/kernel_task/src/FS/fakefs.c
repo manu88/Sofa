@@ -137,7 +137,6 @@ static int _ReadDir(File *file, void *buf, size_t numBytes)
         {
             break;
         }
-
     }
     file->readPos += numOfDirents;
     return acc;
@@ -150,7 +149,7 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     if(strcmp(path, "/") == 0)
     {
 
-            file->ops = &_rootFOP;
+        file->ops = &_rootFOP;
         file->size = NumFiles;
         return 0;
     }

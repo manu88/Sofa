@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <assert.h>
 
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
@@ -82,6 +84,39 @@ static int cpioFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
     return 0;
 }
 
+static int _ReadDir(File *file, void *buf, size_t numBytes)
+{
+    size_t remainFilesToList = file->size - file->readPos;
+    size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
+    size_t numOfDirents = numDirentPerBuff > remainFilesToList? remainFilesToList:numDirentPerBuff;
+   
+    struct dirent *dirp = buf;
+
+    size_t nextOff = 0;
+    size_t acc = 0;
+
+    for(int i=0;i<numOfDirents;i++)
+    {
+        struct dirent *d = dirp + i;
+        size_t fPos = i + file->readPos;
+        assert(fPos <numFiles);
+        snprintf(d->d_name, 256, "%s", _files[fPos]);
+        acc += sizeof(struct dirent);
+        d->d_off = acc;
+        d->d_type = DT_DIR;
+        d->d_reclen = sizeof(struct dirent);
+
+        if(i >= numOfDirents)
+        {
+            break;
+        }
+    }
+    file->readPos += numOfDirents;
+    return acc;
+}
+
+static FileOps _rootFOP = {.Read = _ReadDir};
+
 static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
     if(!_files)
@@ -92,6 +127,15 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
             return ret;
         }
     }
+
+    if(strcmp(path, "/") == 0)
+    {
+
+        file->ops = &_rootFOP;
+        file->size = numFiles;
+        return 0;
+    }
+
     if(mode != O_RDONLY)
     {
         return EROFS;
