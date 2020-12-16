@@ -222,11 +222,9 @@ void processCommand(const char* cmd)
                 //buf[ret] = 0;
                 for(int i=0;i<ret;i++)
                 {
-                    Printf("%c", isprint(buf[i])? buf[i]:'#');
+                    Printf("%c", isprint(buf[i])?buf[i]:isspace(buf[i])?buf[i]:'#');
                 }
                 Printf("\n");
-               // Printf("%s", buf);
-               // Printf("--\n");
             }
             else if(ret == -1) // EOF
             {
