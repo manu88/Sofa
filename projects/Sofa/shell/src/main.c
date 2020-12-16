@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ctype.h>
+#include <dirent.h>
 #include "runtime.h"
 #include "files.h"
 #include "net.h"
@@ -98,6 +99,42 @@ static int doSpawn(const char* cmd)
     }
 
     return 0;
+}
+
+static int doLs(const char* path)
+{
+    DIR *folder = opendir(path);
+    if(folder == NULL)
+    {
+        return errno;
+    }
+    struct dirent *entry = NULL;
+    while( (entry=readdir(folder)) )
+    {
+        Printf("%s\n", entry->d_name);
+    }
+    closedir(folder);
+#if 0
+        if(vfsCap == 0)
+        {
+            Printf("[shell] VFS client not registered (no cap)\n");
+        }
+        if(vfsBuf == NULL)
+        {
+            Printf("[shell] VFS client not registered(no buff)\n");
+        }
+
+        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+        seL4_SetMR(0, VFSRequest_ListDir);
+        strcpy(vfsBuf, path);
+        vfsBuf[strlen(path)] = 0;
+        seL4_Call(vfsCap, info);
+        if(seL4_GetMR(1) != 0)
+        {
+            Printf("got ls response %lX\n", seL4_GetMR(1));
+        }
+
+#endif
 }
 
 void processCommand(const char* cmd)
@@ -313,25 +350,7 @@ void processCommand(const char* cmd)
     else if(startsWith("ls", cmd))
     {
         const char *path = cmd + strlen("ls ");
-        if(vfsCap == 0)
-        {
-            Printf("[shell] VFS client not registered (no cap)\n");
-        }
-        if(vfsBuf == NULL)
-        {
-            Printf("[shell] VFS client not registered(no buff)\n");
-        }
-
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-        seL4_SetMR(0, VFSRequest_ListDir);
-        strcpy(vfsBuf, path);
-        vfsBuf[strlen(path)] = 0;
-        seL4_Call(vfsCap, info);
-        if(seL4_GetMR(1) != 0)
-        {
-            Printf("got ls response %lX\n", seL4_GetMR(1));
-        }
-
+        doLs(path);
     }
     else if(startsWith("spawn", cmd))
     {

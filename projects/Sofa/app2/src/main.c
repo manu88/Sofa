@@ -1,13 +1,7 @@
 #include "runtime.h"
 #include <Sofa.h>
 #include <stdio.h>
-#include <errno.h>
-#define _GNU_SOURCE
-#include <dlfcn.h>
-#include <sys/mman.h>
-
-#include <fcntl.h>
-#include <unistd.h>
+#include <dirent.h>
 
 
 int main(int argc, char *argv[])
@@ -18,21 +12,36 @@ int main(int argc, char *argv[])
 
     SFPrintf("App2 started\n");
 
-    char* ptr = mmap(NULL, 4096, 0, 0,-1, 0);
-    int ret = munmap(ptr, 4096);
-    SFPrintf("munmap ret %i\n", ret);
+    DIR *folder;
 
-    int fd0 = open("/fake/file1", O_RDONLY);
-    int fd1 = open("/fake/cons", O_WRONLY);
-    int fd2 = open("/fake/cons", O_WRONLY);
-
-    //write(2, "Some msg test\n", strlen("Some msg test\n"));
+    folder = opendir("/");
+    if(folder == NULL)
+    {
+        SFPrintf("Unable to read directory\n");
+        return(1);
+    }
+    else
+    {
+        SFPrintf("Directory is opened!\n");
+        struct dirent *entry;
+        int files = 0;
+        while( (entry=readdir(folder)) )
+        {
+            files++;
+            SFPrintf("File %3d: %s\n",
+                    files,
+                    entry->d_name
+                );
+            if(files>10)
+            {
+                break;
+            }
+        }
+        SFPrintf("found %i files\n", files);
+        closedir(folder);
+    }
     
-    SFPrintf("fd0=%i %i %i\n", fd0, fd1, fd2);
 
-    SFPrintf("--> start dlopen\n");
-    void *t = dlopen("file", RTLD_NOW);
-    SFPrintf("dlopen returned %p err=%i\n", t, errno);
 
     return 1;
 }

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include "Log.h"
 #define MAX_PREFIX_LEN 16
 
@@ -190,22 +191,68 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 
 }
 
+static int VFSReadDir(File *file, void *buf, size_t numBytes)
+{
+    size_t remainFilesToList = file->size - file->readPos;
+    size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
+    size_t numOfDirents = numDirentPerBuff > remainFilesToList? remainFilesToList:numDirentPerBuff;
+   
+    struct dirent *dirp = buf;
+
+    size_t nextOff = 0;
+    size_t acc = 0;
+
+    VFSFileSystem* fs = NULL;
+    VFSFileSystem* tmp = NULL;
+    size_t i = 0;
+    HASH_ITER(hh, _fileSystems,fs, tmp)
+    {
+        struct dirent *d = dirp + i;
+        snprintf(d->d_name, 256, "%s", fs->mountPath);
+        acc += sizeof(struct dirent);
+        d->d_off = acc;
+        d->d_type = DT_DIR;
+        d->d_reclen = sizeof(struct dirent);
+
+        i++;
+        if(i >= numOfDirents)
+        {
+            break;
+        }
+
+    }
+    file->readPos += numOfDirents;
+    return acc;
+
+}
+
+
+static FileOps _rootFOP = {.Read = VFSReadDir};
+
 int VFSOpen(const char* path, int mode, File* file)
 {
+    memset(file, 0, sizeof(File));
+    if(strcmp(path, "/") == 0)
+    {
+        file->ops = &_rootFOP;
+        file->size = HASH_COUNT(_fileSystems);
+        return 0;
+    }
     char prefix[MAX_PREFIX_LEN + 1];
     const char *suffix;
 
     if (!Unpack_Path(path, prefix, &suffix))
     {
+        KLOG_DEBUG("Unpack pth err\n");
 	    return ENOENT;
     }
 
     VFSFileSystem* fs = _GetFileSystem(prefix);
     if(fs == NULL)
     {
+        KLOG_DEBUG("FS is null\n");
         return ENOENT;
     }
-    memset(file, 0, sizeof(File));
     return fs->ops->Open(fs, suffix, mode, file);
 }
 
@@ -244,10 +291,14 @@ ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
 {
+    /*
     if(file->mode != O_RDONLY)
     {
+        KLOG_TRACE("VFSRead: invalid mode %X\n", file->mode);
+
         return -EACCES;
     }
+    */
     assert(file->readPos <= file->size);
 
     if(file->readPos == file->size)
@@ -256,9 +307,6 @@ ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
     }
 
     ssize_t ret = file->ops->Read(file, buf, sizeToRead);
-    if(ret > 0)
-    {
-        file->readPos += ret;
-    }
+
     return ret;
 }

@@ -136,5 +136,7 @@ static int fakeFSRead(File *file, void *buf, size_t numBytes)
     } 
     memcpy(buf, f->content + file->readPos, effectiveSize);
 
+    file->readPos += effectiveSize;
+
     return effectiveSize;
 }

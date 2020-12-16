@@ -4,7 +4,10 @@
 #include <sys/types.h>
 #include <files.h>
 #include <errno.h>
-
+#include <dirent.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdio.h>
 
 extern void *__sysinfo;
 
@@ -37,11 +40,50 @@ static long sf_open(va_list ap)
     const char *pathname = va_arg(ap, const char *);
     int flags = va_arg(ap, int);
     mode_t mode = va_arg(ap, mode_t);
-    SFPrintf("sf_open %s\n", pathname);
     return VFSOpen(pathname, flags);
 //    return 0;
 }
 
+static int c = 4;
+static int numSent = 0;
+
+static long sf_getdents64(va_list ap)
+{
+    unsigned int fd = va_arg(ap, int);
+    struct dirent *dirp = va_arg(ap, struct dirent *);
+    unsigned int count = va_arg(ap, unsigned int);
+
+    return VFSRead(fd, dirp, count);
+    if(numSent >= c)
+    {
+        return 0;
+    }
+    size_t numDirentPerBuff = count / sizeof(struct dirent);
+    size_t numOfDirents = numDirentPerBuff > c? c:numDirentPerBuff;
+
+    size_t nextOff = 0;
+    size_t acc = 0;
+    for(size_t i=0;i<numOfDirents;i++)
+    {
+        struct dirent *d = dirp + i;
+
+        snprintf(d->d_name, 256, "File%i", i);
+        acc += sizeof(struct dirent);
+        d->d_off = acc;
+        d->d_type = DT_DIR;
+        d->d_reclen = sizeof(struct dirent);
+
+        
+    }
+    numSent += numOfDirents;
+    return acc;
+
+
+    return 0;
+    //On success, the number of bytes read is returned.
+    //On end of directory, 0 is returned. On error, -1 is returned, 
+    //and errno is set appropriately. 
+}
 static long sf_munmap(va_list ap)
 {
     void *addr = va_arg(ap, void*);
@@ -65,6 +107,26 @@ static long sf_mmap(va_list ap)
 //PROT_WRITE
 //MAP_SHARED
 
+}
+
+
+static long sf_fcntl(va_list ap)
+{
+    int fd = va_arg(ap, int);
+    int cmd = va_arg(ap, int);
+    if(cmd == F_SETFD)
+    {
+        return 0;
+    } 
+    SFPrintf("Not implemented: fcntl for fd=%i cmd=%u\n", fd, cmd);
+    return -1;
+}
+static long sf_ioctl(va_list ap)
+{
+    int fd = va_arg(ap, int);
+    unsigned long request = va_arg(ap, unsigned long);
+    SFPrintf("Not implemented: ioctl for fd=%i request=%u\n", fd, request);
+    return 0;
 }
 
 static long sf_writev(va_list ap)
@@ -123,11 +185,20 @@ long sofa_vsyscall(long sysnum, ...)
     case __NR_brk:
         ret = -ENOMEM;
         break;
+    case __NR_ioctl:
+        ret = sf_ioctl(al);
+        break;
+    case __NR_fcntl:
+        ret = sf_fcntl(al);
+        break;
     case __NR_mmap:
         ret = sf_mmap(al);
         break;
     case __NR_munmap:
         ret = sf_munmap(al);
+        break;
+    case __NR_getdents64:
+        ret = sf_getdents64(al);
         break;
     default:
     SFPrintf("Unknown syscall %zi\n", sysnum);

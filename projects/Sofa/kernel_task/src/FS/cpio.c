@@ -97,6 +97,10 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
         return EROFS;
     }
 
+    if(strcmp(path, "/") == 0)
+    {
+        KLOG_DEBUG("CPIO req for /\n");
+    }
     const char* p = path + 1;// skip 1st '/'
     for(int i=0;i<numFiles;i++)
     {
