@@ -15,6 +15,8 @@ typedef enum
     SyscallID_Spawn,
     SyscallID_Wait,
     SyscallID_Kill,
+    SyscallID_mmap,
+    SyscallID_munmap,
 
     SyscallID_Read,
     SyscallID_Write,
@@ -107,6 +109,10 @@ typedef enum
     RebootMode_Shutdown
 } RebootMode;
 int SFShutdown(void);
+
+
+long SFMmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+long SFMunmap(void* addr, size_t length);
 
 
 // temp/debug syscall

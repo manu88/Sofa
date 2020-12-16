@@ -31,6 +31,7 @@
 #include <sel4utils/helpers.h>
 #include "VFS.h"
 #include "Log.h"
+#include "ProcessList.h"
 
 
 void sel4utils_allocated_object(void *cookie, vka_object_t object)
@@ -59,11 +60,11 @@ static void clear_objects(sel4utils_process_t *process, vka_t *vka)
     assert(process != NULL);
     assert(vka != NULL);
 
-    while (process->allocated_object_list_head != NULL) {
+    while (process->allocated_object_list_head != NULL)
+    {
         object_node_t *prev = process->allocated_object_list_head;
 
         process->allocated_object_list_head = prev->next;
-
         vka_free_object(vka, &prev->object);
         free(prev);
     }
@@ -707,8 +708,10 @@ void sel4utils_destroy_process(sel4utils_process_t *process, vka_t *vka)
     /* destroy the thread */
     sel4utils_clean_up_thread(vka, &process->vspace, &process->thread);
 
+
     /* tear down the vspace */
-    if (process->own_vspace) {
+    if (process->own_vspace) 
+    {
         vspace_tear_down(&process->vspace, VSPACE_FREE);
         /* free any objects created by the vspace */
         clear_objects(process, vka);
@@ -718,7 +721,6 @@ void sel4utils_destroy_process(sel4utils_process_t *process, vka_t *vka)
     if (process->own_ep && process->fault_endpoint.cptr != 0) {
         vka_free_object(vka, &process->fault_endpoint);
     }
-
     /* destroy the page directory */
     if (process->own_vspace) {
         vka_free_object(vka, &process->pd);

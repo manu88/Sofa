@@ -299,6 +299,7 @@ void process_run(const char *name, Process* process)
 
 void process_tear_down(Process* process)
 {
+    KLOG_DEBUG("process_tear_down\n");
     KernelTaskContext* env = getKernelTaskContext();
 
     Thread* elt = NULL;

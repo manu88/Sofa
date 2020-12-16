@@ -186,3 +186,29 @@ int sc_reboot(seL4_CPtr endoint, int code)
 
     return seL4_GetMR(1);
 }
+
+long sc_mmap(seL4_CPtr endpoint, void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 7);
+    seL4_SetMR(0, SyscallID_mmap);
+    seL4_SetMR(1, addr);
+    seL4_SetMR(2, length);
+    seL4_SetMR(3, prot);
+    seL4_SetMR(4, flags);
+    seL4_SetMR(5, fd);
+    seL4_SetMR(6, offset);
+    seL4_Call(endpoint, info);
+
+    return seL4_GetMR(1);
+}
+
+long sc_munmap(seL4_CPtr endpoint, void* addr, size_t length)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, SyscallID_munmap);
+    seL4_SetMR(1, addr);
+    seL4_SetMR(2, length);
+    seL4_Call(endpoint, info);
+
+    return seL4_GetMR(1);
+}

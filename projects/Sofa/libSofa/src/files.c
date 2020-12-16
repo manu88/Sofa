@@ -7,7 +7,6 @@
 seL4_CPtr vfsCap = 0;
 char* vfsBuf = NULL;
 
-extern int fOut;
 
 int VFSClientInit()
 {
@@ -185,7 +184,7 @@ int Printf(const char *format, ...)
 
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
     seL4_SetMR(0, VFSRequest_Write);
-    seL4_SetMR(1, fOut);
+    seL4_SetMR(1, 2);
     seL4_SetMR(2, length);
 
     seL4_Call(vfsCap, info);

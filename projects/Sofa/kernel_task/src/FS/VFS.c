@@ -191,6 +191,7 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 
 int VFSOpen(const char* path, int mode, File* file)
 {
+    printf("--->VFSOpen '%s' mode %i\n", path, mode);
     char prefix[MAX_PREFIX_LEN + 1];
     const char *suffix;
 

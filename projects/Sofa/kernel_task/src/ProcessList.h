@@ -41,8 +41,9 @@ typedef struct _Thread
 
 typedef struct _Process
 {
-    Thread main;
     sel4utils_process_t native;
+
+    Thread main;
     
     const char* name; // pointer to init->name
 

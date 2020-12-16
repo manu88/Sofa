@@ -30,6 +30,9 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info);
 
 void SysCall_Reboot(Thread* caller, seL4_MessageInfo_t info);
 
+void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info);
+void Syscall_munmap(Thread* caller, seL4_MessageInfo_t info);
+
 static SyscallMethod syscallTable[] =
 {
     NULL,
@@ -44,6 +47,8 @@ static SyscallMethod syscallTable[] =
     Syscall_spawn,
     Syscall_wait,
     Syscall_Kill,
+    Syscall_mmap,
+    Syscall_munmap,
 
     Syscall_Read,
     Syscall_Write,

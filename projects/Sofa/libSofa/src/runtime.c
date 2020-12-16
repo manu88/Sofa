@@ -36,6 +36,8 @@ static void process_exit(int code)
     assert(0);
 }
 
+void initMuslSysCalls(void);
+
 int RuntimeInit2(int argc, char *argv[])
 {
     assert(argc >= 2);
@@ -49,7 +51,7 @@ int RuntimeInit2(int argc, char *argv[])
 
     TLSSet(&_mainTLSContext);
     sel4runtime_set_exit(process_exit);
-
+    initMuslSysCalls();
     return 0;
 }
 int RuntimeInit(int argc, char *argv[])
