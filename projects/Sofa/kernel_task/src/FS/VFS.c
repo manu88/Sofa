@@ -7,7 +7,7 @@
 #include "Log.h"
 #define MAX_PREFIX_LEN 16
 
-static VFSFileSystem* _fileSystems = NULL;
+static VFSMountPoint* _mountPoints = NULL;
 
 /*
  * Unpack a path into prefix and suffix.
@@ -71,39 +71,64 @@ static uint8_t Unpack_Path(const char *path, char *prefix, const char **pSuffix)
     return 1;
 }
 
-VFSFileSystem* _GetFileSystem(const char* mountPath)
+VFSMountPoint* _GetMountPoint(const char* mountPath)
 {
-    VFSFileSystem* fs = NULL;
-    HASH_FIND_STR(_fileSystems, mountPath, fs);
-    return fs;
+    VFSMountPoint* mntPt = NULL;
+    HASH_FIND_STR(_mountPoints, mountPath, mntPt);
+    return mntPt;
 }
 
-int VFSMount(VFSFileSystem* fs, const char* mntPoint)
+static int doMountFS(VFSMountPoint* mntpt, VFSFileSystem* fs, const char* path)
+{
+    mntpt->mountPath = strdup(path);
+    mntpt->fs = fs;
+    HASH_ADD_STR(_mountPoints, mountPath, mntpt);
+
+    return 0;
+
+}
+
+VFSMountPoint* VFSMount(VFSFileSystem* fs, const char* mntPoint, int*err)
 {
     assert(fs);
     assert(mntPoint);
 
+    VFSMountPoint *pt = malloc(sizeof(VFSMountPoint));
+    if(pt == NULL)
+    {
+        *err = ENOMEM;
+        return NULL;
+    }
+
     /* Skip leading slash character(s) */
     while (*mntPoint == '/')
-	++mntPoint;
+    {
+	    ++mntPoint;
+    }
 
     if (strlen(mntPoint) > MAX_PREFIX_LEN)
     {
         KLOG_INFO("[VFSMount] name too long '%s'\n", mntPoint);
-	    return ENAMETOOLONG;
+	    *err = ENAMETOOLONG;
+        free(pt);
+        return NULL;
     }
 
-    if(_GetFileSystem(mntPoint))
+    if(_GetMountPoint(mntPoint))
     {
         KLOG_INFO("[VFSMount] mount point already exists '%s'\n", mntPoint);
 
-        return EEXIST;
+        *err = EEXIST;
+        free(pt);
+        return NULL;
     }
-    fs->mountPath = strdup(mntPoint);
+    *err = doMountFS(pt, fs, mntPoint);
+    if(*err != 0)
+    {
+        free(pt);
+    }
 
-    HASH_ADD_STR(_fileSystems, mountPath, fs);
-
-    return 0;
+    return pt;
 }
 
 int VFSInit()
@@ -140,9 +165,9 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 {
     if(strcmp(path, "/") == 0)
     {
-        VFSFileSystem* fs = NULL;
-        VFSFileSystem* tmp = NULL;
-        HASH_ITER(hh, _fileSystems, fs, tmp)
+        VFSMountPoint* fs = NULL;
+        VFSMountPoint* tmp = NULL;
+        HASH_ITER(hh, _mountPoints, fs, tmp)
         {
             printf("%s\n", fs->mountPath);
         }
@@ -169,8 +194,9 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 	    return ENOENT;
     }
 
-    VFSFileSystem* fs =  _GetFileSystem(segments[0]);
-    if(fs == NULL)
+    VFSMountPoint* mnt =  _GetMountPoint(segments[0]);
+
+    if(mnt == NULL)
     {
         printf("[VFS] fs not found for '%s'\n", prefix);
         for(int i=0;i<numPathSegs;i++)
@@ -180,7 +206,8 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
         free(segments);
         return ENOENT;
     }
-    int ret = fs->ops->Stat(fs, segments + 1, numPathSegs-1, stat);
+    assert(mnt->fs);
+    int ret = mnt->fs->ops->Stat(mnt->fs, segments + 1, numPathSegs-1, stat);
     
     for(int i=0;i<numPathSegs;i++)
     {
@@ -202,10 +229,10 @@ static int VFSReadDir(File *file, void *buf, size_t numBytes)
     size_t nextOff = 0;
     size_t acc = 0;
 
-    VFSFileSystem* fs = NULL;
-    VFSFileSystem* tmp = NULL;
+    VFSMountPoint* fs = NULL;
+    VFSMountPoint* tmp = NULL;
     size_t i = 0;
-    HASH_ITER(hh, _fileSystems,fs, tmp)
+    HASH_ITER(hh, _mountPoints,fs, tmp)
     {
         struct dirent *d = dirp + i;
         snprintf(d->d_name, 256, "%s", fs->mountPath);
@@ -235,7 +262,7 @@ int VFSOpen(const char* path, int mode, File* file)
     if(strcmp(path, "/") == 0)
     {
         file->ops = &_rootFOP;
-        file->size = HASH_COUNT(_fileSystems);
+        file->size = HASH_COUNT(_mountPoints);
         return 0;
     }
     char prefix[MAX_PREFIX_LEN + 1];
@@ -247,13 +274,14 @@ int VFSOpen(const char* path, int mode, File* file)
 	    return ENOENT;
     }
 
-    VFSFileSystem* fs = _GetFileSystem(prefix);
-    if(fs == NULL)
+    VFSMountPoint* mnt = _GetMountPoint(prefix);
+    if(mnt == NULL)
     {
         KLOG_DEBUG("FS is null\n");
         return ENOENT;
     }
-    return fs->ops->Open(fs, suffix, mode, file);
+    assert(mnt->fs);
+    return mnt->fs->ops->Open(mnt->fs, suffix, mode, file);
 }
 
 int VFSClose(File* file)
