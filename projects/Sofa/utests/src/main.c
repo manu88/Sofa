@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <dirent.h>
 
 static void testMmap()
 {
@@ -39,6 +40,20 @@ static void testRead(void)
     close(h);
 }
 
+static void testReaddir()
+{
+    DIR *folder = opendir("/");
+    if(folder == NULL)
+    {
+        return;
+    }
+    struct dirent *entry = NULL;
+    while( (entry=readdir(folder)) )
+    {
+    }
+    closedir(folder);
+
+}
 int main(int argc, char *argv[])
 {
     
@@ -47,6 +62,8 @@ int main(int argc, char *argv[])
 
     testRead();
     testMmap();
+    testReaddir();
+    testMalloc();
     
     return 0;
 }
