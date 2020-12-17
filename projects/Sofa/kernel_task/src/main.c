@@ -46,6 +46,7 @@
 #include <sel4platsupport/arch/io.h>
 #include "KThread.h"
 #include <Sofa.h>
+#include "DKService.h"
 #include "VFSService.h"
 #include "NetService.h"
 #include "VFS.h"
@@ -182,6 +183,10 @@ void *main_continued(void *arg UNUSED)
 
 
     error = DeviceTreeInit();
+    assert(error == 0);
+
+    KLOG_INFO("Starting DeviceKit Service\n");
+    error = DKServiceInit();
     assert(error == 0);
 
     error = SerialInit();
