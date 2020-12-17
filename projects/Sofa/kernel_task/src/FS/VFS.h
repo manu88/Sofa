@@ -23,13 +23,18 @@ typedef struct _VFSFileSystemOps
 
 typedef struct _VFSFileSystem
 {
-    char* mountPath;
-    UT_hash_handle hh;
-
     VFSFileSystemOps *ops;
 
     void* data;
 }VFSFileSystem;
+
+
+typedef struct _VFSMountPoint
+{
+    VFSFileSystem *fs;
+    char* mountPath;
+    UT_hash_handle hh;
+} VFSMountPoint;
 
 typedef struct _File File;
 
@@ -54,7 +59,7 @@ typedef struct _File
 }File;
 
 int VFSInit(void);
-int VFSMount(VFSFileSystem* fs, const char* mntPoint);
+VFSMountPoint* VFSMount(VFSFileSystem* fs, const char* mntPoint, int*err);
 
 int VFSStat(const char *path, VFS_File_Stat *stat);
 int VFSOpen(const char* path, int mode, File* file);

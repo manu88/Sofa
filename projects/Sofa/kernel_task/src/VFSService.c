@@ -139,7 +139,9 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
         {
             printf("[VFSMount] ext2\n");
             getExt2FS()->data = dev;
-            return VFSMount(getExt2FS(), "/ext");
+            int err = 0;
+            VFSMount(getExt2FS(), "/ext", &err);
+            return err;
         }
         printf("ext2_mount error for '%s'\n", dev->name);
     }

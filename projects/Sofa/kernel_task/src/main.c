@@ -188,8 +188,9 @@ void *main_continued(void *arg UNUSED)
     assert(error == 0);
 
 
-    VFSMount(getFakeFS(), "/fake");
-    VFSMount(getCpioFS(), "/cpio");
+    VFSMount(getFakeFS(), "/fake", &error);
+    VFSMount(getCpioFS(), "/cpio", &error);
+    VFSMount(getCpioFS(), "/lib", &error);    
 
     KLOG_INFO("Starting VFSService\n");
     error = VFSServiceInit();
