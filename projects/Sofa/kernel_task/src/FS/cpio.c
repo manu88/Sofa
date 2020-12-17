@@ -75,13 +75,23 @@ static int cpioFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
             return ret;
         }
     }
-
+    if(numPathSegments == 1 && strcmp(path[0], "/") == 0)
+    {
+        return 0;
+    }
+    if(numPathSegments > 1)
+    {
+        return -ENOENT;
+    }
     for(int i=0;i<numFiles;i++)
     {
-        printf("'%s'\n",_files[i]);
+        if(strcmp(path[0], _files[i]) == 0)
+        {
+            return 0;
+        }
     }
 
-    return 0;
+    return -ENOENT;
 }
 
 static int _ReadDir(File *file, void *buf, size_t numBytes)
