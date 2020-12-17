@@ -2,7 +2,12 @@
 #include <Sofa.h>
 #include <stdio.h>
 #include <dirent.h>
-
+#include <pthread.h>
+#include <errno.h>
+void* start(void* a)
+{
+    while(1);
+}
 
 int main(int argc, char *argv[])
 {
@@ -12,37 +17,6 @@ int main(int argc, char *argv[])
 
     SFPrintf("App2 started\n");
 
-    DIR *folder;
-
-    folder = opendir("/");
-    if(folder == NULL)
-    {
-        SFPrintf("Unable to read directory\n");
-        return(1);
-    }
-    else
-    {
-        SFPrintf("Directory is opened!\n");
-        struct dirent *entry;
-        int files = 0;
-        while( (entry=readdir(folder)) )
-        {
-            files++;
-            SFPrintf("File %3d: %s\n",
-                    files,
-                    entry->d_name
-                );
-            if(files>10)
-            {
-                break;
-            }
-        }
-        SFPrintf("found %i files\n", files);
-        closedir(folder);
-    }
-    
-
-
-    return 1;
+    return 0;
 }
 
