@@ -37,7 +37,6 @@ typedef enum
 {
     SofaDebugCode_ListProcesses,
     SofaDebugCode_ListServices,
-    SofaDebugCode_ListDevices,
     SofaDebugCode_DumpSched,
 }SofaDebugCode;
 
