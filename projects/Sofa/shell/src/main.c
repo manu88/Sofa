@@ -12,6 +12,7 @@
 #include "runtime.h"
 #include "files.h"
 #include "net.h"
+#include <dk.h>
 
 extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
@@ -114,27 +115,25 @@ static int doLs(const char* path)
         Printf("%s\n", entry->d_name);
     }
     closedir(folder);
-#if 0
-        if(vfsCap == 0)
-        {
-            Printf("[shell] VFS client not registered (no cap)\n");
-        }
-        if(vfsBuf == NULL)
-        {
-            Printf("[shell] VFS client not registered(no buff)\n");
-        }
+}
 
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-        seL4_SetMR(0, VFSRequest_ListDir);
-        strcpy(vfsBuf, path);
-        vfsBuf[strlen(path)] = 0;
-        seL4_Call(vfsCap, info);
-        if(seL4_GetMR(1) != 0)
+static int doDK(const char* cmds)
+{
+    if(strcmp(cmds, "list") == 0)
+    {
+        Printf("DeviceKit list\n");
+        int ret = DKClientInit();
+        if(ret == 0)
         {
-            Printf("got ls response %lX\n", seL4_GetMR(1));
+            DKClientEnum();
         }
-
-#endif
+        else
+        {
+            Printf("DKClientInit error %i\n", ret);
+        }
+        
+    }
+    return 0;
 }
 
 void processCommand(const char* cmd)
@@ -170,6 +169,11 @@ void processCommand(const char* cmd)
         pid_t pidToKill = atol(strPid);
         Printf("Kill pid %i\n", pidToKill);
         SFKill(pidToKill, SIGKILL);
+    }
+    else if(startsWith("dk", cmd))
+    {
+        const char* cmds = cmd + strlen("dk ");
+        doDK(cmds);
     }
     else if(startsWith("services", cmd))
     {
