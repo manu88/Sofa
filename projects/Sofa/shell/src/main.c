@@ -71,7 +71,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     Printf("Sofa shell\n");
-    Printf("Available commands are: exit help ps kill spawn sleep cat poweroff\n");
+    Printf("Available commands are: exit help ps kill spawn sleep cat poweroff services dk open close read write\n");
 }
 
 static void doExit(int code)
@@ -134,6 +134,53 @@ static int doDK(const char* cmds)
         
     }
     return 0;
+}
+
+static int doCat(const char* path)
+{
+    if(strlen(path) == 0)
+    {
+        Printf("cat usage: cat file\n");
+        return -EINVAL;
+    }
+    int handle = VFSOpen(path, O_RDONLY);
+    if(handle <0)
+    {
+        Printf("open error %i\n", handle);
+        return handle;
+    }
+    uint8_t done = 0;
+    while (done == 0)
+    {
+        char buf[256];
+        
+        ssize_t ret = VFSRead(handle, buf, 256);
+        if(ret > 0)
+        {
+            //buf[ret] = 0;
+            for(int i=0;i<ret;i++)
+            {
+                Printf("%c", isprint(buf[i])?buf[i]:isspace(buf[i])?buf[i]:'#');
+            }
+            Printf("\n");
+        }
+        else if(ret == -1) // EOF
+        {
+            done = 1;
+        }
+        else
+        {
+            Printf("Read error %li\n", ret);
+            done = 1;
+        }
+
+    }
+    Printf("\n");
+    
+
+    VFSClose(handle);
+    return 0;
+
 }
 
 void processCommand(const char* cmd)
@@ -203,49 +250,14 @@ void processCommand(const char* cmd)
     else if(startsWith("cat", cmd))
     {
         const char *path = cmd + strlen("cat ");
-        if(strlen(path) == 0)
-        {
-            Printf("cat usage: cat file\n");
-            return;
-        }
-
-        int handle = VFSOpen(path, O_RDONLY);
-        if(handle <0)
-        {
-            Printf("open error %i\n", handle);
-            return;
-        }
-        uint8_t done = 0;
-        while (done == 0)
-        {
-            char buf[256];
-            
-            ssize_t ret = VFSRead(handle, buf, 256);
-            if(ret > 0)
-            {
-                //buf[ret] = 0;
-                for(int i=0;i<ret;i++)
-                {
-                    Printf("%c", isprint(buf[i])?buf[i]:isspace(buf[i])?buf[i]:'#');
-                }
-                Printf("\n");
-            }
-            else if(ret == -1) // EOF
-            {
-                done = 1;
-            }
-            else
-            {
-                Printf("Read error %li\n", ret);
-                done = 1;
-            }
-
-        }
-        Printf("\n");
-        
-
-        VFSClose(handle);
+        doCat(path);
     }
+    else if(startsWith("dog", cmd))
+    {
+        const char *path = cmd + strlen("dog ");
+        doCat(path);
+    }
+
     else if(startsWith("sendto", cmd))
     {
         const char *strArg = cmd + strlen("sendto ");
