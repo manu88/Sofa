@@ -35,6 +35,7 @@ Because we use `musl`, the current goal is to be as much as possible POSIX compl
 ## Services
 * VFS
 * net (udp only)
+* DeviceKit
 
 ## Build
 You should have all the tools and external deps required to build seL4 (some info [here](https://docs.sel4.systems/projects/buildsystem/host-dependencies.html)).
