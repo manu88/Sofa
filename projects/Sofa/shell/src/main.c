@@ -12,6 +12,7 @@
 #include "runtime.h"
 #include "files.h"
 #include "net.h"
+#include <dk.h>
 
 extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
@@ -70,7 +71,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     Printf("Sofa shell\n");
-    Printf("Available commands are: exit help ps kill spawn sleep cat poweroff\n");
+    Printf("Available commands are: exit help ps kill spawn sleep cat poweroff services dk open close read write\n");
 }
 
 static void doExit(int code)
@@ -114,27 +115,72 @@ static int doLs(const char* path)
         Printf("%s\n", entry->d_name);
     }
     closedir(folder);
-#if 0
-        if(vfsCap == 0)
+}
+
+static int doDK(const char* cmds)
+{
+    if(strcmp(cmds, "list") == 0)
+    {
+        Printf("DeviceKit list\n");
+        int ret = DKClientInit();
+        if(ret == 0)
         {
-            Printf("[shell] VFS client not registered (no cap)\n");
+            DKClientEnum();
         }
-        if(vfsBuf == NULL)
+        else
         {
-            Printf("[shell] VFS client not registered(no buff)\n");
+            Printf("DKClientInit error %i\n", ret);
+        }
+        
+    }
+    return 0;
+}
+
+static int doCat(const char* path)
+{
+    if(strlen(path) == 0)
+    {
+        Printf("cat usage: cat file\n");
+        return -EINVAL;
+    }
+    int handle = VFSOpen(path, O_RDONLY);
+    if(handle <0)
+    {
+        Printf("open error %i\n", handle);
+        return handle;
+    }
+    uint8_t done = 0;
+    while (done == 0)
+    {
+        char buf[256];
+        
+        ssize_t ret = VFSRead(handle, buf, 256);
+        if(ret > 0)
+        {
+            //buf[ret] = 0;
+            for(int i=0;i<ret;i++)
+            {
+                Printf("%c", isprint(buf[i])?buf[i]:isspace(buf[i])?buf[i]:'#');
+            }
+            Printf("\n");
+        }
+        else if(ret == -1) // EOF
+        {
+            done = 1;
+        }
+        else
+        {
+            Printf("Read error %li\n", ret);
+            done = 1;
         }
 
-        seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-        seL4_SetMR(0, VFSRequest_ListDir);
-        strcpy(vfsBuf, path);
-        vfsBuf[strlen(path)] = 0;
-        seL4_Call(vfsCap, info);
-        if(seL4_GetMR(1) != 0)
-        {
-            Printf("got ls response %lX\n", seL4_GetMR(1));
-        }
+    }
+    Printf("\n");
+    
 
-#endif
+    VFSClose(handle);
+    return 0;
+
 }
 
 void processCommand(const char* cmd)
@@ -171,6 +217,11 @@ void processCommand(const char* cmd)
         Printf("Kill pid %i\n", pidToKill);
         SFKill(pidToKill, SIGKILL);
     }
+    else if(startsWith("dk", cmd))
+    {
+        const char* cmds = cmd + strlen("dk ");
+        doDK(cmds);
+    }
     else if(startsWith("services", cmd))
     {
         SFDebug(SofaDebugCode_ListServices);
@@ -199,49 +250,14 @@ void processCommand(const char* cmd)
     else if(startsWith("cat", cmd))
     {
         const char *path = cmd + strlen("cat ");
-        if(strlen(path) == 0)
-        {
-            Printf("cat usage: cat file\n");
-            return;
-        }
-
-        int handle = VFSOpen(path, O_RDONLY);
-        if(handle <0)
-        {
-            Printf("open error %i\n", handle);
-            return;
-        }
-        uint8_t done = 0;
-        while (done == 0)
-        {
-            char buf[256];
-            
-            ssize_t ret = VFSRead(handle, buf, 256);
-            if(ret > 0)
-            {
-                //buf[ret] = 0;
-                for(int i=0;i<ret;i++)
-                {
-                    Printf("%c", isprint(buf[i])?buf[i]:isspace(buf[i])?buf[i]:'#');
-                }
-                Printf("\n");
-            }
-            else if(ret == -1) // EOF
-            {
-                done = 1;
-            }
-            else
-            {
-                Printf("Read error %li\n", ret);
-                done = 1;
-            }
-
-        }
-        Printf("\n");
-        
-
-        VFSClose(handle);
+        doCat(path);
     }
+    else if(startsWith("dog", cmd))
+    {
+        const char *path = cmd + strlen("dog ");
+        doCat(path);
+    }
+
     else if(startsWith("sendto", cmd))
     {
         const char *strArg = cmd + strlen("sendto ");
@@ -456,10 +472,6 @@ void processCommand(const char* cmd)
     else if(startsWith("dump", cmd))
     {
         SFDebug(SofaDebugCode_DumpSched);
-    }
-    else if(startsWith("dev", cmd))
-    {
-        SFDebug(SofaDebugCode_ListDevices);
     }
     else
     {
