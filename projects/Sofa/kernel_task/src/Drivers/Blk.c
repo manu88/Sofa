@@ -485,7 +485,7 @@ static int virtio_check_capabilities(uint32_t *device, uint32_t *request, struct
 	}
 }
 
-int BlkInit(uint32_t iobase, KThread* thread)
+int BlkInit(uint32_t iobase)
 {
     KLOG_INFO("==> Init Blk virtio storage\n");
     KernelTaskContext* env = getKernelTaskContext();

@@ -6,6 +6,7 @@
 
 int DeviceTreeInit(void);
 
+int DeviceTreeX86Start(void);
 
 IODevice* DeviceTreeGetDevices(void);
 

@@ -167,12 +167,14 @@ void *main_continued(void *arg UNUSED)
     }
 
     env->_sysState = SystemState_Running;
-    
+// Base system init    
     error = NameServerInit();
     assert(error == 0);
 
     error = IOInit();
     assert(error == 0);
+
+// base services init
 
     error = VFSInit();
     assert(error == 0);
@@ -181,13 +183,14 @@ void *main_continued(void *arg UNUSED)
     error = NetServiceInit();
     assert(error == 0);
 
-
+// device related things
     error = DeviceTreeInit();
     assert(error == 0);
 
     KLOG_INFO("Starting DeviceKit Service\n");
     error = DKServiceInit();
     assert(error == 0);
+
 
     error = SerialInit();
     assert(error == 0);
@@ -206,6 +209,7 @@ void *main_continued(void *arg UNUSED)
     error = DKServiceStart();
     assert(error == 0);
 
+// 'user-space' bootstrap
     VFSMount(getFakeFS(), "/fake", &error);
     VFSMount(getCpioFS(), "/cpio", &error);
     VFSMount(getCpioFS(), "/lib", &error);    
