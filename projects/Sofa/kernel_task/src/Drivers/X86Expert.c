@@ -3,6 +3,7 @@
 #include "Environ.h"
 #include "Blk.h"
 #include "DeviceTree.h"
+#include "IONode.h"
 #include <pci/pci.h>
 #include <platsupport/plat/acpi/acpi.h>
 #include <platsupport/plat/acpi/tables/madt.h>
@@ -116,82 +117,10 @@ typedef struct
 
 
     IONode* currentNode;
+
+    char const* currentName;
 } DeviceTreeContext;
 
-
-IONode* getNode(DeviceTreeContext* ctx, const char* name)
-{
-    printf("getNode for name '%s'\n", name);
-    if(strcmp(name, "\\") == 0)
-    {
-        if(ctx->currentNode == NULL)
-        {
-            ctx->currentNode = ctx->rootNode;
-        }
-        return ctx->rootNode;
-    }
-    if(name[0] == '\\')
-    {
-        // start from beginning
-        printf("Get node starts from beginning\n");
-        name += 1;
-    }
-    else
-    {
-        if(strchr(name, '.') != NULL)
-        {
-            printf("'%s' needs to be walked\n", name);
-            char *ptr = strtok(name, ".");
-
-            IONode* nextNode = ctx->currentNode;
-            while(ptr != NULL)
-            {
-                //printf("'%s'\n", ptr);
-                IONode* nNext = IONodeGetChildren(nextNode, ptr); 
-                if(nNext)
-                {
-                    nextNode = nNext; 
-                }
-                else
-                {
-                    printf("'%s' not found\n", ptr);
-                    nNext = malloc(sizeof(IONode));
-                    assert(nNext);
-                    IONodeInit(nNext, strdup(ptr));
-                    IONodeAddChild(nextNode, nNext);
-                    nextNode = nNext;
-                }
-                
-                ptr = strtok(NULL, ".");
-            }
-            printf("End of Walk\n");
-            return nextNode;
-        }
-        else
-        {
-            IONode* n = IONodeGetChildren(ctx->currentNode, name);
-            if(n)
-            {
-                return n;
-            }
-        }
-    }
-      
-    printf("Node '%s' not found, create in '%s'\n", name, ctx->currentNode->name);
-// Node is NULL, create it
-
-    IONode* newNode = malloc(sizeof(IONode));
-    assert(newNode);
-    memset(newNode, 0, sizeof(IONode));
-    newNode->name = strdup(name);
-    printf("Created node '%s'\n", name);
-
-    IONodeAddChild(ctx->currentNode, newNode);
-
-    //ctx->currentNode = newNode;
-
-    return newNode;
-}
 
 static void debugScope(DeviceTreeContext* ctx)
 {
@@ -234,36 +163,8 @@ static int _startScope(AMLDecompiler* decomp,const ParserContext* context, const
     assert(deviceContext);
 
     char* scopeName = AMLNameConstructNormalized(&scope->name);
-    //printf("start scope '%s' level %i\n\n", scopeName, deviceContext->scopeLevel);
-#if 0
-    if(AMLNameHasPrefixRoot(&scope->name))
-    {
-        printf("New scope ROOT '%s'\n", scopeName);
-    }
-    else
-    {   
-        printf("New scope (%i)", deviceContext->scopeLevel);
-        char *completePath = strdup("\\");
-        size_t acc = strlen(completePath);
-        for(int i=0;i<deviceContext->scopeLevel;i++)
-        {
 
-            acc += strlen(deviceContext->scopes[i]) + 1;
-
-            completePath = realloc(completePath,acc);
-
-
-            strcat(completePath, deviceContext->scopes[i]);
-            strcat(completePath, ".");
-        }
-        completePath = realloc(completePath,acc + strlen(scopeName));
-        strcat(completePath, scopeName);
-        printf("'%s' (orig '%s')\n", completePath, scopeName);
-    }
-#endif
     pushScope(deviceContext, scopeName);
-
-    //IONode* node = getNode(deviceContext, scopeName);
 
 
     return 0;
@@ -293,37 +194,42 @@ static int _startDevice(AMLDecompiler* decomp,const ParserContext* context, cons
     DeviceTreeContext* deviceContext = decomp->userData;
     assert(deviceContext);
 
+    if(deviceContext->currentNode != NULL)
+    {
+        char* n = AMLNameConstructNormalized(&dev->name);
+        printf("StartDevice Warning: currentNode should be NULL for '%s'\n", n);
+        printf("Instead is '%s'\n", deviceContext->currentNode->name);
+        debugScope(deviceContext);        
+    }
+//    assert(deviceContext->currentNode == NULL);
 
     //printf("'%s'\n", realName);
+    IONode*n = deviceContext->rootNode;
 
     if(AMLNameHasPrefixRoot(&dev->name))
     {
-        printf("\t-->Start root device: ");
         assert(deviceContext->rootNode);
-        IONode*n = deviceContext->rootNode;
 
         for(uint8_t i=0;i<AMLNameCountSegments(&dev->name);i++)
         {
             char name[5] = "";
             AMLNameGetSegment(&dev->name, i, name);
-//            printf("%s.", name);
             IONode* c = IONodeGetChildren(n, name);
             if(c == NULL)
             {
                 c = malloc(sizeof(IONode));
+                
+                assert(strchr(name, ".") == NULL);
                 IONodeInit(c, strdup(name));
                 IONodeAddChild(n, c);
             }
             n = c;
 
         }
-//        printf("\n");
     }
     else 
     {
-//        printf("\t-->Start non root device:\n");
         assert(deviceContext->rootNode);
-        IONode*n = deviceContext->rootNode;
 
         for(int i=0;i<deviceContext->scopeLevel;i++)
         {
@@ -344,6 +250,8 @@ static int _startDevice(AMLDecompiler* decomp,const ParserContext* context, cons
                     if(c == NULL)
                     {
                         c = malloc(sizeof(IONode));
+                        assert(strchr(ptr, ".") == NULL);
+
                         IONodeInit(c, strdup(ptr));
                         IONodeAddChild(n, c);
                     }
@@ -359,56 +267,115 @@ static int _startDevice(AMLDecompiler* decomp,const ParserContext* context, cons
                 if(c == NULL)
                 {
                     c = malloc(sizeof(IONode));
+                    assert(strchr(name, ".") == NULL);
                     IONodeInit(c, strdup(name));
                     IONodeAddChild(n, c);
                 }
                 n = c;
-            }    
-
+            }
         }
-
         char* realName  = AMLNameConstructNormalized(&dev->name);
+
         if(IONodeGetChildren(n, realName) == NULL)
         {
             IONode* c = malloc(sizeof(IONode));
+            assert(strchr(realName, ".") == NULL);
+
             IONodeInit(c, realName);
             IONodeAddChild(n, c);
+            n = c;
         }
         else
         {
             free(realName);
         }
         
-        
 
     }
+    n->isDevice = 1;
+    deviceContext->currentNode = n;
     
+    assert(deviceContext->currentNode);
 
     return 0;
 }
 
 static int _endDevice(AMLDecompiler* decomp,const ParserContext* context, const ACPIDevice* dev)
 {
-    return 0;
-    char* realName  = AMLNameConstructNormalized(&dev->name);
-    printf("\tEnd device '%s'\n", realName);
-    free(realName);
+    DeviceTreeContext* deviceContext = decomp->userData;
+    assert(deviceContext);
+
+
+    if(deviceContext->currentNode == NULL)
+    {
+        char* n = AMLNameConstructNormalized(&dev->name);
+        printf("StartDevice Warning: currentNode should NOT be NULL for '%s'\n", n);
+        debugScope(deviceContext);        
+    }
+    else if(strcmp(deviceContext->currentNode->name, "COM1") == 0)
+    {
+        printf("-----> ENDING COM1\n");
+    }
+
+
+//    assert(deviceContext->currentNode);
+    deviceContext->currentNode = NULL;
     return 0;
 }
 
 static int _startName(AMLDecompiler* decomp,const ParserContext* context, const char* name)
 {
+    DeviceTreeContext* deviceContext = decomp->userData;
+    assert(deviceContext);
+    if(deviceContext->currentNode)
+    {
+        deviceContext->currentName = name;
+    }
+
 //    printf("\tStart Name '%s'\n", name);
     return 0;
 }
 static int _onString(AMLDecompiler* decomp,const ParserContext* context, const char* string)
 {
-//    printf("\t\t String '%s'\n", string);
+    DeviceTreeContext* deviceContext = decomp->userData;
+    assert(deviceContext);
+
+    if(deviceContext->currentNode && deviceContext->currentName)
+    {
+
+        if (strcmp("_HID", deviceContext->currentName) == 0)
+        {
+            deviceContext->currentNode->hid.type = IOVariantType_STRING;
+            deviceContext->currentNode->hid.value.s = string;
+            // = IOValueString(string);
+        }
+    }
+/*
+    if(strcmp(string, "QEMU0002") == 0)
+    {
+        printf("Got QEMU0002 for name '%s' '%s'\n",deviceContext->currentNode->name, deviceContext->currentName);
+    }
+*/
+    //printf("\t\t String '%s'\n", string);
     return 0;
 }
 
 static int _onValue(AMLDecompiler* decomp,const ParserContext* context, uint64_t value)
 {
+    DeviceTreeContext* deviceContext = decomp->userData;
+    assert(deviceContext);
+
+    if(deviceContext->currentNode && deviceContext->currentName)
+    {
+//        printf("Got value %X for name '%s' in device '%s'\n", value, deviceContext->currentName, deviceContext->currentNode->name);
+        if (strcmp("_HID", deviceContext->currentName) == 0)
+        {
+            //deviceContext->currentNode->hid = IOValueUINT64(value);
+            deviceContext->currentNode->hid.type = IOVariantType_UINT64;
+            deviceContext->currentNode->hid.value.v = value;
+        }
+    }
+    deviceContext->currentName = NULL;
     return 0;
     if(isEisaId(value))
     {
@@ -529,15 +496,30 @@ static void walkDev(IONode* n, int indent)
         {
             printf("\t");
         }
-        printf("'%s'\n", c->name);
+        printf("'%s' ", c->name);
+        printf("HID=");
 
-        size_t count = 0;
-        IONode* tmp = NULL;
-        LL_COUNT(c->children, tmp, count);
-        if(count)
+        if(c->hid.type == IOVariantType_UINT64)
         {
-            walkDev(c, indent+1);
+            if(isEisaId(c->hid.value.v))
+            {
+                char str[8] = "";
+                getEisaidString(c->hid.value.v, str);
+                printf("%s", str);
+            }
+            else
+            {
+                printf("0X%lX", c->hid.value.v);
+            }
         }
+        else if(c->hid.type == IOVariantType_STRING)
+        {
+            printf("%s", c->hid.value.s);
+        }
+        printf("\n");
+
+
+        walkDev(c, indent+1);
     }
 }
 
