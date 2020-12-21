@@ -3,6 +3,7 @@
 #include <sys/uio.h> // iovec
 #include <sys/types.h>
 #include <files.h>
+#include <net.h>
 #include <errno.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -16,7 +17,7 @@ static long sf_close(va_list ap)
 {
     int fd = va_arg(ap, int);
 
-    return VFSClose(fd);
+    return VFSClientClose(fd);
 }
 
 static long sf_write(va_list ap)
@@ -25,7 +26,30 @@ static long sf_write(va_list ap)
     const void *buf = va_arg(ap, void *);
     size_t bufSize = va_arg(ap, size_t);
 
-    return VFSWrite(fd, buf, bufSize);
+    return VFSClientWrite(fd, buf, bufSize);
+}
+
+static long sf_readv(va_list ap)
+{
+    int fd = va_arg(ap, int);
+    const struct iovec *iov = va_arg(ap, struct iovec *);
+    int iovcnt = va_arg(ap, int);
+    long acc = 0;
+    for(int i=0;i<iovcnt;i++)
+    {
+        struct iovec * v = iov + i;
+        if(v->iov_len)
+        {
+            long r = VFSClientRead(fd, v->iov_base, v->iov_len);
+            if(r<=0)
+            {
+                return r;
+            }
+            acc += r;
+        }
+    }
+
+    return acc;
 }
 static long sf_read(va_list ap)
 {
@@ -33,14 +57,14 @@ static long sf_read(va_list ap)
     char *buf = va_arg(ap, char *);
     int bufSize = va_arg(ap, int);
 
-    return VFSRead(fd, buf, bufSize);
+    return VFSClientRead(fd, buf, bufSize);
 }
 static long sf_open(va_list ap)
 {
     const char *pathname = va_arg(ap, const char *);
     int flags = va_arg(ap, int);
     mode_t mode = va_arg(ap, mode_t);
-    return VFSOpen(pathname, flags);
+    return VFSClientOpen(pathname, flags);
 //    return 0;
 }
 
@@ -53,7 +77,7 @@ static long sf_getdents64(va_list ap)
     struct dirent *dirp = va_arg(ap, struct dirent *);
     unsigned int count = va_arg(ap, unsigned int);
 
-    return VFSRead(fd, dirp, count);
+    return VFSClientRead(fd, dirp, count);
     if(numSent >= c)
     {
         return 0;
@@ -77,13 +101,51 @@ static long sf_getdents64(va_list ap)
     }
     numSent += numOfDirents;
     return acc;
-
-
-    return 0;
     //On success, the number of bytes read is returned.
     //On end of directory, 0 is returned. On error, -1 is returned, 
     //and errno is set appropriately. 
 }
+
+static long sf_socket(va_list ap)
+{
+    int domain = va_arg(ap, int);
+    int type = va_arg(ap, int);
+    int protocol = va_arg(ap, int);
+
+    return NetClientSocket(domain, type, protocol);
+}
+
+static long sf_bind(va_list ap)
+{
+    int sockfd = va_arg(ap, int);
+    const struct sockaddr *addr = va_arg(ap, struct sockaddr *);
+    socklen_t addrlen = va_arg(ap, socklen_t);
+    return NetClientBind(sockfd, addr, addrlen);
+}
+
+static long sf_sendto(va_list ap)
+{
+    int sockfd = va_arg(ap, int);
+    const void *buf = va_arg(ap, void*);
+    size_t len = va_arg(ap, size_t);
+    int flags = va_arg(ap, int);
+    const struct sockaddr *dest_addr = va_arg(ap, struct sockaddr *);
+    socklen_t addrlen = va_arg(ap, socklen_t);
+    
+    return NetClientSendTo(sockfd, buf, len, flags, dest_addr, addrlen);
+}
+
+static long sf_recvfrom(va_list ap)
+{
+    int sockfd = va_arg(ap, int);
+    void *buf = va_arg(ap, void*);
+    size_t len = va_arg(ap, size_t);
+    int flags = va_arg(ap, int);
+    struct sockaddr *src_addr = va_arg(ap, struct sockaddr *);
+    socklen_t *addrlen = va_arg(ap, socklen_t *);
+    return NetClientRecvFrom(sockfd, buf, len, flags, src_addr, addrlen);
+}
+
 static long sf_munmap(va_list ap)
 {
     void *addr = va_arg(ap, void*);
@@ -118,7 +180,7 @@ static long sf_fcntl(va_list ap)
     {
         return 0;
     } 
-    SFPrintf("Not implemented: fcntl for fd=%i cmd=%u\n", fd, cmd);
+    SFPrintf("Not implemented: fcntl for fd=%i cmd=%X\n", fd, cmd);
     return -1;
 }
 static long sf_ioctl(va_list ap)
@@ -142,7 +204,7 @@ static long sf_writev(va_list ap)
     {
         char * base = (char *)iov[i].iov_base;
         SFPrintf("%s", base);
-        VFSWrite(fildes, iov[i].iov_base, iov[i].iov_len);
+        VFSClientWrite(fildes, iov[i].iov_base, iov[i].iov_len);
         ret += iov[i].iov_len;
         /*
         for (int j = 0; j < iov[i].iov_len; j++) 
@@ -167,6 +229,12 @@ long sofa_vsyscall(long sysnum, ...)
     long ret = -1;
     switch (sysnum)
     {
+    case __NR_getpid:
+        ret = SFGetPid();
+        break;
+    case __NR_getppid:
+        ret = SFGetPPid();
+        break;
     case __NR_open:
         ret =  sf_open(al);
         break;
@@ -178,6 +246,9 @@ long sofa_vsyscall(long sysnum, ...)
         break;
     case __NR_read:
         ret = sf_read(al);
+        break;
+    case __NR_readv:
+        ret = sf_readv(al);
         break;
     case __NR_writev:
         ret = sf_writev(al);
@@ -199,6 +270,18 @@ long sofa_vsyscall(long sysnum, ...)
         break;
     case __NR_getdents64:
         ret = sf_getdents64(al);
+        break;
+    case __NR_socket:
+        ret = sf_socket(al);
+        break;
+    case __NR_bind:
+        ret = sf_bind(al);
+        break;
+    case __NR_sendto:
+        ret = sf_sendto(al);
+        break;
+    case __NR_recvfrom:
+        ret = sf_recvfrom(al);
         break;
     default:
     SFPrintf("Unknown syscall %zi\n", sysnum);

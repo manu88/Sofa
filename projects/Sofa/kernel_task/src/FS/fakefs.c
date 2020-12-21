@@ -42,42 +42,17 @@ static const FakeFile const files[] =
 {
     {
         .name = "file1",
-        .content = "Hello this is the content of file1",
+        .content = "Hello this is the content of file1\n",
         .mode = O_RDONLY
     },
     {
         .name = "file2",
-        .content = "Hello this is the content of file2, wich is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2",
+        .content = "Hello this is the content of file2, which is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2\n",
         .mode = O_RDONLY
     },
     {
-        .name = "file3",
-        .content = "Hello this is the content of file1",
-        .mode = O_RDONLY
-    },
-    {
-        .name = "file4",
-        .content = "Hello this is the content of file2, wich is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2",
-        .mode = O_RDONLY
-    },
-    {
-        .name = "file5",
-        .content = "Hello this is the content of file1",
-        .mode = O_RDONLY
-    },
-    {
-        .name = "file6",
-        .content = "Hello this is the content of file2, wich is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2",
-        .mode = O_RDONLY
-    },
-    {
-        .name = "file7",
-        .content = "Hello this is the content of file1",
-        .mode = O_RDONLY
-    },
-    {
-        .name = "file8",
-        .content = "Hello this is the content of file2, wich is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2",
+        .name = "script",
+        .content = "ls /\nps\n",
         .mode = O_RDONLY
     },
     {
@@ -85,7 +60,7 @@ static const FakeFile const files[] =
         .mode = O_WRONLY
     },
 };
-#define NumFiles 9
+#define NumFiles 4
 
 VFSFileSystem* getFakeFS()
 {

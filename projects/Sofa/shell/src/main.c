@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <unistd.h>
 #include "runtime.h"
 #include "files.h"
 #include "net.h"
@@ -18,6 +19,8 @@ extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
 
 int fOut = -1;
+
+void processCommand(const char* cmd);
 
 static char *trim(char *str)
 {
@@ -71,12 +74,12 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     Printf("Sofa shell\n");
-    Printf("Available commands are: exit help ps kill spawn sleep cat poweroff services dk open close read write\n");
+    Printf("Available commands are: echo exit help ps sh kill spawn sleep cat poweroff services dk\n");
 }
 
 static void doExit(int code)
 {
-    VFSClose(fOut);
+    VFSClientClose(fOut);
     exit(code);
 }
 
@@ -154,7 +157,7 @@ static int doCat(const char* path)
         Printf("cat usage: cat file\n");
         return -EINVAL;
     }
-    int handle = VFSOpen(path, O_RDONLY);
+    int handle = open(path, O_RDONLY);
     if(handle <0)
     {
         Printf("open error %i\n", handle);
@@ -165,7 +168,7 @@ static int doCat(const char* path)
     {
         char buf[256];
         
-        ssize_t ret = VFSRead(handle, buf, 256);
+        ssize_t ret = read(handle, buf, 256);
         if(ret > 0)
         {
             //buf[ret] = 0;
@@ -173,7 +176,6 @@ static int doCat(const char* path)
             {
                 Printf("%c", isprint(buf[i])?buf[i]:isspace(buf[i])?buf[i]:'#');
             }
-            Printf("\n");
         }
         else if(ret == -1) // EOF
         {
@@ -186,12 +188,30 @@ static int doCat(const char* path)
         }
 
     }
-    Printf("\n");
     
-
-    VFSClose(handle);
+    close(handle);
     return 0;
+}
 
+static int doSh(const char* cmd)
+{
+    FILE * fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    fp = fopen(cmd, "r");
+    if (fp == NULL)
+    {
+        return -ENOENT;
+    }
+    while ((read = getline(&line, &len, fp)) != EOF) 
+    {
+        processCommand(trim(line));
+    }
+
+    fclose(fp);
+    return 0;
 }
 
 void processCommand(const char* cmd)
@@ -199,6 +219,16 @@ void processCommand(const char* cmd)
     if(startsWith("exit", cmd))
     {
         doExit(0);
+    }
+    else if(startsWith("echo", cmd))
+    {
+        const char* args = cmd + strlen("echo ");
+        Printf("%s\n", args);
+    }
+    else if(startsWith("sh", cmd))
+    {
+        const char* args = cmd + strlen("sh ");
+        doSh(args);
     }
     else if(startsWith("ps", cmd))
     {
@@ -214,7 +244,7 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("vfs", cmd))
     {
-        VFSDebug();
+        VFSClientDebug();
     }
     else if(startsWith("kill", cmd))
     {
@@ -268,110 +298,6 @@ void processCommand(const char* cmd)
         const char *path = cmd + strlen("dog ");
         doCat(path);
     }
-
-    else if(startsWith("sendto", cmd))
-    {
-        const char *strArg = cmd + strlen("sendto ");
-        int port = -1;
-        char addr[16]  = "";
-        char data[128] = "";
-        if(sscanf(strArg, "%s %i %s", addr, &port, data) != 3)
-        {
-            Printf("sendto usage: sendto host port data\n");
-            return;
-        }
-        Printf("send '%s' to '%s':%i\n", data, addr, port);
-
-        struct sockaddr_in server_address;
-	    memset(&server_address, 0, sizeof(server_address));
-	    server_address.sin_family = AF_INET;
-        inet_pton(AF_INET, addr, &server_address.sin_addr);
-        server_address.sin_port = htons(port);
-
-        int sock = NetSocket(PF_INET, SOCK_DGRAM, 0);
-        NetSendTo(sock, data, strlen(data), 0, (struct sockaddr*)&server_address, sizeof(server_address));
-        NetClose(sock);
-
-    }
-    else if(startsWith("close", cmd))
-    {
-        const char *strArg = cmd + strlen("close ");
-        if(strlen(strArg) == 0)
-        {
-            Printf("close usage: close file handle\n");
-            return;
-        }
-        int handle = atoi(strArg);
-        int ret = VFSClose(handle);
-        Printf("%i\n", ret);
-    }
-    else if(startsWith("seek", cmd))
-    {
-        const char *strArg = cmd + strlen("seek ");
-        int handle = -1;
-        int offset = -1;
-        if(sscanf(strArg, "%i %i", &handle, &offset) != 2)
-        {
-            Printf("seek usage: seek handle offset\n");
-            return;
-        }
-        int ret = VFSSeek(handle, offset);
-        Printf("%i\n", ret);
-    }
-    else if(startsWith("write", cmd))
-    {
-        const char *strArg = cmd + strlen("write ");
-        int handle = -1;
-        int size = -1;
-        if(sscanf(strArg, "%i %i", &handle, &size) != 2)
-        {
-            Printf("write usage: write file handle data\n");
-            return;
-        }
-        char data[] = "Hello this is some content";
-        int ret = VFSWrite(handle, data, strlen(data));
-        Printf("%i\n", ret);
-    }
-    else if(startsWith("read", cmd))
-    {
-        const char *strArg = cmd + strlen("read ");
-        int handle = -1;
-        int size = -1;
-        if(sscanf(strArg, "%i %i", &handle, &size) != 2)
-        {
-            Printf("read usage: read file handle\n");
-            return;
-        }
-        char buf[128];
-        ssize_t ret = VFSRead(handle, buf, size);
-        if(ret > 0)
-        {
-            Printf("%li :'%s'\n", ret, buf);
-        }
-        else if(ret == -1)
-        {
-            Printf("-- End of file --\n");
-        }
-        else
-        {
-            Printf("Read error %li\n", ret);
-        }
-        
-    }
-    else if(startsWith("open", cmd))
-    {
-        const char *args = cmd + strlen("open ");
-        int mode = -1;
-        char path[512] = "0";
-        if(sscanf(args, "%i %s", &mode, path) !=2)
-        {
-            Printf("usage open Mode path\n");
-            return;
-        }
-
-        int ret = VFSOpen(path, mode);
-        Printf("%i\n",ret);
-    }
     else if(startsWith("ls", cmd))
     {
         const char *path = cmd + strlen("ls ");
@@ -396,89 +322,19 @@ void processCommand(const char* cmd)
             Printf("wait returned pid %i status %i\n", ret, appStatus);
         }
     }
-    else if(startsWith("bind", cmd))
-    {
-        const char *strArgs = cmd + strlen("bind ");
-
-        int port = -1;
-        int handle = -1;
-
-        if(sscanf(strArgs, "%i %i", &handle, &port) != 2)
-        {
-            Printf("bind usage: handle port\n");
-            return;
-        }
-        // socket address used for the server
-	    struct sockaddr_in server_address;
-	    memset(&server_address, 0, sizeof(server_address));
-	    server_address.sin_family = AF_INET;
-
-        server_address.sin_port = htons(port);
-
-	    // htons: host to network long: same as htons but to long
-	    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
-
-
-        int h = NetBind(handle, (struct sockaddr *)&server_address, sizeof(server_address));
-        Printf("%i\n", h);
-
-    }
     else if(startsWith("sleep", cmd))
     {
         const char *strMS = cmd + strlen("sleep ");
         int ms = atol(strMS);
         SFSleep(ms);
     }
-    else if(startsWith("nclose", cmd))
-    {
-        const char *str = cmd + strlen("nclose ");
-        int handle = atol(str);
-
-        int ret = NetClose(handle);
-        Printf("%i\n", ret);
-    }
-    else if(startsWith("socket", cmd))
-    {
-        int r = NetSocket(PF_INET, SOCK_DGRAM, 0);
-        Printf("socket returned %i\n", r);
-    }
-    else if(startsWith("r", cmd))
-    {
-        const char *strArgs = cmd + strlen("r ");
-
-        int size = -1;
-        int handle = -1;
-
-        if(sscanf(strArgs, "%i %i", &handle, &size) != 2)
-        {
-            Printf("bind usage: handle port\n");
-            return;
-        }
-
-        char dats[128];
-        if(size > 128)
-        {
-            size = 128;
-        }
-
-        struct sockaddr_in client_address;
-	    int client_address_len = 0;
-
-        ssize_t rRead = NetRecvFrom(0, dats, size, 0, (struct sockaddr *)&client_address, &client_address_len);
-        Printf("NetRecvFrom returned %zi '%s'\n", rRead, dats);
-        if(rRead)
-        {
-            Printf("Received %zi msg from %s on port %i\n", rRead, inet_ntoa(client_address.sin_addr), client_address.sin_port );
-        }
-
-    }
     else if(startsWith("pid", cmd))
     {
-        Printf("PID=%i\n", SFGetPid());
+        Printf("PID=%i\n", getpid());
     }
     else if(startsWith("ppid", cmd))
     {
-        Printf("PPID=%i\n", SFGetPPid());
+        Printf("PPID=%i\n", getppid());
     }
     else if(startsWith("dump", cmd))
     {
@@ -498,9 +354,9 @@ int main(int argc, char *argv[])
     argv = &argv[2];
     VFSClientInit();
 
-    VFSOpen("/fake/file1", O_RDONLY); // 0
-    VFSOpen("/fake/cons", O_WRONLY);  // 1
-    VFSOpen("/fake/cons", O_WRONLY);  // 2
+    open("/fake/file1", O_RDONLY); // 0
+    open("/fake/cons", O_WRONLY);  // 1
+    open("/fake/cons", O_WRONLY);  // 2
 
     Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
 
@@ -509,7 +365,7 @@ int main(int argc, char *argv[])
         Printf("%i %s\n",i,argv[i]);
     }
 
-    NetInit();
+    NetClientInit();
 
     //int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
 
