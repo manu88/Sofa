@@ -29,7 +29,6 @@ static long sf_write(va_list ap)
     return VFSClientWrite(fd, buf, bufSize);
 }
 
-static int once = 0;
 static long sf_readv(va_list ap)
 {
     int fd = va_arg(ap, int);
@@ -102,9 +101,6 @@ static long sf_getdents64(va_list ap)
     }
     numSent += numOfDirents;
     return acc;
-
-
-    return 0;
     //On success, the number of bytes read is returned.
     //On end of directory, 0 is returned. On error, -1 is returned, 
     //and errno is set appropriately. 

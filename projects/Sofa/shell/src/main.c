@@ -74,7 +74,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     Printf("Sofa shell\n");
-    Printf("Available commands are: exit help ps kill spawn sleep cat poweroff services dk\n");
+    Printf("Available commands are: echo exit help ps sh kill spawn sleep cat poweroff services dk\n");
 }
 
 static void doExit(int code)
@@ -176,7 +176,6 @@ static int doCat(const char* path)
             {
                 Printf("%c", isprint(buf[i])?buf[i]:isspace(buf[i])?buf[i]:'#');
             }
-            Printf("\n");
         }
         else if(ret == -1) // EOF
         {
@@ -189,7 +188,6 @@ static int doCat(const char* path)
         }
 
     }
-    Printf("\n");
     
     close(handle);
     return 0;
@@ -205,11 +203,10 @@ static int doSh(const char* cmd)
     fp = fopen(cmd, "r");
     if (fp == NULL)
     {
-        exit(EXIT_FAILURE);
+        return -ENOENT;
     }
     while ((read = getline(&line, &len, fp)) != EOF) 
     {
-        SFPrintf(":>%s", line);
         processCommand(trim(line));
     }
 
@@ -222,6 +219,11 @@ void processCommand(const char* cmd)
     if(startsWith("exit", cmd))
     {
         doExit(0);
+    }
+    else if(startsWith("echo", cmd))
+    {
+        const char* args = cmd + strlen("echo ");
+        Printf("%s\n", args);
     }
     else if(startsWith("sh", cmd))
     {
