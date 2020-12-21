@@ -28,6 +28,30 @@ static long sf_write(va_list ap)
 
     return VFSClientWrite(fd, buf, bufSize);
 }
+
+static int once = 0;
+static long sf_readv(va_list ap)
+{
+    int fd = va_arg(ap, int);
+    const struct iovec *iov = va_arg(ap, struct iovec *);
+    int iovcnt = va_arg(ap, int);
+    long acc = 0;
+    for(int i=0;i<iovcnt;i++)
+    {
+        struct iovec * v = iov + i;
+        if(v->iov_len)
+        {
+            long r = VFSClientRead(fd, v->iov_base, v->iov_len);
+            if(r<=0)
+            {
+                return r;
+            }
+            acc += r;
+        }
+    }
+
+    return acc;
+}
 static long sf_read(va_list ap)
 {
     int fd = va_arg(ap, int);
@@ -160,7 +184,7 @@ static long sf_fcntl(va_list ap)
     {
         return 0;
     } 
-    SFPrintf("Not implemented: fcntl for fd=%i cmd=%u\n", fd, cmd);
+    SFPrintf("Not implemented: fcntl for fd=%i cmd=%X\n", fd, cmd);
     return -1;
 }
 static long sf_ioctl(va_list ap)
@@ -220,6 +244,9 @@ long sofa_vsyscall(long sysnum, ...)
         break;
     case __NR_read:
         ret = sf_read(al);
+        break;
+    case __NR_readv:
+        ret = sf_readv(al);
         break;
     case __NR_writev:
         ret = sf_writev(al);
