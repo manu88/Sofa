@@ -8,7 +8,7 @@
 #include "KThread.h"
 #include "DeviceTree.h"
 
-IODevice _netDevice = IODeviceInit("Virtio-net-pci", IODevice_Net, NULL);
+IODevice _netDevice = IODeviceNew("Virtio-net-pci", IODevice_Net, NULL);
 
 static KThread netThread;
 static NetworkDriver _driver = {0};

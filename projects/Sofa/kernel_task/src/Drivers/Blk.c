@@ -150,7 +150,7 @@ static IODeviceOperations blkOps =
 
 
 VirtioDevice dev;
-static IODevice _blk = IODeviceInit("virtio-blk-pci", IODevice_BlockDev, &blkOps);
+static IODevice _blk = IODeviceNew("virtio-blk-pci", IODevice_BlockDev, &blkOps);
 
 
 static void write_reg8(VirtioDevice *dev, uint16_t port, uint8_t val) 

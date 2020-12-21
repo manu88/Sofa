@@ -121,11 +121,22 @@ static int doDK(const char* cmds)
 {
     if(strcmp(cmds, "list") == 0)
     {
-        Printf("DeviceKit list\n");
         int ret = DKClientInit();
         if(ret == 0)
         {
-            DKClientEnum();
+            DKClientEnumDevices();
+        }
+        else
+        {
+            Printf("DKClientInit error %i\n", ret);
+        }
+    }
+    else if(strcmp(cmds, "tree") == 0)
+    {
+        int ret = DKClientInit();
+        if(ret == 0)
+        {
+            DKClientEnumTree();
         }
         else
         {
