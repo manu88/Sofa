@@ -324,7 +324,7 @@ void process_tear_down(Process* process)
         }
         if(elt->stack && elt->stackSize)
         {
-            printf("Remove Thread stack (size %zi)\n", elt->stackSize);
+            KLOG_INFO("Remove Thread stack (size %zi)\n", elt->stackSize);
             vspace_free_sized_stack(&process->native.vspace, elt->stack, elt->stackSize);
         }
         kfree(elt);

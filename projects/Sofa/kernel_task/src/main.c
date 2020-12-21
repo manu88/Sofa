@@ -61,20 +61,6 @@ static char kernelTaskName[] = "kernel_task";
 
 Process initProcess;
 
-static void DumpProcesses()
-{
-    Process* p = NULL;
-    printf("----- List process -----\n");
-    FOR_EACH_PROCESS(p)
-    {
-        printf("%i '%s' %i threads\n", ProcessGetPID(p), ProcessGetName(p), ProcessCountExtraThreads(p));
-    }
-    printf("------------------------\n");
-
-    seL4_DebugDumpScheduler();
-}
-
-
 static void process_messages()
 {
     KernelTaskContext* env = getKernelTaskContext();
@@ -111,14 +97,14 @@ static void process_messages()
         {
             Thread* sender = (Thread*) badge;
             Process* process = sender->_base.process;
-            printf("Got cap fault from '%s' %i\n", ProcessGetName(process), process->init->pid);
+            KLOG_ERROR("Got cap fault from '%s' %i\n", ProcessGetName(process), process->init->pid);
         }
         else if (label == seL4_VMFault)
         {
             const ThreadBase* base = (ThreadBase*) badge;
             if(base->kernTaskThread)
             {
-                printf("Fault in kernel_task thread\n");
+                KLOG_ERROR("Fault in kernel_task thread\n");
                 assert(0);
                 continue;
             }

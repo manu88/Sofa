@@ -56,10 +56,10 @@ static void walkDev(const IONode* n, int indent)
     {
         for(int i=0;i<indent;i++)
         {
-            printf("\t");
+            KLOG_DEBUG("\t");
         }
-        printf("'%s' ", c->name);
-        printf("HID=");
+        KLOG_DEBUG("'%s' ", c->name);
+        KLOG_DEBUG("HID=");
 
         if(c->hid.type == IOVariantType_UINT64)
         {
@@ -67,22 +67,22 @@ static void walkDev(const IONode* n, int indent)
             {
                 char str[8] = "";
                 getEisaidString(c->hid.value.v, str);
-                printf("%s", str);
+                KLOG_DEBUG("%s", str);
             }
             else
             {
-                printf("0X%lX", c->hid.value.v);
+                KLOG_DEBUG("0X%lX", c->hid.value.v);
             }
         }
         else if(c->hid.type == IOVariantType_STRING)
         {
-            printf("%s", c->hid.value.s);
+            KLOG_DEBUG("%s", c->hid.value.s);
         }
         if(c->driver)
         {
-            printf(" DRIVER ");
+            KLOG_DEBUG(" DRIVER ");
         }
-        printf("\n");
+        KLOG_DEBUG("\n");
 
         walkDev(c, indent+1);
     }

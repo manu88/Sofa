@@ -5,6 +5,7 @@
 #include <lwip/udp.h>
 #include "Environ.h"
 #include "Net.h"
+#include "Log.h"
 #include "KThread.h"
 #include "DeviceTree.h"
 
@@ -48,7 +49,7 @@ void NetInit(uint32_t iobase0)
     _driver.driver =  ethif_new_lwip_driver_no_malloc(env->ops, NULL, native_ethdriver_init, &cfg, &lwip_driver);
     if(_driver.driver == NULL)
     {
-        printf("ERROR unable to create lwip driver\n");
+        KLOG_INFO("ERROR unable to create lwip driver\n");
         return;
     }
 

@@ -1,21 +1,16 @@
 #include "X86Expert.h"
 #include "Log.h"
 #include "Environ.h"
-#include "Blk.h"
 #include "DeviceTree.h"
 #include "IONode.h"
 
-
 #include "PCI.h"
-#include <pci/pci.h>
 #include <platsupport/plat/acpi/acpi.h>
 #include <platsupport/plat/acpi/tables/madt.h>
 #include <AMLDecompiler.h>
 #include <EISAID.h>
 
-
-static void ACPITest(IONode* root);
-
+static void ACPIParse(IONode* root);
 
 int PlatformExpertInit()
 {
@@ -25,66 +20,16 @@ int PlatformExpertInit()
 
 int PlatformExpertConstructTree(IONode *root)
 {
-    ACPITest(root);
+    ACPIParse(root);
 
-    return 0;
-    char procname[13];
-
-    
-    int error = 0;
-    KernelTaskContext* env = getKernelTaskContext();
-    printf("#### PCI SCAN\n");
-    libpci_scan(env->ops.io_port_ops);
-    printf("#### PCI SCAN\n");
-
-    printf("Got %u pci devices\n", libpci_num_devices);
-
-//Storage virtio 
-    libpci_device_t *virtioBlkDev = libpci_find_device(0x1af4, 0x1001);
-    if(virtioBlkDev)
-    {
-        printf("Got Virtio Blk device '%s' from '%s' subsystem %i\n", virtioBlkDev->vendor_name, virtioBlkDev->device_name, virtioBlkDev->subsystem_id);
-
-        if(virtioBlkDev->subsystem_id == 2)
-        {
-            libpci_device_iocfg_t iocfg;
-            libpci_read_ioconfig(&iocfg, virtioBlkDev->bus, virtioBlkDev->dev, virtioBlkDev->fun);
-            libpci_device_iocfg_debug_print(&iocfg, false);
-            uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
-
-            BlkInit(iobase0);
-            //virtio_blk_init(iobase0);
-        }
-    }
-
-//NET virtio: vid 0x1af4 did 0x1000
-    libpci_device_t *virtioNetDev = libpci_find_device(0x1af4, 0x1000);
-
-    if(virtioNetDev)
-    {
-        printf("Got Virtio Net device '%s' from '%s' subsystem %i\n", virtioNetDev->vendor_name, virtioNetDev->device_name, virtioNetDev->subsystem_id);
-        if(virtioNetDev->subsystem_id == 1) // network card
-        {
-            libpci_device_iocfg_t iocfg;
-            libpci_read_ioconfig(&iocfg, virtioNetDev->bus, virtioNetDev->dev, virtioNetDev->fun);
-            libpci_device_iocfg_debug_print(&iocfg, false);
-            uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
-            printf("IOBASE0 is %X\n", iobase0);
-            NetInit(iobase0);
-        }
-        else
-        {
-            printf("Virtio device subsystem is %i\n", virtioNetDev->subsystem_id);
-        }
-    }
-
-    return 0;
-    
+    return 0;    
 }
 
 
 
 
+/***** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** */
+// ACPI Parser
 /***** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** **** */
 
 typedef struct
@@ -95,7 +40,6 @@ typedef struct
     char *scopes[64];
     int scopeLevel;
 
-
     IONode* currentNode;
 
     char const* currentName;
@@ -104,12 +48,12 @@ typedef struct
 
 static void debugScope(DeviceTreeContext* ctx)
 {
-    printf("-->\n");
+    KLOG_DEBUG("-->\n");
     for(int i=0;i<ctx->scopeLevel;i++)
     {
-        printf("%i '%s'\n", i, ctx->scopes[i]);
+        KLOG_DEBUG("%i '%s'\n", i, ctx->scopes[i]);
     }
-    printf("<--\n");
+    KLOG_DEBUG("<--\n");
 }
 
 static void pushScope(DeviceTreeContext* ctx, char* scope)
@@ -154,10 +98,6 @@ static int _endScope(AMLDecompiler* decomp,const ParserContext* context, const A
     DeviceTreeContext* deviceContext = decomp->userData;
     assert(deviceContext);
     assert(deviceContext->scopeLevel);
-
-    char* scopeName = AMLNameConstructNormalized(&scope->name);
-    //printf("end scope '%s' level %i\n", scopeName, deviceContext->scopeLevel);
-    free(scopeName);
     popScope(deviceContext);
     
     return 0;
@@ -177,13 +117,12 @@ static int _startDevice(AMLDecompiler* decomp,const ParserContext* context, cons
     if(deviceContext->currentNode != NULL)
     {
         char* n = AMLNameConstructNormalized(&dev->name);
-        printf("StartDevice Warning: currentNode should be NULL for '%s'\n", n);
-        printf("Instead is '%s'\n", deviceContext->currentNode->name);
+        KLOG_DEBUG("StartDevice Warning: currentNode should be NULL for '%s'\n", n);
+        KLOG_DEBUG("Instead is '%s'\n", deviceContext->currentNode->name);
         debugScope(deviceContext);        
     }
 //    assert(deviceContext->currentNode == NULL);
 
-    //printf("'%s'\n", realName);
     IONode*n = deviceContext->rootNode;
 
     if(AMLNameHasPrefixRoot(&dev->name))
@@ -260,7 +199,7 @@ static int _startDevice(AMLDecompiler* decomp,const ParserContext* context, cons
         {
             if(strchr(realName, '.') != NULL)
             {
-                printf("Not expecting '.' in '%s'\n", realName);
+                KLOG_DEBUG("Not expecting '.' in '%s'\n", realName);
             }
             assert(strchr(realName, '.') == NULL);
             IONode* c = malloc(sizeof(IONode));
@@ -290,7 +229,7 @@ static int _endDevice(AMLDecompiler* decomp,const ParserContext* context, const 
     if(deviceContext->currentNode == NULL)
     {
         char* n = AMLNameConstructNormalized(&dev->name);
-        printf("StartDevice Warning: currentNode should NOT be NULL for '%s'\n", n);
+        KLOG_DEBUG("StartDevice Warning: currentNode should NOT be NULL for '%s'\n", n);
         debugScope(deviceContext);        
     }
 
@@ -357,11 +296,11 @@ static int _onValue(AMLDecompiler* decomp,const ParserContext* context, uint64_t
     {
         char str[8] = "";
         getEisaidString(value, str);
-        printf("\t\tEISAID value = '%s'  (0X%lX)\n", str, value);
+        KLOG_DEBUG("\t\tEISAID value = '%s'  (0X%lX)\n", str, value);
     }
     else
     {
-        printf("\t\tvalue = 0X%lX\n", value);
+        KLOG_DEBUG("\t\tvalue = 0X%lX\n", value);
     }
     return 0;
 }
@@ -499,11 +438,9 @@ static void walkDev(IONode* n, int indent)
     }
 }
 
-
-static void ACPITest(IONode *root)
+static void ACPIParse(IONode *root)
 {
     KernelTaskContext* env = getKernelTaskContext();
-    // don't bother APCI scan for now
     ps_io_mapper_t io_mapper;
     int error =  sel4platsupport_new_io_mapper(env->vspace, env->vka, &io_mapper);
     assert(error == 0);

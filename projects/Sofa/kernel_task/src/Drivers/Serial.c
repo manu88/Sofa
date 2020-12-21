@@ -1,5 +1,6 @@
 #include "Serial.h"
 #include "Environ.h"
+#include "Log.h"
 #include <sel4platsupport/arch/io.h>
 #include <vka/capops.h>
 #include <utils/circular_buffer.h>
@@ -60,7 +61,7 @@ int SerialInit()
             break;
         }
     }
-    printf("COM DEV PRODUCES IRQ %i\n",irqNum);
+    KLOG_DEBUG("COM DEV PRODUCES IRQ %i\n",irqNum);
     return 0;
     // FIXME: can't get the serial IRQ to work on pc99 :( :(
 #if 0  

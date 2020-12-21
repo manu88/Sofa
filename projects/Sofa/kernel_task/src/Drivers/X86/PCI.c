@@ -4,6 +4,9 @@
 #include "DeviceTree.h"
 #include "Environ.h"
 #include <pci/pci.h>
+
+#include "Blk.h"
+#include "Net.h"
  
 
 typedef struct _PCIDriver
@@ -61,6 +64,28 @@ static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
                pciDev->device_id,
                pciDev->vendor_name,
                pciDev->device_name);
+
+    libpci_device_iocfg_t iocfg;
+    libpci_read_ioconfig(&iocfg, pciDev->bus, pciDev->dev, pciDev->fun);
+    uint32_t iobase0 =  libpci_device_iocfg_get_baseaddr32(&iocfg, 0);
+
+    //Storage virtio vid=0x1af4, pid=0x1001
+    if(pciDev->vendor_id == 0x1af4
+       && pciDev->device_id==0x1001
+       && pciDev->subsystem_id == 2)
+    {
+        KLOG_DEBUG("Got VIRTIO BLOCK DEVICE\n");
+        BlkInit(iobase0);
+    }
+    //NET virtio: vid 0x1af4 did 0x1000
+    else if(pciDev->vendor_id == 0x1af4
+            && pciDev->device_id==0x1000
+            && pciDev->subsystem_id == 1)
+    {
+        KLOG_DEBUG("Got VIRTIO NET DEVICE\n");
+        NetInit(iobase0);
+    }
+
 }
 
 static int _scanPCIBus(PCIDriver* driver)
