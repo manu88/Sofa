@@ -4,13 +4,13 @@
 #include <sys/socket.h>
 
 
-int NetInit(void);
+int NetClientInit(void);
 
-int NetSocket(int domain, int type, int protocol);
-int NetClose(int handle);
-int NetBind(int handle, const struct sockaddr *addr, socklen_t addrlen);
+int NetClientSocket(int domain, int type, int protocol);
+int NetClientClose(int handle);
+int NetClientBind(int handle, const struct sockaddr *addr, socklen_t addrlen);
 
-ssize_t NetRecvFrom(int handle, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
+ssize_t NetClientRecvFrom(int handle, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 
-ssize_t NetSendTo(int handle, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
+ssize_t NetClientSendTo(int handle, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
 

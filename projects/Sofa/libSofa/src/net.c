@@ -9,7 +9,7 @@
 seL4_CPtr netCap = 0;
 char* netBuf = NULL;
 
-int NetInit()
+int NetClientInit()
 {
     ssize_t capOrErr = SFGetService("NET");
 
@@ -27,7 +27,7 @@ int NetInit()
 }
 
 
-int NetClose(int handle)
+int NetClientClose(int handle)
 {
     if(netCap == 0)
     {
@@ -45,7 +45,7 @@ int NetClose(int handle)
     return seL4_GetMR(1);
 }
 
-int NetSocket(int domain, int type, int protocol)
+int NetClientSocket(int domain, int type, int protocol)
 {
     if(netCap == 0)
     {
@@ -72,7 +72,7 @@ int NetSocket(int domain, int type, int protocol)
     return handle;
 }
 
-int NetBind(int handle, const struct sockaddr *addr, socklen_t addrlen)
+int NetClientBind(int handle, const struct sockaddr *addr, socklen_t addrlen)
 {    
     if(netCap == 0)
     {
@@ -100,7 +100,7 @@ int NetBind(int handle, const struct sockaddr *addr, socklen_t addrlen)
 }
 
 
-ssize_t NetSendTo(int handle, const void *buf, size_t bufLen, int flags, const struct sockaddr *dest_addr, socklen_t addrlen)
+ssize_t NetClientSendTo(int handle, const void *buf, size_t bufLen, int flags, const struct sockaddr *dest_addr, socklen_t addrlen)
 {
     if(netCap == 0)
     {
@@ -131,7 +131,7 @@ ssize_t NetSendTo(int handle, const void *buf, size_t bufLen, int flags, const s
     return err;
 }
 
-ssize_t NetRecvFrom(int handle, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
+ssize_t NetClientRecvFrom(int handle, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
 {
     if(netCap == 0)
     {
@@ -166,5 +166,4 @@ ssize_t NetRecvFrom(int handle, void *buf, size_t len, int flags, struct sockadd
     }
 
     return -1;
-
 }

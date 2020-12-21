@@ -76,7 +76,7 @@ void cmdHelp()
 
 static void doExit(int code)
 {
-    VFSClose(fOut);
+    VFSClientClose(fOut);
     exit(code);
 }
 
@@ -154,7 +154,7 @@ static int doCat(const char* path)
         Printf("cat usage: cat file\n");
         return -EINVAL;
     }
-    int handle = VFSOpen(path, O_RDONLY);
+    int handle = VFSClientOpen(path, O_RDONLY);
     if(handle <0)
     {
         Printf("open error %i\n", handle);
@@ -165,7 +165,7 @@ static int doCat(const char* path)
     {
         char buf[256];
         
-        ssize_t ret = VFSRead(handle, buf, 256);
+        ssize_t ret = VFSClientRead(handle, buf, 256);
         if(ret > 0)
         {
             //buf[ret] = 0;
@@ -189,7 +189,7 @@ static int doCat(const char* path)
     Printf("\n");
     
 
-    VFSClose(handle);
+    VFSClientClose(handle);
     return 0;
 
 }
@@ -214,7 +214,7 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("vfs", cmd))
     {
-        VFSDebug();
+        VFSClientDebug();
     }
     else if(startsWith("kill", cmd))
     {
@@ -288,9 +288,9 @@ void processCommand(const char* cmd)
         inet_pton(AF_INET, addr, &server_address.sin_addr);
         server_address.sin_port = htons(port);
 
-        int sock = NetSocket(PF_INET, SOCK_DGRAM, 0);
-        NetSendTo(sock, data, strlen(data), 0, (struct sockaddr*)&server_address, sizeof(server_address));
-        NetClose(sock);
+        int sock = NetClientSocket(PF_INET, SOCK_DGRAM, 0);
+        NetClientSendTo(sock, data, strlen(data), 0, (struct sockaddr*)&server_address, sizeof(server_address));
+        NetClientClose(sock);
 
     }
     else if(startsWith("close", cmd))
@@ -302,7 +302,7 @@ void processCommand(const char* cmd)
             return;
         }
         int handle = atoi(strArg);
-        int ret = VFSClose(handle);
+        int ret = VFSClientClose(handle);
         Printf("%i\n", ret);
     }
     else if(startsWith("seek", cmd))
@@ -315,7 +315,7 @@ void processCommand(const char* cmd)
             Printf("seek usage: seek handle offset\n");
             return;
         }
-        int ret = VFSSeek(handle, offset);
+        int ret = VFSClientSeek(handle, offset);
         Printf("%i\n", ret);
     }
     else if(startsWith("write", cmd))
@@ -329,7 +329,7 @@ void processCommand(const char* cmd)
             return;
         }
         char data[] = "Hello this is some content";
-        int ret = VFSWrite(handle, data, strlen(data));
+        int ret = VFSClientWrite(handle, data, strlen(data));
         Printf("%i\n", ret);
     }
     else if(startsWith("read", cmd))
@@ -343,7 +343,7 @@ void processCommand(const char* cmd)
             return;
         }
         char buf[128];
-        ssize_t ret = VFSRead(handle, buf, size);
+        ssize_t ret = VFSClientRead(handle, buf, size);
         if(ret > 0)
         {
             Printf("%li :'%s'\n", ret, buf);
@@ -369,7 +369,7 @@ void processCommand(const char* cmd)
             return;
         }
 
-        int ret = VFSOpen(path, mode);
+        int ret = VFSClientOpen(path, mode);
         Printf("%i\n",ret);
     }
     else if(startsWith("ls", cmd))
@@ -419,7 +419,7 @@ void processCommand(const char* cmd)
 	    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
 
-        int h = NetBind(handle, (struct sockaddr *)&server_address, sizeof(server_address));
+        int h = NetClientBind(handle, (struct sockaddr *)&server_address, sizeof(server_address));
         Printf("%i\n", h);
 
     }
@@ -434,12 +434,12 @@ void processCommand(const char* cmd)
         const char *str = cmd + strlen("nclose ");
         int handle = atol(str);
 
-        int ret = NetClose(handle);
+        int ret = NetClientClose(handle);
         Printf("%i\n", ret);
     }
     else if(startsWith("socket", cmd))
     {
-        int r = NetSocket(PF_INET, SOCK_DGRAM, 0);
+        int r = NetClientSocket(PF_INET, SOCK_DGRAM, 0);
         Printf("socket returned %i\n", r);
     }
     else if(startsWith("r", cmd))
@@ -464,7 +464,7 @@ void processCommand(const char* cmd)
         struct sockaddr_in client_address;
 	    int client_address_len = 0;
 
-        ssize_t rRead = NetRecvFrom(0, dats, size, 0, (struct sockaddr *)&client_address, &client_address_len);
+        ssize_t rRead = NetClientRecvFrom(0, dats, size, 0, (struct sockaddr *)&client_address, &client_address_len);
         Printf("NetRecvFrom returned %zi '%s'\n", rRead, dats);
         if(rRead)
         {
@@ -498,9 +498,9 @@ int main(int argc, char *argv[])
     argv = &argv[2];
     VFSClientInit();
 
-    VFSOpen("/fake/file1", O_RDONLY); // 0
-    VFSOpen("/fake/cons", O_WRONLY);  // 1
-    VFSOpen("/fake/cons", O_WRONLY);  // 2
+    VFSClientOpen("/fake/file1", O_RDONLY); // 0
+    VFSClientOpen("/fake/cons", O_WRONLY);  // 1
+    VFSClientOpen("/fake/cons", O_WRONLY);  // 2
 
     Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
 
@@ -509,7 +509,7 @@ int main(int argc, char *argv[])
         Printf("%i %s\n",i,argv[i]);
     }
 
-    NetInit();
+    NetClientInit();
 
     //int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
 

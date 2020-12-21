@@ -25,7 +25,7 @@ int VFSClientInit()
     return -1;
 }
 
-void VFSDebug()
+void VFSClientDebug()
 {
     if(vfsCap == 0)
     {
@@ -41,7 +41,7 @@ void VFSDebug()
     seL4_Send(vfsCap, info);
 }
 
-int VFSOpen(const char* path, int mode)
+int VFSClientOpen(const char* path, int mode)
 {
     if(vfsCap == 0)
     {
@@ -67,7 +67,7 @@ int VFSOpen(const char* path, int mode)
     return handle;
 }
 
-int VFSClose(int handle)
+int VFSClientClose(int handle)
 {
     if(vfsCap == 0)
     {
@@ -87,7 +87,7 @@ int VFSClose(int handle)
     return -err;
 }
 
-int VFSSeek(int handle, size_t pos)
+int VFSClientSeek(int handle, size_t pos)
 {
     if(vfsCap == 0)
     {
@@ -113,7 +113,7 @@ int VFSSeek(int handle, size_t pos)
     return -err;
 }
 
-ssize_t VFSWrite(int handle, const char* data, size_t size)
+ssize_t VFSClientWrite(int handle, const char* data, size_t size)
 {
     if(vfsCap == 0)
     {
@@ -143,7 +143,7 @@ ssize_t VFSWrite(int handle, const char* data, size_t size)
     return -err; 
 }
 
-ssize_t VFSRead(int handle, char* data, size_t size)
+ssize_t VFSClientRead(int handle, char* data, size_t size)
 {
     if(vfsCap == 0)
     {

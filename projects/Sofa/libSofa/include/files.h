@@ -4,14 +4,14 @@
 
 int VFSClientInit(void);
 
-int VFSOpen(const char* path, int mode);
-int VFSClose(int handle);
+int VFSClientOpen(const char* path, int mode);
+int VFSClientClose(int handle);
 
-ssize_t VFSRead(int handle, char* data, size_t size);
-ssize_t VFSWrite(int handle, const char* data, size_t size);
+ssize_t VFSClientRead(int handle, char* data, size_t size);
+ssize_t VFSClientWrite(int handle, const char* data, size_t size);
 
-int VFSSeek(int handle, size_t pos);
+int VFSClientSeek(int handle, size_t pos);
 
-void VFSDebug(void);
+void VFSClientDebug(void);
 
 int Printf(const char *format, ...) __attribute__((format(printf,1,2)));
