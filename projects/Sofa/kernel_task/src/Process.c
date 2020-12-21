@@ -318,9 +318,7 @@ void process_tear_down(Process* process)
             if(elt->ipcBuffer_vaddr)
             {
                 vspace_unmap_pages(&process->native.vspace, elt->ipcBuffer_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
-            
             }
-
         }
         if(elt->stack && elt->stackSize)
         {
