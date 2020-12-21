@@ -61,20 +61,6 @@ static char kernelTaskName[] = "kernel_task";
 
 Process initProcess;
 
-static void DumpProcesses()
-{
-    Process* p = NULL;
-    printf("----- List process -----\n");
-    FOR_EACH_PROCESS(p)
-    {
-        printf("%i '%s' %i threads\n", ProcessGetPID(p), ProcessGetName(p), ProcessCountExtraThreads(p));
-    }
-    printf("------------------------\n");
-
-    seL4_DebugDumpScheduler();
-}
-
-
 static void process_messages()
 {
     KernelTaskContext* env = getKernelTaskContext();
@@ -111,14 +97,14 @@ static void process_messages()
         {
             Thread* sender = (Thread*) badge;
             Process* process = sender->_base.process;
-            printf("Got cap fault from '%s' %i\n", ProcessGetName(process), process->init->pid);
+            KLOG_ERROR("Got cap fault from '%s' %i\n", ProcessGetName(process), process->init->pid);
         }
         else if (label == seL4_VMFault)
         {
             const ThreadBase* base = (ThreadBase*) badge;
             if(base->kernTaskThread)
             {
-                printf("Fault in kernel_task thread\n");
+                KLOG_ERROR("Fault in kernel_task thread\n");
                 assert(0);
                 continue;
             }
@@ -167,12 +153,14 @@ void *main_continued(void *arg UNUSED)
     }
 
     env->_sysState = SystemState_Running;
-    
+// Base system init    
     error = NameServerInit();
     assert(error == 0);
 
     error = IOInit();
     assert(error == 0);
+
+// base services init
 
     error = VFSInit();
     assert(error == 0);
@@ -181,13 +169,14 @@ void *main_continued(void *arg UNUSED)
     error = NetServiceInit();
     assert(error == 0);
 
-
+// device related things
     error = DeviceTreeInit();
     assert(error == 0);
 
     KLOG_INFO("Starting DeviceKit Service\n");
     error = DKServiceInit();
     assert(error == 0);
+
 
     error = SerialInit();
     assert(error == 0);
@@ -206,6 +195,7 @@ void *main_continued(void *arg UNUSED)
     error = DKServiceStart();
     assert(error == 0);
 
+// 'user-space' bootstrap
     VFSMount(getFakeFS(), "/fake", &error);
     VFSMount(getCpioFS(), "/cpio", &error);
     VFSMount(getCpioFS(), "/lib", &error);    

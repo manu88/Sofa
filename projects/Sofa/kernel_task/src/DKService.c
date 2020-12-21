@@ -14,14 +14,13 @@ static KThread _dkThread;
 
 int DKServiceInit()
 {
-        int error = 0;
+    int error = 0;
     ServiceInit(&_dkService, getKernelTaskProcess() );
     _dkService.name = _dkName;
 
     ServiceCreateKernelTask(&_dkService);
     NameServerRegister(&_dkService);
     return 0;
-
 }
 
 static int mainDKService(KThread* thread, void *arg)
@@ -62,18 +61,22 @@ static int mainDKService(KThread* thread, void *arg)
             LL_APPEND(caller->clients, client);            
             seL4_SetMR(1, (seL4_Word) buffShared);
             seL4_Reply(msg);
-
         }
         else if(seL4_GetMR(0) == DKRequest_List)
         {
-            KLOG_DEBUG("DKService: Enum request\n");
+            KLOG_DEBUG("DKService: Dev Enum request\n");
             IODevice* dev = NULL;
             FOR_EACH_DEVICE(dev)
             {
                 KLOG_INFO("'%s' type %i\n", dev->name, dev->type);
             }
-
         }
+        else if(seL4_GetMR(0) == DKRequest_Tree)
+        {
+            KLOG_DEBUG("DKService: IONode tree request\n");
+            DeviceTreePrint(DeviceTreeGetRoot());
+        }
+
     }
     
 }

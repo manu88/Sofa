@@ -4,7 +4,7 @@
 #include "Process.h"
 #include "ProcessList.h"
 #include "NameServer.h"
-
+#include "DeviceTree.h"
 
 extern Process initProcess;
 
@@ -45,14 +45,14 @@ void doShutdown(void)
         seL4_Send(serv->kernTaskEp, info);
 
     }
+    KLOG_INFO("Send hardware shutdown\n");
 
-    KLOG_INFO("Did Send will stop msg to services\n");
-    ps_io_port_out(&ctx->ops.io_port_ops, 0x604, 2, 0x2000);
-    
+    DeviceTreeHardwarePoweroff();
 }
 
 
 
 void doReboot()
 {
+
 }

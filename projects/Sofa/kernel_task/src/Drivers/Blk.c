@@ -150,7 +150,7 @@ static IODeviceOperations blkOps =
 
 
 VirtioDevice dev;
-static IODevice _blk = IODeviceInit("virtio-blk-pci", IODevice_BlockDev, &blkOps);
+static IODevice _blk = IODeviceNew("virtio-blk-pci", IODevice_BlockDev, &blkOps);
 
 
 static void write_reg8(VirtioDevice *dev, uint16_t port, uint8_t val) 
@@ -232,7 +232,7 @@ static void blk_debug(VirtioDevice *dev)
 {
     for(int i=0;i<dev->queueSize;i++)
     {
-        printf("%i %i %c\n",i, dev->rx_ring.desc[i].len, i==dev->rdt?'*': ' ');
+        KLOG_DEBUG("%i %i %c\n",i, dev->rx_ring.desc[i].len, i==dev->rdt?'*': ' ');
     }
 }
 
@@ -277,8 +277,6 @@ static void* _blkCmd(VirtioDevice* dev, int op, size_t sector, char* buf, size_t
 
     unsigned int rdt_data = (dev->rdt + 1) % dev->queueSize;
     unsigned int rdt_footer = (dev->rdt + 2) % dev->queueSize;
-
-    //printf("Start CMD at %i, data %i footer %i\n", dev->rdt, rdt_data, rdt_footer);
 
     dev->rx_ring.desc[dev->rdt] = (struct vring_desc) {
         .addr = dev->hdr_phys,
@@ -330,7 +328,7 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
     virtio_blk_req *req = dev->headerReq;// .rx_ring.desc[desc1].addr;
     if(req->status != VIRTIO_BLK_S_OK)
     {
-        printf("Error status not OK %i\n", req->status);
+        KLOG_DEBUG("Error status not OK %i\n", req->status);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
@@ -341,7 +339,7 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
 
     if(!(dev->rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
     {
-        printf("desc1 (%i) is missing the Next desc flag!\n", desc1);
+        KLOG_DEBUG("desc1 (%i) is missing the Next desc flag!\n", desc1);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);
         return -1;
     }
@@ -349,8 +347,8 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
 
     if(!(dev->rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
     {
-        printf("desc2 (%i) is missing the Next desc flag!\n", desc2);
-        printf("Desc1 is %i\n", desc1);
+        KLOG_DEBUG("desc2 (%i) is missing the Next desc flag!\n", desc2);
+        KLOG_DEBUG("Desc1 is %i\n", desc1);
         blk_debug(dev);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
@@ -359,14 +357,14 @@ static ssize_t _blkReadSector(struct _IODevice* device, size_t sector, char* buf
     desc3 = dev->rx_ring.desc[desc2].next % dev->queueSize;
     if(dev->rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
     {
-        printf("desc2' (%i) size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", desc3, dev->rx_ring.desc[desc2].len);
+        KLOG_DEBUG("desc2' (%i) size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", desc3, dev->rx_ring.desc[desc2].len);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
 
     if(dev->rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
     {
-        printf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE but %i\n", dev->rx_ring.desc[desc3].len);
+        KLOG_DEBUG("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE but %i\n", dev->rx_ring.desc[desc3].len);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
@@ -423,7 +421,7 @@ static ssize_t _blkWrite(IODevice* device, size_t sector, const char* buf, size_
     virtio_blk_req *req = dev->headerReq;// .rx_ring.desc[desc1].addr;
     if(req->status != VIRTIO_BLK_S_OK)
     {
-        printf("Error status not OK %i\n", req->status);
+        KLOG_DEBUG("Error status not OK %i\n", req->status);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
@@ -433,7 +431,7 @@ static ssize_t _blkWrite(IODevice* device, size_t sector, const char* buf, size_
     uint32_t desc3 = 0;
     if(!(dev->rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
     {
-        printf("desc1 is missing the Next desc flag!\n");
+        KLOG_DEBUG("desc1 is missing the Next desc flag!\n");
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);
         return -1;
     }
@@ -441,7 +439,7 @@ static ssize_t _blkWrite(IODevice* device, size_t sector, const char* buf, size_
 
     if(!(dev->rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
     {
-        printf("desc2 is missing the Next desc flag!\n");
+        KLOG_DEBUG("desc2 is missing the Next desc flag!\n");
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
@@ -450,14 +448,14 @@ static ssize_t _blkWrite(IODevice* device, size_t sector, const char* buf, size_
 
     if(dev->rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
     {
-        printf("desc2' size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", dev->rx_ring.desc[desc2].len);
+        KLOG_DEBUG("desc2' size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", dev->rx_ring.desc[desc2].len);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
 
     if(dev->rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
     {
-        printf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE but %i\n", dev->rx_ring.desc[desc3].len);
+        KLOG_DEBUG("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE but %i\n", dev->rx_ring.desc[desc3].len);
         dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
         return -1;
     }
@@ -477,7 +475,7 @@ static int virtio_check_capabilities(uint32_t *device, uint32_t *request, struct
 			}
             else
             {
-				printf("virtio supports unsupported option %s (%s)\n",
+				KLOG_DEBUG("virtio supports unsupported option %s (%s)\n",
 						caps[i].name, caps[i].help);
 			}
 		}
@@ -485,7 +483,7 @@ static int virtio_check_capabilities(uint32_t *device, uint32_t *request, struct
 	}
 }
 
-int BlkInit(uint32_t iobase, KThread* thread)
+int BlkInit(uint32_t iobase)
 {
     KLOG_INFO("==> Init Blk virtio storage\n");
     KernelTaskContext* env = getKernelTaskContext();
@@ -520,19 +518,7 @@ int BlkInit(uint32_t iobase, KThread* thread)
             }
         }
 	}
-/*
-    if((feats >> 31) & 1U)
-    {
-        printf("FEATURES: more that 31 supported\n");
-    }
-    for (int i=0;i<32;i++)
-    {
-        if((feats >> i) & 1U)
-        {
-            printf("FEATURES: feat %i set\n",i);
-        }
-    }
-*/
+
     set_features(&dev, request_features);
 
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);

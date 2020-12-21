@@ -8,6 +8,7 @@ typedef enum
     IODevice_Unknown = 0,
     IODevice_Net,
     IODevice_BlockDev,
+    IODevice_CharDev,
 
 } IODeviceType;
 
@@ -39,7 +40,14 @@ typedef struct _IODevice
 }IODevice;
 
 
-#define IODeviceInit(name_, type_, ops_) {.name = name_ ,.type = type_, .ops = ops_ }
+#define IODeviceNew(name_, type_, ops_) {.name = name_ ,.type = type_, .ops = ops_ }
 
+
+static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type)
+{
+    memset(d, 0, sizeof(IODevice));
+    d->name = name;
+    d->type = type;
+}
 ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize);
 ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize);

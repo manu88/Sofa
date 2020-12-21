@@ -318,13 +318,11 @@ void process_tear_down(Process* process)
             if(elt->ipcBuffer_vaddr)
             {
                 vspace_unmap_pages(&process->native.vspace, elt->ipcBuffer_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
-            
             }
-
         }
         if(elt->stack && elt->stackSize)
         {
-            printf("Remove Thread stack (size %zi)\n", elt->stackSize);
+            KLOG_INFO("Remove Thread stack (size %zi)\n", elt->stackSize);
             vspace_free_sized_stack(&process->native.vspace, elt->stack, elt->stackSize);
         }
         kfree(elt);

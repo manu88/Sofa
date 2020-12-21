@@ -137,17 +137,17 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
     {
         if(ext2_mount(dev, NULL))
         {
-            printf("[VFSMount] ext2\n");
+            KLOG_DEBUG("[VFSMount] ext2\n");
             getExt2FS()->data = dev;
             int err = 0;
             VFSMount(getExt2FS(), "/ext", &err);
             return err;
         }
-        printf("ext2_mount error for '%s'\n", dev->name);
+        KLOG_DEBUG("ext2_mount error for '%s'\n", dev->name);
     }
     else
     {
-        printf("ext2_probe error for '%s'\n", dev->name);
+        KLOG_DEBUG("ext2_probe error for '%s'\n", dev->name);
     }
 
     return -1;
@@ -156,7 +156,7 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
 
 int VFSAddDEvice(IODevice *dev)
 {
-    printf("[VFS] add device '%s'\n", dev->name);
+    KLOG_DEBUG("[VFS] add device '%s'\n", dev->name);
     _dev = dev;
 
     VFSSupported type = VFSSupported_Unknown;
@@ -165,7 +165,7 @@ int VFSAddDEvice(IODevice *dev)
     {
         return test;
     }
-    printf("[VFS] device  '%s' added with FS type %i\n", dev->name, type);
+    KLOG_DEBUG("[VFS] device  '%s' added with FS type %i\n", dev->name, type);
     return 0;
 
 }
@@ -180,7 +180,7 @@ static void ClientCleanup(ServiceClient *clt)
     FileHandle* tmp = NULL;
     HASH_ITER(hh, c->files, f, tmp)
     {
-        printf("close File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
+        KLOG_DEBUG("close File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
         VFSClose(&f->file);
         free(f);
     }
@@ -199,8 +199,6 @@ static int mainVFS(KThread* thread, void *arg)
         if(dev->type == IODevice_BlockDev)
         {
             int r = VFSAddDEvice(dev);
-            printf("VFSAddDEvice '%s' retuned %i\n", dev->name, r);
-
         }
     }
     while (1)
@@ -315,20 +313,20 @@ static int mainVFS(KThread* thread, void *arg)
             }
             else if(seL4_GetMR(0) == VFSRequest_Debug)
             {
-                printf("VFS Client Debug\n");
+                KLOG_DEBUG("VFS Client Debug\n");
 
-                printf("VFS has %i clients\n", HASH_COUNT(_clients));
+                KLOG_DEBUG("VFS has %i clients\n", HASH_COUNT(_clients));
                 FileHandle* f = NULL;
                 FileHandle* tmp = NULL;
-                printf("Current index %i\n", clt->fileIndex);
+                KLOG_DEBUG("Current index %i\n", clt->fileIndex);
                 HASH_ITER(hh, clt->files, f, tmp)
                 {
-                    printf("File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
+                    KLOG_DEBUG("File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
                 }
             }
             else
             {
-                printf("Other VFS request %lu\n", seL4_GetMR(0));
+                KLOG_DEBUG("Other VFS request %lu\n", seL4_GetMR(0));
                 seL4_Reply(msg);
             }
         }

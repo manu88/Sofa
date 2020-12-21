@@ -30,11 +30,18 @@ int DKClientInit()
     return -1;
 }
 
-int DKClientEnum(void)
+int DKClientEnumDevices(void)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
     seL4_SetMR(0, DKRequest_List);
     seL4_Send(dkCap, info);
+    return 0;
+}
 
+int DKClientEnumTree()
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+    seL4_SetMR(0, DKRequest_Tree);
+    seL4_Send(dkCap, info);
     return 0;
 }

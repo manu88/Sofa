@@ -2,6 +2,7 @@
 #include "SyscallTable.h"
 #include "Reboot.h"
 
+
 void SysCall_Reboot(Thread* caller, seL4_MessageInfo_t info)
 {
     RebootMode mode = seL4_GetMR(1);
