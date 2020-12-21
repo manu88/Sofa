@@ -229,6 +229,12 @@ long sofa_vsyscall(long sysnum, ...)
     long ret = -1;
     switch (sysnum)
     {
+    case __NR_getpid:
+        ret = SFGetPid();
+        break;
+    case __NR_getppid:
+        ret = SFGetPPid();
+        break;
     case __NR_open:
         ret =  sf_open(al);
         break;

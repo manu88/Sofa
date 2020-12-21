@@ -330,11 +330,11 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("pid", cmd))
     {
-        Printf("PID=%i\n", SFGetPid());
+        Printf("PID=%i\n", getpid());
     }
     else if(startsWith("ppid", cmd))
     {
-        Printf("PPID=%i\n", SFGetPPid());
+        Printf("PPID=%i\n", getppid());
     }
     else if(startsWith("dump", cmd))
     {
