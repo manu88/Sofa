@@ -66,7 +66,7 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
         client->buff = buff;
         client->service = &_dkService.service;
         //HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
-        LL_APPEND(caller->clients, client);            
+        ThreadBaseAddServiceClient(caller, client);
         seL4_SetMR(1, (seL4_Word) buffShared);
         seL4_Reply(msg);
     }

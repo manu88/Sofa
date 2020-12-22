@@ -261,7 +261,7 @@ static int mainVFS(KThread* thread, void *arg)
             seL4_SetMR(1, (seL4_Word) buffShared);
             seL4_Reply(msg);
 
-            LL_APPEND(caller->clients, (ServiceClient*) client);
+            ThreadBaseAddServiceClient(caller, (ServiceClient*) client);
         }
         else
         {

@@ -33,7 +33,10 @@ typedef struct
     seL4_Word currentSyscallID;
 
     unsigned int timerID;
-    ServiceClient* clients; // a list of Service clients belonging to this thread.
+    ServiceClient* _clients; // a list of Service clients belonging to this thread.
 
 
 } ThreadBase;
+
+
+void ThreadBaseAddServiceClient(ThreadBase*t, ServiceClient* client);

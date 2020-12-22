@@ -15,6 +15,7 @@
  */
 #include "ProcessList.h"
 #include "utils.h"
+#include "NameServer.h"
 
 
 void ThreadCleanupTimer(Thread* t)
@@ -24,4 +25,9 @@ void ThreadCleanupTimer(Thread* t)
     tm_free_id(&env->tm, t->_base.timerID);
     cnode_delete(&env->vka, t->_base.replyCap);
     t->_base.replyCap = 0;
+}
+
+void ThreadBaseAddServiceClient(ThreadBase*t, ServiceClient* client)
+{
+    LL_APPEND(t->_clients, (ServiceClient*) client);
 }
