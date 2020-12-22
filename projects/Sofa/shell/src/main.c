@@ -4,15 +4,12 @@
 #include <signal.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <unistd.h>
-#include "runtime.h"
-#include "files.h"
-#include "net.h"
+#include <runtime.h>
+#include <files.h>
+#include <proc.h>
 #include <dk.h>
 
 extern seL4_CPtr vfsCap;
@@ -221,6 +218,17 @@ static int doSh(const char* cmd)
     return 0;
 }
 
+static int doPS(const char* cmd)
+{
+    SFDebug(SofaDebugCode_ListProcesses);
+
+    Printf("New PS\n");
+
+    ProcClientEnum();
+    
+    return 0;
+}
+
 void processCommand(const char* cmd)
 {
     if(startsWith("exit", cmd))
@@ -239,7 +247,8 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("ps", cmd))
     {
-        SFDebug(SofaDebugCode_ListProcesses);
+        const char* args = cmd + strlen("ps ");
+        doPS(args);
     }
     else if(startsWith("poweroff", cmd))
     {
@@ -372,9 +381,8 @@ int main(int argc, char *argv[])
         Printf("%i %s\n",i,argv[i]);
     }
 
-    NetClientInit();
 
-    //int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
+    ProcClientInit();
 
 
     while (1)

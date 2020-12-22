@@ -15,15 +15,52 @@
  */
 #include "ProcService.h"
 #include "BaseService.h"
+#include "Process.h"
+#include "Log.h"
+#include <proc.h>
 
 static BaseService _service;
 
+static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
+static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
+
+
+static BaseServiceCallbacks _servOps = {.onSystemMsg=_OnSystemMsg, .onClientMsg=_OnClientMsg};
+
+
 int ProcServiceInit()
 {
-    return BaseServiceCreate(&_service, "Proc");
+    return BaseServiceCreate(&_service, "Proc", &_servOps);
 }
 
 int ProcServiceStart()
 {
     return BaseServiceStart(&_service);
+}
+
+
+static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
+{
+    KLOG_DEBUG("ProcService.on system msg\n");
+}
+
+static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+{
+    KLOG_DEBUG("ProcService. client msg from %i\n", ProcessGetPID(sender->process));
+
+    ProcRequest req = (ProcRequest) seL4_GetMR(0);
+
+    switch (req)
+    {
+    case ProcRequest_Register:
+        KLOG_DEBUG("Proc request register\n");
+        seL4_Reply(msg);
+        break;
+    case ProcRequest_Enum:
+        KLOG_DEBUG("Proc request enum\n");
+        seL4_Reply(msg);
+        break;
+    default:
+        break;
+    } 
 }

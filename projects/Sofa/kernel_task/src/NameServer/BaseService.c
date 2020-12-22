@@ -17,12 +17,13 @@
 #include "Environ.h"
 
 
-int BaseServiceCreate(BaseService*s, const char*name)
+int BaseServiceCreate(BaseService*s, const char*name, BaseServiceCallbacks* ops)
 {
     memset(s, 0, sizeof(BaseService));
     int error = 0;
     ServiceInit(&s->service, getKernelTaskProcess());
     s->service.name = name;
+    s->callbacks = ops;
 
     ServiceCreateKernelTask(&s->service);
     NameServerRegister(&s->service);

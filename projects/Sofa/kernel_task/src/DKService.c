@@ -33,12 +33,7 @@ static BaseServiceCallbacks _dkOps = {.onSystemMsg=_OnSystemMsg, .onClientMsg=_O
 
 int DKServiceInit()
 {
-    int err =  BaseServiceCreate(&_dkService, "deviceKit");
-    if(err == 0)
-    {
-        _dkService.callbacks = &_dkOps;
-    }
-    return err;
+    return BaseServiceCreate(&_dkService, "deviceKit", &_dkOps);
 }
 
 

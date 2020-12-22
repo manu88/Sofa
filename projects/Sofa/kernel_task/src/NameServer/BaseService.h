@@ -35,10 +35,12 @@ typedef struct _BaseService
     KThread thread;
     Service service;
 
+    ServiceClient* _clients; // the list of currently connected clients
+
     BaseServiceCallbacks* callbacks;
 }BaseService;
 
 
-int BaseServiceCreate(BaseService*s, const char*name);
+int BaseServiceCreate(BaseService*s, const char*name, BaseServiceCallbacks* ops);
 
 int BaseServiceStart(BaseService*s);
