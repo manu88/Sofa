@@ -74,6 +74,8 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
                 {
                     printf("%s ", ProcessGetName(p));
                 }
+
+                printf(" Pages %lu ", p->stats.allocPages);
                 
                 printf("%s", proc == p ? "*":"");
 

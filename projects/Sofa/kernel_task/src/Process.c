@@ -373,10 +373,15 @@ void process_resume(Process*p)
 void* process_new_pages(Process*p, seL4_CapRights_t rights, size_t numPages)
 {
     void* pages = sel4utils_new_pages(&p->native.vspace, seL4_AllRights, numPages, PAGE_BITS_4K);
+    if(pages)
+    {
+        p->stats.allocPages += numPages;
+    }
     return pages;
 }
 
 void process_unmap_pages(Process*p, void *vaddr, size_t numPages)
 {
     sel4utils_unmap_pages(&p->native.vspace, vaddr, numPages, PAGE_BITS_4K, VSPACE_FREE);
+    p->stats.allocPages -= numPages;
 }

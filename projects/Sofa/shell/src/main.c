@@ -83,25 +83,32 @@ static void doExit(int code)
     exit(code);
 }
 
-static int doSpawn(const char* cmd)
+static int doSpawn(char* cmd)
 {
+    int detached = cmd[strlen(cmd)-1] == '&'? 1:0;
+    if(detached)
+    {
+        cmd[strlen(cmd)-1] = 0;
+    }
     int pid = SFSpawn(cmd);
     if(pid <= 0)
     {
         Printf("Spawn error %i\n", pid);
         return pid;
     }
-    int appStatus = 0;
-    int ret = SFWait(&appStatus);
-    if(ret < 0)
+    if(!detached)
     {
-        Printf("Wait interupted\n");
+        int appStatus = 0;
+        int ret = SFWait(&appStatus);
+        if(ret < 0)
+        {
+            Printf("Wait interupted\n");
+        }
+        else
+        {
+            Printf("%s (pid %i) returned %i\n", cmd, pid, appStatus);
+        }
     }
-    else
-    {
-        Printf("%s (pid %i) returned %i\n", cmd, pid, appStatus);
-    }
-
     return 0;
 }
 

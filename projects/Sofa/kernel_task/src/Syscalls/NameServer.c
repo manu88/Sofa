@@ -15,7 +15,7 @@
  */
 #include <Sofa.h>
 #include "SyscallTable.h"
-#include "../NameServer.h"
+#include "NameServer.h"
 #include "utils.h"
 #include <vka/capops.h>
 

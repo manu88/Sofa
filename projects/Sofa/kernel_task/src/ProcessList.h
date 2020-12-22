@@ -53,6 +53,10 @@ typedef struct _Thread
 
 } Thread;
 
+typedef struct _ProcStats
+{
+    uint64_t allocPages;
+}ProcStats;
 
 typedef struct _Process
 {
@@ -77,6 +81,8 @@ typedef struct _Process
     struct _Process* children;
     struct _Process* next; // For Global process list
     struct _Process* nextChild; // For Children
+
+    ProcStats stats;
 } Process;
 
 
