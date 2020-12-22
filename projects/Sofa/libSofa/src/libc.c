@@ -1,3 +1,18 @@
+/*
+ * This file is part of the Sofa project
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <bits/syscall.h>
 #include <stdarg.h>
 #include <sys/uio.h> // iovec
@@ -183,6 +198,8 @@ static long sf_fcntl(va_list ap)
     SFPrintf("Not implemented: fcntl for fd=%i cmd=%X\n", fd, cmd);
     return -1;
 }
+
+
 static long sf_ioctl(va_list ap)
 {
     int fd = va_arg(ap, int);
@@ -199,28 +216,16 @@ static long sf_writev(va_list ap)
 
     ssize_t ret = 0;
 
-
     for (int i = 0; i < iovcnt; i++) 
     {
         char * base = (char *)iov[i].iov_base;
         SFPrintf("%s", base);
         VFSClientWrite(fildes, iov[i].iov_base, iov[i].iov_len);
         ret += iov[i].iov_len;
-        /*
-        for (int j = 0; j < iov[i].iov_len; j++) 
-        {
-            
-            //seL4_DebugPutChar(base[j]);
-
-            ret++;
-        }
-        */
     }
-    //SFPrintf("writeev fd=%i size=%zi\n", fildes, ret);
 
     return ret;
 }
-
 
 long sofa_vsyscall(long sysnum, ...)
 {
