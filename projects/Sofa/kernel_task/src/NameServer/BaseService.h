@@ -13,17 +13,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "ProcService.h"
-#include "BaseService.h"
+#pragma once
+#include "KThread.h"
+#include "NameServer.h"
+#include "Thread.h"
 
-static BaseService _service;
 
-int ProcServiceInit()
+typedef struct _BaseService BaseService;
+
+typedef void (*OnSystemMsg)(BaseService* service, seL4_MessageInfo_t msg);
+typedef void (*OnClientMsg)(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
+
+typedef struct
 {
-    return BaseServiceCreate(&_service, "Proc");
-}
+    OnSystemMsg onSystemMsg;
+    OnClientMsg onClientMsg;
+}BaseServiceCallbacks;
 
-int ProcServiceStart()
+typedef struct _BaseService
 {
-    return BaseServiceStart(&_service);
-}
+    KThread thread;
+    Service service;
+
+    BaseServiceCallbacks* callbacks;
+}BaseService;
+
+
+int BaseServiceCreate(BaseService*s, const char*name);
+
+int BaseServiceStart(BaseService*s);

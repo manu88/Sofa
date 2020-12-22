@@ -61,11 +61,14 @@
 #include <sel4platsupport/arch/io.h>
 #include "KThread.h"
 #include <Sofa.h>
+
+#include "VFS.h"
+#include "cpio.h"
+
 #include "DKService.h"
 #include "VFSService.h"
 #include "NetService.h"
-#include "VFS.h"
-#include "cpio.h"
+#include "ProcService.h"
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
 Calls to KSleep will ensure that they are never called from main*/
@@ -176,6 +179,12 @@ void *main_continued(void *arg UNUSED)
     assert(error == 0);
 
 // base services init
+
+    error = ProcServiceInit();
+    assert(error == 0);
+
+    error = ProcServiceStart();
+    assert(error == 0);
 
     error = VFSInit();
     assert(error == 0);
