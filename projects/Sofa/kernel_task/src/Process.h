@@ -30,3 +30,6 @@ void process_tear_down(Process* process);
 
 void process_suspend(Process*p);
 void process_resume(Process*p);
+
+void* process_new_pages(Process*p, seL4_CapRights_t rights, size_t numPages);
+void process_unmap_pages(Process*p, void *vaddr, size_t numPages);

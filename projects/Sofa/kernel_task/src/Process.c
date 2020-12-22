@@ -368,3 +368,15 @@ void process_resume(Process*p)
 {
     seL4_TCB_Resume(p->native.thread.tcb.cptr);
 }
+
+
+void* process_new_pages(Process*p, seL4_CapRights_t rights, size_t numPages)
+{
+    void* pages = sel4utils_new_pages(&p->native.vspace, seL4_AllRights, numPages, PAGE_BITS_4K);
+    return pages;
+}
+
+void process_unmap_pages(Process*p, void *vaddr, size_t numPages)
+{
+    sel4utils_unmap_pages(&p->native.vspace, vaddr, numPages, PAGE_BITS_4K, VSPACE_FREE);
+}

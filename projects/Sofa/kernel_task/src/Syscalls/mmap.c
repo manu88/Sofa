@@ -23,7 +23,7 @@ void Syscall_munmap(Thread* caller, seL4_MessageInfo_t info)
     size_t length = seL4_GetMR(2);//, length);
 
     const size_t numPages = length / 4096;
-    sel4utils_unmap_pages(&caller->_base.process->native.vspace, addr, numPages, PAGE_BITS_4K, VSPACE_FREE);
+    process_unmap_pages(caller->_base.process, addr, numPages);
     seL4_SetMR(1, 0);
     seL4_Reply(info);
 }
@@ -40,7 +40,6 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
     int fd = seL4_GetMR(5);//, fd);
     off_t offset = seL4_GetMR(6);//, offset);
 
-
     if(addr)
     {
         KLOG_INFO("mmap Only support NULL addr for now\n");
@@ -52,7 +51,7 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
     const size_t numPages = length / 4096;
 
     KernelTaskContext* ctx = getKernelTaskContext();
-    void* p = sel4utils_new_pages(&caller->_base.process->native.vspace, seL4_AllRights, numPages, PAGE_BITS_4K);
+    void* p = process_new_pages(caller->_base.process, seL4_AllRights, numPages);
     if(!p)
     {
         KLOG_DEBUG("unable to create a new page\n");
