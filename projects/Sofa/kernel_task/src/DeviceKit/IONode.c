@@ -14,6 +14,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "IONode.h"
+#include <EISAID.h>
+
 
 int IONodeGetEISAID(const IONode*n, char eisaID[9])
 {
