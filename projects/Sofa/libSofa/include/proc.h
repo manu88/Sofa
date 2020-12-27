@@ -14,6 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <sys/types.h>
 
 typedef enum
 {
@@ -21,6 +22,20 @@ typedef enum
     ProcRequest_Enum,
 }ProcRequest;
 
+typedef struct
+{
+    pid_t pid;
+    uint64_t startTime;
+    uint16_t nameLen;
+    char name[]; // to keep as last field as the name len is variable!
+}ProcessDesc;
+
+
+extern const char procServiceName[];
+
 int ProcClientInit(void);
 
-int ProcClientEnum(void);
+// returning other than 0 will stop the enum.
+typedef int (*OnProcessDescription)(const ProcessDesc* p, void* ptr);
+
+int ProcClientEnum(OnProcessDescription callb, void* ptr);

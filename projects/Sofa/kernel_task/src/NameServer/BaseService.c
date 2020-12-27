@@ -15,18 +15,21 @@
  */
 #include "BaseService.h"
 #include "Environ.h"
+#include "Process.h"
+#include <utils/uthash.h>
 
 
 int BaseServiceCreate(BaseService*s, const char*name, BaseServiceCallbacks* ops)
 {
     memset(s, 0, sizeof(BaseService));
-    int error = 0;
     ServiceInit(&s->service, getKernelTaskProcess());
     s->service.name = name;
     s->callbacks = ops;
 
     ServiceCreateKernelTask(&s->service);
     NameServerRegister(&s->service);
+
+    return 0;
 }
 
 static int mainBaseService(KThread* thread, void *arg)
@@ -47,8 +50,6 @@ static int mainBaseService(KThread* thread, void *arg)
         {
             service->callbacks->onClientMsg(service, caller, msg);
         }
-        
-
     }    
 }
 
@@ -60,4 +61,38 @@ int BaseServiceStart(BaseService*s)
     int error = KThreadRun(&s->thread, 254, s);
 
     return error;
+}
+
+
+int BaseServiceCreateClientContext(BaseService* service, ThreadBase* sender, ServiceClient* client, size_t numPages)
+{
+
+    KernelTaskContext* env = getKernelTaskContext();
+    char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, numPages, PAGE_BITS_4K);
+    assert(buff);
+    void* buffShared = vspace_share_mem(&env->vspace,
+                                        &sender->process->native.vspace,
+                                        buff,
+                                        numPages,
+                                        PAGE_BITS_4K,
+                                        seL4_ReadWrite,
+                                        1
+                                        );
+    assert(buffShared);
+    client->caller = sender;
+    client->buff = buff;
+    client->buffClientAddr = buffShared;
+    client->service = service;
+
+    HASH_ADD_PTR(service->_clients, caller, client);
+
+
+    return 0;
+}
+
+ServiceClient* BaseServiceGetClient(BaseService*s, ThreadBase* caller)
+{
+    ServiceClient* clt = NULL;
+    HASH_FIND_PTR(s->_clients, &caller, clt );
+    return clt;
 }

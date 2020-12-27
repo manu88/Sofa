@@ -306,6 +306,8 @@ void process_run(const char *name, Process* process)
 //    sel4utils_create_word_args(string_args, argv, argc, process->main.process_endpoint, process->init_remote_vaddr);
 
     /* spawn the process */
+
+    process->stats.startTime = GetTime();
     error = sel4utils_spawn_process_v(&process->native, &env->vka, &env->vspace,
                                       argc, argv, 1);
     ZF_LOGF_IF(error != 0, "Failed to start test process!");

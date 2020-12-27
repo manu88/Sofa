@@ -112,3 +112,11 @@ int TimerInit()
     return 0;
 
 }
+
+uint64_t GetTime()
+{
+    uint64_t r = 0;
+
+    tm_get_time(&getKernelTaskContext()->tm, &r);
+    return r;
+}

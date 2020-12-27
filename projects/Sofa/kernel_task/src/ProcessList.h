@@ -56,6 +56,7 @@ typedef struct _Thread
 typedef struct _ProcStats
 {
     uint64_t allocPages;
+    uint64_t startTime;
 }ProcStats;
 
 typedef struct _Process
@@ -137,6 +138,7 @@ Process* getProcessList(void);
 void ProcessListAdd(Process* p);
 void ProcessListRemove(Process* p);
 
+size_t ProcessListCount(void);
 Process* ProcessListGetByPid(pid_t pid);
 
 #define FOR_EACH_PROCESS(p) LL_FOREACH(getProcessList(),p)

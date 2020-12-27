@@ -30,7 +30,7 @@ static BaseServiceCallbacks _servOps = {.onSystemMsg=_OnSystemMsg, .onClientMsg=
 
 int ProcServiceInit()
 {
-    return BaseServiceCreate(&_service, "Proc", &_servOps);
+    return BaseServiceCreate(&_service, procServiceName, &_servOps);
 }
 
 int ProcServiceStart()
@@ -38,27 +38,69 @@ int ProcServiceStart()
     return BaseServiceStart(&_service);
 }
 
-
 static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
 {
     KLOG_DEBUG("ProcService.on system msg\n");
 }
 
+
+static void onRegister(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+{
+    KLOG_DEBUG("Proc request register\n");
+    ServiceClient* client = malloc(sizeof(ServiceClient));
+    assert(client);
+    int err = BaseServiceCreateClientContext(service, sender, client, 1);
+    if(err != 0)
+    {
+        free(client);
+    }
+    seL4_SetMR(1, err == 0? client->buffClientAddr:-1);
+    seL4_Reply(msg);
+}
+
+
+static void onProcEnum(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+{
+
+    ServiceClient* client = BaseServiceGetClient(service, sender);
+    assert(client);
+
+    size_t procCount = ProcessListCount();
+    //KLOG_DEBUG("Proc enum request: %zi processes\n", procCount);    
+
+    Process*p = NULL;
+
+    size_t accSize = 0;
+    char* buff = client->buff; 
+    FOR_EACH_PROCESS(p)
+    {
+
+        ProcessDesc* desc = (ProcessDesc*) buff;
+        desc->startTime = p->stats.startTime;
+        desc->pid = ProcessGetPID(p);
+        desc->nameLen = strlen(ProcessGetName(p));
+        strncpy(desc->name, ProcessGetName(p), desc->nameLen);
+        size_t recSize = sizeof(ProcessDesc) + desc->nameLen;
+
+        accSize += recSize; 
+
+        buff += recSize;
+    }
+    seL4_SetMR(1, procCount);
+    seL4_Reply(msg);
+}
+
 static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
 {
-    KLOG_DEBUG("ProcService. client msg from %i\n", ProcessGetPID(sender->process));
-
     ProcRequest req = (ProcRequest) seL4_GetMR(0);
 
     switch (req)
     {
     case ProcRequest_Register:
-        KLOG_DEBUG("Proc request register\n");
-        seL4_Reply(msg);
+        onRegister(service, sender, msg);
         break;
     case ProcRequest_Enum:
-        KLOG_DEBUG("Proc request enum\n");
-        seL4_Reply(msg);
+        onProcEnum(service, sender, msg);
         break;
     default:
         break;

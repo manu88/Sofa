@@ -38,9 +38,14 @@ typedef struct _BaseService
     ServiceClient* _clients; // the list of currently connected clients
 
     BaseServiceCallbacks* callbacks;
+
 }BaseService;
 
 
 int BaseServiceCreate(BaseService*s, const char*name, BaseServiceCallbacks* ops);
 
 int BaseServiceStart(BaseService*s);
+
+
+int BaseServiceCreateClientContext(BaseService* service, ThreadBase* caller, ServiceClient* client, size_t numPages);
+ServiceClient* BaseServiceGetClient(BaseService*s, ThreadBase* caller);

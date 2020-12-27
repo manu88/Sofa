@@ -19,13 +19,14 @@
 #include <Sofa.h>
 #include <stdarg.h>
 
+const char procServiceName[] = "Proc";
 
 seL4_CPtr procCap = 0;
 char* procBuf = NULL;
 
 int ProcClientInit()
 {
-    ssize_t capOrErr = SFGetService("Proc");
+    ssize_t capOrErr = SFGetService(procServiceName);
 
     if(capOrErr > 0)
     {
@@ -40,9 +41,27 @@ int ProcClientInit()
     return -1;
 }
 
-int ProcClientEnum()
+int ProcClientEnum(OnProcessDescription callb, void* ptr)
 {
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     seL4_SetMR(0, ProcRequest_Enum);
     seL4_Call(procCap, info);
+
+    size_t numProc = seL4_GetMR(1);
+
+    char* buff = procBuf;
+    for(size_t i=0;i<numProc; i++)
+    {
+        const ProcessDesc* desc = (ProcessDesc*) buff; 
+
+        int r = callb(desc, ptr);
+        if( r!= 0)
+        {
+            return r;
+        }
+
+        size_t recSize = sizeof(ProcessDesc) + desc->nameLen;
+
+        buff += recSize;
+    }
 }

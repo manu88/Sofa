@@ -218,13 +218,14 @@ static int doSh(const char* cmd)
     return 0;
 }
 
+static int PSOnProcessDescription(const ProcessDesc* desc, void* ptr)
+{
+    Printf("PID %i '%s' start time %lu \n",  desc->pid, desc->name, desc->startTime);
+}
+
 static int doPS(const char* cmd)
 {
-    SFDebug(SofaDebugCode_ListProcesses);
-
-    Printf("New PS\n");
-
-    ProcClientEnum();
+    ProcClientEnum(PSOnProcessDescription, NULL);
     
     return 0;
 }

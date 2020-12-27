@@ -28,6 +28,14 @@ void ProcessListAdd(Process* p)
     LL_APPEND(_processes, p);
 }
 
+size_t ProcessListCount()
+{
+    Process* el = NULL;
+    size_t c = 0;
+    LL_COUNT(_processes, el, c);
+    return c;
+}
+
 void ProcessListRemove(Process* p)
 {
     LL_DELETE(_processes, p);
