@@ -20,6 +20,8 @@ typedef enum
 {
     ProcRequest_Register,
     ProcRequest_Enum,
+    ProcRequest_Kill,
+    ProcRequest_Spawn,
 }ProcRequest;
 
 typedef struct
@@ -39,3 +41,4 @@ int ProcClientInit(void);
 typedef int (*OnProcessDescription)(const ProcessDesc* p, void* ptr);
 
 int ProcClientEnum(OnProcessDescription callb, void* ptr);
+int ProcClientKill(pid_t pid, int sig);

@@ -230,6 +230,21 @@ static int doPS(const char* cmd)
     return 0;
 }
 
+static int doKill(const char* args)
+{
+    const char *strPid = args;
+    if(strlen(strPid) == 0)
+    {
+        Printf("Kill usage: kill pid signal\n");
+        return;
+    }
+    pid_t pidToKill = atol(strPid);
+    Printf("Kill pid %i\n", pidToKill);
+    ProcClientKill(pidToKill, SIGKILL);
+//    SFKill(pidToKill, SIGKILL);
+
+}
+
 void processCommand(const char* cmd)
 {
     if(startsWith("exit", cmd))
@@ -265,15 +280,8 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("kill", cmd))
     {
-        const char *strPid = cmd + strlen("kill ");
-        if(strlen(strPid) == 0)
-        {
-            Printf("Kill usage: kill pid signal\n");
-            return;
-        }
-        pid_t pidToKill = atol(strPid);
-        Printf("Kill pid %i\n", pidToKill);
-        SFKill(pidToKill, SIGKILL);
+        const char *args = cmd + strlen("kill ");
+        doKill(args);
     }
     else if(startsWith("dk", cmd))
     {

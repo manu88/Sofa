@@ -65,3 +65,13 @@ int ProcClientEnum(OnProcessDescription callb, void* ptr)
         buff += recSize;
     }
 }
+
+int ProcClientKill(pid_t pid, int sig)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, ProcRequest_Kill);
+    seL4_SetMR(1, pid);
+    seL4_SetMR(2, sig);
+    seL4_Call(procCap, info);
+    return (int) seL4_GetMR(1); 
+}

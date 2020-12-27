@@ -19,6 +19,8 @@
 #include "Log.h"
 #include <proc.h>
 
+int doKill(pid_t pidToKill, ThreadBase* sender, int signal);
+
 static BaseService _service;
 
 static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
@@ -90,6 +92,25 @@ static void onProcEnum(BaseService* service, ThreadBase* sender, seL4_MessageInf
     seL4_Reply(msg);
 }
 
+static void onProcKill(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+{
+    KLOG_DEBUG("ProcessService: kill req\n");
+    pid_t pidToKill = seL4_GetMR(1);
+    int signal = seL4_GetMR(2);
+
+    int ret = doKill(pidToKill, sender, signal);
+
+    if(pidToKill == ProcessGetPID(sender->process))
+    {
+        // dont bother send a reply, we're dead!
+        return;
+    }
+
+    seL4_SetMR(1, ret);
+    seL4_Reply(msg);
+
+}
+
 static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
 {
     ProcRequest req = (ProcRequest) seL4_GetMR(0);
@@ -101,6 +122,9 @@ static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageI
         break;
     case ProcRequest_Enum:
         onProcEnum(service, sender, msg);
+        break;
+    case ProcRequest_Kill:
+        onProcKill(service, sender, msg);
         break;
     default:
         break;

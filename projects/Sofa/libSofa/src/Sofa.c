@@ -51,10 +51,6 @@ pid_t SFWait(int *wstatus)
     return SFWaitPid(-1, wstatus, 0);
 }
 
-int SFKill(pid_t pid, int sig)
-{
-    return sc_kill(TLSGet()->ep, pid, sig);
-}
 
 ssize_t SFRead(char* data, size_t dataSize)
 {

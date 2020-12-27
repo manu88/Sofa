@@ -120,17 +120,6 @@ void sc_debug(seL4_CPtr endpoint, SofaDebugCode code)
 
 
 
-int sc_kill(seL4_CPtr endpoint, pid_t pid, int sig)
-{
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
-    seL4_SetMR(0, SyscallID_Kill);
-    seL4_SetMR(1, pid);
-    seL4_SetMR(2, sig);
-
-    seL4_Call(endpoint, info);
-    return seL4_GetMR(1);
-}
-
 
 pid_t sc_getppid(seL4_CPtr endpoint)
 {

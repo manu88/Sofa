@@ -33,7 +33,7 @@ Because we use `musl`, the current goal is to be as much as possible POSIX compl
 * udp echo server
 
 ## Services
-* Process
+* Process: Enum, Spawn, Kill
 * VFS
 * net (udp only)
 * DeviceKit
