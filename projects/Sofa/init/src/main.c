@@ -19,6 +19,7 @@
 #include <Thread.h>
 #include <runtime.h>
 #include <proc.h>
+#include <sys/wait.h>
 
 int main(int argc, char *argv[])
 {
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
     SFPrintf("---- Userland unit tests ----\n");
     int unittestsPid = ProcClientSpawn("/cpio/utests");
     int utestStatus = -1;
-    ProcClientWaitPid(unittestsPid, &utestStatus, 0);
+    waitpid(unittestsPid, &utestStatus, 0);
     SFPrintf("Unit tests returned %i\n", utestStatus);
     SFPrintf("-----------------------------\n");
 
@@ -50,7 +51,7 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        pid_t retPid = ProcClientWait(&appStatus);
+        pid_t retPid = wait(&appStatus);
         SFPrintf("[init] Wait returned pid %i status %i\n", retPid, appStatus);
         if(retPid == shellPid)
         {

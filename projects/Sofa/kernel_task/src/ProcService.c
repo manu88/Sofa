@@ -50,7 +50,6 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
 
 static void onRegister(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
 {
-    KLOG_DEBUG("Proc request register\n");
     ServiceClient* client = malloc(sizeof(ServiceClient));
     assert(client);
     int err = BaseServiceCreateClientContext(service, sender, client, 1);
@@ -121,7 +120,6 @@ static void onProcWait(BaseService* service, ThreadBase* sender, seL4_MessageInf
 
     if(r == -EWOULDBLOCK)
     {
-        KLOG_DEBUG("Wait from %s would block\n", ProcessGetName(sender->process));
         KernelTaskContext* ctx = getKernelTaskContext();
         seL4_Word slot = get_free_slot(&ctx->vka);
         int error = cnode_savecaller(&ctx->vka, slot);
@@ -135,9 +133,7 @@ static void onProcWait(BaseService* service, ThreadBase* sender, seL4_MessageInf
         }
         
         sender->replyCap = slot;
-        KLOG_DEBUG("Set %i state to waiting\n",ProcessGetPID(sender->process));
         sender->state = ThreadState_Waiting;
-        //sender-> caller->state = ThreadState_Waiting;
     }
     else
     {

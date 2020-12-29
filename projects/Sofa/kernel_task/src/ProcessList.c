@@ -80,7 +80,6 @@ Thread* ProcessGetWaitingThread(Process*p)
             return t;
         }
     }
-    KLOG_DEBUG("No waiting threads in %i\n", ProcessGetPID(p));
     return NULL;
 }
 

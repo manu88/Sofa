@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
+#include <proc.h>
 
 extern void *__sysinfo;
 
@@ -199,6 +200,16 @@ static long sf_fcntl(va_list ap)
     return -1;
 }
 
+static long sf_wait4(va_list ap)
+{
+    pid_t pid = va_arg(ap, pid_t);
+    int* status = va_arg(ap, int*);
+    int options = va_arg(ap, int);
+    struct rusage *rusage  = va_arg(ap, struct rusage *);
+    return ProcClientWaitPid(pid, status, options);
+    
+}
+
 
 static long sf_ioctl(va_list ap)
 {
@@ -266,6 +277,9 @@ long sofa_vsyscall(long sysnum, ...)
         break;
     case __NR_fcntl:
         ret = sf_fcntl(al);
+        break;
+    case __NR_wait4:
+        ret = sf_wait4(al);
         break;
     case __NR_mmap:
         ret = sf_mmap(al);

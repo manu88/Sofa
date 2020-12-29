@@ -11,6 +11,7 @@
 #include <files.h>
 #include <proc.h>
 #include <dk.h>
+#include <sys/wait.h>
 
 extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
@@ -96,7 +97,7 @@ static int doSpawn(char* cmd)
     if(!detached)
     {
         int appStatus = 0;
-        int ret = ProcClientWaitPid(pid, &appStatus, 0);
+        int ret = waitpid(pid, &appStatus, 0);
         if(ret < 0)
         {
             Printf("Wait interupted\n");
@@ -335,7 +336,7 @@ void processCommand(const char* cmd)
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
-        int ret = ProcClientWait(&appStatus);
+        int ret = wait(&appStatus);
         if(ret < 0)
         {
             Printf("Wait interupted\n");
