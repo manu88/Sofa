@@ -53,11 +53,17 @@ long doSpawn(ThreadBase* caller, const char* dataBuf)
     {
         return -EINVAL;
     }
+
     VFS_File_Stat stat;
     int st = VFSStat(args[0], &stat);
     if(st != 0)
     {
         return -st;
+    }
+
+    if(stat.type == FileType_Dir)
+    {
+        return -EISDIR;
     }
 
     Process* newProc = kmalloc(sizeof(Process));

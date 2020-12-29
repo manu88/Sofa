@@ -67,7 +67,6 @@ typedef enum
 typedef enum 
 {
     VFSRequest_Register,
-    VFSRequest_ListDir,
     VFSRequest_Open,
     VFSRequest_Close,
     VFSRequest_Read,

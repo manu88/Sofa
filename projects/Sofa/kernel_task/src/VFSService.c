@@ -72,11 +72,6 @@ int VFSServiceInit()
 
 static IODevice* _dev = NULL;
 
-static int VFSServiceLs(Client* client, const char* path)
-{
-    VFS_File_Stat st;
-    return VFSStat(path, &st);
-}
 
 static int VFSServiceOpen(Client* client, const char* path, int mode)
 {
@@ -269,14 +264,7 @@ static int mainVFS(KThread* thread, void *arg)
             HASH_FIND_PTR(_clients, &caller, _clt );
             assert(_clt);
             Client* clt = (Client*) _clt;
-            if(seL4_GetMR(0) == VFSRequest_ListDir)
-            {
-                const char* path = clt->_clt.buff;
-                int ret = VFSServiceLs(clt, path);
-                seL4_SetMR(1, ret);
-                seL4_Reply(msg);
-            }
-            else if(seL4_GetMR(0) == VFSRequest_Open)
+            if(seL4_GetMR(0) == VFSRequest_Open)
             {
                 const char* path = clt->_clt.buff;
                 int ret = VFSServiceOpen(clt, path, seL4_GetMR(1));

@@ -17,10 +17,15 @@
 #include <utils/uthash.h>
 #include <sys/types.h>
 
+typedef enum
+{
+    FileType_Regular,
+    FileType_Dir,
+}FileType;
 
 typedef struct _VFS_File_Stat
 {
-    /* data */
+    FileType type;
 }VFS_File_Stat;
 
 typedef struct _VFSFileSystem VFSFileSystem;

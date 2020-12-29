@@ -180,13 +180,7 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 {
     if(strcmp(path, "/") == 0)
     {
-        VFSMountPoint* fs = NULL;
-        VFSMountPoint* tmp = NULL;
-        HASH_ITER(hh, _mountPoints, fs, tmp)
-        {
-            printf("%s\n", fs->mountPath);
-        }
-
+        stat->type = FileType_Dir;
         return 0;
     }
 
