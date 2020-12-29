@@ -220,7 +220,7 @@ static int doSh(const char* cmd)
 
 static int PSOnProcessDescription(const ProcessDesc* desc, void* ptr)
 {
-    Printf("PID %i '%s' start time %lu \n",  desc->pid, desc->name, desc->startTime);
+    Printf("PID %i '%s' %u start time %lu \n",  desc->pid, desc->name, desc->state, desc->startTime);
 }
 
 static int doPS(const char* cmd)
@@ -241,8 +241,6 @@ static int doKill(const char* args)
     pid_t pidToKill = atol(strPid);
     Printf("Kill pid %i\n", pidToKill);
     ProcClientKill(pidToKill, SIGKILL);
-//    SFKill(pidToKill, SIGKILL);
-
 }
 
 void processCommand(const char* cmd)

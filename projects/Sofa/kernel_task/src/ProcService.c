@@ -82,6 +82,7 @@ static void onProcEnum(BaseService* service, ThreadBase* sender, seL4_MessageInf
         desc->startTime = p->stats.startTime;
         desc->pid = ProcessGetPID(p);
         desc->nameLen = strlen(ProcessGetName(p));
+        desc->state = p->state;
         strncpy(desc->name, ProcessGetName(p), desc->nameLen);
         size_t recSize = sizeof(ProcessDesc) + desc->nameLen;
 

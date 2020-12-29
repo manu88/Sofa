@@ -117,7 +117,6 @@ static int mode2()
     while (1)
     {
     }
-    
     return 1;
 }
 

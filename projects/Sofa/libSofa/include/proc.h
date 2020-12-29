@@ -28,6 +28,7 @@ typedef struct
 {
     pid_t pid;
     uint64_t startTime;
+    uint8_t state;
     uint16_t nameLen;
     char name[]; // to keep as last field as the name len is variable!
 }ProcessDesc;
