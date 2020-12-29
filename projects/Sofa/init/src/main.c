@@ -35,10 +35,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    SFPrintf("---- Userland unit tests ----\n");
     int unittestsPid = ProcClientSpawn("/cpio/utests");
     int utestStatus = -1;
     SFWaitPid(unittestsPid, &utestStatus, 0);
     SFPrintf("Unit tests returned %i\n", utestStatus);
+    SFPrintf("-----------------------------\n");
 
     const char shellPath[] = "/cpio/shell";
     int shellPid = ProcClientSpawn(shellPath);

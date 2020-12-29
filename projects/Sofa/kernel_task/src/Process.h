@@ -20,6 +20,8 @@
 
 #define UNTYPEDS_PER_PROCESS_BASE 1
 
+#define MAKE_EXIT_CODE(ret, sig) ((ret) << 8 | (sig))
+
 void spawnApp(Process* p, const char* imgName, Process* parent);
 void doExit(Process*p, int retCode);
 

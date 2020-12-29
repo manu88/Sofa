@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Process.h"
-
+#include <signal.h>
 
 int doKill(pid_t pidToKill, ThreadBase* sender, int signal)
 {
@@ -30,7 +30,7 @@ int doKill(pid_t pidToKill, ThreadBase* sender, int signal)
     }
     else
     {
-        doExit(processToKill, signal);        
+        doExit(processToKill, MAKE_EXIT_CODE(0, SIGKILL));        
         ret = 0;
 
     }
