@@ -61,11 +61,14 @@
 #include <sel4platsupport/arch/io.h>
 #include "KThread.h"
 #include <Sofa.h>
+#include <signal.h>
+#include "VFS.h"
+#include "cpio.h"
+
 #include "DKService.h"
 #include "VFSService.h"
 #include "NetService.h"
-#include "VFS.h"
-#include "cpio.h"
+#include "ProcService.h"
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
 Calls to KSleep will ensure that they are never called from main*/
@@ -141,7 +144,7 @@ static void process_messages()
             KLOG_INFO("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
             KLOG_INFO("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
 
-            doExit(process, -1);
+            doExit(process, MAKE_EXIT_CODE(0, SIGSEGV));
         }
         else 
         {
@@ -176,6 +179,12 @@ void *main_continued(void *arg UNUSED)
     assert(error == 0);
 
 // base services init
+
+    error = ProcServiceInit();
+    assert(error == 0);
+
+    error = ProcServiceStart();
+    assert(error == 0);
 
     error = VFSInit();
     assert(error == 0);
@@ -220,7 +229,6 @@ void *main_continued(void *arg UNUSED)
     initProcess.argc = 0;
     spawnApp(&initProcess, "/cpio/init", NULL);
 
-    seL4_DebugDumpScheduler();
     process_messages();    
 
     return NULL;

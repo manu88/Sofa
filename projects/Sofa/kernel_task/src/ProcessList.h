@@ -22,12 +22,7 @@
 #include "Allocator.h"
 #include "Thread.h"
 
-typedef enum
-{
-    ThreadState_Running = 0,
-    ThreadState_Sleeping,
-    ThreadState_Waiting,
-} ThreadState;
+
 
 typedef enum
 {
@@ -46,13 +41,17 @@ typedef struct _Thread
     uint8_t* ipcBuffer;
 //    seL4_Word replyCap;
 
-    ThreadState state;
     struct _Thread *next;
     void *stack;
     size_t stackSize;
 
 } Thread;
 
+typedef struct _ProcStats
+{
+    uint64_t allocPages;
+    uint64_t startTime;
+}ProcStats;
 
 typedef struct _Process
 {
@@ -60,23 +59,27 @@ typedef struct _Process
 
     Thread main;
     
-    const char* name; // pointer to init->name
+    const char* name; // pointer to init->name, or static string in init's case.
 
-    char **argv;
-    int argc;
+    char **argv; // program arguments
+    int argc; // program args count
+
     void *init_remote_vaddr; // the shared mem address for the process to retreive its init stuff
     test_init_data_t *init; // init stuff. valid on kernel_task' side, for process side, use 'init_remote_vaddr'
 
 
     Thread* threads; // other threads, NOT including the main one
  
-    int retCode;
+    int retCode; // combination of retcode + signal. see man 2 wait for specs. and the macro MAKE_EXIT_CODE somewhere in this source code.
     ProcessState state;
-    struct _Process *parent;
 
+    struct _Process *parent;
     struct _Process* children;
+
     struct _Process* next; // For Global process list
     struct _Process* nextChild; // For Children
+
+    ProcStats stats;
 } Process;
 
 
@@ -131,6 +134,7 @@ Process* getProcessList(void);
 void ProcessListAdd(Process* p);
 void ProcessListRemove(Process* p);
 
+size_t ProcessListCount(void);
 Process* ProcessListGetByPid(pid_t pid);
 
 #define FOR_EACH_PROCESS(p) LL_FOREACH(getProcessList(),p)

@@ -13,21 +13,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "ProcessList.h"
-#include "utils.h"
-#include "NameServer.h"
+#pragma once
 
+int ProcServiceInit(void);
 
-void ThreadCleanupTimer(Thread* t)
-{
-    KernelTaskContext* env = getKernelTaskContext();
-    tm_deregister_cb(&env->tm, t->_base.timerID);
-    tm_free_id(&env->tm, t->_base.timerID);
-    cnode_delete(&env->vka, t->_base.replyCap);
-    t->_base.replyCap = 0;
-}
-
-void ThreadBaseAddServiceClient(ThreadBase*t, ServiceClient* client)
-{
-    LL_APPEND(t->_clients, (ServiceClient*) client);
-}
+int ProcServiceStart(void);

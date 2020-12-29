@@ -4,16 +4,14 @@
 #include <signal.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <unistd.h>
-#include "runtime.h"
-#include "files.h"
-#include "net.h"
+#include <runtime.h>
+#include <files.h>
+#include <proc.h>
 #include <dk.h>
+#include <sys/wait.h>
 
 extern seL4_CPtr vfsCap;
 extern char* vfsBuf;
@@ -83,25 +81,32 @@ static void doExit(int code)
     exit(code);
 }
 
-static int doSpawn(const char* cmd)
+static int doSpawn(char* cmd)
 {
-    int pid = SFSpawn(cmd);
+    int detached = cmd[strlen(cmd)-1] == '&'? 1:0;
+    if(detached)
+    {
+        cmd[strlen(cmd)-1] = 0;
+    }
+    int pid = ProcClientSpawn(cmd);
     if(pid <= 0)
     {
         Printf("Spawn error %i\n", pid);
         return pid;
     }
-    int appStatus = 0;
-    int ret = SFWait(&appStatus);
-    if(ret < 0)
+    if(!detached)
     {
-        Printf("Wait interupted\n");
+        int appStatus = 0;
+        int ret = waitpid(pid, &appStatus, 0);
+        if(ret < 0)
+        {
+            Printf("Wait interupted\n");
+        }
+        else
+        {
+            Printf("%s (pid %i) returned %i\n", cmd, pid, appStatus);
+        }
     }
-    else
-    {
-        Printf("%s (pid %i) returned %i\n", cmd, pid, appStatus);
-    }
-
     return 0;
 }
 
@@ -214,6 +219,31 @@ static int doSh(const char* cmd)
     return 0;
 }
 
+static int PSOnProcessDescription(const ProcessDesc* desc, void* ptr)
+{
+    Printf("PID %i '%s' %u start time %lu \n",  desc->pid, desc->name, desc->state, desc->startTime);
+}
+
+static int doPS(const char* cmd)
+{
+    ProcClientEnum(PSOnProcessDescription, NULL);
+    
+    return 0;
+}
+
+static int doKill(const char* args)
+{
+    const char *strPid = args;
+    if(strlen(strPid) == 0)
+    {
+        Printf("Kill usage: kill pid signal\n");
+        return -1;
+    }
+    pid_t pidToKill = atol(strPid);
+    Printf("Kill pid %i\n", pidToKill);
+    ProcClientKill(pidToKill, SIGKILL);
+}
+
 void processCommand(const char* cmd)
 {
     if(startsWith("exit", cmd))
@@ -232,7 +262,8 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("ps", cmd))
     {
-        SFDebug(SofaDebugCode_ListProcesses);
+        const char* args = cmd + strlen("ps ");
+        doPS(args);
     }
     else if(startsWith("poweroff", cmd))
     {
@@ -248,15 +279,8 @@ void processCommand(const char* cmd)
     }
     else if(startsWith("kill", cmd))
     {
-        const char *strPid = cmd + strlen("kill ");
-        if(strlen(strPid) == 0)
-        {
-            Printf("Kill usage: kill pid signal\n");
-            return;
-        }
-        pid_t pidToKill = atol(strPid);
-        Printf("Kill pid %i\n", pidToKill);
-        SFKill(pidToKill, SIGKILL);
+        const char *args = cmd + strlen("kill ");
+        doKill(args);
     }
     else if(startsWith("dk", cmd))
     {
@@ -312,7 +336,7 @@ void processCommand(const char* cmd)
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
-        int ret = SFWait(&appStatus);
+        int ret = wait(&appStatus);
         if(ret < 0)
         {
             Printf("Wait interupted\n");
@@ -365,9 +389,8 @@ int main(int argc, char *argv[])
         Printf("%i %s\n",i,argv[i]);
     }
 
-    NetClientInit();
 
-    //int h = NetBind(AF_INET, SOCK_DGRAM, 3000);
+    ProcClientInit();
 
 
     while (1)

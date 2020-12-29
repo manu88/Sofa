@@ -42,7 +42,8 @@ typedef struct _ServiceClient
     Service* service; // the service it belongs to.
     ThreadBase* caller;
     UT_hash_handle hh; /* makes this structure hashable */
-    char* buff; // the IPC buffer
+    char* buff; // the IPC buffer, SERVICE side
+    void* buffClientAddr; // the IPC buffer, CLIENT side
 
 
     struct _ServiceClient* next; // For the per thread client list. See Process.Thread.clients

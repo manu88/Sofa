@@ -70,7 +70,7 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
 static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
 {
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
-    seL4_SetMR(0, SyscallID_Wait);
+    seL4_SetMR(0, 4);
     seL4_SetMR(1, pid);
     seL4_SetMR(2, retCode);
     seL4_Send(onThread->_base.replyCap, tag);
@@ -84,9 +84,9 @@ void _closeThreadClients(Thread*t)
     ServiceClient* clt = NULL;
     ServiceClient* tmp = NULL;
 
-    LL_FOREACH_SAFE(t->_base.clients, clt, tmp)
+    LL_FOREACH_SAFE(t->_base._clients, clt, tmp)
     {
-        LL_DELETE(t->_base.clients, clt);
+        LL_DELETE(t->_base._clients, clt);
         seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
         seL4_SetMR(0, ServiceNotification_ClientExit);
         seL4_SetMR(1, (seL4_Word) clt);
@@ -131,7 +131,7 @@ void doExit(Process* process, int retCode)
         }
         else
         {
-            KLOG_DEBUG("%i is waiting on %i, but no reply cap present\n", ProcessGetPID(parent), ProcessGetPID(process));
+            KLOG_TRACE("%i is waiting on %i, but no reply cap present\n", ProcessGetPID(parent), ProcessGetPID(process));
         }
         
 //        assert(waitingThread->_base.replyCap != 0);
@@ -306,6 +306,8 @@ void process_run(const char *name, Process* process)
 //    sel4utils_create_word_args(string_args, argv, argc, process->main.process_endpoint, process->init_remote_vaddr);
 
     /* spawn the process */
+
+    process->stats.startTime = GetTime();
     error = sel4utils_spawn_process_v(&process->native, &env->vka, &env->vspace,
                                       argc, argv, 1);
     ZF_LOGF_IF(error != 0, "Failed to start test process!");
@@ -367,4 +369,21 @@ void process_suspend(Process*p)
 void process_resume(Process*p)
 {
     seL4_TCB_Resume(p->native.thread.tcb.cptr);
+}
+
+
+void* process_new_pages(Process*p, seL4_CapRights_t rights, size_t numPages)
+{
+    void* pages = sel4utils_new_pages(&p->native.vspace, seL4_AllRights, numPages, PAGE_BITS_4K);
+    if(pages)
+    {
+        p->stats.allocPages += numPages;
+    }
+    return pages;
+}
+
+void process_unmap_pages(Process*p, void *vaddr, size_t numPages)
+{
+    sel4utils_unmap_pages(&p->native.vspace, vaddr, numPages, PAGE_BITS_4K, VSPACE_FREE);
+    p->stats.allocPages -= numPages;
 }

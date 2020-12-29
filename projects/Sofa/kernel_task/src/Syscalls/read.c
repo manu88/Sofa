@@ -37,7 +37,7 @@ static void onControlChar(char ctl, void* ptr)
 
             cnode_delete(&getKernelTaskContext()->vka, caller->_base.replyCap);
             caller->_base.replyCap = 0;
-            caller->state = ThreadState_Running;
+            caller->_base.state = ThreadState_Running;
         }
     }
     else
@@ -60,7 +60,7 @@ static void onBytesAvailable(size_t size, char until, void* ptr)
     seL4_Send(caller->_base.replyCap, tag);
     cnode_delete(&getKernelTaskContext()->vka, caller->_base.replyCap);
     caller->_base.replyCap = 0;
-    caller->state = ThreadState_Running;
+    caller->_base.state = ThreadState_Running;
 
 }
 

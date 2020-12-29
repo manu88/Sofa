@@ -18,17 +18,6 @@
 #include <runtime.h>
 #include <stdarg.h>
 
-int SFSpawn(const char* path)
-{
-    if(!path)
-    {
-        return -1;
-    }
-
-    int ret = sc_spawn(TLSGet()->ep, TLSGet()->buffer, path);
-
-    return ret;
-}
 
 pid_t SFGetPid()
 {
@@ -41,20 +30,8 @@ pid_t SFGetPPid()
 }
 
 
-pid_t SFWaitPid(pid_t pid, int *wstatus, int options)
-{
-    return sc_wait(TLSGet()->ep, pid, wstatus, options);
-}
 
-pid_t SFWait(int *wstatus)
-{
-    return SFWaitPid(-1, wstatus, 0);
-}
 
-int SFKill(pid_t pid, int sig)
-{
-    return sc_kill(TLSGet()->ep, pid, sig);
-}
 
 ssize_t SFRead(char* data, size_t dataSize)
 {

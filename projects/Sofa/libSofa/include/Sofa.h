@@ -27,9 +27,9 @@ typedef enum
 
     SyscallID_Sleep,
 
-    SyscallID_Spawn,
-    SyscallID_Wait,
-    SyscallID_Kill,
+//    SyscallID_Spawn,
+//    SyscallID_Wait,
+//    SyscallID_Kill,
     SyscallID_mmap,
     SyscallID_munmap,
 
@@ -50,7 +50,6 @@ typedef enum
 
 typedef enum
 {
-    SofaDebugCode_ListProcesses,
     SofaDebugCode_ListServices,
     SofaDebugCode_DumpSched,
 }SofaDebugCode;
@@ -93,15 +92,8 @@ typedef enum
 int SFSleep(int ms);
 
 
-int SFSpawn(const char* path);
-
 pid_t SFGetPid(void);
 pid_t SFGetPPid(void);
-
-pid_t SFWaitPid(pid_t pid, int *wstatus, int options);
-pid_t SFWait(int *wstatus);
-
-int SFKill(pid_t pid, int sig);
 
 ssize_t SFRead(char* data, size_t dataSize);
 ssize_t SFWrite(const char* data, size_t dataSize);

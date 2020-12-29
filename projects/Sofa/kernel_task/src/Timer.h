@@ -19,3 +19,5 @@
 #define TIMER_ID_COUT 100
 
 int TimerInit(void);
+
+uint64_t GetTime(void);

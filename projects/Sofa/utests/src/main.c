@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <dirent.h>
+#include <proc.h>
+#include <signal.h>
 
 static void testMmap()
 {
@@ -40,6 +42,11 @@ static void testRead(void)
     close(h);
 }
 
+static void testWait()
+{
+    assert(ProcClientWait(NULL) == -ECHILD);
+}
+
 static void testReaddir()
 {
     DIR *folder = opendir("/");
@@ -54,16 +61,112 @@ static void testReaddir()
     closedir(folder);
 
 }
-int main(int argc, char *argv[])
-{
-    
-    RuntimeInit2(argc, argv);
-    VFSClientInit();
 
+static void testSpawn(const char* selfName)
+{
+    char b[512];
+    snprintf(b,512, "%s 1", selfName);
+    int pid = ProcClientSpawn(b);
+    assert(pid > 0);
+    int status = 0;
+    int r = ProcClientWaitPid(pid, &status, 0);
+    assert(r == pid);
+    assert(WIFEXITED(status));
+}
+
+static void testKillChild(const char* selfName)
+{
+    char b[512];
+    snprintf(b,512, "%s 2", selfName);
+    int pid = ProcClientSpawn(b);
+    assert(pid > 0);
+
+    int r = ProcClientKill(pid, SIGKILL);
+    assert(r == 0);
+}
+
+static void testChildFault(const char* selfName)
+{
+    char b[512];
+    snprintf(b,512, "%s 3", selfName);
+    int pid = ProcClientSpawn(b);
+    assert(pid > 0);
+
+    int status = 0;
+    int r = ProcClientWaitPid(pid, &status, 0);
+    assert(r == pid);
+    assert(WIFSIGNALED(status));
+}
+
+
+static int baseMain(int argc, char *argv[])
+{
     testRead();
     testMmap();
     testReaddir();
     testMalloc();
+    testWait();
+    testSpawn(argv[0]);
+    testKillChild(argv[0]);
+    testChildFault(argv[0]);
+
+    return 0;
+}
+
+static int mode1()
+{
+    return 1;
+}
+
+static int mode2()
+{
+    while (1)
+    {
+    }
+    return 1;
+}
+
+static int mode3()
+{
+    float* lolz = NULL;
+    *lolz = 42;
+}
+
+int main(int argc, char *argv[])
+{
+    RuntimeInit2(argc, argv);
+
+    argc -=2;
+    argv = &argv[2];
+
+    VFSClientInit();
+    ProcClientInit();
+
+//    SFPrintf("Unit tests '%s' %i args\n", argv[0], argc);
+
+    if(argc == 1)
+    {
+        return baseMain(argc, argv);
+    }
+    else
+    {
+        int mode = atoi(argv[1]);
+        switch (mode)
+        {
+        case 1:
+            return mode1();
+            break;
+        case 2:
+            return mode2();
+            break;
+        case 3:
+            return mode3();
+            break;
+        
+        default:
+            break;
+        }
+    }
     
     return 0;
 }

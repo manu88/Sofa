@@ -40,6 +40,7 @@ static void _PoweroffQEMU(void* ptr)
 
 static void _checkFWCF(PCIDriver* drv, IONode * fwcfNode)
 {
+    // see https://wiki.osdev.org/QEMU_fw_cfg
     char eisaID[9] = "";
     if(IONodeGetEISAID(fwcfNode, eisaID) == 0)
     {

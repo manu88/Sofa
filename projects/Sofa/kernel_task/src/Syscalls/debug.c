@@ -55,34 +55,7 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
             printf("'%s' owner %i %s\n", s->name, ProcessGetPID(s->owner), ProcessGetName(s->owner));
         }
     }
-        break;
-    case SofaDebugCode_ListProcesses:
-        {
-            Process* p = NULL;
-            FOR_EACH_PROCESS(p)
-            {
-                printf("%i ", ProcessGetPID(p));
-                printf("%c ", getProcessStateStr(p->state));
-                if(p->argv && p->argc)
-                {
-                    for(int i=0;i<p->argc;i++)
-                    {
-                        printf("%s ", p->argv[i]);
-                    }
-                }
-                else
-                {
-                    printf("%s ", ProcessGetName(p));
-                }
-                
-                printf("%s", proc == p ? "*":"");
-
-                printf("\n");
-            }
-
-        }
-        break;
-    
+        break;    
     default:
         break;
     }
