@@ -70,7 +70,7 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
 static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
 {
     seL4_MessageInfo_t tag = seL4_MessageInfo_new(0, 0, 0, 3);
-    seL4_SetMR(0, SyscallID_Wait);
+    seL4_SetMR(0, 4);
     seL4_SetMR(1, pid);
     seL4_SetMR(2, retCode);
     seL4_Send(onThread->_base.replyCap, tag);
@@ -96,6 +96,7 @@ void _closeThreadClients(Thread*t)
 
 void doExit(Process* process, int retCode)
 {
+    KLOG_DEBUG("Do exit from %i\n", ProcessGetPID(process));
     if(ProcessGetPID(process) == 1)
     {
         Panic("init returned");
@@ -142,6 +143,7 @@ void doExit(Process* process, int retCode)
     }
     else // Zombie time
     {
+        KLOG_DEBUG("Zombie time for %i\n", ProcessGetPID(process));
         process->retCode = retCode;
         process->state = ProcessState_Zombie;
     }

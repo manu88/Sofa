@@ -25,7 +25,7 @@ void sc_exit(seL4_CPtr endpoint, int code);
 int sc_sleep(seL4_CPtr endpoint, int ms);
 
 
-int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options);
+//int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options);
 
 ssize_t sc_write(seL4_CPtr endpoint, const char* data, size_t dataSize);
 

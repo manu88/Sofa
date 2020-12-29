@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "ProcessList.h"
-
+#include "Log.h"
 
 static Process* _processes = NULL;
 
@@ -68,18 +68,19 @@ int ProcessCountExtraThreads(const Process* p)
 
 Thread* ProcessGetWaitingThread(Process*p)
 {
-    if(p->main.state == ThreadState_Waiting)
+    if(p->main._base.state == ThreadState_Waiting)
     {
         return &(p->main);
     }
     Thread* t = NULL;
     PROCESS_FOR_EACH_EXTRA_THREAD(p, t)
     {
-        if(t->state == ThreadState_Waiting)
+        if(t->_base.state == ThreadState_Waiting)
         {
             return t;
         }
     }
+    KLOG_DEBUG("No waiting threads in %i\n", ProcessGetPID(p));
     return NULL;
 }
 

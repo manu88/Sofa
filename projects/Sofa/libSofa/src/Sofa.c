@@ -30,15 +30,7 @@ pid_t SFGetPPid()
 }
 
 
-pid_t SFWaitPid(pid_t pid, int *wstatus, int options)
-{
-    return sc_wait(TLSGet()->ep, pid, wstatus, options);
-}
 
-pid_t SFWait(int *wstatus)
-{
-    return SFWaitPid(-1, wstatus, 0);
-}
 
 
 ssize_t SFRead(char* data, size_t dataSize)

@@ -22,12 +22,7 @@
 #include "Allocator.h"
 #include "Thread.h"
 
-typedef enum
-{
-    ThreadState_Running = 0,
-    ThreadState_Sleeping,
-    ThreadState_Waiting,
-} ThreadState;
+
 
 typedef enum
 {
@@ -46,7 +41,6 @@ typedef struct _Thread
     uint8_t* ipcBuffer;
 //    seL4_Word replyCap;
 
-    ThreadState state;
     struct _Thread *next;
     void *stack;
     size_t stackSize;

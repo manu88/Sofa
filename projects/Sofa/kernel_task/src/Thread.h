@@ -17,6 +17,14 @@
 #include <sys/types.h>
 #include <sel4/types.h>
 
+
+typedef enum
+{
+    ThreadState_Running = 0,
+    ThreadState_Sleeping,
+    ThreadState_Waiting,
+} ThreadState;
+
 typedef struct _ServiceClient ServiceClient;
 
 typedef struct _Process Process;
@@ -28,6 +36,9 @@ typedef struct
 {
     uint8_t kernTaskThread;
     Process* process; //process owner
+
+    ThreadState state;
+
 
     seL4_Word replyCap;
     seL4_Word currentSyscallID;

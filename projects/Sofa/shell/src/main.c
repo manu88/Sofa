@@ -96,7 +96,7 @@ static int doSpawn(char* cmd)
     if(!detached)
     {
         int appStatus = 0;
-        int ret = SFWait(&appStatus);
+        int ret = ProcClientWaitPid(pid, &appStatus, 0);
         if(ret < 0)
         {
             Printf("Wait interupted\n");
@@ -236,7 +236,7 @@ static int doKill(const char* args)
     if(strlen(strPid) == 0)
     {
         Printf("Kill usage: kill pid signal\n");
-        return;
+        return -1;
     }
     pid_t pidToKill = atol(strPid);
     Printf("Kill pid %i\n", pidToKill);
@@ -335,7 +335,7 @@ void processCommand(const char* cmd)
     else if(startsWith("wait", cmd))
     {
         int appStatus = 0;
-        int ret = SFWait(&appStatus);
+        int ret = ProcClientWait(&appStatus);
         if(ret < 0)
         {
             Printf("Wait interupted\n");

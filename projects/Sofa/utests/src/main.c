@@ -42,6 +42,11 @@ static void testRead(void)
     close(h);
 }
 
+static void testWait()
+{
+    assert(ProcClientWait(NULL) == -ECHILD);
+}
+
 static void testReaddir()
 {
     DIR *folder = opendir("/");
@@ -64,7 +69,7 @@ static void testSpawn(const char* selfName)
     int pid = ProcClientSpawn(b);
     assert(pid > 0);
     int status = 0;
-    int r = SFWaitPid(pid, &status, 0);
+    int r = ProcClientWaitPid(pid, &status, 0);
     assert(r == pid);
     assert(WIFEXITED(status));
 }
@@ -88,7 +93,7 @@ static void testChildFault(const char* selfName)
     assert(pid > 0);
 
     int status = 0;
-    int r = SFWaitPid(pid, &status, 0);
+    int r = ProcClientWaitPid(pid, &status, 0);
     assert(r == pid);
     assert(WIFSIGNALED(status));
 }
@@ -100,6 +105,7 @@ static int baseMain(int argc, char *argv[])
     testMmap();
     testReaddir();
     testMalloc();
+    testWait();
     testSpawn(argv[0]);
     testKillChild(argv[0]);
     testChildFault(argv[0]);

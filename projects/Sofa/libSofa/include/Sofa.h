@@ -28,7 +28,7 @@ typedef enum
     SyscallID_Sleep,
 
 //    SyscallID_Spawn,
-    SyscallID_Wait,
+//    SyscallID_Wait,
 //    SyscallID_Kill,
     SyscallID_mmap,
     SyscallID_munmap,
@@ -94,10 +94,6 @@ int SFSleep(int ms);
 
 pid_t SFGetPid(void);
 pid_t SFGetPPid(void);
-
-pid_t SFWaitPid(pid_t pid, int *wstatus, int options);
-pid_t SFWait(int *wstatus);
-
 
 ssize_t SFRead(char* data, size_t dataSize);
 ssize_t SFWrite(const char* data, size_t dataSize);

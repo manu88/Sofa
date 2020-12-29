@@ -21,6 +21,7 @@
 
 int doKill(pid_t pidToKill, ThreadBase* sender, int signal);
 long doSpawn(ThreadBase* caller, const char* dataBuf);
+long doWait(Process* process, pid_t pidToWait, int options, int *retCode);
 
 static BaseService _service;
 
@@ -96,7 +97,6 @@ static void onProcEnum(BaseService* service, ThreadBase* sender, seL4_MessageInf
 
 static void onProcKill(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
 {
-    KLOG_DEBUG("ProcessService: kill req\n");
     pid_t pidToKill = seL4_GetMR(1);
     int signal = seL4_GetMR(2);
 
@@ -110,6 +110,44 @@ static void onProcKill(BaseService* service, ThreadBase* sender, seL4_MessageInf
 
     seL4_SetMR(1, ret);
     seL4_Reply(msg);
+}
+
+static void onProcWait(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+{
+    pid_t pidToWait = seL4_GetMR(1);
+    int options = seL4_GetMR(2);
+    int retCode = 0;
+    long r = doWait(sender->process, pidToWait, options, &retCode);
+
+    if(r == -EWOULDBLOCK)
+    {
+        KLOG_DEBUG("Wait from %s would block\n", ProcessGetName(sender->process));
+        KernelTaskContext* ctx = getKernelTaskContext();
+        seL4_Word slot = get_free_slot(&ctx->vka);
+        int error = cnode_savecaller(&ctx->vka, slot);
+        if (error)
+        {
+            KLOG_TRACE("[Syscall_wait] Unable to save caller err=%i\n", error);
+            cnode_delete(&ctx->vka, slot);
+            seL4_SetMR(1, -error);
+            seL4_Reply(msg);
+            return;
+        }
+        
+        sender->replyCap = slot;
+        KLOG_DEBUG("Set %i state to waiting\n",ProcessGetPID(sender->process));
+        sender->state = ThreadState_Waiting;
+        //sender-> caller->state = ThreadState_Waiting;
+    }
+    else
+    {
+        seL4_SetMR(1, r);
+        if(r>0)
+        {
+            seL4_SetMR(2, retCode); // wstatus
+        }
+        seL4_Reply(msg);
+    }
 }
 
 static void onProcSpawn(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
@@ -140,6 +178,9 @@ static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageI
         break;
     case ProcRequest_Spawn:
         onProcSpawn(service, sender, msg);
+        break;
+    case ProcRequest_Wait:
+        onProcWait(service, sender, msg);
         break;
     default:
         break;

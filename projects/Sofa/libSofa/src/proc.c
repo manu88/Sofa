@@ -86,3 +86,29 @@ int ProcClientSpawn(const char* buf)
     return (int) seL4_GetMR(1); 
 
 }
+
+pid_t ProcClientWaitPid(pid_t pid, int *wstatus, int options)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, ProcRequest_Wait);
+    seL4_SetMR(1, pid);
+    seL4_SetMR(2, options);
+
+    info = seL4_Call(procCap, info);
+
+    if(pid == -EINTR)
+    {
+        return -EINTR;
+    }
+
+    if (wstatus)
+    {
+        *wstatus = (int) seL4_GetMR(2);
+    }
+
+    return seL4_GetMR(1);
+}
+pid_t ProcClientWait(int *wstatus)
+{
+    return ProcClientWaitPid(-1, wstatus, 0);
+}
