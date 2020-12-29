@@ -75,3 +75,14 @@ int ProcClientKill(pid_t pid, int sig)
     seL4_Call(procCap, info);
     return (int) seL4_GetMR(1); 
 }
+
+int ProcClientSpawn(const char* buf)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, ProcRequest_Spawn);
+    seL4_SetMR(1, 0);
+    strncpy(procBuf, buf, 4096);
+    seL4_Call(procCap, info);
+    return (int) seL4_GetMR(1); 
+
+}

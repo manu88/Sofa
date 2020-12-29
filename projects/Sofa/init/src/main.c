@@ -18,6 +18,7 @@
 #include <Sofa.h>
 #include <Thread.h>
 #include <runtime.h>
+#include <proc.h>
 
 int main(int argc, char *argv[])
 {
@@ -28,13 +29,19 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    int unittestsPid = SFSpawn("/cpio/utests");
+    
+    if(ProcClientInit() !=0)
+    {
+        return EXIT_FAILURE;
+    }
+
+    int unittestsPid = ProcClientSpawn("/cpio/utests");
     int utestStatus = -1;
     SFWaitPid(unittestsPid, &utestStatus, 0);
     SFPrintf("Unit tests returned %i\n", utestStatus);
 
     const char shellPath[] = "/cpio/shell";
-    int shellPid = SFSpawn(shellPath);
+    int shellPid = ProcClientSpawn(shellPath);
     SFPrintf("[init] shell pid is %i\n", shellPid);
 
     int appStatus = 0;
@@ -45,7 +52,7 @@ int main(int argc, char *argv[])
         SFPrintf("[init] Wait returned pid %i status %i\n", retPid, appStatus);
         if(retPid == shellPid)
         {
-            shellPid = SFSpawn(shellPath);
+            shellPid = ProcClientSpawn(shellPath);
             SFPrintf("[init] shell pid is %i\n", shellPid);
         }
     }

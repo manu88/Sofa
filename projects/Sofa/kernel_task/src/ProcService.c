@@ -20,6 +20,7 @@
 #include <proc.h>
 
 int doKill(pid_t pidToKill, ThreadBase* sender, int signal);
+long doSpawn(ThreadBase* caller, const char* dataBuf);
 
 static BaseService _service;
 
@@ -108,7 +109,17 @@ static void onProcKill(BaseService* service, ThreadBase* sender, seL4_MessageInf
 
     seL4_SetMR(1, ret);
     seL4_Reply(msg);
+}
 
+static void onProcSpawn(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+{
+    ServiceClient* client = BaseServiceGetClient(service, sender);
+    assert(client);
+
+    long ret = doSpawn(sender, client->buff);
+
+    seL4_SetMR(1, ret);
+    seL4_Reply(msg);
 }
 
 static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
@@ -125,6 +136,9 @@ static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageI
         break;
     case ProcRequest_Kill:
         onProcKill(service, sender, msg);
+        break;
+    case ProcRequest_Spawn:
+        onProcSpawn(service, sender, msg);
         break;
     default:
         break;

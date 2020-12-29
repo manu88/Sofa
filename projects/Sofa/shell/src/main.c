@@ -87,7 +87,7 @@ static int doSpawn(char* cmd)
     {
         cmd[strlen(cmd)-1] = 0;
     }
-    int pid = SFSpawn(cmd);
+    int pid = ProcClientSpawn(cmd);
     if(pid <= 0)
     {
         Printf("Spawn error %i\n", pid);

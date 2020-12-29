@@ -42,3 +42,4 @@ typedef int (*OnProcessDescription)(const ProcessDesc* p, void* ptr);
 
 int ProcClientEnum(OnProcessDescription callb, void* ptr);
 int ProcClientKill(pid_t pid, int sig);
+int ProcClientSpawn(const char* buf);

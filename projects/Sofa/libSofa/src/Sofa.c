@@ -18,17 +18,6 @@
 #include <runtime.h>
 #include <stdarg.h>
 
-int SFSpawn(const char* path)
-{
-    if(!path)
-    {
-        return -1;
-    }
-
-    int ret = sc_spawn(TLSGet()->ep, TLSGet()->buffer, path);
-
-    return ret;
-}
 
 pid_t SFGetPid()
 {

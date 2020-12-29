@@ -27,7 +27,7 @@ typedef enum
 
     SyscallID_Sleep,
 
-    SyscallID_Spawn,
+//    SyscallID_Spawn,
     SyscallID_Wait,
 //    SyscallID_Kill,
     SyscallID_mmap,
@@ -91,8 +91,6 @@ typedef enum
 
 int SFSleep(int ms);
 
-
-int SFSpawn(const char* path);
 
 pid_t SFGetPid(void);
 pid_t SFGetPPid(void);
