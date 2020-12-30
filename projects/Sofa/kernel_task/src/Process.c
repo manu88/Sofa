@@ -41,6 +41,18 @@
 extern Process initProcess;
 
 
+int ProcessCreateSofaIPCBuffer(Process* p, void** addr, void** procAddr)
+{
+    KernelTaskContext* ctx = getKernelTaskContext();
+
+    *addr = (uint8_t*) vspace_new_pages(&ctx->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    assert(*addr);
+    *procAddr = vspace_share_mem(&ctx->vspace, &p->native.vspace, *addr, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
+    assert(*procAddr);
+
+    return 0;
+}
+
 void spawnApp(Process* p, const char* imgName, Process* parent)
 {
     KernelTaskContext* envir = getKernelTaskContext();
@@ -53,11 +65,13 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
 
     int consumed_untypeds = process_set_up(NULL, p, imgName,(seL4_Word) &p->main);
 
+    ProcessCreateSofaIPCBuffer(p, &p->main.ipcBuffer, &p->init->mainIPCBuffer);
+/*
     p->main.ipcBuffer = (uint8_t*) vspace_new_pages(&envir->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(p->main.ipcBuffer);
     p->init->mainIPCBuffer = vspace_share_mem(&envir->vspace, &p->native.vspace, p->main.ipcBuffer, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
     assert(p->init->mainIPCBuffer);
-
+*/
     if(parent != NULL)
     {
         ProcessAddChild(parent, p);

@@ -186,7 +186,7 @@ long sc_munmap(seL4_CPtr endpoint, void* addr, size_t length)
 
 int sc_newThread(seL4_CPtr endpoint, ThreadConfig* conf)
 {
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 7);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 8);
     seL4_SetMR(0, SyscallID_ThreadNew);
 
     /*
@@ -196,6 +196,7 @@ int sc_newThread(seL4_CPtr endpoint, ThreadConfig* conf)
        4 ipcbuf
        5 ipcbufAddr
        6 stacktop
+       7 shared buffer
     */
     seL4_Call(endpoint, info);
 
@@ -209,6 +210,7 @@ int sc_newThread(seL4_CPtr endpoint, ThreadConfig* conf)
     conf->ipcBuf = seL4_GetMR(4);
     conf->ipcBufAddr = seL4_GetMR(5);
     conf->stackTop = (void*) seL4_GetMR(6);
+    conf->sofaIPC = (void*) seL4_GetMR(7);
 
     return 0;
 }

@@ -26,9 +26,12 @@ static void __entryPoint(void *arg0, void *arg1, void *ipc_buf)
     Thread* self = (Thread*) arg0;
     assert(self);
 
+    TLSContext ctx = {.buffer = (uint8_t*) self->sofaIPC, .ep = self->ep};
+
+    TLSSet(&ctx);
     int r = self->main(self, arg1);
 
-
+    //TLSSet(NULL);
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     seL4_SetMR(0, SyscallID_ThreadExit);
     seL4_SetMR(1, r);
@@ -74,6 +77,9 @@ int ThreadInit(Thread* t, ThreadMain threadMain, void* arg)
 
     t->ep = conf.ep;
     t->main = threadMain;
+    t->sofaIPC = conf.sofaIPC;
+
+    assert(t->sofaIPC);
 
     err = sel4utils_start_thread(&t->th, __entryPoint, t, arg, 1);
 

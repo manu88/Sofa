@@ -27,6 +27,7 @@ typedef struct _Thread
     ThreadMain main;
     seL4_CPtr ep;
 
+    void* sofaIPC;
     
 } Thread;
 

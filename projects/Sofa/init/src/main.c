@@ -26,21 +26,21 @@
 
 #include <Thread.h>
 
-static seL4_CPtr endpoint = 0;
-static test_init_data_t *init_data = NULL;
-
 Thread th;
 
 static int thRun(Thread* thread, void *arg)
 {
-    assert(thread);   
+    assert(thread);
+
+    SFPrintf("Hello from thread\n");
+    SFSleep(4000);
+    SFPrintf("Thread: after sleep\n");
+    while(1);
     return 42;
 }
 
 int main(int argc, char *argv[])
 {
-    endpoint = (seL4_CPtr) atoi(argv[0]);
-    init_data = (test_init_data_t *) atol(argv[1]);
     RuntimeInit2(argc, argv);
 
     if(SFGetPid() != 1)

@@ -75,6 +75,7 @@ void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info)
        4 ipcbufcap
        5 ipcbuf
        6 stacktop
+       7 sofa IPC buffer
     */
 
     Thread* newThread = kmalloc(sizeof(Thread));
@@ -100,10 +101,16 @@ void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info)
     void* stacktop = CreateNewStack(caller);
     assert(stacktop);
 
+    void* addr = NULL;
+    void* procAddr = NULL;
+    ProcessCreateSofaIPCBuffer(process, &addr, &procAddr);
+    assert(addr);
+    assert(procAddr);
+
     newThread->stack = stacktop;
     newThread->stackSize = 1;
-    //newThread->ipcBuffer = ipcBufCap;
-    //newThread->ipcBuffer_vaddr = ipcBuf;
+    newThread->ipcBuffer = addr;
+    newThread->ipcBuffer_vaddr = procAddr;
     LL_APPEND(process->threads, newThread);
 
     seL4_SetMR(1, (seL4_Word) 0);
@@ -112,6 +119,7 @@ void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info)
     seL4_SetMR(4, (seL4_Word) ipcBuf);
     seL4_SetMR(5, (seL4_Word) ipcBufAddr);
     seL4_SetMR(6, (seL4_Word) stacktop);
+    seL4_SetMR(7, (seL4_Word) procAddr);
     seL4_Reply(info);
 }
 

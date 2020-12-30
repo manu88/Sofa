@@ -52,6 +52,8 @@ typedef struct
     seL4_CPtr ipcBuf;
     seL4_CPtr ipcBufAddr;
     void* stackTop;
+
+    void* sofaIPC;
 } ThreadConfig;
 
 
