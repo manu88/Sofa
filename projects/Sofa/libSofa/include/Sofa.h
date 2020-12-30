@@ -38,7 +38,7 @@ typedef enum
     SyscallID_PPID,
     SyscallID_Debug,
 
-    SyscallID_RequestCap,
+//    SyscallID_RequestCap,
 
     SofaSysCall_RegisterService, // Register a 
     SofaSysCall_GetService,
@@ -55,14 +55,6 @@ typedef enum
 }SofaDebugCode;
 
 
-typedef enum
-{
-    SofaRequestCap_TCB,
-    SofaRequestCap_NewThread,
-    SofaRequestCap_NewThread2,
-    SofaRequestCap_IPCBuff,
-    SofaRequestCap_Endpoint,
-}SofaRequestCap;
 
 typedef enum 
 {

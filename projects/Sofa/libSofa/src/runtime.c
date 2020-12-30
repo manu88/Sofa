@@ -104,23 +104,6 @@ int RuntimeInit(int argc, char *argv[])
 }
 
 
-seL4_CPtr getNewThreadEndpoint(uint8_t** ipcBufferAddr)
-{
-    return 0;
-#if 0
-    seL4_CPtr recvSlot;
-    int vka_error = vka_cspace_alloc(&getProcessEnv()->vka, &recvSlot);
-    assert(vka_error == 0);
-    set_cap_receive_path(getProcessEnv(), recvSlot);
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-    seL4_SetMR(0, SyscallID_ThreadNew);
-
-    info = seL4_Call(TLSGet()->ep, info);
-
-    *ipcBufferAddr = (uint8_t*)seL4_GetMR(1);
-    return recvSlot;
-#endif
-}
 
 void sendThreadExit(seL4_CPtr ep)
 {

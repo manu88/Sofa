@@ -42,8 +42,8 @@ typedef struct
 static int requestNewThreadConfig(seL4_CPtr endpoint, ThreadConfig* conf)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 7);
-    seL4_SetMR(0, SyscallID_RequestCap);
-    seL4_SetMR(1, SofaRequestCap_NewThread2);
+    seL4_SetMR(0, SyscallID_ThreadNew);
+    seL4_SetMR(1, SyscallID_ThreadNew);
 
 
 
@@ -75,14 +75,19 @@ static void thRun(void *arg0, void *arg1, void *ipc_buf)
 {   
 
     seL4_CPtr ep = (seL4_CPtr) arg0;
+    seL4_CPtr tcb = (seL4_CPtr) arg1;
     assert(ep);
     assert(ipc_buf);
+    assert(tcb);
+    assert(seL4_GetIPCBuffer());
 
     //while(1);
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-    seL4_SetMR(0, SyscallID_Exit);
+    seL4_SetMR(0, SyscallID_ThreadExit);
     seL4_SetMR(1, 10);
     seL4_Send(ep, info);
+
+    seL4_TCB_Suspend(tcb);
 
     while(1);
 }
@@ -114,7 +119,7 @@ static void startThread()
 
     seL4_DebugNameThread(th.tcb.cptr, "Thread");
 
-    err = sel4utils_start_thread(&th, thRun, (void*) conf.ep, NULL, 1);
+    err = sel4utils_start_thread(&th, thRun, (void*) conf.ep, th.tcb.cptr, 1);
 
     SFPrintf("start thread ret %i\n", err);
 #endif

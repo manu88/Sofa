@@ -39,6 +39,5 @@ int RuntimeInit2(int argc, char *argv[]);
 seL4_CPtr getProcessEndpoint(void);
 struct env* getProcessEnv(void);
 
-seL4_CPtr getNewThreadEndpoint(uint8_t** ipcBufferAddr);
 
 void sendThreadExit(seL4_CPtr ep);
