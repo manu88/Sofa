@@ -16,7 +16,7 @@
 #pragma once
 #include <sel4/sel4.h>
 #include <sys/types.h> // pid_t
-
+#include <Sofa.h>
 
 // program exit
 void sc_exit(seL4_CPtr endpoint, int code);
@@ -43,3 +43,16 @@ int sc_reboot(seL4_CPtr endoint, int code);
 
 long sc_mmap(seL4_CPtr endpoint, void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 long sc_munmap(seL4_CPtr endpoint, void* addr, size_t length);
+
+
+typedef struct
+{
+    seL4_CPtr tcb;
+    seL4_CPtr ep;
+    seL4_CPtr ipcBuf;
+    seL4_CPtr ipcBufAddr;
+    void* stackTop;
+} ThreadConfig;
+
+
+int sc_newThread(seL4_CPtr endpoint, ThreadConfig* conf);

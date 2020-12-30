@@ -117,7 +117,8 @@ void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info)
 
 void Syscall_ThreadExit(Thread* caller, seL4_MessageInfo_t info)
 {
-    KLOG_DEBUG("Thread exit request\n");
+    int ret = (int) seL4_GetMR(1);
+    KLOG_DEBUG("Thread exit request code %i\n", ret);
     Process* process = caller->_base.process;
     assert(process);
     LL_DELETE(process->threads, caller);

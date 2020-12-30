@@ -28,7 +28,7 @@ char _cpio_archive_end[1];
 
 static seL4_CPtr endpoint;
 static struct env env;
-
+test_init_data_t *init_data;
 
 static TLSContext _mainTLSContext;
 
@@ -59,7 +59,7 @@ int RuntimeInit2(int argc, char *argv[])
 {
     assert(argc >= 2);
     endpoint = (seL4_CPtr) atoi(argv[0]);
-    test_init_data_t *init_data = (void *) atol(argv[1]);
+    init_data = (void *) atol(argv[1]);
 
     memset(&_mainTLSContext, 0, sizeof(TLSContext));
     _mainTLSContext.ep = endpoint;

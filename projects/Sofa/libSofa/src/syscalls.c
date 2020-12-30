@@ -15,6 +15,7 @@
  */
 #include <runtime.h>
 #include <Sofa.h>
+#include "syscalls.h"
 
 void sc_exit(seL4_CPtr endpoint, int code)
 {
@@ -179,4 +180,35 @@ long sc_munmap(seL4_CPtr endpoint, void* addr, size_t length)
     seL4_Call(endpoint, info);
 
     return seL4_GetMR(1);
+}
+
+
+
+int sc_newThread(seL4_CPtr endpoint, ThreadConfig* conf)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 7);
+    seL4_SetMR(0, SyscallID_ThreadNew);
+
+    /*
+    MR 1 status : 0 ok
+       2 tcb
+       3 ep
+       4 ipcbuf
+       5 ipcbufAddr
+       6 stacktop
+    */
+    seL4_Call(endpoint, info);
+
+    if(seL4_GetMR(1) != 0)
+    {
+        return seL4_GetMR(1);
+    }
+
+    conf->tcb = seL4_GetMR(2);
+    conf->ep = seL4_GetMR(3);
+    conf->ipcBuf = seL4_GetMR(4);
+    conf->ipcBufAddr = seL4_GetMR(5);
+    conf->stackTop = (void*) seL4_GetMR(6);
+
+    return 0;
 }
