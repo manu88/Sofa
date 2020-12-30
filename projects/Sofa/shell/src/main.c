@@ -244,6 +244,21 @@ static int doKill(const char* args)
     ProcClientKill(pidToKill, SIGKILL);
 }
 
+static int doInit(const char* args)
+{
+    ssize_t cap = SFGetService("init");
+    Printf("init connection %zi\n", cap);
+    if(cap > 0)
+    {
+        seL4_MessageInfo_t msg = seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0, 1);
+        seL4_SetMR(0,42);
+        seL4_Send(cap, msg);
+
+        return 0;
+    }
+
+    return cap;
+}
 void processCommand(const char* cmd)
 {
     if(startsWith("exit", cmd))
@@ -291,26 +306,10 @@ void processCommand(const char* cmd)
     {
         SFDebug(SofaDebugCode_ListServices);
     }
-    else if(startsWith("register", cmd))
+    else if(startsWith("init", cmd))
     {
-        const char* serviceName = cmd + strlen("register ");
-        if(strlen(serviceName) == 0)
-        {
-            Printf("register takes a Name argument\n");
-            return;
-        }
-        Printf("register arg is '%s'\n", serviceName);
-        ssize_t ret =  SFRegisterService(serviceName);
-        if (ret <= 0)
-        {
-            Printf("Error registering service '%s' %li\n", serviceName, ret);
-
-        }
-        else
-        {
-            Printf("Service is at %li\n", ret);
-        }
-        
+        const char *args = cmd + strlen("init ");
+        doInit(args);
     }
     else if(startsWith("cat", cmd))
     {

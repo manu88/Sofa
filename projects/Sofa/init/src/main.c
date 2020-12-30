@@ -32,10 +32,20 @@ static int thRun(Thread* thread, void *arg)
 {
     assert(thread);
 
-    SFPrintf("Hello from thread\n");
-    SFSleep(4000);
-    SFPrintf("Thread: after sleep\n");
-    while(1);
+    SFPrintf("Init: create service\n");
+
+    ssize_t errOrCap = SFRegisterService("init");
+    if(errOrCap <= 0)
+    {
+        SFPrintf("Error: unable to register init service\n");
+        return -1;
+    }
+    while(1)
+    {
+        seL4_Word sender;
+        seL4_Recv(errOrCap, &sender);
+        SFPrintf("Init service: received msg from %lu\n", sender);
+    }
     return 42;
 }
 
@@ -62,7 +72,6 @@ int main(int argc, char *argv[])
     SFPrintf("-----------------------------\n");
 
     ThreadInit(&th, thRun, NULL);
-//    ssize_t errOrCap = SFRegisterService("init");
 
     const char shellPath[] = "/cpio/shell";
     int shellPid = ProcClientSpawn(shellPath);
