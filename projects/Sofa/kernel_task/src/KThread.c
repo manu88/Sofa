@@ -51,7 +51,7 @@ int KThreadRun(KThread* t, int prio, void* arg)
     int error;
     KernelTaskContext* env = getKernelTaskContext();
     sel4utils_thread_config_t thConf = thread_config_new(&env->simple);
-    thConf = thread_config_cspace(thConf, simple_get_cnode(&env->simple), 0);
+  //  thConf = thread_config_cspace(thConf, simple_get_cnode(&env->simple), 0);
 
     // create a minted enpoint for the thread
     cspacepath_t srcPath;

@@ -59,9 +59,9 @@ typedef enum
 {
     SofaRequestCap_TCB,
     SofaRequestCap_NewThread,
+    SofaRequestCap_NewThread2,
     SofaRequestCap_IPCBuff,
     SofaRequestCap_Endpoint,
-    SofaRequestCap_NewPage,
 }SofaRequestCap;
 
 typedef enum 

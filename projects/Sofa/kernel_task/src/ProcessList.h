@@ -43,7 +43,7 @@ typedef struct _Thread
 
     struct _Thread *next;
     void *stack;
-    size_t stackSize;
+    size_t stackSize; // in pages
 
 } Thread;
 

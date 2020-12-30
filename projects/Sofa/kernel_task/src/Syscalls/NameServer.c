@@ -93,7 +93,7 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
     cspacepath_t res2;
     vka_cspace_make_path(&ctx->vka, tcb_obj2.cptr, &res2);
 
-    assert(vka_cnode_mint(&res2, &res, seL4_AllRights, 0) == 0);
+    //assert(vka_cnode_mint(&res2, &res, seL4_AllRights, 0) == 0);
 
 
     seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->_base.process->native, &ctx->vka, res.capPtr);

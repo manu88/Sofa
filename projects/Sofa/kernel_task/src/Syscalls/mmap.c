@@ -34,11 +34,11 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
     assert(process);
     
     void * addr = (void*) seL4_GetMR(1); // NULL means anywhere
-    size_t length = seL4_GetMR(2);//, length);
-    int prot = seL4_GetMR(3);//, prot);
-    int flags = seL4_GetMR(4);//, flags);
-    int fd = seL4_GetMR(5);//, fd);
-    off_t offset = seL4_GetMR(6);//, offset);
+    size_t length = seL4_GetMR(2);
+    int prot = seL4_GetMR(3);
+    int flags = seL4_GetMR(4);
+    int fd = seL4_GetMR(5);
+    off_t offset = seL4_GetMR(6);
 
     if(addr)
     {
