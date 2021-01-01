@@ -110,6 +110,7 @@ void _closeThreadClients(Thread*t)
 
 void doExit(Process* process, int retCode)
 {
+    KLOG_DEBUG("doExit for process %i\n", ProcessGetPID(process));
     if(ProcessGetPID(process) == 1)
     {
         Panic("init returned");
@@ -120,6 +121,18 @@ void doExit(Process* process, int retCode)
     PROCESS_FOR_EACH_EXTRA_THREAD(process, thread)
     {
         _closeThreadClients(thread);
+        KLOG_DEBUG("doExit.Suspend thread\n");
+        seL4_TCB_Suspend(thread->tcb.cptr);
+        KLOG_DEBUG("doExit.Suspend thread ok\n");
+
+        KLOG_DEBUG("start vspace_free_ipc_buffer\n");
+        vspace_free_ipc_buffer(&thread->_base.process->native.vspace, (seL4_Word *) thread->ipcBuf2);
+        KLOG_DEBUG("end vspace_free_ipc_buffer\n");
+
+        KLOG_DEBUG("start vspace_free_sized_stack\n");
+        vspace_free_sized_stack(&thread->_base.process->native.vspace, thread->stack, thread->stackSize);
+        KLOG_DEBUG("end vspace_free_sized_stack\n");
+
     }
 
 //reap the children to init
@@ -343,18 +356,25 @@ void process_tear_down(Process* process)
     LL_FOREACH_SAFE(process->threads,elt,tmp) 
     {
         LL_DELETE(process->threads,elt);
+        
+        seL4_TCB_Suspend(elt->tcb.cptr);
+        KLOG_DEBUG("Free TCB thread %p\n", elt);
+        vka_free_object(&env->vka, &elt->tcb);
+        KLOG_DEBUG("Did Free TCB thread %p\n", elt);
+
         if(elt->_base.replyCap != 0)
         {
             ThreadCleanupTimer(elt);
             if(elt->ipcBuffer_vaddr)
             {
-                vspace_unmap_pages(&process->native.vspace, elt->ipcBuffer_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
+                //vspace_unmap_pages(&process->native.vspace, elt->ipcBuffer_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
             }
         }
         if(elt->stack && elt->stackSize)
         {
             KLOG_INFO("Remove Thread stack (size %zi)\n", elt->stackSize);
             vspace_free_sized_stack(&process->native.vspace, elt->stack, elt->stackSize);
+            KLOG_DEBUG("Did remove thread stack\n");
         }
         kfree(elt);
     }
@@ -365,11 +385,8 @@ void process_tear_down(Process* process)
     }
 
     /* unmap the env->init data frame */
-
     vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
     vspace_unmap_pages(&process->native.vspace, process->init->mainIPCBuffer, 1, PAGE_BITS_4K, VSPACE_FREE);
-
-
 
     /* destroy the process */
     sel4utils_destroy_process(&process->native, &env->vka);   

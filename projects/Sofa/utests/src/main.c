@@ -107,19 +107,23 @@ int thread1(Thread* thread, void *arg)
     int val = (int) arg;
     assert(val == 42);
 
-    SFSleep(1000);
+    SFSleep(500);
     return 53;
 }
 
 static void testThread()
 {
-    //ThreadInit(&th, thread1, (void*) 42);
+    ThreadInit(&th, thread1, (void*) 42);
+    int retVal = 0;
+    assert(ThreadJoin(&th, &retVal) == 0);
+    assert(retVal == 53);
 
 }
 
 
 static int baseMain(int argc, char *argv[])
 {
+
     testRead();
     testMmap();
     testReaddir();
@@ -129,7 +133,7 @@ static int baseMain(int argc, char *argv[])
     testKillChild(argv[0]);
     testChildFault(argv[0]);
 
-    testThread();
+    //testThread();
 
     return 0;
 }

@@ -251,7 +251,14 @@ static int doInit(const char* args)
     if(cap > 0)
     {
         seL4_MessageInfo_t msg = seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0, 1);
-        seL4_SetMR(0,42);
+        seL4_SetMR(0, 1);
+        msg = seL4_Call(cap, msg);
+        long addr = seL4_GetMR(0);
+        char* sharedBuf = addr;
+        SFPrintf("init responded to code 1\n");
+        msg = seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0, 1);
+        seL4_SetMR(0, 2);
+        sprintf(sharedBuf, "Hello world");
         seL4_Send(cap, msg);
 
         return 0;

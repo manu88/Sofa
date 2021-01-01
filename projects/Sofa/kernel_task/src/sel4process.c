@@ -695,7 +695,8 @@ error:
 void sel4utils_destroy_process(sel4utils_process_t *process, vka_t *vka)
 {
     /* destroy the cnode */
-    if (process->own_cspace) {
+    if (process->own_cspace) 
+    {
         cspacepath_t path;
         vka_cspace_make_path(vka, process->cspace.cptr, &path);
         /* need to revoke the cnode to remove any self references that would keep the object
@@ -704,7 +705,6 @@ void sel4utils_destroy_process(sel4utils_process_t *process, vka_t *vka)
         vka_free_object(vka, &process->cspace);
     }
 
-
     /* destroy the thread */
     sel4utils_clean_up_thread(vka, &process->vspace, &process->thread);
 
@@ -712,8 +712,13 @@ void sel4utils_destroy_process(sel4utils_process_t *process, vka_t *vka)
     /* tear down the vspace */
     if (process->own_vspace) 
     {
+        printf("Start of stuf\n");
+
         vspace_tear_down(&process->vspace, VSPACE_FREE);
         /* free any objects created by the vspace */
+
+        printf("End of stuf\n");
+
         clear_objects(process, vka);
     }
 

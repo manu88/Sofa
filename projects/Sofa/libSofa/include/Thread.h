@@ -26,12 +26,13 @@ typedef struct _Thread
     sel4utils_thread_t th;
     ThreadMain main;
     seL4_CPtr ep;
-
+    seL4_CPtr localEp; // for Join
     void* sofaIPC;
+
     
 } Thread;
 
 
 int ThreadInit(Thread* t, ThreadMain threadMain, void* arg);
 
-int ThreadJoin(Thread* t, void **retval);
+int ThreadJoin(Thread* t, int* retval);

@@ -45,6 +45,10 @@ typedef struct _Thread
     void *stack;
     size_t stackSize; // in pages
 
+    
+    vka_object_t tcb; // the tcb cap, kernel_task' side
+    void* ipcBuf2;
+
 } Thread;
 
 typedef struct _ProcStats

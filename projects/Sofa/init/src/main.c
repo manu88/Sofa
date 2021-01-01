@@ -13,41 +13,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <allocman/vka.h>
-#include <allocman/bootstrap.h>
 #include <Sofa.h>
 #include <Thread.h>
 #include <runtime.h>
 #include <proc.h>
 #include <sys/wait.h>
 
-#include <sel4utils/helpers.h>
-#include <sel4runtime.h>
 
-#include <Thread.h>
-
-Thread th;
-
-static int thRun(Thread* thread, void *arg)
-{
-    assert(thread);
-
-    SFPrintf("Init: create service\n");
-
-    ssize_t errOrCap = SFRegisterService("init");
-    if(errOrCap <= 0)
-    {
-        SFPrintf("Error: unable to register init service\n");
-        return -1;
-    }
-    while(1)
-    {
-        seL4_Word sender;
-        seL4_Recv(errOrCap, &sender);
-        SFPrintf("Init service: received msg from %lu\n", sender);
-    }
-    return 42;
-}
 
 int main(int argc, char *argv[])
 {
@@ -71,7 +43,11 @@ int main(int argc, char *argv[])
     SFPrintf("Unit tests returned %i\n", utestStatus);
     SFPrintf("-----------------------------\n");
 
-    ThreadInit(&th, thRun, NULL);
+
+    const char initServicePath[] = "/cpio/initService";
+    int initServPid = ProcClientSpawn(initServicePath);
+    SFPrintf("[init] init service pid is %i\n", initServPid);
+
 
     const char shellPath[] = "/cpio/shell";
     int shellPid = ProcClientSpawn(shellPath);

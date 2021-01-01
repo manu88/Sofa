@@ -15,6 +15,7 @@
  */
 #include <Thread.h>
 #include <runtime.h>
+
 #include "syscalls.h"
 #include "test_init_data.h"
 
@@ -31,11 +32,20 @@ static void __entryPoint(void *arg0, void *arg1, void *ipc_buf)
     TLSSet(&ctx);
     int r = self->main(self, arg1);
 
+
     TLSSet(NULL);
+
+// signal to join
+    seL4_MessageInfo_t infoJoin = seL4_MessageInfo_new(0, 0, 0, 1);
+    seL4_SetMR(0, r);
+    seL4_Call(self->localEp, infoJoin);
+
+// Signal term to kernel task
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
     seL4_SetMR(0, SyscallID_ThreadExit);
     seL4_SetMR(1, r);
     seL4_Send(self->ep, info);
+
 
     seL4_TCB_Suspend(self->th.tcb.cptr);
 
@@ -52,6 +62,12 @@ int ThreadInit(Thread* t, ThreadMain threadMain, void* arg)
         return err;
     }
 
+    long localEp = sc_caprequest(TLSGet()->ep, CapRequest_Endpoint);
+    SFPrintf("localEp cap %lu\n", localEp);
+    if(localEp > 0)
+    {
+        t->localEp = localEp;
+    }
 
     t->th.tcb.cptr = conf.tcb;
     t->th.stack_top = conf.stackTop;
@@ -83,8 +99,19 @@ int ThreadInit(Thread* t, ThreadMain threadMain, void* arg)
 
     err = sel4utils_start_thread(&t->th, __entryPoint, t, arg, 1);
 
-    SFPrintf("start thread ret %i\n", err);
+    return err;
+}
 
 
+int ThreadJoin(Thread* t, int *retval)
+{
+    seL4_Word badge;
+    seL4_Wait(t->localEp, &badge);
+
+    if(retval)
+    {
+        *retval = seL4_GetMR(0);
+    }
     return 0;
+
 }
