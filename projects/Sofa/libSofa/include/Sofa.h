@@ -111,7 +111,7 @@ ssize_t SFGetService(const char* name);
 
 
 
-long SFShareMem(void* addr, seL4_Word with);
+long SFShareMem(void* addr, seL4_Word with, seL4_CapRights_t rights);
 
 typedef enum
 {

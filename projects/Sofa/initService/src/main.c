@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
         {
             p = SFMmap(NULL, 4096, 0, 0, 0, 0);
             SFPrintf("Init service: shared buff init side = %p\n", p);
-            long addr = SFShareMem(p, sender);
+            long addr = SFShareMem(p, sender, seL4_ReadWrite);
 
             seL4_SetMR(0, addr);
             seL4_Reply(msg);

@@ -133,7 +133,7 @@ long SFMunmap(void* addr, size_t length)
 }
 
 
-long SFShareMem(void* addr, seL4_Word with)
+long SFShareMem(void* addr, seL4_Word with, seL4_CapRights_t rights)
 {
-    return sc_sharemem(TLSGet()->ep, addr, with);
+    return sc_sharemem(TLSGet()->ep, addr, with, rights.words[0]);
 }

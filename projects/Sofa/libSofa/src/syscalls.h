@@ -44,7 +44,7 @@ int sc_reboot(seL4_CPtr endoint, int code);
 long sc_mmap(seL4_CPtr endpoint, void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 long sc_munmap(seL4_CPtr endpoint, void* addr, size_t length);
 
-long sc_sharemem(seL4_CPtr endpoint, void* addr, seL4_Word with);
+long sc_sharemem(seL4_CPtr endpoint, void* addr, seL4_Word with, uint64_t rights);
 
 long sc_caprequest(seL4_CPtr endoint, CapRequest type);
 

@@ -172,12 +172,13 @@ long sc_mmap(seL4_CPtr endpoint, void *addr, size_t length, int prot, int flags,
 }
 
 
-long sc_sharemem(seL4_CPtr endpoint, void* addr, seL4_Word with)
+long sc_sharemem(seL4_CPtr endpoint, void* addr, seL4_Word with, uint64_t rights)
 {
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
     seL4_SetMR(0, SyscallID_ShareMem);
     seL4_SetMR(1, addr);
     seL4_SetMR(2, with);
+    seL4_SetMR(3, rights);
     seL4_Call(endpoint, info);
 
     return seL4_GetMR(1);
