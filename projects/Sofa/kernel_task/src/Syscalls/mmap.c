@@ -15,6 +15,7 @@
  */
 #include "SyscallTable.h"
 #include <sel4utils/vspace_internal.h>
+#include "Process.h"
 
 
 void Syscall_munmap(Thread* caller, seL4_MessageInfo_t info)
@@ -34,11 +35,11 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
     assert(process);
     
     void * addr = (void*) seL4_GetMR(1); // NULL means anywhere
-    size_t length = seL4_GetMR(2);//, length);
-    int prot = seL4_GetMR(3);//, prot);
-    int flags = seL4_GetMR(4);//, flags);
-    int fd = seL4_GetMR(5);//, fd);
-    off_t offset = seL4_GetMR(6);//, offset);
+    size_t length = seL4_GetMR(2);
+    int prot = seL4_GetMR(3);
+    int flags = seL4_GetMR(4);
+    int fd = seL4_GetMR(5);
+    off_t offset = seL4_GetMR(6);
 
     if(addr)
     {
@@ -62,4 +63,26 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
 
     seL4_SetMR(1,(seL4_Word) p);
     seL4_Reply(info);   
+}
+
+
+void Syscall_shareMem(Thread* caller, seL4_MessageInfo_t info)
+{
+    Process* proc = caller->_base.process;
+
+    void* addrToShare = (void* ) seL4_GetMR(1);
+    Thread* procToShareWith =(Thread*) seL4_GetMR(2);
+
+    uint64_t _rights = seL4_GetMR(3);
+    seL4_CapRights_t rights;
+    rights.words[0] = _rights;
+
+    void* sharedp = vspace_share_mem(&proc->native.vspace, &procToShareWith->_base.process->native.vspace, addrToShare, 1, PAGE_BITS_4K, rights, 1);
+    assert(sharedp);
+
+    KLOG_DEBUG("Shared mem at %p\n", sharedp);
+
+    seL4_SetMR(1, (seL4_Word) sharedp);
+    seL4_Reply(info);
+
 }

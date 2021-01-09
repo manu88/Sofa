@@ -15,19 +15,24 @@
  */
 #pragma once
 #include <helpers.h>
+#include <sel4utils/thread.h>
 
+typedef struct _Thread Thread;
 
-// FIXME: Merge  helper_thread_t and this struct together
-typedef struct
+typedef int (*ThreadMain)(Thread* thread, void *arg);
+
+typedef struct _Thread
 {
-    helper_thread_t th; // Needs to remain 1st!
+    sel4utils_thread_t th;
+    ThreadMain main;
     seL4_CPtr ep;
+    seL4_CPtr localEp; // for Join
+    void* sofaIPC;
 
-    void* ret;
+    
 } Thread;
 
-typedef void *(*start_routine) (void *);
 
-int ThreadInit(Thread* t, start_routine threadMain, void* arg);
+int ThreadInit(Thread* t, ThreadMain threadMain, void* arg);
 
-int ThreadJoin(Thread* t, void **retval);
+int ThreadJoin(Thread* t, int* retval);

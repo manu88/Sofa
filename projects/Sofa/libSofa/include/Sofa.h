@@ -15,6 +15,7 @@
  */
 #pragma once
 #include <sys/types.h> // pid_t
+#include <sel4/types.h>
 
 typedef enum
 {
@@ -33,6 +34,8 @@ typedef enum
     SyscallID_mmap,
     SyscallID_munmap,
 
+    SyscallID_ShareMem,
+
     SyscallID_Read,
     SyscallID_Write,
     SyscallID_PPID,
@@ -40,7 +43,7 @@ typedef enum
 
     SyscallID_RequestCap,
 
-    SofaSysCall_RegisterService, // Register a 
+    SofaSysCall_RegisterService,
     SofaSysCall_GetService,
 
     SofaSysCall_Reboot,
@@ -54,15 +57,12 @@ typedef enum
     SofaDebugCode_DumpSched,
 }SofaDebugCode;
 
-
-typedef enum
+typedef enum 
 {
-    SofaRequestCap_TCB,
-    SofaRequestCap_NewThread,
-    SofaRequestCap_IPCBuff,
-    SofaRequestCap_Endpoint,
-    SofaRequestCap_NewPage,
-}SofaRequestCap;
+    CapRequest_Notification,
+    CapRequest_Endpoint,
+} CapRequest;
+
 
 typedef enum 
 {
@@ -108,6 +108,10 @@ ssize_t SFReadLine(char* data, size_t dataSize);
 
 ssize_t SFRegisterService(const char* name);
 ssize_t SFGetService(const char* name);
+
+
+
+long SFShareMem(void* addr, seL4_Word with, seL4_CapRights_t rights);
 
 typedef enum
 {

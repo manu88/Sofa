@@ -21,6 +21,7 @@
 
 void Syscall_exit(Thread* caller, seL4_MessageInfo_t info)
 {
+    KLOG_DEBUG("-->Syscall exit\n");
     int retCode = seL4_GetMR(1);
 
     ThreadBase* base = (ThreadBase*) caller;
@@ -28,10 +29,11 @@ void Syscall_exit(Thread* caller, seL4_MessageInfo_t info)
     {
         KLOG_INFO("Exit from kernel_task thread with status %i\n", retCode);
         KThreadCleanup((KThread*) caller);
-        return;
     }
-    KernelTaskContext* env = getKernelTaskContext();
-
-    Process* process = caller->_base.process;
-    doExit(process, MAKE_EXIT_CODE(retCode, 0));
+    else
+    {
+        KernelTaskContext* env = getKernelTaskContext();
+        Process* process = caller->_base.process;
+        doExit(process, MAKE_EXIT_CODE(retCode, 0));
+    }
 }

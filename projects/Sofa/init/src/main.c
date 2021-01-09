@@ -13,13 +13,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <allocman/vka.h>
-#include <allocman/bootstrap.h>
 #include <Sofa.h>
 #include <Thread.h>
 #include <runtime.h>
 #include <proc.h>
 #include <sys/wait.h>
+
+
 
 int main(int argc, char *argv[])
 {
@@ -42,6 +42,12 @@ int main(int argc, char *argv[])
     waitpid(unittestsPid, &utestStatus, 0);
     SFPrintf("Unit tests returned %i\n", utestStatus);
     SFPrintf("-----------------------------\n");
+
+
+    const char initServicePath[] = "/cpio/initService";
+    int initServPid = ProcClientSpawn(initServicePath);
+    SFPrintf("[init] init service pid is %i\n", initServPid);
+
 
     const char shellPath[] = "/cpio/shell";
     int shellPid = ProcClientSpawn(shellPath);

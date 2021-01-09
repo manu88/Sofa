@@ -35,6 +35,7 @@ void Syscall_Write(Thread* caller, seL4_MessageInfo_t info);
 
 void Syscall_PPID(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info);
+
 void Syscall_RequestCap(Thread* caller, seL4_MessageInfo_t info);
 
 void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info);
@@ -44,6 +45,8 @@ void SysCall_Reboot(Thread* caller, seL4_MessageInfo_t info);
 
 void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_munmap(Thread* caller, seL4_MessageInfo_t info);
+
+void Syscall_shareMem(Thread* caller, seL4_MessageInfo_t info);
 
 static SyscallMethod syscallTable[] =
 {
@@ -58,6 +61,8 @@ static SyscallMethod syscallTable[] =
 
     Syscall_mmap,
     Syscall_munmap,
+
+    Syscall_shareMem,
 
     Syscall_Read,
     Syscall_Write,

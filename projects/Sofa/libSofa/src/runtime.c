@@ -28,7 +28,7 @@ char _cpio_archive_end[1];
 
 static seL4_CPtr endpoint;
 static struct env env;
-
+test_init_data_t *init_data;
 
 static TLSContext _mainTLSContext;
 
@@ -59,7 +59,7 @@ int RuntimeInit2(int argc, char *argv[])
 {
     assert(argc >= 2);
     endpoint = (seL4_CPtr) atoi(argv[0]);
-    test_init_data_t *init_data = (void *) atol(argv[1]);
+    init_data = (void *) atol(argv[1]);
 
     memset(&_mainTLSContext, 0, sizeof(TLSContext));
     _mainTLSContext.ep = endpoint;
@@ -104,23 +104,6 @@ int RuntimeInit(int argc, char *argv[])
 }
 
 
-seL4_CPtr getNewThreadEndpoint(uint8_t** ipcBufferAddr)
-{
-    return 0;
-#if 0
-    seL4_CPtr recvSlot;
-    int vka_error = vka_cspace_alloc(&getProcessEnv()->vka, &recvSlot);
-    assert(vka_error == 0);
-    set_cap_receive_path(getProcessEnv(), recvSlot);
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-    seL4_SetMR(0, SyscallID_ThreadNew);
-
-    info = seL4_Call(TLSGet()->ep, info);
-
-    *ipcBufferAddr = (uint8_t*)seL4_GetMR(1);
-    return recvSlot;
-#endif
-}
 
 void sendThreadExit(seL4_CPtr ep)
 {

@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <proc.h>
 #include <signal.h>
+#include <Thread.h>
 
 static void testMmap()
 {
@@ -98,9 +99,31 @@ static void testChildFault(const char* selfName)
     assert(WIFSIGNALED(status));
 }
 
+static Thread th;
+
+int thread1(Thread* thread, void *arg)
+{
+    assert(thread == &th);
+    int val = (int) arg;
+    assert(val == 42);
+
+    SFSleep(500);
+    return 53;
+}
+
+static void testThread()
+{
+    ThreadInit(&th, thread1, (void*) 42);
+    int retVal = 0;
+    assert(ThreadJoin(&th, &retVal) == 0);
+    assert(retVal == 53);
+
+}
+
 
 static int baseMain(int argc, char *argv[])
 {
+
     testRead();
     testMmap();
     testReaddir();
@@ -109,6 +132,8 @@ static int baseMain(int argc, char *argv[])
     testSpawn(argv[0]);
     testKillChild(argv[0]);
     testChildFault(argv[0]);
+
+    //testThread();
 
     return 0;
 }

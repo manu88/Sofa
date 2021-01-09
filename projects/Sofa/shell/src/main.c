@@ -11,14 +11,13 @@
 #include <files.h>
 #include <proc.h>
 #include <dk.h>
+#include <init.h>
 #include <sys/wait.h>
 
-extern seL4_CPtr vfsCap;
-extern char* vfsBuf;
 
 int fOut = -1;
-
-void processCommand(const char* cmd);
+static int lastCmdRet = 0;
+int processCommand(const char* cmd);
 
 static char *trim(char *str)
 {
@@ -244,16 +243,67 @@ static int doKill(const char* args)
     ProcClientKill(pidToKill, SIGKILL);
 }
 
-void processCommand(const char* cmd)
+static int doInit(const char* args)
+{
+    ssize_t cap = SFGetService("init");
+    Printf("init connection %zi\n", cap);
+    if(cap > 0)
+    {
+        seL4_MessageInfo_t msg = seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0, 1);
+        seL4_SetMR(0, InitRequest_Connect);
+        msg = seL4_Call(cap, msg);
+        long addr = seL4_GetMR(0);
+        char* sharedBuf = (char*) addr;
+        SFPrintf("init responded to code 1\n");
+
+        msg = seL4_MessageInfo_new(seL4_Fault_NullFault, 0,0, 1);
+        seL4_SetMR(0, InitRequest_Test);
+        sprintf(sharedBuf, "Hello world");
+        seL4_Send(cap, msg);
+
+        return 0;
+    }
+
+    return cap;
+}
+
+
+static int doEcho(const char* args)
+{
+    const char* trimmed = trim(args);
+    if(strlen(trimmed) == 0)
+    {
+        return -EINVAL;
+    }
+    if(strcmp(trimmed, "$?") == 0)
+    {
+        Printf("%i\n", lastCmdRet);
+    }
+    else if(trimmed[0] == '$')
+    {
+        const char* name = trimmed + 1;
+        char* value = getenv(name);
+        Printf("%s\n", value);
+    }
+    else
+    {
+        Printf("'%s'\n", trim(args));
+    }
+    
+    return 0;
+}
+
+int processCommand(const char* cmd)
 {
     if(startsWith("exit", cmd))
     {
         doExit(0);
+        return 0; 
     }
     else if(startsWith("echo", cmd))
     {
         const char* args = cmd + strlen("echo ");
-        Printf("%s\n", args);
+        return doEcho(args);
     }
     else if(startsWith("sh", cmd))
     {
@@ -263,75 +313,62 @@ void processCommand(const char* cmd)
     else if(startsWith("ps", cmd))
     {
         const char* args = cmd + strlen("ps ");
-        doPS(args);
+        return doPS(args);
     }
     else if(startsWith("poweroff", cmd))
     {
-        SFShutdown();
+        return SFShutdown();
     }
     else if(startsWith("help", cmd))
     {
         cmdHelp();
+        return 0;
     }
     else if(startsWith("vfs", cmd))
     {
         VFSClientDebug();
+        return 0;
     }
     else if(startsWith("kill", cmd))
     {
         const char *args = cmd + strlen("kill ");
-        doKill(args);
+        return doKill(args);
     }
     else if(startsWith("dk", cmd))
     {
         const char* cmds = cmd + strlen("dk ");
-        doDK(cmds);
+        return doDK(cmds);
     }
     else if(startsWith("services", cmd))
     {
         SFDebug(SofaDebugCode_ListServices);
+        return 0;
     }
-    else if(startsWith("register", cmd))
+    else if(startsWith("init", cmd))
     {
-        const char* serviceName = cmd + strlen("register ");
-        if(strlen(serviceName) == 0)
-        {
-            Printf("register takes a Name argument\n");
-            return;
-        }
-        Printf("register arg is '%s'\n", serviceName);
-        ssize_t ret =  SFRegisterService(serviceName);
-        if (ret <= 0)
-        {
-            Printf("Error registering service '%s' %li\n", serviceName, ret);
-
-        }
-        else
-        {
-            Printf("Service is at %li\n", ret);
-        }
-        
+        const char *args = cmd + strlen("init ");
+        return doInit(args);
     }
     else if(startsWith("cat", cmd))
     {
         const char *path = cmd + strlen("cat ");
-        doCat(path);
+        return doCat(path);
     }
     else if(startsWith("dog", cmd))
     {
         const char *path = cmd + strlen("dog ");
-        doCat(path);
+        return doCat(path);
     }
     else if(startsWith("ls", cmd))
     {
         const char *path = cmd + strlen("ls ");
-        doLs(path);
+        return doLs(path);
     }
     else if(startsWith("spawn", cmd))
     {
-        const char *strApp = cmd + strlen("spawn ");
+        char *strApp = (char*)(cmd + strlen("spawn "));
         int ret = doSpawn(strApp);
-        Printf("%i\n", ret);
+        return ret;
     }
     else if(startsWith("wait", cmd))
     {
@@ -341,34 +378,36 @@ void processCommand(const char* cmd)
         {
             Printf("Wait interupted\n");
         }
-        else
-        {
-            Printf("wait returned pid %i status %i\n", ret, appStatus);
-        }
+        return ret;
     }
     else if(startsWith("sleep", cmd))
     {
         const char *strMS = cmd + strlen("sleep ");
         int ms = atol(strMS);
-        SFSleep(ms);
+        return SFSleep(ms);
     }
     else if(startsWith("pid", cmd))
     {
-        Printf("PID=%i\n", getpid());
+        pid_t pid = getpid();
+        Printf("PID=%i\n", pid);
+        return pid;
     }
     else if(startsWith("ppid", cmd))
     {
-        Printf("PPID=%i\n", getppid());
+        pid_t ppid = getppid();
+        Printf("PPID=%i\n", ppid);
+        return ppid;
     }
     else if(startsWith("dump", cmd))
     {
         SFDebug(SofaDebugCode_DumpSched);
+        return 0;
     }
     else
     {
         Printf("Unknown command '%s'\n", cmd);
     }
-
+    return -1;
 }
 
 int main(int argc, char *argv[])
@@ -421,7 +460,7 @@ int main(int argc, char *argv[])
         }
         if(strlen(data))
         {
-            processCommand(trim(data));
+            lastCmdRet = processCommand(trim(data));
         }
 
     }

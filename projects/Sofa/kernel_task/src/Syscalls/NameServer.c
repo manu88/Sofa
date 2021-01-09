@@ -81,21 +81,22 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
 
     KernelTaskContext* ctx = getKernelTaskContext();
 
+    KLOG_DEBUG("Create Kernel task endpoint\n");
     vka_object_t tcb_obj;
     vka_alloc_endpoint(&ctx->vka, &tcb_obj);
     cspacepath_t res;
     vka_cspace_make_path(&ctx->vka, tcb_obj.cptr, &res);
 
 // create a minted enpoint for the thread
+    KLOG_DEBUG("Create Process task endpoint\n");
 
     vka_object_t tcb_obj2;
     vka_alloc_endpoint(&ctx->vka, &tcb_obj2);
     cspacepath_t res2;
     vka_cspace_make_path(&ctx->vka, tcb_obj2.cptr, &res2);
 
-    assert(vka_cnode_mint(&res2, &res, seL4_AllRights, 0) == 0);
 
-
+    KLOG_DEBUG("Copy cap to process\n");
     seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->_base.process->native, &ctx->vka, res.capPtr);
     newService->endpoint = ret;
     newService->baseEndpoint = res.capPtr;
