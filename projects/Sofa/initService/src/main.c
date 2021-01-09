@@ -14,15 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <Sofa.h>
-#include <Thread.h>
 #include <runtime.h>
 #include <proc.h>
-#include <sys/wait.h>
-
-
-#include <sel4utils/helpers.h>
-#include <sel4runtime.h>
-
+#include <init.h>
 
 int main(int argc, char *argv[])
 {
@@ -43,10 +37,10 @@ int main(int argc, char *argv[])
         seL4_Word sender;
         seL4_MessageInfo_t msg = seL4_Recv(errOrCap, &sender);
 
-        long code = seL4_GetMR(0);
+        InitRequest code = seL4_GetMR(0);
         SFPrintf("Init service: received msg from %lu code %i\n", sender, code);
 
-        if(code == 1)
+        if(code == InitRequest_Connect)
         {
             p = SFMmap(NULL, 4096, 0, 0, 0, 0);
             SFPrintf("Init service: shared buff init side = %p\n", p);
