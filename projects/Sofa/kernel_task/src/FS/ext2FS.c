@@ -37,6 +37,7 @@ static FileOps _fileOps =
 {
     .Read =  ext2FSRead,
     .Close = ext2FSClose,
+    .asyncRead = 0,
 };
 
 

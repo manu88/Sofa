@@ -61,13 +61,14 @@ typedef struct _VFSMountPoint
 typedef struct _File File;
 
 /* Operations that can be performed on a File. */
-typedef struct _FileOps {
-    //int (*FStat)(struct File *file, struct VFS_File_Stat *stat);
+typedef struct _FileOps
+{
     int (*Read)(ThreadBase* caller, File *file, void *buf, size_t numBytes);
     int (*Write)(File *file, const void *buf, size_t numBytes);
     int (*Seek)(File *file, size_t pos);
     int (*Close)(File *file);
-    //int (*Read_Entry)(struct File *dir, struct VFS_Dir_Entry *entry);  /* Read next directory entry. */
+
+    uint8_t asyncRead;
 }FileOps;
 
 typedef struct _File
@@ -86,7 +87,7 @@ VFSMountPoint* VFSMount(VFSFileSystem* fs, const char* mntPoint, int*err);
 int VFSStat(const char *path, VFS_File_Stat *stat);
 int VFSOpen(const char* path, int mode, File* file);
 
-ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead);
+ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, int * async_later);
 ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite);
 
 int VFSClose(File* file);

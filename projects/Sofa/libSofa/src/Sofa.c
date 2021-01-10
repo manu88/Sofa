@@ -33,21 +33,6 @@ pid_t SFGetPPid()
 
 
 
-ssize_t SFRead(char* data, size_t dataSize)
-{
-    return sc_read(TLSGet()->ep, data, dataSize, 0);
-}
-
-ssize_t SFWrite(const char* data, size_t dataSize)
-{
-    return sc_write(TLSGet()->ep, data, dataSize);
-}
-
-ssize_t SFReadLine(char* data, size_t dataSize)
-{
-    return sc_read(TLSGet()->ep, data, dataSize, '\n');
-}
-
 void SFDebug(SofaDebugCode code)
 {
     sc_debug(TLSGet()->ep, code);

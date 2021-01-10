@@ -221,7 +221,6 @@ static int doSh(const char* cmd)
 static int PSOnProcessDescription(const ProcessDesc* desc, void* ptr)
 {
     uint64_t currentT = SFGetTime();
-    
     Printf("PID %i '%s' %u start time %li running %f \n",  desc->pid, desc->name, desc->state, desc->startTime, (float)(currentT- desc->startTime) / NS_IN_S);
 }
 
@@ -280,6 +279,11 @@ static int doEcho(const char* args)
     if(strcmp(trimmed, "$?") == 0)
     {
         Printf("%i\n", lastCmdRet);
+    }
+    else if(strcmp(trimmed, "$$") == 0)
+    {
+        Printf("%i\n", getpid());
+        return 0;
     }
     else if(trimmed[0] == '$')
     {
@@ -429,7 +433,27 @@ int main(int argc, char *argv[])
 
     ProcClientInit();
 
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
 
+
+    FILE* fp = stdin;
+    Printf(">:");
+
+    while ((read = getline(&line, &len, fp)) != EOF) 
+    {
+        line[read-1] = 0;
+        //Printf("Got line(%zi) '%s'\n", read, line);
+
+        if(strlen(line))
+        {
+            lastCmdRet = processCommand(trim(line));
+        }
+        Printf(">:");
+    }
+
+#if 0
     while (1)
     {
         Printf(">:");
@@ -462,7 +486,7 @@ int main(int argc, char *argv[])
         }
 
     }
-
+#endif
     doExit(1);
     
     return 1;

@@ -47,6 +47,7 @@ static int cpioFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes
 static FileOps _fileOps = 
 {
     .Read  = cpioFSRead,
+    .asyncRead = 0
 };
 
 
@@ -140,7 +141,10 @@ static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
     return acc;
 }
 
-static FileOps _rootFOP = {.Read = _ReadDir};
+static FileOps _rootFOP = {
+    .Read = _ReadDir,
+    .asyncRead = 0
+    };
 
 static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {

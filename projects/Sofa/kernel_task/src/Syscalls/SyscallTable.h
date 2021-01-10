@@ -65,7 +65,7 @@ static SyscallMethod syscallTable[] =
 
     Syscall_shareMem,
 
-    Syscall_Read,
+//    Syscall_Read,
     Syscall_Write,
     Syscall_PPID,
     Syscall_Debug,

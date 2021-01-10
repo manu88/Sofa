@@ -31,6 +31,7 @@ typedef struct
     size_t size;
     char until;
     void* ptr;
+    void* ptr2;
 
 } SerialWaiter;
 
@@ -115,11 +116,12 @@ size_t SerialGetAvailableChar()
 }
 
 
-int SerialRegisterWaiter(OnBytesAvailable callback, size_t forSize, char until, void* ptr)
+int SerialRegisterWaiter(OnBytesAvailable callback, size_t forSize, char until, void* ptr, void* ptr2)
 {
     _waiter.waiter = callback;
     _waiter.size = forSize;
     _waiter.ptr = ptr;
+    _waiter.ptr2 = ptr2;
     _waiter.until = until;
     return 0;
 }
@@ -178,12 +180,12 @@ void handleSerialInput(KernelTaskContext* env)
                 //
                 if(_waiter.until && data == _waiter.until)
                 {
-                    _waiter.waiter(SerialGetAvailableChar(), _waiter.until, _waiter.ptr);
+                    _waiter.waiter(SerialGetAvailableChar(), _waiter.until, _waiter.ptr, _waiter.ptr2);
                     memset(&_waiter, 0, sizeof(_waiter));
                 }
                 else if(SerialGetAvailableChar() >= _waiter.size)
                 {
-                    _waiter.waiter(SerialGetAvailableChar(), (char) 0, _waiter.ptr);
+                    _waiter.waiter(SerialGetAvailableChar(), (char) 0, _waiter.ptr, _waiter.ptr2);
                     memset(&_waiter, 0, sizeof(_waiter));
                 }
             }

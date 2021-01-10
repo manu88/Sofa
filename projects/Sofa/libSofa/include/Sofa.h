@@ -37,7 +37,7 @@ typedef enum
 
     SyscallID_ShareMem,
 
-    SyscallID_Read,
+//    SyscallID_Read,
     SyscallID_Write,
     SyscallID_PPID,
     SyscallID_Debug,
@@ -98,15 +98,13 @@ uint64_t SFGetTime(void);
 pid_t SFGetPid(void);
 pid_t SFGetPPid(void);
 
-ssize_t SFRead(char* data, size_t dataSize);
-ssize_t SFWrite(const char* data, size_t dataSize);
 
 int SFPrintf(const char *format, ...) __attribute__((format(printf,1,2)));
 
 
 // if returns -EAGAIN, it means that no endline was found in dataSize, BUT data was written.
 // simply issue the call again to get the rest. 
-ssize_t SFReadLine(char* data, size_t dataSize);
+//ssize_t SFReadLine(char* data, size_t dataSize);
 
 // Name server
 

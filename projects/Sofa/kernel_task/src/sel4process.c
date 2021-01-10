@@ -508,7 +508,7 @@ static char* GetFileVFS( const char* path, size_t *size)
 
     KThread* caller = (KThread*) seL4_GetUserData();
     assert(caller);
-    ssize_t readFile = VFSRead(&caller->_base, &file, prgData, file.size);
+    ssize_t readFile = VFSRead(&caller->_base, &file, prgData, file.size, NULL);
     *size = file.size;
     return prgData;
 

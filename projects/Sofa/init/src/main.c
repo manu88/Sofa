@@ -22,15 +22,23 @@
 #include <fcntl.h>
 
 
+static void doUnitTests()
+{
+    SFPrintf("---- Userland unit tests ----\n");
+    int unittestsPid = ProcClientSpawn("/cpio/utests");
+    int utestStatus = -1;
+    waitpid(unittestsPid, &utestStatus, 0);
+    SFPrintf("Unit tests returned %i\n", utestStatus);
+    SFPrintf("-----------------------------\n");
+
+}
 int main(int argc, char *argv[])
 {
     RuntimeInit2(argc, argv);
 
     VFSClientInit();
 
-    open("/fake/file1", O_RDONLY); // 0
-    open("/fake/cons", O_WRONLY);  // 1
-    open("/fake/cons", O_WRONLY);  // 2
+
 
 
     if(SFGetPid() != 1)
@@ -43,13 +51,13 @@ int main(int argc, char *argv[])
     {
         return EXIT_FAILURE;
     }
+    
+    //doUnitTests();
 
-    SFPrintf("---- Userland unit tests ----\n");
-    int unittestsPid = ProcClientSpawn("/cpio/utests");
-    int utestStatus = -1;
-    waitpid(unittestsPid, &utestStatus, 0);
-    SFPrintf("Unit tests returned %i\n", utestStatus);
-    SFPrintf("-----------------------------\n");
+
+    open("/fake/consin", O_RDONLY); // 0
+    open("/fake/cons", O_WRONLY);  // 1
+    open("/fake/cons", O_WRONLY);  // 2
 
 
     const char initServicePath[] = "/cpio/initService";

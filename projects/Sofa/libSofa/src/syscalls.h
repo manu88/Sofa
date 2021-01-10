@@ -28,12 +28,6 @@ int sc_sleep(seL4_CPtr endpoint, int ms);
 uint64_t sc_gettime(seL4_CPtr endpoint);
 
 
-//int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options);
-
-ssize_t sc_write(seL4_CPtr endpoint, const char* data, size_t dataSize);
-
-ssize_t sc_read(seL4_CPtr endpoint, char* data, size_t dataSize, char until);
-
 void sc_debug(seL4_CPtr endpoint, SofaDebugCode code);
 
 pid_t sc_getppid(seL4_CPtr endpoint);

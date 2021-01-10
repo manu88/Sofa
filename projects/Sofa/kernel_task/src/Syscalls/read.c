@@ -19,7 +19,7 @@
 #include <platsupport/time_manager.h>
 #include <Sofa.h>
 
-
+#if 0
 static void onControlChar(char ctl, void* ptr)
 {
     Thread* caller = (Thread*) ptr;
@@ -46,7 +46,7 @@ static void onControlChar(char ctl, void* ptr)
     }
 }
 
-static void onBytesAvailable(size_t size, char until, void* ptr)
+static void onBytesAvailable(size_t size, char until, void* ptr, void* _)
 {
     Thread* caller = (Thread*) ptr;
     assert(caller);
@@ -86,10 +86,11 @@ void Syscall_Read(Thread* caller, seL4_MessageInfo_t info)
 
     caller->_base.replyCap = slot;
     caller->_base.currentSyscallID = SyscallID_Read;
-    SerialRegisterWaiter(onBytesAvailable, sizeToRead, readUntil, caller);
+    SerialRegisterWaiter(onBytesAvailable, sizeToRead, readUntil, caller, NULL);
     SerialRegisterController(onControlChar, caller);
 
 }
+#endif
 
 void Syscall_Write(Thread* caller, seL4_MessageInfo_t info)
 {
