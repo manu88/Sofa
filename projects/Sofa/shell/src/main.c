@@ -222,7 +222,7 @@ static int PSOnProcessDescription(const ProcessDesc* desc, void* ptr)
 {
     uint64_t currentT = SFGetTime();
     
-    Printf("PID %i '%s' %u start time %f \n",  desc->pid, desc->name, desc->state, (float)(currentT- desc->startTime) / NS_IN_S);
+    Printf("PID %i '%s' %u start time %li running %f \n",  desc->pid, desc->name, desc->state, desc->startTime, (float)(currentT- desc->startTime) / NS_IN_S);
 }
 
 static int doPS(const char* cmd)
