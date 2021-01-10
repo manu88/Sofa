@@ -43,6 +43,14 @@ static void testRead(void)
     close(h);
 }
 
+static void testTime()
+{
+    uint64_t t1 = SFGetTime();
+    assert(SFSleep(100) == 0);
+    uint64_t t2 = SFGetTime();
+    assert(t2 > t1);
+}
+
 static void testWait()
 {
     assert(ProcClientWait(NULL) == -ECHILD);
@@ -132,6 +140,7 @@ static int baseMain(int argc, char *argv[])
     testSpawn(argv[0]);
     testKillChild(argv[0]);
     testChildFault(argv[0]);
+    testTime();
 
     //testThread();
 

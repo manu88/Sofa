@@ -71,7 +71,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     Printf("Sofa shell\n");
-    Printf("Available commands are: echo exit help ps sh kill spawn sleep cat poweroff services dk\n");
+    Printf("Available commands are: echo exit help ps sh kill spawn sleep cat poweroff services dk gettime\n");
 }
 
 static void doExit(int code)
@@ -220,7 +220,9 @@ static int doSh(const char* cmd)
 
 static int PSOnProcessDescription(const ProcessDesc* desc, void* ptr)
 {
-    Printf("PID %i '%s' %u start time %lu \n",  desc->pid, desc->name, desc->state, desc->startTime);
+    uint64_t currentT = SFGetTime();
+    
+    Printf("PID %i '%s' %u start time %f \n",  desc->pid, desc->name, desc->state, (float)(currentT- desc->startTime) / NS_IN_S);
 }
 
 static int doPS(const char* cmd)
@@ -385,6 +387,12 @@ int processCommand(const char* cmd)
         const char *strMS = cmd + strlen("sleep ");
         int ms = atol(strMS);
         return SFSleep(ms);
+    }
+    else if(strcmp("gettime", cmd) == 0)
+    {
+        float tsecs = (float)SFGetTime()/NS_IN_S;
+        Printf("Time %f\n", tsecs);
+        return 0;
     }
     else if(startsWith("pid", cmd))
     {

@@ -20,4 +20,5 @@
 
 int TimerInit(void);
 
+// get current time in nanoseconds
 uint64_t GetTime(void);

@@ -24,6 +24,9 @@ void sc_exit(seL4_CPtr endpoint, int code);
 // sleep syscall
 int sc_sleep(seL4_CPtr endpoint, int ms);
 
+// get current time in nanoseconds
+uint64_t sc_gettime(seL4_CPtr endpoint);
+
 
 //int sc_wait(seL4_CPtr endpoint, pid_t pid, int *wstatus, int options);
 

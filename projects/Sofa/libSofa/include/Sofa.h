@@ -27,6 +27,7 @@ typedef enum
     SyscallID_Exit,
 
     SyscallID_Sleep,
+    SyscallID_GetTime,
 
 //    SyscallID_Spawn,
 //    SyscallID_Wait,
@@ -89,6 +90,9 @@ typedef enum
 } NetRequest;
 
 int SFSleep(int ms);
+
+// get current time in nanoseconds
+uint64_t SFGetTime(void);
 
 
 pid_t SFGetPid(void);

@@ -24,7 +24,7 @@ typedef void (*SyscallMethod)(Thread* caller, seL4_MessageInfo_t info);
 
 void Syscall_exit(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info);
-
+void Syscall_GetTime(Thread* caller, seL4_MessageInfo_t info);
 
 void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info);
 void Syscall_ThreadExit(Thread* caller, seL4_MessageInfo_t info);
@@ -58,6 +58,7 @@ static SyscallMethod syscallTable[] =
     Syscall_exit,
 
     Syscall_sleep,
+    Syscall_GetTime,
 
     Syscall_mmap,
     Syscall_munmap,

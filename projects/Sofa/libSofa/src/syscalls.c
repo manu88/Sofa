@@ -34,6 +34,22 @@ int sc_sleep(seL4_CPtr endpoint, int ms)
     return seL4_GetMR(1);
 }
 
+uint64_t sc_gettime(seL4_CPtr endpoint)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, SyscallID_GetTime);
+    info = seL4_Call(endpoint, info);
+
+    union
+    {
+        uint64_t v;
+        uint32_t s[2];
+    } value;
+    value.s[0] = seL4_GetMR(1);
+    value.s[1] = seL4_GetMR(2);    
+    return value.v;
+}
+
 
 ssize_t sc_write(seL4_CPtr endpoint, const char* data, size_t dataSize)
 {

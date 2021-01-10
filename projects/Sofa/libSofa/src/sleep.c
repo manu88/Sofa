@@ -26,3 +26,7 @@ int SFSleep(int ms)
     return sc_sleep(TLSGet()->ep, ms);
 }
 
+uint64_t SFGetTime()
+{
+    return sc_gettime(TLSGet()->ep);
+}

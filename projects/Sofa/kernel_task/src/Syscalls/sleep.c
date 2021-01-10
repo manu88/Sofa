@@ -15,6 +15,7 @@
  */
 #include "SyscallTable.h"
 #include "../utils.h"
+#include "Timer.h"
 #include "Log.h"
 #include <platsupport/time_manager.h>
 #include <Sofa.h>
@@ -78,4 +79,20 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
     caller->_base.currentSyscallID = SyscallID_Sleep;
     caller->_base.timerID = timerID;
     caller->_base.replyCap = slot;
+}
+
+void Syscall_GetTime(Thread* caller, seL4_MessageInfo_t info)
+{
+    union
+    {
+        uint64_t v;
+        uint32_t s[2];
+    } value;
+    
+    value.v =  GetTime();
+
+    seL4_SetMR(1, value.s[0]);
+    seL4_SetMR(2, value.s[1]);
+
+    seL4_Reply(info);
 }
