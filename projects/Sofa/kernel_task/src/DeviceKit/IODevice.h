@@ -16,7 +16,7 @@
 #pragma once
 #include "utlist.h"
 #include <sys/types.h>
-
+#include <string.h>
 
 typedef enum
 {
