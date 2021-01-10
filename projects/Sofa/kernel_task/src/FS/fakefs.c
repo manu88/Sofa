@@ -254,6 +254,8 @@ static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes
         return -1;
     }
 
+    assert(file->ops->asyncRead == 0);
+
     size_t effectiveSize = strlen(f->content) - file->readPos;
     if(numBytes < effectiveSize)
     {

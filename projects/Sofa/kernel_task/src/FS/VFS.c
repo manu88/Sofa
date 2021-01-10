@@ -331,17 +331,17 @@ ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
     return file->ops->Write(file, buf, sizeToWrite);
 }
 
-ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, int * async_later)
+ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, int *async_later)
 {
     assert(file->readPos <= file->size);
+    if(async_later)
+    {
+        *async_later = file->ops->asyncRead;
+    }
 
     if(file->readPos == file->size)
     {
         return -1; // EOF
-    }
-    if(async_later)
-    {
-        *async_later = file->ops->asyncRead;
     }
     ssize_t ret = file->ops->Read(caller, file, buf, sizeToRead);
 

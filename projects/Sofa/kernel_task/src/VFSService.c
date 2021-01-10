@@ -368,7 +368,6 @@ static int mainVFS(KThread* thread, void *arg)
                 ssize_t ret = VFSServiceRead(clt, handle, size, &asyncLater);
                 if(asyncLater)
                 {
-                    KLOG_DEBUG("[VFSService] async read for %i\n", handle);
                     continue;
                 }
                 int err = ret<0? -ret:0;
