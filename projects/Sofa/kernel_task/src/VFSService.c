@@ -309,12 +309,7 @@ static int mainVFS(KThread* thread, void *arg)
         {
             ServiceClient* _clt = NULL;
             HASH_FIND_PTR(_clients, &caller, _clt );
-            if(_clt)
-            {
-                KLOG_DEBUG("[VFSService] Register Client already exists\n");
-
-            }
-            else
+            if(_clt == NULL)
             {
                 _clt = RegisterClient(caller);
             }

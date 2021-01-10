@@ -218,17 +218,17 @@ static int doSh(const char* cmd)
     return 0;
 }
 
-static int PSOnProcessDescription(const ProcessDesc* desc, void* ptr)
+static int PSOnProcessDescription(const ProcessDesc* desc, void* _)
 {
     uint64_t currentT = SFGetTime();
     Printf("PID %i '%s' %u start time %li running %f \n",  desc->pid, desc->name, desc->state, desc->startTime, (float)(currentT- desc->startTime) / NS_IN_S);
+
+    return 0;
 }
 
 static int doPS(const char* cmd)
 {
-    ProcClientEnum(PSOnProcessDescription, NULL);
-    
-    return 0;
+    return ProcClientEnum(PSOnProcessDescription, NULL);
 }
 
 static int doKill(const char* args)
@@ -440,11 +440,10 @@ int main(int argc, char *argv[])
 
     FILE* fp = stdin;
     Printf(">:");
-
+    //fflush(stdout);
     while ((read = getline(&line, &len, fp)) != EOF) 
     {
         line[read-1] = 0;
-        //Printf("Got line(%zi) '%s'\n", read, line);
 
         if(strlen(line))
         {

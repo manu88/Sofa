@@ -241,9 +241,14 @@ static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes)
 {
-    printf("%s",(const char*) buf);
+    for(size_t i=0;i<numBytes;i++)
+    {
+        putchar(((char*)buf)[i]);
+    }
+//    printf("%s",(const char*) buf);
+
     fflush(stdout);
-    return 0;
+    return numBytes;
 }
 
 static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
