@@ -425,10 +425,6 @@ int main(int argc, char *argv[])
     argv = &argv[2];
     VFSClientInit();
 
-    open("/fake/file1", O_RDONLY); // 0
-    open("/fake/cons", O_WRONLY);  // 1
-    open("/fake/cons", O_WRONLY);  // 2
-
     Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
 
     for(int i=0;i<argc;i++)

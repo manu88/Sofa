@@ -56,8 +56,6 @@ int ProcessCreateSofaIPCBuffer(Process* p, void** addr, void** procAddr)
 static int ProcessCloneServices(Process* parent, Process* p)
 {
     assert(parent);
-    KLOG_DEBUG("ProcessCloneServices parent is %s %i\n", ProcessGetName(parent), ProcessGetPID(parent));
-
     ServiceClient* clt = NULL;
     ServiceClient* tmp = NULL;
 
@@ -68,13 +66,11 @@ static int ProcessCloneServices(Process* parent, Process* p)
 
         if(ServiceHasFlag(clt->service, ServiceFlag_Clone))
         {
-            KLOG_DEBUG("Should clone process in service %s\n", clt->service->name);
             seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
             seL4_SetMR(0, ServiceNotification_Clone);
             seL4_SetMR(1, (seL4_Word) t); //
             seL4_SetMR(2, (seL4_Word) &p->main);
             seL4_Send(clt->service->kernTaskEp, info);
-
         }
     }
 

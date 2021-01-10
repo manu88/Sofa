@@ -202,12 +202,67 @@ static void ClientCleanup(ServiceClient *clt)
     free(c);
 }
 
+
+static Client*  RegisterClient(ThreadBase* caller)
+{
+    KernelTaskContext* env = getKernelTaskContext();
+
+    char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
+    assert(buff);
+    void* buffShared = vspace_share_mem(&env->vspace,
+                                        &caller->process->native.vspace,
+                                        buff,
+                                        1,
+                                        PAGE_BITS_4K,
+                                        seL4_ReadWrite,
+                                        1
+                                        );
+    assert(buffShared);
+    Client* client = malloc(sizeof(Client));
+    assert(client);
+    memset(client, 0, sizeof(Client));
+    client->_clt.caller = caller;
+    client->_clt.buff = buff;
+    client->_clt.buffClientAddr = buffShared;
+    client->_clt.service = &_vfsService;
+    HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
+
+    ThreadBaseAddServiceClient(caller, (ServiceClient*) client);
+    return client;
+}
+
+
 static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
 {
     assert(parent->process);
     assert(newProc->process);
-    KLOG_DEBUG("[VFSService] Clone request FROM %i to %i\n", ProcessGetPID(parent->process), ProcessGetPID(newProc->process));
+    
+    Client* newClient =  RegisterClient(newProc);
+    assert(newClient);
+
+
+    ServiceClient* _parentClient = NULL;
+    HASH_FIND_PTR(_clients, &parent, _parentClient);
+    assert(_parentClient);
+    Client* parentClient = (Client*) _parentClient;
+
+
+    FileHandle* f = NULL;
+    FileHandle* tmp = NULL;
+    HASH_ITER(hh, parentClient->files, f, tmp)
+    {
+        FileHandle* hdl = malloc(sizeof(FileHandle));
+        memset(hdl, 0, sizeof(FileHandle));
+        if(hdl)
+        {
+            hdl->file = f->file;
+            hdl->index = f->index;
+            HASH_ADD_INT(newClient->files, index, hdl);
+        }
+    }
+    newClient->fileIndex = parentClient->fileIndex;
 }
+
 
 static int mainVFS(KThread* thread, void *arg)
 {
@@ -252,28 +307,20 @@ static int mainVFS(KThread* thread, void *arg)
         }
         else if(seL4_GetMR(0) == VFSRequest_Register)
         {
-            char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
-            assert(buff);
-            void* buffShared = vspace_share_mem(&env->vspace,
-                                                &caller->process->native.vspace,
-                                                buff,
-                                                1,
-                                                PAGE_BITS_4K,
-                                                seL4_ReadWrite,
-                                                1
-                                                );
-            assert(buffShared);
-            Client* client = malloc(sizeof(Client));
-            assert(client);
-            memset(client, 0, sizeof(Client));
-            client->_clt.caller = caller;
-            client->_clt.buff = buff;
-            client->_clt.service = &_vfsService;
-            HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
-            seL4_SetMR(1, (seL4_Word) buffShared);
-            seL4_Reply(msg);
+            ServiceClient* _clt = NULL;
+            HASH_FIND_PTR(_clients, &caller, _clt );
+            if(_clt)
+            {
+                KLOG_DEBUG("[VFSService] Register Client already exists\n");
 
-            ThreadBaseAddServiceClient(caller, (ServiceClient*) client);
+            }
+            else
+            {
+                _clt = RegisterClient(caller);
+            }
+            void* addr = _clt->buffClientAddr;
+            seL4_SetMR(1, (seL4_Word) addr);
+            seL4_Reply(msg);
         }
         else
         {

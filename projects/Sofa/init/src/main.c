@@ -18,12 +18,20 @@
 #include <runtime.h>
 #include <proc.h>
 #include <sys/wait.h>
-
+#include <files.h>
+#include <fcntl.h>
 
 
 int main(int argc, char *argv[])
 {
     RuntimeInit2(argc, argv);
+
+    VFSClientInit();
+
+    open("/fake/file1", O_RDONLY); // 0
+    open("/fake/cons", O_WRONLY);  // 1
+    open("/fake/cons", O_WRONLY);  // 2
+
 
     if(SFGetPid() != 1)
     {
