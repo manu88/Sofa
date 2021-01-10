@@ -22,6 +22,12 @@
 
 typedef struct _Process Process;
 
+
+typedef enum 
+{
+    ServiceFlag_Clone = 0
+}ServiceFlags;
+
 typedef struct _Service
 {
     char* name;
@@ -34,6 +40,8 @@ typedef struct _Service
 
 
     seL4_CPtr kernTaskEp; // endpoint employed by kernel_task to send messages to the service
+
+    int flags;
 } Service;
 
 
@@ -54,6 +62,7 @@ typedef enum
 {
     ServiceNotification_ClientExit,
     ServiceNotification_WillStop,
+    ServiceNotification_Clone,
 }ServiceNotification;
 
 Service* NameServerGetServices(void);
@@ -67,6 +76,16 @@ static inline void ServiceInit(Service* s, Process* owner)
 {
     memset(s, 0, sizeof(Service));
     s->owner = owner;
+}
+
+static inline void ServiceSetFlag(Service* s, ServiceFlags flag)
+{
+    s->flags |= 1UL << flag;
+}
+
+static inline int ServiceHasFlag(const Service* s, ServiceFlags flag)
+{
+    return (s->flags >> flag) &1U;
 }
 
 /*

@@ -64,6 +64,10 @@ int VFSServiceInit()
 
     ServiceInit(&_vfsService, getKernelTaskProcess());
     _vfsService.name = _vfsName;
+    ServiceSetFlag(&_vfsService, ServiceFlag_Clone);
+
+    assert( (_vfsService.flags >> ServiceFlag_Clone) &1U);
+    assert( ServiceHasFlag(&_vfsService, ServiceFlag_Clone));
     ServiceCreateKernelTask(&_vfsService);
 
     NameServerRegister(&_vfsService);
@@ -198,6 +202,13 @@ static void ClientCleanup(ServiceClient *clt)
     free(c);
 }
 
+static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
+{
+    assert(parent->process);
+    assert(newProc->process);
+    KLOG_DEBUG("[VFSService] Clone request FROM %i to %i\n", ProcessGetPID(parent->process), ProcessGetPID(newProc->process));
+}
+
 static int mainVFS(KThread* thread, void *arg)
 {
     KernelTaskContext* env = getKernelTaskContext();
@@ -230,6 +241,12 @@ static int mainVFS(KThread* thread, void *arg)
             else if(notif == ServiceNotification_WillStop)
             {
                 KLOG_DEBUG("[VFSService] will stop\n");
+            }
+            else if(notif == ServiceNotification_Clone)
+            {
+                ThreadBase* parent =(ThreadBase*) seL4_GetMR(1);
+                ThreadBase* newProc =(ThreadBase*) seL4_GetMR(2);
+                ClientClone(parent, newProc);
             }
 
         }

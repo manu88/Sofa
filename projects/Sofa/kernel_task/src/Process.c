@@ -53,6 +53,34 @@ int ProcessCreateSofaIPCBuffer(Process* p, void** addr, void** procAddr)
     return 0;
 }
 
+static int ProcessCloneServices(Process* parent, Process* p)
+{
+    assert(parent);
+    KLOG_DEBUG("ProcessCloneServices parent is %s %i\n", ProcessGetName(parent), ProcessGetPID(parent));
+
+    ServiceClient* clt = NULL;
+    ServiceClient* tmp = NULL;
+
+    Thread* t = &parent->main;
+    LL_FOREACH_SAFE(t->_base._clients, clt, tmp)
+    {
+        assert(clt->service);
+
+        if(ServiceHasFlag(clt->service, ServiceFlag_Clone))
+        {
+            KLOG_DEBUG("Should clone process in service %s\n", clt->service->name);
+            seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+            seL4_SetMR(0, ServiceNotification_Clone);
+            seL4_SetMR(1, (seL4_Word) t); //
+            seL4_SetMR(2, (seL4_Word) &p->main);
+            seL4_Send(clt->service->kernTaskEp, info);
+
+        }
+    }
+
+    return 0;
+}
+
 void spawnApp(Process* p, const char* imgName, Process* parent)
 {
     KernelTaskContext* envir = getKernelTaskContext();
@@ -78,6 +106,15 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
         assert(p != &initProcess); // we only allow NULL parent for the first process
     }
     ProcessListAdd(p);
+    if(parent)
+    {
+        ProcessCloneServices(parent, p);
+    }
+    else
+    {
+        assert(p == &initProcess);
+    }
+    
     process_run(imgName, p);
 }
 
