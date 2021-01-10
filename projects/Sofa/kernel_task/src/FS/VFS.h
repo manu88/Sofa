@@ -72,7 +72,7 @@ typedef struct _File
 {
     int mode;
     size_t readPos;
-    size_t size;
+    ssize_t size; // -1 means inf. stream
     FileOps* ops;
 
     void* impl;

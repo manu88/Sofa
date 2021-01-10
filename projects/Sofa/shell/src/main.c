@@ -427,12 +427,6 @@ int main(int argc, char *argv[])
 
     Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
 
-    for(int i=0;i<argc;i++)
-    {
-        Printf("%i %s\n",i,argv[i]);
-    }
-
-
     ProcClientInit();
 
 

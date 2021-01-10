@@ -20,14 +20,16 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <assert.h>
-
+#include "Serial.h"
 
 static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
 static int fakeFSRead(File *file, void *buf, size_t numBytes);
+static int consRead(File *file, void *buf, size_t numBytes);
 static int fakeFSClose(File *file);
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes);
+
 
 static VFSFileSystemOps _ops =
 {
@@ -42,6 +44,13 @@ static FileOps _fileOps =
     .Write = fakeFSWrite
 };
 
+static FileOps _consoleOps = 
+{
+    .Read = consRead,
+//    .Close = fakeFSClose,
+//    .Write = consWrite
+};
+
 static VFSFileSystem _fs = {.ops = &_ops};
 
 typedef struct 
@@ -50,6 +59,7 @@ typedef struct
     const char* content;
 
     int mode;
+    FileOps *ops;
 } FakeFile;
 
 
@@ -58,24 +68,33 @@ static const FakeFile const files[] =
     {
         .name = "file1",
         .content = "Hello this is the content of file1\n",
-        .mode = O_RDONLY
+        .mode = O_RDONLY,
+        .ops = &_fileOps
     },
     {
         .name = "file2",
         .content = "Hello this is the content of file2, which is a little bit longuer in order to test the buffers.\nPlease Note That this sentence should begin at a new line.\n\tItem1\n\tItem2\n",
-        .mode = O_RDONLY
+        .mode = O_RDONLY,
+        .ops = &_fileOps
     },
     {
         .name = "script",
         .content = "ls /\nps\n",
-        .mode = O_RDONLY
+        .mode = O_RDONLY,
+        .ops = &_fileOps
     },
     {
         .name = "cons",
-        .mode = O_WRONLY
+        .mode = O_WRONLY,
+        .ops = &_fileOps
+    },
+    {
+        .name = "consin",
+        .mode = O_RDONLY,
+        .ops = &_consoleOps
     },
 };
-#define NumFiles 4
+#define NumFiles 5
 
 VFSFileSystem* getFakeFS()
 {
@@ -149,7 +168,7 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     {
         if(strcmp(p, files[i].name) == 0)
         {
-            file->ops = &_fileOps;
+            file->ops = files[i].ops;
             file->impl = &files[i];
 
             if(files[i].content)
@@ -158,7 +177,7 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
             }
             else
             {
-                file->size = 0;
+                file->size = -1;
             }
             if(mode == files[i].mode)
             {
@@ -174,6 +193,12 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 static int fakeFSClose(File *file)
 {
     return 0;
+}
+
+static int consRead(File *file, void *buf, size_t numBytes)
+{
+    KLOG_DEBUG("cons read request size %zi\n", numBytes);
+    return -1;
 }
 
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes)

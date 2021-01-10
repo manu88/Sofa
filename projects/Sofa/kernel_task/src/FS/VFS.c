@@ -328,14 +328,6 @@ ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 
 ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
 {
-    /*
-    if(file->mode != O_RDONLY)
-    {
-        KLOG_TRACE("VFSRead: invalid mode %X\n", file->mode);
-
-        return -EACCES;
-    }
-    */
     assert(file->readPos <= file->size);
 
     if(file->readPos == file->size)
