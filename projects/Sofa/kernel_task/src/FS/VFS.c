@@ -227,7 +227,7 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 
 }
 
-static int VFSReadDir(File *file, void *buf, size_t numBytes)
+static int VFSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
     size_t remainFilesToList = file->size - file->readPos;
     size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
@@ -326,7 +326,7 @@ ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
     return file->ops->Write(file, buf, sizeToWrite);
 }
 
-ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
+ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead)
 {
     assert(file->readPos <= file->size);
 
@@ -335,7 +335,7 @@ ssize_t VFSRead(File* file, char* buf, size_t sizeToRead)
         return -1; // EOF
     }
 
-    ssize_t ret = file->ops->Read(file, buf, sizeToRead);
+    ssize_t ret = file->ops->Read(caller, file, buf, sizeToRead);
 
     return ret;
 }

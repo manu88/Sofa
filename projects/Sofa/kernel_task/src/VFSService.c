@@ -126,7 +126,7 @@ static ssize_t VFSServiceRead(Client* client, int handle, int size)
         return -EINVAL;
     }
 
-    return VFSRead(&file->file, client->_clt.buff, size);
+    return VFSRead(client->_clt.caller, &file->file, client->_clt.buff, size);
 }
 
 static int VFSServiceClose(Client* client, int handle)

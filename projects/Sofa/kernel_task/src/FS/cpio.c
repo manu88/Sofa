@@ -42,7 +42,7 @@ static VFSFileSystemOps _ops =
 static VFSFileSystem _cpioFS  = {.ops = &_ops};
 
 
-static int cpioFSRead(File *file, void *buf, size_t numBytes);
+static int cpioFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
 
 static FileOps _fileOps = 
 {
@@ -109,7 +109,7 @@ static int cpioFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
     return -ENOENT;
 }
 
-static int _ReadDir(File *file, void *buf, size_t numBytes)
+static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
     size_t remainFilesToList = file->size - file->readPos;
     size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
@@ -192,7 +192,7 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     return ENOENT;
 }
 
-static int cpioFSRead(File *file, void *buf, size_t numBytes)
+static int cpioFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
     
     void* fData = file->impl;

@@ -25,8 +25,8 @@
 static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
-static int fakeFSRead(File *file, void *buf, size_t numBytes);
-static int consRead(File *file, void *buf, size_t numBytes);
+static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
+static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
 static int fakeFSClose(File *file);
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes);
 
@@ -120,7 +120,7 @@ static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
     return ENOENT;
 }
 
-static int _ReadDir(File *file, void *buf, size_t numBytes)
+static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
     size_t remainFilesToList = file->size - file->readPos;
     size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
@@ -195,7 +195,7 @@ static int fakeFSClose(File *file)
     return 0;
 }
 
-static int consRead(File *file, void *buf, size_t numBytes)
+static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
     KLOG_DEBUG("cons read request size %zi\n", numBytes);
     return -1;
@@ -208,7 +208,7 @@ static int fakeFSWrite(File *file, const void *buf, size_t numBytes)
     return 0;
 }
 
-static int fakeFSRead(File *file, void *buf, size_t numBytes)
+static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
     FakeFile* f = file->impl;
     if(!f)
