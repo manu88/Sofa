@@ -199,7 +199,7 @@ static void ClientCleanup(ServiceClient *clt)
         VFSClose(&f->file);
         free(f);
     }
-
+    free(c->workingDir);
     free(c);
 }
 
