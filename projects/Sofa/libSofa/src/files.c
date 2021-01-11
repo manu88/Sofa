@@ -152,10 +152,13 @@ ssize_t VFSClientWrite(int handle, const char* data, size_t size)
     int wSize = seL4_GetMR(2);
     if(err == 0)
     {
-        return wSize;
+        err = wSize;
     }
-
-    return -err; 
+    else 
+    {
+        err = -err;
+    }
+    return err; 
 }
 
 ssize_t VFSClientRead(int handle, char* data, size_t size)

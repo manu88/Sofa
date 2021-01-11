@@ -338,7 +338,6 @@ ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, in
     {
         *async_later = file->ops->asyncRead;
     }
-
     if(file->readPos == file->size)
     {
         return -1; // EOF

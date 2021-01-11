@@ -452,40 +452,6 @@ int main(int argc, char *argv[])
         Printf(">:");
     }
 
-#if 0
-    while (1)
-    {
-        Printf(">:");
-
-        char data[128] = "";
-        uint8_t gotCmd = 0;
-        size_t bufferIndex = 0;
-        ssize_t readSize = 0;
-        while (gotCmd == 0)
-        {
-            const size_t sizeToRead = 16;
-            readSize = SFReadLine(data + bufferIndex, sizeToRead);
-            if(readSize == -EINTR)
-            {
-                Printf("[Shell] got ctl-c\n");
-            }
-            if(readSize == -EAGAIN)
-            {
-                bufferIndex += sizeToRead;
-            }
-            else
-            {
-                gotCmd = 1;
-                data[bufferIndex + readSize -1] = 0;
-            }
-        }
-        if(strlen(data))
-        {
-            lastCmdRet = processCommand(trim(data));
-        }
-
-    }
-#endif
     doExit(1);
     
     return 1;

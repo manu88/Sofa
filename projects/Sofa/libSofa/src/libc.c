@@ -231,14 +231,12 @@ static long sf_writev(va_list ap)
     struct iovec *iov = va_arg(ap, struct iovec *);
     int iovcnt = va_arg(ap, int);
     ssize_t ret = 0;
-
+ 
     for (int i = 0; i < iovcnt; i++) 
     {
         char * base = (char *)iov[i].iov_base;
-        VFSClientWrite(fildes, iov[i].iov_base, iov[i].iov_len);
-        ret += iov[i].iov_len;
+        ret += VFSClientWrite(fildes, iov[i].iov_base, iov[i].iov_len);
     }
-
     return ret;
 }
 
