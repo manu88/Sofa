@@ -117,16 +117,16 @@ static ssize_t VFSServiceWrite(Client* client, int handle, int size)
     return VFSWrite(&file->file, client->_clt.buff, size);
 }
 
-static ssize_t VFSServiceRead(Client* client, int handle, int size)
+static ssize_t VFSServiceRead(Client* client, int handle, int size, int* asyncResult)
 {
+//    KLOG_DEBUG("VFSServiceRead from %s %i h=%i\n", ProcessGetName(client->_clt.caller->process), ProcessGetPID(client->_clt.caller->process), handle);
     FileHandle* file = NULL;
     HASH_FIND_INT(client->files, &handle, file);
     if(file == NULL)
     {
         return -EINVAL;
     }
-
-    return VFSRead(&file->file, client->_clt.buff, size);
+    return VFSRead(client->_clt.caller, &file->file, client->_clt.buff, size, asyncResult);
 }
 
 static int VFSServiceClose(Client* client, int handle)
@@ -309,12 +309,7 @@ static int mainVFS(KThread* thread, void *arg)
         {
             ServiceClient* _clt = NULL;
             HASH_FIND_PTR(_clients, &caller, _clt );
-            if(_clt)
-            {
-                KLOG_DEBUG("[VFSService] Register Client already exists\n");
-
-            }
-            else
+            if(_clt == NULL)
             {
                 _clt = RegisterClient(caller);
             }
@@ -363,7 +358,13 @@ static int mainVFS(KThread* thread, void *arg)
             {
                 int handle = seL4_GetMR(1);
                 int size = seL4_GetMR(2);
-                ssize_t ret = VFSServiceRead(clt, handle, size);
+
+                int asyncLater = -1;
+                ssize_t ret = VFSServiceRead(clt, handle, size, &asyncLater);
+                if(asyncLater)
+                {
+                    continue;
+                }
                 int err = ret<0? -ret:0;
                 size = ret >=0? ret:0; 
                 seL4_SetMR(1, err);

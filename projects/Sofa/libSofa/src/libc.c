@@ -17,12 +17,14 @@
 #include <stdarg.h>
 #include <sys/uio.h> // iovec
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <files.h>
 #include <net.h>
 #include <errno.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
 #include <proc.h>
 
@@ -36,14 +38,7 @@ static long sf_close(va_list ap)
     return VFSClientClose(fd);
 }
 
-static long sf_write(va_list ap)
-{
-    int fd = va_arg(ap, int);
-    const void *buf = va_arg(ap, void *);
-    size_t bufSize = va_arg(ap, size_t);
 
-    return VFSClientWrite(fd, buf, bufSize);
-}
 
 static long sf_readv(va_list ap)
 {
@@ -215,7 +210,18 @@ static long sf_ioctl(va_list ap)
 {
     int fd = va_arg(ap, int);
     unsigned long request = va_arg(ap, unsigned long);
-    SFPrintf("Not implemented: ioctl for fd=%i request=%u\n", fd, request);
+    switch (request)
+    {
+    case TIOCGWINSZ:
+    {
+        struct winsize* arg = va_arg(ap, struct winsize*);
+        return -1;
+    }
+    
+    default:
+        SFPrintf("Not implemented: ioctl for fd=%i request=%X\n", fd, request);
+        return -1;
+    }
     return 0;
 }
 
@@ -224,18 +230,23 @@ static long sf_writev(va_list ap)
     int  fildes = va_arg(ap, int);
     struct iovec *iov = va_arg(ap, struct iovec *);
     int iovcnt = va_arg(ap, int);
-
     ssize_t ret = 0;
-
+ 
     for (int i = 0; i < iovcnt; i++) 
     {
         char * base = (char *)iov[i].iov_base;
-        SFPrintf("%s", base);
-        VFSClientWrite(fildes, iov[i].iov_base, iov[i].iov_len);
-        ret += iov[i].iov_len;
+        ret += VFSClientWrite(fildes, iov[i].iov_base, iov[i].iov_len);
     }
-
     return ret;
+}
+
+static long sf_write(va_list ap)
+{
+    int fd = va_arg(ap, int);
+    const void *buf = va_arg(ap, void *);
+    size_t bufSize = va_arg(ap, size_t);
+
+    return VFSClientWrite(fd, buf, bufSize);
 }
 
 long sofa_vsyscall(long sysnum, ...)

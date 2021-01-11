@@ -51,45 +51,6 @@ uint64_t sc_gettime(seL4_CPtr endpoint)
 }
 
 
-ssize_t sc_write(seL4_CPtr endpoint, const char* data, size_t dataSize)
-{
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
-    seL4_SetMR(0, SyscallID_Write);
-    seL4_SetMR(1, dataSize);
-
-    size_t effectiveSize = dataSize; 
-    memcpy(TLSGet()->buffer, data, effectiveSize);
-    TLSGet()->buffer[effectiveSize] = 0;
-
-    seL4_Send(endpoint, info);
-    return effectiveSize;
-
-}
-
-ssize_t sc_read(seL4_CPtr endpoint, char* data, size_t dataSize, char until)
-{
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
-    seL4_SetMR(0, SyscallID_Read);
-    seL4_SetMR(1, dataSize);
-    seL4_SetMR(2, (seL4_Word)until); 
-
-    info = seL4_Call(endpoint, info);
-
-    ssize_t readSize = seL4_GetMR(1);
-    ssize_t effectiveSize = seL4_GetMR(1);
-    if(readSize == -EAGAIN)
-    {
-        effectiveSize = dataSize;
-    }
-    else if(readSize < 0)
-    {
-        return readSize;
-    }
-    memcpy(data, TLSGet()->buffer, effectiveSize );
-
-    return readSize;
-}
-
 void sc_debug(seL4_CPtr endpoint, SofaDebugCode code)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);

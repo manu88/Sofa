@@ -21,13 +21,13 @@
 #include <dirent.h>
 #include <assert.h>
 #include "Serial.h"
+#include "../utils.h"
 
 static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
-static int fakeFSRead(File *file, void *buf, size_t numBytes);
-static int consRead(File *file, void *buf, size_t numBytes);
-static int fakeFSClose(File *file);
+static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
+static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes);
 
 
@@ -40,15 +40,14 @@ static VFSFileSystemOps _ops =
 static FileOps _fileOps = 
 {
     .Read = fakeFSRead,
-    .Close = fakeFSClose,
-    .Write = fakeFSWrite
+    .Write = fakeFSWrite,
+    .asyncRead = 0
 };
 
 static FileOps _consoleOps = 
 {
+    .asyncRead = 1,
     .Read = consRead,
-//    .Close = fakeFSClose,
-//    .Write = consWrite
 };
 
 static VFSFileSystem _fs = {.ops = &_ops};
@@ -120,7 +119,7 @@ static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
     return ENOENT;
 }
 
-static int _ReadDir(File *file, void *buf, size_t numBytes)
+static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
     size_t remainFilesToList = file->size - file->readPos;
     size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
@@ -151,7 +150,11 @@ static int _ReadDir(File *file, void *buf, size_t numBytes)
     return acc;
 }
 
-static FileOps _rootFOP = {.Read = _ReadDir};
+static FileOps _rootFOP = 
+{
+    .Read = _ReadDir,
+    .asyncRead = 0
+};
 
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
@@ -170,6 +173,7 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
         {
             file->ops = files[i].ops;
             file->impl = &files[i];
+
 
             if(files[i].content)
             {
@@ -190,31 +194,72 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     return ENOENT;
 }
 
-static int fakeFSClose(File *file)
+
+static void onBytesAvailable(size_t size, char until, void* ptr, void* buf)
 {
-    return 0;
+    ThreadBase* caller = (ThreadBase*) ptr;
+    assert(caller);
+
+    size_t bytes = SerialCopyAvailableChar(buf, size);
+    ((char*)buf)[bytes] = 0;
+
+    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 3);
+    seL4_SetMR(1, 0);
+    seL4_SetMR(2, bytes);            
+    
+    seL4_Send(caller->replyCap, msg);
+    cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
+    caller->replyCap = 0;
+    caller->state = ThreadState_Running;
+
 }
 
-static int consRead(File *file, void *buf, size_t numBytes)
+
+static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
-    KLOG_DEBUG("cons read request size %zi\n", numBytes);
+    KernelTaskContext* env = getKernelTaskContext();
+
+    assert(caller->replyCap == 0);
+
+    seL4_Word slot = get_free_slot(&env->vka);
+    int error = cnode_savecaller(&env->vka, slot);
+    if (error)
+    {
+        KLOG_TRACE("Unable to save caller err=%i\n", error);
+        cnode_delete(&env->vka, slot);
+        return -ENOMEM;
+    }
+
+    caller->replyCap = slot;
+    caller->currentSyscallID = 0;
+    SerialRegisterWaiter(onBytesAvailable, numBytes, '\n', caller, buf);
+    //SerialRegisterController(onControlChar, caller);
+
+
     return -1;
 }
 
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes)
 {
-    printf("%s",(const char*) buf);
+    for(size_t i=0;i<numBytes;i++)
+    {
+        putchar(((char*)buf)[i]);
+    }
+//    printf("%s",(const char*) buf);
+
     fflush(stdout);
-    return 0;
+    return numBytes;
 }
 
-static int fakeFSRead(File *file, void *buf, size_t numBytes)
+static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
     FakeFile* f = file->impl;
     if(!f)
     {
         return -1;
     }
+
+    assert(file->ops->asyncRead == 0);
 
     size_t effectiveSize = strlen(f->content) - file->readPos;
     if(numBytes < effectiveSize)

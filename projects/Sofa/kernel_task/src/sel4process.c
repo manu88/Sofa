@@ -29,6 +29,7 @@
 #include <sel4utils/elf.h>
 #include <sel4utils/mapping.h>
 #include <sel4utils/helpers.h>
+#include "KThread.h"
 #include "VFS.h"
 #include "Log.h"
 #include "ProcessList.h"
@@ -504,7 +505,10 @@ static char* GetFileVFS( const char* path, size_t *size)
     assert(file.ops);
     char* prgData = malloc(file.size);
     assert(prgData);
-    ssize_t readFile = VFSRead(&file, prgData, file.size);
+
+    KThread* caller = (KThread*) seL4_GetUserData();
+    assert(caller);
+    ssize_t readFile = VFSRead(&caller->_base, &file, prgData, file.size, NULL);
     *size = file.size;
     return prgData;
 

@@ -218,18 +218,17 @@ static int doSh(const char* cmd)
     return 0;
 }
 
-static int PSOnProcessDescription(const ProcessDesc* desc, void* ptr)
+static int PSOnProcessDescription(const ProcessDesc* desc, void* _)
 {
     uint64_t currentT = SFGetTime();
-    
     Printf("PID %i '%s' %u start time %li running %f \n",  desc->pid, desc->name, desc->state, desc->startTime, (float)(currentT- desc->startTime) / NS_IN_S);
+
+    return 0;
 }
 
 static int doPS(const char* cmd)
 {
-    ProcClientEnum(PSOnProcessDescription, NULL);
-    
-    return 0;
+    return ProcClientEnum(PSOnProcessDescription, NULL);
 }
 
 static int doKill(const char* args)
@@ -280,6 +279,11 @@ static int doEcho(const char* args)
     if(strcmp(trimmed, "$?") == 0)
     {
         Printf("%i\n", lastCmdRet);
+    }
+    else if(strcmp(trimmed, "$$") == 0)
+    {
+        Printf("%i\n", getpid());
+        return 0;
     }
     else if(trimmed[0] == '$')
     {
@@ -429,38 +433,23 @@ int main(int argc, char *argv[])
 
     ProcClientInit();
 
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
 
-    while (1)
+
+    FILE* fp = stdin;
+    Printf(">:");
+    //fflush(stdout);
+    while ((read = getline(&line, &len, fp)) != EOF) 
     {
+        line[read-1] = 0;
+
+        if(strlen(line))
+        {
+            lastCmdRet = processCommand(trim(line));
+        }
         Printf(">:");
-
-        char data[128] = "";
-        uint8_t gotCmd = 0;
-        size_t bufferIndex = 0;
-        ssize_t readSize = 0;
-        while (gotCmd == 0)
-        {
-            const size_t sizeToRead = 16;
-            readSize = SFReadLine(data + bufferIndex, sizeToRead);
-            if(readSize == -EINTR)
-            {
-                Printf("[Shell] got ctl-c\n");
-            }
-            if(readSize == -EAGAIN)
-            {
-                bufferIndex += sizeToRead;
-            }
-            else
-            {
-                gotCmd = 1;
-                data[bufferIndex + readSize -1] = 0;
-            }
-        }
-        if(strlen(data))
-        {
-            lastCmdRet = processCommand(trim(data));
-        }
-
     }
 
     doExit(1);

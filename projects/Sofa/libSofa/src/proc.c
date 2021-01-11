@@ -64,6 +64,7 @@ int ProcClientEnum(OnProcessDescription callb, void* ptr)
 
         buff += recSize;
     }
+    return 0;
 }
 
 int ProcClientKill(pid_t pid, int sig)

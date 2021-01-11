@@ -131,8 +131,7 @@ static void testThread()
 
 static int baseMain(int argc, char *argv[])
 {
-
-    testRead();
+    //testRead();
     testMmap();
     testReaddir();
     testMalloc();
@@ -175,8 +174,6 @@ int main(int argc, char *argv[])
 
     VFSClientInit();
     ProcClientInit();
-
-//    SFPrintf("Unit tests '%s' %i args\n", argv[0], argc);
 
     if(argc == 1)
     {
