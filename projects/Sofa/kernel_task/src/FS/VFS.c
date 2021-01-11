@@ -229,7 +229,6 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 
 static int VFSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
-    KLOG_DEBUG("VFSReadDir req\n");
     size_t remainFilesToList = file->size - file->readPos;
     size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
     size_t numOfDirents = numDirentPerBuff > remainFilesToList? remainFilesToList:numDirentPerBuff;
@@ -291,7 +290,6 @@ int VFSOpen(const char* path, int mode, File* file)
     VFSMountPoint* mnt = _GetMountPoint(prefix);
     if(mnt == NULL)
     {
-        KLOG_DEBUG("FS is null\n");
         return ENOENT;
     }
     assert(mnt->fs);

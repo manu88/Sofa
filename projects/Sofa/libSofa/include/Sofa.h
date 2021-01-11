@@ -75,6 +75,7 @@ typedef enum
     VFSRequest_Seek,
     VFSRequest_Debug,
     VFSRequest_GetCWD,
+    VFSRequest_ChDir,
     
 } VFSRequest;
 

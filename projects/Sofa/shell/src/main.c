@@ -109,11 +109,22 @@ static int doSpawn(char* cmd)
     return 0;
 }
 
-static int doLs(const char* path)
+static int doLs(const char* path_)
 {
+    char *path = (char*) path_;
+    int shouldFree = 0;
+    if(strlen(path) == 0)
+    {
+        path = get_current_dir_name();
+        shouldFree = 1;
+    }
     DIR *folder = opendir(path);
     if(folder == NULL)
     {
+        if(shouldFree)
+        {
+            free(path);
+        }
         return errno;
     }
     struct dirent *entry = NULL;
@@ -122,6 +133,12 @@ static int doLs(const char* path)
         Printf("%s\n", entry->d_name);
     }
     closedir(folder);
+
+    if(shouldFree)
+    {
+        free(path);
+    }
+    return 0;
 }
 
 static int doDK(const char* cmds)
@@ -413,9 +430,15 @@ int processCommand(const char* cmd)
     else if(startsWith("pwd", cmd))
     {
         char *pwd = get_current_dir_name();
-        Printf("pwd='%s'\n", pwd);
+        Printf("%s\n", pwd);
+        free(pwd);
         return 0;
 
+    }
+    else if(startsWith("cd ", cmd))
+    {
+        const char *p = cmd + strlen("cd ");
+        return chdir(p);
     }
     else if(startsWith("dump", cmd))
     {

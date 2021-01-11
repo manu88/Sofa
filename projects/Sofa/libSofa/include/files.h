@@ -29,6 +29,7 @@ int VFSClientSeek(int handle, size_t pos);
 
 
 char* VFSClientGetCWD(char *buf, size_t size);
+int VFSClientChDir(const char* path);
 void VFSClientDebug(void);
 
 int Printf(const char *format, ...) __attribute__((format(printf,1,2)));

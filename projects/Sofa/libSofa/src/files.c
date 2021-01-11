@@ -198,9 +198,23 @@ char* VFSClientGetCWD(char *buf, size_t size)
 
     size_t pathSize = seL4_GetMR(1);
     memcpy(buf, vfsBuf, pathSize);
+    buf[pathSize] = 0;
     return buf;
 }
 
+int VFSClientChDir(const char* path)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, VFSRequest_ChDir);
+    seL4_SetMR(1, strlen(path));
+    strcpy(vfsBuf, path);
+    vfsBuf[strlen(path)] = 0;
+    seL4_Call(vfsCap, info);
+    return (int) seL4_GetMR(1);
+
+
+    return 0;
+}
 
 int Printf(const char *format, ...)
 {

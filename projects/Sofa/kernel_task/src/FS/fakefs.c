@@ -104,17 +104,9 @@ static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
 {
     if(numPathSegments == 0) // root
     {
-        for(int i=0;i<NumFiles;i++)
-        {
-            printf("%s %i\n", files[i].name, files[i].mode);
-        }
+        stat->type = FileType_Dir;
         return 0;   
 
-    }
-    printf("fakeStat request %i\n", numPathSegments);
-    for (int i=0;i<numPathSegments;i++)
-    {
-        printf("%s\n", path[i]);
     }
     return ENOENT;
 }

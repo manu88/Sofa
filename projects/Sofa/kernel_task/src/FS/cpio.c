@@ -91,6 +91,11 @@ static int cpioFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
             return ret;
         }
     }
+    if(numPathSegments == 0)
+    {
+        stat->type = FileType_Dir;
+        return 0;
+    }
     if(numPathSegments == 1 && strcmp(path[0], "/") == 0)
     {
         return 0;
@@ -106,7 +111,6 @@ static int cpioFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
             return 0;
         }
     }
-
     return -ENOENT;
 }
 

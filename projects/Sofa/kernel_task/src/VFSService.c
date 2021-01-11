@@ -384,6 +384,29 @@ static int mainVFS(KThread* thread, void *arg)
                 seL4_SetMR(1, ret);
                 seL4_Reply(msg);
             }
+            else if(seL4_GetMR(0) == VFSRequest_ChDir)
+            {
+                const char* path = clt->_clt.buff;
+
+                VFS_File_Stat f;
+                int err = VFSStat(path, &f);
+                if(err == 0 && f.type == FileType_Dir)
+                {
+                    free(clt->workingDir);
+                    clt->workingDir = malloc(strlen(path) + 1);
+                    assert(clt->workingDir);
+                    strcpy(clt->workingDir, path);
+                    clt->workingDir[strlen(path)] = 0;
+                    
+                }
+                else if(err == 0)
+                {
+                    err = -EISDIR;
+                }
+                
+                seL4_SetMR(1, err);
+                seL4_Reply(msg);
+            }
             else if(seL4_GetMR(0) == VFSRequest_GetCWD)
             {
                 size_t maxSize = seL4_GetMR(1);

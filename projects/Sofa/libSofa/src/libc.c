@@ -259,6 +259,12 @@ static long sf_getcwd(va_list ap)
     return VFSClientGetCWD(buf, size);
 }
 
+static long sf_chdir(va_list ap)
+{
+    const char* path = va_arg(ap, char*);
+    return VFSClientChDir(path);
+}
+
 long sofa_vsyscall(long sysnum, ...)
 {
     va_list al;
@@ -325,6 +331,9 @@ long sofa_vsyscall(long sysnum, ...)
         break;
     case __NR_getcwd:
         ret = sf_getcwd(al);
+        break;
+    case __NR_chdir:
+        ret = sf_chdir(al);
         break;
     default:
     SFPrintf("Unknown syscall %zi\n", sysnum);
