@@ -189,6 +189,19 @@ ssize_t VFSClientRead(int handle, char* data, size_t size)
 }
 
 
+char* VFSClientGetCWD(char *buf, size_t size)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, VFSRequest_GetCWD);
+    seL4_SetMR(1, size);
+    seL4_Call(vfsCap, info);
+
+    size_t pathSize = seL4_GetMR(1);
+    memcpy(buf, vfsBuf, pathSize);
+    return buf;
+}
+
+
 int Printf(const char *format, ...)
 {
     assert(vfsCap);

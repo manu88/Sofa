@@ -49,6 +49,7 @@ typedef struct
     FileHandle* files;
     int fileIndex;
 
+    char* workingDir;
 
 }Client;
 
@@ -225,6 +226,8 @@ static Client*  RegisterClient(ThreadBase* caller)
     client->_clt.buff = buff;
     client->_clt.buffClientAddr = buffShared;
     client->_clt.service = &_vfsService;
+
+    client->workingDir = strdup("/fake/");
     HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
 
     ThreadBaseAddServiceClient(caller, (ServiceClient*) client);
@@ -261,6 +264,8 @@ static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
         }
     }
     newClient->fileIndex = parentClient->fileIndex;
+    newClient->workingDir = strdup(parentClient->workingDir);
+
 }
 
 
@@ -378,6 +383,20 @@ static int mainVFS(KThread* thread, void *arg)
                 int ret = VFSServiceSeek(clt, handle, offset);
                 seL4_SetMR(1, ret);
                 seL4_Reply(msg);
+            }
+            else if(seL4_GetMR(0) == VFSRequest_GetCWD)
+            {
+                size_t maxSize = seL4_GetMR(1);
+                size_t pathSize = strlen(clt->workingDir);
+                if(pathSize < maxSize)
+                {
+                    maxSize = pathSize;
+                }
+                strncpy(clt->_clt.buff, clt->workingDir, maxSize);
+                clt->_clt.buff[maxSize] = 0;
+                seL4_SetMR(1, maxSize);
+                seL4_Reply(msg);
+
             }
             else if(seL4_GetMR(0) == VFSRequest_Debug)
             {

@@ -157,6 +157,7 @@ static long sf_recvfrom(va_list ap)
     return NetClientRecvFrom(sockfd, buf, len, flags, src_addr, addrlen);
 }
 
+
 static long sf_munmap(va_list ap)
 {
     void *addr = va_arg(ap, void*);
@@ -249,6 +250,15 @@ static long sf_write(va_list ap)
     return VFSClientWrite(fd, buf, bufSize);
 }
 
+
+static long sf_getcwd(va_list ap)
+{
+    char* buf = va_arg(ap, char*);
+    size_t size = va_arg(ap, size_t);
+
+    return VFSClientGetCWD(buf, size);
+}
+
 long sofa_vsyscall(long sysnum, ...)
 {
     va_list al;
@@ -312,6 +322,9 @@ long sofa_vsyscall(long sysnum, ...)
         break;
     case __NR_recvfrom:
         ret = sf_recvfrom(al);
+        break;
+    case __NR_getcwd:
+        ret = sf_getcwd(al);
         break;
     default:
     SFPrintf("Unknown syscall %zi\n", sysnum);

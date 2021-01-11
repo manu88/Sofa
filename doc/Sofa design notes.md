@@ -57,5 +57,22 @@ However, spawn (in the Posix sense) still requires some part of the calling proc
 * For each service that has the `ServiceFlag_Clone`flag set, send a message to the service to clone the state of the parent into the new child.
 * Such clone operation is entirely left to the service and Sofa does not enforce any policy regarding the cloning logic.
 
-A client clone example can be found in the VFSService (around [here](https://github.com/manu88/Sofa/blob/master/projects/Sofa/kernel_task/src/VFSService.c#L235)) .
+#### VFSService Client clone example 
+
+The clone method can  be found in the VFSService  around [here](https://github.com/manu88/Sofa/blob/master/projects/Sofa/kernel_task/src/VFSService.c#L235).
+
+A VFSService client has the following properties:
+
+* A list of open files
+* The current working directory
+
+On clone request, the Service will simply copy the working directory and the open file list into the new process.
+
+
+
+On the contrary, the Process Service [ProcService](https://github.com/manu88/Sofa/blob/master/projects/Sofa/kernel_task/src/ProcService.c) will not clone any client, simply because it has no state.
+
+
+
+
 

@@ -73,7 +73,8 @@ typedef enum
     VFSRequest_Read,
     VFSRequest_Write,
     VFSRequest_Seek,
-    VFSRequest_Debug
+    VFSRequest_Debug,
+    VFSRequest_GetCWD,
     
 } VFSRequest;
 

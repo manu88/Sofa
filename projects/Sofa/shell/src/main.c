@@ -410,6 +410,13 @@ int processCommand(const char* cmd)
         Printf("PPID=%i\n", ppid);
         return ppid;
     }
+    else if(startsWith("pwd", cmd))
+    {
+        char *pwd = get_current_dir_name();
+        Printf("pwd='%s'\n", pwd);
+        return 0;
+
+    }
     else if(startsWith("dump", cmd))
     {
         SFDebug(SofaDebugCode_DumpSched);
