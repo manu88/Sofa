@@ -49,6 +49,7 @@ typedef struct
     FileHandle* files;
     int fileIndex;
 
+    char* workingDir;
 
 }Client;
 
@@ -77,12 +78,124 @@ int VFSServiceInit()
 static IODevice* _dev = NULL;
 
 
+int PathIsAbsolute(const char* path)
+{
+    return path[0] == '/';
+}
+
+
+char* ConcPath(const char* workingDir, const char* path)
+{
+    size_t wdSize = strlen(workingDir);
+    const size_t totalSize = wdSize + strlen(path);
+
+    char* realP = malloc(totalSize);
+    if(!realP)
+    {
+        return NULL;
+    }
+    if( wdSize > 1 && workingDir[wdSize-1] == '/' && path[0] == '/') 
+    {
+        wdSize -=1;
+    }
+    strcpy(realP, workingDir);
+    strcpy(realP + wdSize, path);
+
+    return realP;
+}
+static int VFSServiceChDIR(Client* clt)
+{
+    const char* path = clt->_clt.buff;
+
+    char *realP = NULL;
+    int freeRealP = 0;
+    int absolute = PathIsAbsolute(path);
+    if(absolute)
+    {
+        realP = path;
+    }
+    else if (strlen(path) == 0)
+    {
+        realP = clt->workingDir;
+    }
+    else
+    {
+        realP = ConcPath(clt->workingDir, path);
+        if(!realP)
+        {
+            return -ENOMEM;
+        }
+        freeRealP = 1;
+    }
+    
+    VFS_File_Stat f;
+    int err = VFSStat(realP, &f);
+    if(err == 0 && f.type == FileType_Dir)
+    {
+        free(clt->workingDir);
+        size_t pSize = strlen(realP);
+        int addLastSlash = 0;
+        if(realP[pSize-1] != '/')
+        {
+            addLastSlash =1;
+        }
+        clt->workingDir = malloc(pSize + 1 + addLastSlash);
+        assert(clt->workingDir);
+        strcpy(clt->workingDir, realP);
+        if(addLastSlash)
+        {
+            clt->workingDir[pSize] = '/';    
+        }
+
+        clt->workingDir[pSize + addLastSlash] = 0;
+        
+    }
+    else if(err == 0)
+    {
+        err = -EISDIR;
+    }
+
+
+    if(freeRealP)
+    {
+        free(realP);
+    }
+
+    return err;
+
+}
+
 static int VFSServiceOpen(Client* client, const char* path, int mode)
 {
+    char *realP = NULL;
+    int freeRealP = 0;
+    int absolute = PathIsAbsolute(path);
+    if(absolute)
+    {
+        realP = path;
+    }
+    else if (strlen(path) == 0)
+    {
+        realP = client->workingDir;
+    }
+    else
+    {
+        realP = ConcPath(client->workingDir, path);
+        if(!realP)
+        {
+            return -ENOMEM;
+        }
+        freeRealP = 1;
+    }
+
     File ff;
-    int ret =  VFSOpen(path, mode,&ff);
+    int ret =  VFSOpen(realP, mode,&ff);
     if(ret != 0)
     {
+        if(freeRealP)
+        {
+            free(realP);
+        }
         return -ret;
     }
     FileHandle* f = malloc(sizeof(FileHandle));
@@ -90,6 +203,10 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
     f->file = ff;
     f->index = client->fileIndex++;
     HASH_ADD_INT(client->files, index, f);
+    if(freeRealP)
+    {
+        free(realP);
+    }
 
     return f->index;
 }
@@ -119,7 +236,6 @@ static ssize_t VFSServiceWrite(Client* client, int handle, int size)
 
 static ssize_t VFSServiceRead(Client* client, int handle, int size, int* asyncResult)
 {
-//    KLOG_DEBUG("VFSServiceRead from %s %i h=%i\n", ProcessGetName(client->_clt.caller->process), ProcessGetPID(client->_clt.caller->process), handle);
     FileHandle* file = NULL;
     HASH_FIND_INT(client->files, &handle, file);
     if(file == NULL)
@@ -198,12 +314,12 @@ static void ClientCleanup(ServiceClient *clt)
         VFSClose(&f->file);
         free(f);
     }
-
+    free(c->workingDir);
     free(c);
 }
 
 
-static Client*  RegisterClient(ThreadBase* caller)
+static Client* RegisterClient(ThreadBase* caller)
 {
     KernelTaskContext* env = getKernelTaskContext();
 
@@ -225,6 +341,8 @@ static Client*  RegisterClient(ThreadBase* caller)
     client->_clt.buff = buff;
     client->_clt.buffClientAddr = buffShared;
     client->_clt.service = &_vfsService;
+
+    client->workingDir = strdup("/");
     HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
 
     ThreadBaseAddServiceClient(caller, (ServiceClient*) client);
@@ -237,7 +355,7 @@ static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
     assert(parent->process);
     assert(newProc->process);
     
-    Client* newClient =  RegisterClient(newProc);
+    Client* newClient = RegisterClient(newProc);
     assert(newClient);
 
 
@@ -261,8 +379,25 @@ static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
         }
     }
     newClient->fileIndex = parentClient->fileIndex;
+    newClient->workingDir = strdup(parentClient->workingDir);
+
 }
 
+
+int VFSServiceGetClientCWD(ThreadBase* sender, char** pat_ret)
+{
+    assert(pat_ret);
+    ServiceClient* _clt = NULL;
+    HASH_FIND_PTR(_clients, &sender, _clt );
+    if(_clt == NULL)
+    {
+        return -ESRCH;
+    }
+    Client* clt = (Client*) _clt;
+    
+    *pat_ret = clt->workingDir;
+    return 0;
+}
 
 static int mainVFS(KThread* thread, void *arg)
 {
@@ -378,6 +513,26 @@ static int mainVFS(KThread* thread, void *arg)
                 int ret = VFSServiceSeek(clt, handle, offset);
                 seL4_SetMR(1, ret);
                 seL4_Reply(msg);
+            }
+            else if(seL4_GetMR(0) == VFSRequest_ChDir)
+            {
+                int r = VFSServiceChDIR(clt);
+                seL4_SetMR(1, r);
+                seL4_Reply(msg);                
+            }
+            else if(seL4_GetMR(0) == VFSRequest_GetCWD)
+            {
+                size_t maxSize = seL4_GetMR(1);
+                size_t pathSize = strlen(clt->workingDir);
+                if(pathSize < maxSize)
+                {
+                    maxSize = pathSize;
+                }
+                strncpy(clt->_clt.buff, clt->workingDir, maxSize);
+                clt->_clt.buff[maxSize] = 0;
+                seL4_SetMR(1, maxSize);
+                seL4_Reply(msg);
+
             }
             else if(seL4_GetMR(0) == VFSRequest_Debug)
             {

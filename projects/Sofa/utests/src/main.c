@@ -131,7 +131,7 @@ static void testThread()
 
 static int baseMain(int argc, char *argv[])
 {
-    //testRead();
+    testRead();
     testMmap();
     testReaddir();
     testMalloc();

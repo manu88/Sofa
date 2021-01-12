@@ -19,6 +19,17 @@ int fOut = -1;
 static int lastCmdRet = 0;
 int processCommand(const char* cmd);
 
+static char* currentWD = NULL;
+
+static void showPrompt()
+{
+    if(currentWD == NULL)
+    {
+        currentWD = get_current_dir_name();
+    }
+    Printf("%s$ ", currentWD);
+}
+
 static char *trim(char *str)
 {
     size_t len = 0;
@@ -71,7 +82,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     Printf("Sofa shell\n");
-    Printf("Available commands are: echo exit help ps sh kill spawn sleep cat poweroff services dk gettime\n");
+    Printf("Available commands are: echo exit help ps sh kill spawn sleep cat poweroff services dk gettime cd pwd\n");
 }
 
 static void doExit(int code)
@@ -122,6 +133,8 @@ static int doLs(const char* path)
         Printf("%s\n", entry->d_name);
     }
     closedir(folder);
+
+    return 0;
 }
 
 static int doDK(const char* cmds)
@@ -410,6 +423,23 @@ int processCommand(const char* cmd)
         Printf("PPID=%i\n", ppid);
         return ppid;
     }
+    else if(startsWith("pwd", cmd))
+    {
+        Printf("%s\n", currentWD);
+        return 0;
+
+    }
+    else if(startsWith("cd ", cmd))
+    {
+        const char *p = cmd + strlen("cd ");
+        int ret = chdir(p);
+        if(ret == 0)
+        {
+            free(currentWD);
+            currentWD = get_current_dir_name();
+        }
+        return ret;
+    }
     else if(startsWith("dump", cmd))
     {
         SFDebug(SofaDebugCode_DumpSched);
@@ -439,8 +469,8 @@ int main(int argc, char *argv[])
 
 
     FILE* fp = stdin;
-    Printf(">:");
-    //fflush(stdout);
+    showPrompt();
+
     while ((read = getline(&line, &len, fp)) != EOF) 
     {
         line[read-1] = 0;
@@ -449,7 +479,7 @@ int main(int argc, char *argv[])
         {
             lastCmdRet = processCommand(trim(line));
         }
-        Printf(">:");
+        showPrompt();
     }
 
     doExit(1);

@@ -18,6 +18,7 @@
 #include "Process.h"
 #include "Log.h"
 #include <proc.h>
+#include <VFSService.h> // for PathIsAbsolute and ConcPath
 
 int doKill(pid_t pidToKill, ThreadBase* sender, int signal);
 long doSpawn(ThreadBase* caller, const char* dataBuf);
@@ -146,15 +147,36 @@ static void onProcWait(BaseService* service, ThreadBase* sender, seL4_MessageInf
     }
 }
 
-static void onProcSpawn(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+static long onProcSpawn(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
 {
     ServiceClient* client = BaseServiceGetClient(service, sender);
     assert(client);
 
-    long ret = doSpawn(sender, client->buff);
+    long ret = 0;
+    if(PathIsAbsolute(client->buff))
+    {
+        ret = doSpawn(sender, client->buff);
+        return ret;
+    }
 
-    seL4_SetMR(1, ret);
-    seL4_Reply(msg);
+    char* cltPath = NULL;
+    ret = VFSServiceGetClientCWD(sender, &cltPath);
+    if(ret != 0)
+    {
+        KLOG_DEBUG("onProcSpawn: unable to get working dir\n");
+        return ret;
+    }
+    KLOG_DEBUG("onProcSpawn: CWD is '%s'\n", cltPath);
+
+    char* realP = ConcPath(cltPath, client->buff);
+    if(!realP)
+    {
+        return -ENOMEM;
+    }
+
+    ret = doSpawn(sender, realP);
+    free(realP);
+    return ret;
 }
 
 static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
@@ -173,8 +195,13 @@ static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageI
         onProcKill(service, sender, msg);
         break;
     case ProcRequest_Spawn:
-        onProcSpawn(service, sender, msg);
+    {
+        long ret = onProcSpawn(service, sender, msg);
+        seL4_SetMR(1, ret);
+        seL4_Reply(msg);
+
         break;
+    }
     case ProcRequest_Wait:
         onProcWait(service, sender, msg);
         break;

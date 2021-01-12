@@ -15,7 +15,7 @@
  */
 #pragma once
 #include "IODevice.h"
-
+#include <Thread.h>
 
 typedef enum
 {
@@ -29,5 +29,11 @@ int VFSServiceInit(void);
 
 int VFSServiceStart(void);
 
+int VFSServiceGetClientCWD(ThreadBase* sender, char** pat_ret);
+
 //int VFSAddDEvice(IODevice *dev);
+
+int PathIsAbsolute(const char* path);
+char* ConcPath(const char* workingDir, const char* path);
+
 
