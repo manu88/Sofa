@@ -63,6 +63,7 @@
 #include <Sofa.h>
 #include <signal.h>
 #include "VFS.h"
+#include "devFS.h"
 #include "cpio.h"
 
 #include "DKService.h"
@@ -222,7 +223,7 @@ void *main_continued(void *arg UNUSED)
 // 'user-space' bootstrap
     VFSMount(getFakeFS(), "/fake", &error);
     VFSMount(getCpioFS(), "/cpio", &error);
-    VFSMount(getCpioFS(), "/lib", &error);    
+    VFSMount(getDevFS(), "/dev", &error);    
 
 
     ProcessInit(&initProcess);

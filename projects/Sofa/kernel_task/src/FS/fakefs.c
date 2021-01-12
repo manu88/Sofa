@@ -44,11 +44,6 @@ static FileOps _fileOps =
     .asyncRead = 0
 };
 
-static FileOps _consoleOps = 
-{
-    .asyncRead = 1,
-    .Read = consRead,
-};
 
 static VFSFileSystem _fs = {.ops = &_ops};
 
@@ -82,18 +77,8 @@ static const FakeFile const files[] =
         .mode = O_RDONLY,
         .ops = &_fileOps
     },
-    {
-        .name = "cons",
-        .mode = O_WRONLY,
-        .ops = &_fileOps
-    },
-    {
-        .name = "consin",
-        .mode = O_RDONLY,
-        .ops = &_consoleOps
-    },
 };
-#define NumFiles 5
+#define NumFiles 3
 
 VFSFileSystem* getFakeFS()
 {
@@ -206,30 +191,6 @@ static void onBytesAvailable(size_t size, char until, void* ptr, void* buf)
 
 }
 
-
-static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
-{
-    KernelTaskContext* env = getKernelTaskContext();
-
-    assert(caller->replyCap == 0);
-
-    seL4_Word slot = get_free_slot(&env->vka);
-    int error = cnode_savecaller(&env->vka, slot);
-    if (error)
-    {
-        KLOG_TRACE("Unable to save caller err=%i\n", error);
-        cnode_delete(&env->vka, slot);
-        return -ENOMEM;
-    }
-
-    caller->replyCap = slot;
-    caller->currentSyscallID = 0;
-    SerialRegisterWaiter(onBytesAvailable, numBytes, '\n', caller, buf);
-    //SerialRegisterController(onControlChar, caller);
-
-
-    return -1;
-}
 
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes)
 {

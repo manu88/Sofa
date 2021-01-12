@@ -259,7 +259,6 @@ static int VFSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes
     }
     file->readPos += numOfDirents;
     return acc;
-
 }
 
 
@@ -321,11 +320,12 @@ int VFSSeek(File* file, size_t pos)
 
 ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 {
-    if(file->mode != O_WRONLY)
+    if(file->mode == O_WRONLY || file->mode == O_RDWR)
     {
-        return -EACCES;
+        return file->ops->Write(file, buf, sizeToWrite);
     }
-    return file->ops->Write(file, buf, sizeToWrite);
+    return -EACCES;
+    
 }
 
 ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, int *async_later)
