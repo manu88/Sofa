@@ -283,7 +283,6 @@ int VFSOpen(const char* path, int mode, File* file)
 
     if (!Unpack_Path(path, prefix, &suffix))
     {
-        KLOG_DEBUG("Unpack pth err\n");
 	    return ENOENT;
     }
 

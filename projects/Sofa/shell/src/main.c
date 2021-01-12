@@ -19,6 +19,17 @@ int fOut = -1;
 static int lastCmdRet = 0;
 int processCommand(const char* cmd);
 
+static char* currentWD = NULL;
+
+static void showPrompt()
+{
+    if(currentWD == NULL)
+    {
+        currentWD = get_current_dir_name();
+    }
+    Printf("%s$ ", currentWD);
+}
+
 static char *trim(char *str)
 {
     size_t len = 0;
@@ -71,7 +82,7 @@ static int startsWith(const char *pre, const char *str)
 void cmdHelp()
 {
     Printf("Sofa shell\n");
-    Printf("Available commands are: echo exit help ps sh kill spawn sleep cat poweroff services dk gettime\n");
+    Printf("Available commands are: echo exit help ps sh kill spawn sleep cat poweroff services dk gettime cd pwd\n");
 }
 
 static void doExit(int code)
@@ -109,22 +120,11 @@ static int doSpawn(char* cmd)
     return 0;
 }
 
-static int doLs(const char* path_)
+static int doLs(const char* path)
 {
-    char *path = (char*) path_;
-    int shouldFree = 0;
-    if(strlen(path) == 0)
-    {
-        path = get_current_dir_name();
-        shouldFree = 1;
-    }
     DIR *folder = opendir(path);
     if(folder == NULL)
     {
-        if(shouldFree)
-        {
-            free(path);
-        }
         return errno;
     }
     struct dirent *entry = NULL;
@@ -134,10 +134,6 @@ static int doLs(const char* path_)
     }
     closedir(folder);
 
-    if(shouldFree)
-    {
-        free(path);
-    }
     return 0;
 }
 
@@ -429,16 +425,20 @@ int processCommand(const char* cmd)
     }
     else if(startsWith("pwd", cmd))
     {
-        char *pwd = get_current_dir_name();
-        Printf("%s\n", pwd);
-        free(pwd);
+        Printf("%s\n", currentWD);
         return 0;
 
     }
     else if(startsWith("cd ", cmd))
     {
         const char *p = cmd + strlen("cd ");
-        return chdir(p);
+        int ret = chdir(p);
+        if(ret == 0)
+        {
+            free(currentWD);
+            currentWD = get_current_dir_name();
+        }
+        return ret;
     }
     else if(startsWith("dump", cmd))
     {
@@ -469,8 +469,8 @@ int main(int argc, char *argv[])
 
 
     FILE* fp = stdin;
-    Printf(">:");
-    //fflush(stdout);
+    showPrompt();
+
     while ((read = getline(&line, &len, fp)) != EOF) 
     {
         line[read-1] = 0;
@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
         {
             lastCmdRet = processCommand(trim(line));
         }
-        Printf(">:");
+        showPrompt();
     }
 
     doExit(1);
