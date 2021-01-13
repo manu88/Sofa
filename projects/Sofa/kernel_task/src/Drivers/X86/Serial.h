@@ -17,11 +17,7 @@
 #include "VFS.h"
 #include "IONode.h"
 
-#define SERIAL_CIRCULAR_BUFFER_SIZE 512
-typedef void (*OnBytesAvailable)(size_t size, char until, void* ptr, void* ptr2);
 
-FileOps* getConsOps(void);
-FileOps* getConsOps2(void);
 
 
 void AddComDev(IODriver *drv, IONode * n);

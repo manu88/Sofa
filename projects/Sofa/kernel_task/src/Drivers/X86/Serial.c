@@ -19,19 +19,23 @@
 #include "IODevice.h"
 #include "devFS.h"
 #include <sel4platsupport/arch/io.h>
-#include <utils/circular_buffer.h>
+#include <CircBuff.h>
+#include "IRQServer.h"
 
-static char _circ_buffer[sizeof(circ_buf_t) + SERIAL_CIRCULAR_BUFFER_SIZE -1]; // '-1' 'cause 1 byte is already present in circ_buf_t
+#define SERIAL_CIRCULAR_BUFFER_SIZE 512
 
-static circ_buf_t* getCircularBuffer()
+
+
+typedef struct
 {
-    return (circ_buf_t *) _circ_buffer;
-}
+    IODevice dev;
+    CircularBuffer inputBuffer[MAKE_CIRC_SIZE(SERIAL_CIRCULAR_BUFFER_SIZE)];
+    //CircularBuffer _comInputBuffer[MAKE_CIRC_SIZE(SERIAL_CIRCULAR_BUFFER_SIZE)];
+} ComDevice;
 
-size_t ComGetAvailableChar()
-{
-    return getCircularBuffer()->tail - getCircularBuffer()->head;
-}
+typedef void (*OnBytesAvailable)(CircularBuffer* inputBuffer, char until, void* ptr, void* ptr2);
+
+//static CircularBuffer _comInputBuffer[MAKE_CIRC_SIZE(SERIAL_CIRCULAR_BUFFER_SIZE)];
 
 static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
 static int consWrite(File *file, const void *buf, size_t numBytes);
@@ -61,16 +65,6 @@ static IODeviceOperations _comDevOps =
     .handleIRQ = onIrq
 };
 
-FileOps* getConsOps()
-{
-    return &_consoleOps;
-}
-
-FileOps* getConsOps2()
-{
-    return &_consoleOps2;
-}
-
 typedef struct 
 {
     OnBytesAvailable waiter;
@@ -79,14 +73,15 @@ typedef struct
     char until;
     void* ptr;
     void* ptr2;
+    CircularBuffer* buffer;
 
 } SerialWaiter;
 
 static SerialWaiter _waiter = {0};
 
-void ComHandleInput(IODevice* dev)
+void ComHandleInput(ComDevice* dev)
 {
-    ps_chardevice_t* charDev = (ps_chardevice_t*) dev->impl;
+    ps_chardevice_t* charDev = (ps_chardevice_t*) dev->dev.impl;
 
     int data = 0;
     while(data != EOF)
@@ -107,23 +102,21 @@ void ComHandleInput(IODevice* dev)
             if(data == '\r')
                 data = '\n';
 
-            circ_buf_put(getCircularBuffer(), data);
+            CircularBufferPut(dev->inputBuffer, data);
 
             if(_waiter.waiter &&  _waiter.size)
             {
-                // echo only if someone is waiting on us!
-                //putchar(data);
+
                 ps_cdev_putchar(charDev, data);
-                //fflush(stdout);
-                //
+
                 if(_waiter.until && data == _waiter.until)
                 {
-                    _waiter.waiter(ComGetAvailableChar(), _waiter.until, _waiter.ptr, _waiter.ptr2);
+                    _waiter.waiter(dev->inputBuffer, _waiter.until, _waiter.ptr, _waiter.ptr2);
                     memset(&_waiter, 0, sizeof(_waiter));
                 }
-                else if(ComGetAvailableChar() >= _waiter.size)
+                else if(CircularBufferGetAvailableChar(dev->inputBuffer) >= _waiter.size)
                 {
-                    _waiter.waiter(ComGetAvailableChar(), (char) 0, _waiter.ptr, _waiter.ptr2);
+                    _waiter.waiter(dev->inputBuffer, (char) 0, _waiter.ptr, _waiter.ptr2);
                     memset(&_waiter, 0, sizeof(_waiter));
                 }
             }
@@ -140,12 +133,12 @@ static void onIrq(IODevice* dev, int irqN)
     ComHandleInput(dev);
 }
 
-size_t ComCopyAvailableChar(char* dest, size_t maxSize)
+size_t ComCopyAvailableChar(CircularBuffer* buf, char* dest, size_t maxSize)
 {
     size_t copied = 0;
-    while (circ_buf_is_empty(getCircularBuffer()) == 0)
+    while (CircularBufferIsEmpty(buf) == 0)
     {
-        dest[copied] = circ_buf_get(getCircularBuffer());        
+        dest[copied] = CircularBufferGet(buf);        
         copied +=1;
         if(copied > maxSize)
         {
@@ -157,12 +150,13 @@ size_t ComCopyAvailableChar(char* dest, size_t maxSize)
     
 }
 
-static void onBytesAvailable(size_t size, char until, void* ptr, void* buf)
+static void onBytesAvailable(CircularBuffer* buffer, char until, void* ptr, void* buf)
 {
+    size_t size = CircularBufferGetAvailableChar(buffer);
     ThreadBase* caller = (ThreadBase*) ptr;
     assert(caller);
 
-    size_t bytes = ComCopyAvailableChar(buf, size);
+    size_t bytes = ComCopyAvailableChar(buffer, buf, size);
     ((char*)buf)[bytes] = 0;
 
     seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 3);
@@ -176,18 +170,22 @@ static void onBytesAvailable(size_t size, char until, void* ptr, void* buf)
 }
 
 
-int ComRegisterWaiter(OnBytesAvailable callback, size_t forSize, char until, void* ptr, void* ptr2)
+int ComRegisterWaiter(ComDevice* dev, OnBytesAvailable callback, size_t forSize, char until, void* ptr, void* ptr2)
 {
     _waiter.waiter = callback;
     _waiter.size = forSize;
     _waiter.ptr = ptr;
     _waiter.ptr2 = ptr2;
     _waiter.until = until;
+    _waiter.buffer = dev->inputBuffer;
     return 0;
 }
 
 static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
+    assert(file->impl);
+    ComDevice* dev = file->impl;
+
     KernelTaskContext* env = getKernelTaskContext();
 
     assert(caller->replyCap == 0);
@@ -203,7 +201,7 @@ static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 
     caller->replyCap = slot;
     caller->currentSyscallID = 0;
-    ComRegisterWaiter(onBytesAvailable, numBytes, '\n', caller, buf);
+    ComRegisterWaiter(dev, onBytesAvailable, numBytes, '\n', caller, buf);
     return -1;
 }
 
@@ -253,7 +251,7 @@ void AddComDev(IODriver *drv, IONode * n)
 {
     KernelTaskContext* context = getKernelTaskContext();
 
-    IODevice* com = malloc(sizeof(IODevice));
+    ComDevice* com = malloc(sizeof(ComDevice));
     if(!com)
     {
         KLOG_ERROR("PCI._AddComDev: unable to alloc space for device '%s'\n", n->name);
@@ -262,14 +260,16 @@ void AddComDev(IODriver *drv, IONode * n)
     IODeviceInit(com, n->name, IODevice_CharDev);
     DeviceTreeAddDevice(com);
 
+    CircularBufferInit(com->inputBuffer, SERIAL_CIRCULAR_BUFFER_SIZE);
+
     n->driver = drv;
     ps_chardevice_t* comDev = malloc(sizeof(ps_chardevice_t));
     assert(comDev);
 
     int comID = n->name[3] - '0';
-    com->ops = &_comDevOps;
-    com->impl = ps_cdev_init(comID -1 , &context->ops , comDev);
-    assert(com->impl);
+    com->dev.ops = &_comDevOps;
+    com->dev.impl = ps_cdev_init(comID -1 , &context->ops , comDev);
+    assert(com->dev.impl);
 
     int irqN = DevProducesIRQ(comDev);
     KLOG_DEBUG("PCI Driver '%s' produces IRQ %i\n", n->name, irqN);
@@ -288,12 +288,12 @@ void AddComDev(IODriver *drv, IONode * n)
         sprintf(comFile->name, "tty%i", comID-1);
         if(strcmp(n->name, "COM1") == 0)
         {
-            circ_buf_init(SERIAL_CIRCULAR_BUFFER_SIZE, getCircularBuffer());
-            comFile->ops = getConsOps();
+            
+            comFile->ops = &_consoleOps;
         }
         else
         {
-            comFile->ops = getConsOps2();
+            comFile->ops = &_consoleOps2;
         }
         comFile->device = com;
         DevFSAddDev(comFile);

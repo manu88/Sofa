@@ -71,4 +71,3 @@ ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize);
 ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize);
 
 
-int IODeviceRegisterIRQ(IODevice* dev, int irqN);

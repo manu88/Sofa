@@ -86,8 +86,6 @@ static void process_messages()
     KernelTaskContext* env = getKernelTaskContext();
     while (1)
     {   
-        //handleSerialInput(env);
-        //handleSerialInput2(env);
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env->root_task_endpoint.cptr, &badge);
         seL4_Word label = seL4_MessageInfo_get_label(info);
