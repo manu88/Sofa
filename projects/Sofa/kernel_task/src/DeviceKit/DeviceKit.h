@@ -14,8 +14,5 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "IODevice.h"
 
-
-int IRQServerInit(void);
-int IRQServerRegisterIRQ(IODevice* dev, int irqN);
+int DeviceKitInit(void);

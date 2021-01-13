@@ -67,6 +67,7 @@
 #include "devFS.h"
 #include "cpio.h"
 
+#include "DeviceKit.h"
 #include "DKService.h"
 #include "VFSService.h"
 #include "NetService.h"
@@ -178,6 +179,10 @@ void *main_continued(void *arg UNUSED)
 
     error = IOInit();
     assert(error == 0);
+
+    error = DeviceKitInit();
+    assert(error == 0);
+
 
 // base services init
 

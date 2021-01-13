@@ -117,6 +117,11 @@ static int doSpawn(char* cmd)
             Printf("%s (pid %i) returned %i\n", cmd, pid, appStatus);
         }
     }
+    else
+    {
+        Printf("[ ] %i\n", pid);
+    }
+    
     return 0;
 }
 

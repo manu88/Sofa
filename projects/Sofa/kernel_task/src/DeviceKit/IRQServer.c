@@ -17,79 +17,117 @@
 #include "Log.h"
 #include "KThread.h"
 #include "Environ.h"
+#include "utlist.h"
+
+
+
 static const char tName[] = "IRQServer";
-static KThread _irqThread;
-static int once = 1;
 
-static seL4_CPtr _irqaep = 0;
-static int _irq = -1;
-static IODevice *_dev = NULL;
 
+
+
+typedef struct _IRQInstance 
+{
+    struct _IRQInstance *next;
+
+    IODevice* recipient;
+    seL4_CPtr irqAckHandler;
+} IRQInstance;
+
+
+typedef struct 
+{
+    KThread _irqThread;
+    vka_object_t irq_aep_obj;
+
+    IRQInstance *irqInstances;
+} IRQServer;
+
+static IRQServer _server;
+
+
+
+static int _irqMain(KThread* th, void* arg);
+
+int IRQServerInit()
+{
+    memset(&_server, 0, sizeof(IRQServer));
+    KThreadInit(&_server._irqThread);
+    _server._irqThread.name = tName;
+    _server._irqThread.mainFunction = _irqMain;
+
+
+    KernelTaskContext* context = getKernelTaskContext();
+
+    int error = vka_alloc_notification(&context->vka, &_server.irq_aep_obj);
+    if(error != 0)
+    {
+        return error;
+    }
+    assert(error == 0);
+
+    error = KThreadRun(&_server._irqThread, 254, &_server);
+    return error;
+}
 
 static int _irqMain(KThread* th, void* arg)
 {
+    IRQServer* server = arg;
+    assert(arg);
     KLOG_INFO("Starting IRQ Server\n");
-    assert(_irqaep);
-    assert(_irq);
-    assert(_dev);
 
-    int once = 1;
     while (1)
     {   
         seL4_Word sender = 0;
-        seL4_Wait(_irqaep, &sender);
-        if(once)
-        {
-            KLOG_DEBUG("IRQ Sender is %u\n", sender);
-            once = 0;
-        }
-        seL4_IRQHandler_Ack(_irq);
-        _dev->ops->handleIRQ(_dev, _irq);
+        seL4_Wait(_server.irq_aep_obj.cptr, &sender);
+        
+        IRQInstance* instance = (IRQInstance*) sender; 
+        assert(instance);
+        assert(instance->recipient);
+        assert(instance->irqAckHandler);
+        seL4_IRQHandler_Ack(instance->irqAckHandler);
+        
+        instance->recipient->ops->handleIRQ(instance->recipient, -1);
     }
     
 }
 
-int IODeviceRegisterIRQ(IODevice* dev, int irqN)
+int IRQServerRegisterIRQ(IODevice* dev, int irqN)
 {
-    if(once != 1)
-    {
-        return -1;
-    }
-    once = 0;
     KLOG_INFO("IODeviceRegisterIRQ %i for '%s'\n", irqN, dev->name);
 
     KernelTaskContext* context = getKernelTaskContext();
 
-    cspacepath_t irq_path = { 0 };
-    seL4_CPtr irq;
+    cspacepath_t irq_handler_path = { 0 };
+    seL4_CPtr irq_handler;
 
-    int error = vka_cspace_alloc(&context->vka, &irq);
+    int error = vka_cspace_alloc(&context->vka, &irq_handler);
     assert(error == 0);
-    vka_cspace_make_path(&context->vka, irq, &irq_path);
+    vka_cspace_make_path(&context->vka, irq_handler, &irq_handler_path);
 
-    error = simple_get_IRQ_handler(&context->simple, irqN, irq_path);
+    error = simple_get_IRQ_handler(&context->simple, irqN, irq_handler_path);
     assert(error == 0);
 
-    vka_object_t irq_aep_obj = { 0 };
-
-    error = vka_alloc_notification(&context->vka, &irq_aep_obj);
-    assert(error == 0);
+    IRQInstance* instance = malloc(sizeof(IRQInstance));
+    assert(instance);
+    memset(instance, 0, sizeof(IRQInstance));
+    instance->recipient = dev;
     
     seL4_CPtr capMint = get_free_slot(&context->vka);
-    error = cnode_mint(&context->vka, irq_aep_obj.cptr, capMint, seL4_AllRights, 42);
+    error = cnode_mint(&context->vka, _server.irq_aep_obj.cptr, capMint, seL4_AllRights, (seL4_Word) instance);
     assert(error == 0);
 
 
-    error = seL4_IRQHandler_SetNotification(irq_path.capPtr, capMint);
+    error = seL4_IRQHandler_SetNotification(irq_handler_path.capPtr, capMint);
     assert(error == 0);
 
-    _irqaep = capMint;
-    _irq = irq_path.capPtr;
-    _dev = dev;
+    instance->irqAckHandler = irq_handler_path.capPtr; 
 
-    KThreadInit(&_irqThread);
-    _irqThread.name = tName;
-    _irqThread.mainFunction = _irqMain;
-    KThreadRun(&_irqThread, 254, NULL);
+    LL_APPEND(_server.irqInstances, instance);
+
+    size_t numIrqInstance = 0;
+    IRQInstance* t = NULL;
+    LL_COUNT(_server.irqInstances, t, numIrqInstance);
+    KLOG_DEBUG("[IRQService] Got %zi IRQ instances\n", numIrqInstance); 
     return 0;
 }

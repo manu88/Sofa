@@ -13,9 +13,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "IODevice.h"
+#include "DeviceKit.h"
+#include "IRQServer.h"
 
+int DeviceKitInit()
+{
+    int error;
 
-int IRQServerInit(void);
-int IRQServerRegisterIRQ(IODevice* dev, int irqN);
+    error = IRQServerInit();
+    return error;
+}

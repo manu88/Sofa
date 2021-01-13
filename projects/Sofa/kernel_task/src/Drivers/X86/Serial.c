@@ -23,47 +23,8 @@
 #include "IRQServer.h"
 
 #define SERIAL_CIRCULAR_BUFFER_SIZE 512
-
-
-
-typedef struct
-{
-    IODevice dev;
-    CircularBuffer inputBuffer[MAKE_CIRC_SIZE(SERIAL_CIRCULAR_BUFFER_SIZE)];
-    //CircularBuffer _comInputBuffer[MAKE_CIRC_SIZE(SERIAL_CIRCULAR_BUFFER_SIZE)];
-} ComDevice;
-
 typedef void (*OnBytesAvailable)(CircularBuffer* inputBuffer, char until, void* ptr, void* ptr2);
 
-//static CircularBuffer _comInputBuffer[MAKE_CIRC_SIZE(SERIAL_CIRCULAR_BUFFER_SIZE)];
-
-static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
-static int consWrite(File *file, const void *buf, size_t numBytes);
-
-static int consRead2(ThreadBase* caller, File *file, void *buf, size_t numBytes);
-static int consWrite2(File *file, const void *buf, size_t numBytes);
-
-static FileOps _consoleOps = 
-{
-    .asyncRead = 1,
-    .Read = consRead,
-    .Write = consWrite
-};
-
-
-static FileOps _consoleOps2 = 
-{
-    .asyncRead = 1,
-    .Read = consRead2,
-    .Write = consWrite2
-};
-
-static void onIrq(IODevice* dev, int irqN);
-
-static IODeviceOperations _comDevOps = 
-{
-    .handleIRQ = onIrq
-};
 
 typedef struct 
 {
@@ -77,7 +38,39 @@ typedef struct
 
 } SerialWaiter;
 
-static SerialWaiter _waiter = {0};
+
+typedef struct
+{
+    IODevice dev;
+    CircularBuffer inputBuffer[MAKE_CIRC_SIZE(SERIAL_CIRCULAR_BUFFER_SIZE)];
+    SerialWaiter waiter;
+
+} ComDevice;
+
+
+//static CircularBuffer _comInputBuffer[MAKE_CIRC_SIZE(SERIAL_CIRCULAR_BUFFER_SIZE)];
+
+static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
+static int consWrite(File *file, const void *buf, size_t numBytes);
+
+
+static FileOps _consoleOps = 
+{
+    .asyncRead = 1,
+    .Read = consRead,
+    .Write = consWrite
+};
+
+
+
+static void onIrq(IODevice* dev, int irqN);
+
+static IODeviceOperations _comDevOps = 
+{
+    .handleIRQ = onIrq
+};
+
+
 
 void ComHandleInput(ComDevice* dev)
 {
@@ -104,20 +97,20 @@ void ComHandleInput(ComDevice* dev)
 
             CircularBufferPut(dev->inputBuffer, data);
 
-            if(_waiter.waiter &&  _waiter.size)
+            if(dev->waiter.waiter &&  dev->waiter.size)
             {
 
                 ps_cdev_putchar(charDev, data);
 
-                if(_waiter.until && data == _waiter.until)
+                if(dev->waiter.until && data == dev->waiter.until)
                 {
-                    _waiter.waiter(dev->inputBuffer, _waiter.until, _waiter.ptr, _waiter.ptr2);
-                    memset(&_waiter, 0, sizeof(_waiter));
+                    dev->waiter.waiter(dev->inputBuffer, dev->waiter.until, dev->waiter.ptr, dev->waiter.ptr2);
+                    memset(&dev->waiter, 0, sizeof(SerialWaiter));
                 }
-                else if(CircularBufferGetAvailableChar(dev->inputBuffer) >= _waiter.size)
+                else if(CircularBufferGetAvailableChar(dev->inputBuffer) >= dev->waiter.size)
                 {
-                    _waiter.waiter(dev->inputBuffer, (char) 0, _waiter.ptr, _waiter.ptr2);
-                    memset(&_waiter, 0, sizeof(_waiter));
+                    dev->waiter.waiter(dev->inputBuffer, (char) 0, dev->waiter.ptr, dev->waiter.ptr2);
+                    memset(&dev->waiter, 0, sizeof(SerialWaiter));
                 }
             }
 
@@ -172,12 +165,12 @@ static void onBytesAvailable(CircularBuffer* buffer, char until, void* ptr, void
 
 int ComRegisterWaiter(ComDevice* dev, OnBytesAvailable callback, size_t forSize, char until, void* ptr, void* ptr2)
 {
-    _waiter.waiter = callback;
-    _waiter.size = forSize;
-    _waiter.ptr = ptr;
-    _waiter.ptr2 = ptr2;
-    _waiter.until = until;
-    _waiter.buffer = dev->inputBuffer;
+    dev->waiter.waiter = callback;
+    dev->waiter.size = forSize;
+    dev->waiter.ptr = ptr;
+    dev->waiter.ptr2 = ptr2;
+    dev->waiter.until = until;
+    dev->waiter.buffer = dev->inputBuffer;
     return 0;
 }
 
@@ -222,19 +215,6 @@ static int consWrite(File *file, const void *buf, size_t numBytes)
 }
 
 
-static int consRead2(ThreadBase* caller, File *file, void *buf, size_t numBytes)
-{
-    assert(0);
-}
-
-static int consWrite2(File *file, const void *buf, size_t numBytes)
-{
-    assert(0);
-}
-
-
-
-
 static int DevProducesIRQ(const ps_chardevice_t* d)
 {
     for (int i=0;i<256;i++)
@@ -276,7 +256,7 @@ void AddComDev(IODriver *drv, IONode * n)
 
     if(irqN > 0)
     {
-        IODeviceRegisterIRQ(com, irqN);
+        IRQServerRegisterIRQ(com, irqN);
     }
 
 // create a file in /dev
@@ -286,15 +266,9 @@ void AddComDev(IODriver *drv, IONode * n)
         memset(comFile, 0, sizeof(DevFile));
         comFile->name = strdup(n->name);
         sprintf(comFile->name, "tty%i", comID-1);
-        if(strcmp(n->name, "COM1") == 0)
-        {
-            
-            comFile->ops = &_consoleOps;
-        }
-        else
-        {
-            comFile->ops = &_consoleOps2;
-        }
+
+        comFile->ops = &_consoleOps;
+
         comFile->device = com;
         DevFSAddDev(comFile);
         n->devFile = comFile;
