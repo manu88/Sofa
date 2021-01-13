@@ -20,7 +20,6 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <assert.h>
-#include "Serial.h"
 #include "Log.h"
 #include "../utils.h"
 
@@ -28,23 +27,12 @@
 static int devFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
 static int devFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
-static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
-static int consWrite(File *file, const void *buf, size_t numBytes);
-
-
 static VFSFileSystemOps _ops =
 {
     .Stat = devFSStat,
     .Open = devFSOpen,
 };
 
-
-static FileOps _consoleOps = 
-{
-    .asyncRead = 1,
-    .Read = consRead,
-    .Write = consWrite
-};
 
 static VFSFileSystem _fs = {.ops = &_ops};
 
@@ -121,7 +109,6 @@ static int devFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     {
 
         file->ops = &_rootFOP;
-        file->size = HASH_COUNT(_devFiles);
         return 0;
     }
     const char* p = path+1;
@@ -134,63 +121,9 @@ static int devFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
         return -ENOENT;
     }
     file->ops = f->ops;
-    file->impl = f;
+    file->impl = f->device;
     file->size = -1;
     file->mode = O_RDWR;
     return 0;
 
 }
-
-
-static void onBytesAvailable(size_t size, char until, void* ptr, void* buf)
-{
-    ThreadBase* caller = (ThreadBase*) ptr;
-    assert(caller);
-
-    size_t bytes = SerialCopyAvailableChar(buf, size);
-    ((char*)buf)[bytes] = 0;
-
-    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 3);
-    seL4_SetMR(1, 0);
-    seL4_SetMR(2, bytes);            
-    
-    seL4_Send(caller->replyCap, msg);
-    cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
-    caller->replyCap = 0;
-    caller->state = ThreadState_Running;
-
-}
-
-
-static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
-{
-    KernelTaskContext* env = getKernelTaskContext();
-
-    assert(caller->replyCap == 0);
-
-    seL4_Word slot = get_free_slot(&env->vka);
-    int error = cnode_savecaller(&env->vka, slot);
-    if (error)
-    {
-        KLOG_TRACE("Unable to save caller err=%i\n", error);
-        cnode_delete(&env->vka, slot);
-        return -ENOMEM;
-    }
-
-    caller->replyCap = slot;
-    caller->currentSyscallID = 0;
-    SerialRegisterWaiter(onBytesAvailable, numBytes, '\n', caller, buf);
-    return -1;
-}
-
-
-static int consWrite(File *file, const void *buf, size_t numBytes)
-{
-    for(size_t i=0;i<numBytes;i++)
-    {
-        putchar(((char*)buf)[i]);
-    }
-    fflush(stdout);
-    return numBytes;
-}
-

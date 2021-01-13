@@ -461,6 +461,17 @@ int main(int argc, char *argv[])
 
     Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
 
+    if(argc > 1)
+    {
+        close(2);
+        close(1);
+        close(0);
+
+        open("/dev/tty1", O_RDONLY);  // 0
+        open("/dev/tty1", O_WRONLY);  // 1
+        open("/dev/tty1", O_WRONLY);  // 2        
+    }
+
     ProcClientInit();
 
     char * line = NULL;

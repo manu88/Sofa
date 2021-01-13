@@ -27,6 +27,7 @@ For a list of VID/PID : https://github.com/openbsd/src/blob/master/sys/dev/pci/p
 #include "Drivers/Net.h"
 #include "Drivers/Blk.h"
 #include "KThread.h"
+#include "devFS.h"
 
 
 static IODevice *_deviceList = NULL;
@@ -96,6 +97,10 @@ static void walkDev(const IONode* n, int indent)
         if(c->driver)
         {
             KLOG_DEBUG(" DRIVER ");
+        }
+        if(c->devFile)
+        {
+            KLOG_DEBUG(" %s ", c->devFile->name);
         }
         KLOG_DEBUG("\n");
 

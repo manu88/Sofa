@@ -52,9 +52,9 @@ int main(int argc, char *argv[])
     //doUnitTests();
 
 
-    open("/dev/COM1", O_RDONLY); // 0
-    open("/dev/COM1", O_WRONLY);  // 1
-    open("/dev/COM1", O_WRONLY);  // 2
+    open("/dev/tty0", O_RDONLY);  // 0
+    open("/dev/tty0", O_WRONLY);  // 1
+    open("/dev/tty0", O_WRONLY);  // 2
 
 
     const char initServicePath[] = "/cpio/initService";

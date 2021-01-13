@@ -14,21 +14,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "Environ.h"
-
-//#define SERIAL_BADGE 2
+#include "VFS.h"
+#include "IONode.h"
 
 #define SERIAL_CIRCULAR_BUFFER_SIZE 512
-int SerialInit(void);
-
-void handleSerialInput(KernelTaskContext* env);
-
-
 typedef void (*OnBytesAvailable)(size_t size, char until, void* ptr, void* ptr2);
-typedef void (*OnControlChar)(char ctl, void* ptr);
 
-size_t SerialGetAvailableChar(void);
-size_t SerialCopyAvailableChar(char* dest, size_t maxSize);
+FileOps* getConsOps(void);
+FileOps* getConsOps2(void);
 
-int SerialRegisterWaiter(OnBytesAvailable callback, size_t forSize, char until, void* ptr, void* ptr2);
-int SerialRegisterController(OnControlChar callback, void* ptr);
+
+void AddComDev(IODriver *drv, IONode * n);

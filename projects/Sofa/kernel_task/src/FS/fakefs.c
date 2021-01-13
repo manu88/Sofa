@@ -20,7 +20,6 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <assert.h>
-#include "Serial.h"
 #include "../utils.h"
 
 static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
@@ -170,27 +169,6 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     }
     return ENOENT;
 }
-
-
-static void onBytesAvailable(size_t size, char until, void* ptr, void* buf)
-{
-    ThreadBase* caller = (ThreadBase*) ptr;
-    assert(caller);
-
-    size_t bytes = SerialCopyAvailableChar(buf, size);
-    ((char*)buf)[bytes] = 0;
-
-    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 3);
-    seL4_SetMR(1, 0);
-    seL4_SetMR(2, bytes);            
-    
-    seL4_Send(caller->replyCap, msg);
-    cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
-    caller->replyCap = 0;
-    caller->state = ThreadState_Running;
-
-}
-
 
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes)
 {

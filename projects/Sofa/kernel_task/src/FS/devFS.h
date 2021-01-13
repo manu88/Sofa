@@ -17,13 +17,16 @@
 #include "VFS.h"
 #include <utils/uthash.h>
 
+typedef struct _IODevice IODevice;
 
-typedef struct 
+typedef struct _DevFile
 {
     const char* name;
     FileOps *ops;
 
     UT_hash_handle hh;
+
+    IODevice* device;
 } DevFile;
 
 VFSFileSystem* getDevFS(void);

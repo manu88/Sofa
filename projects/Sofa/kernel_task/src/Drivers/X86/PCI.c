@@ -18,29 +18,16 @@
 #include "IODriver.h"
 #include "DeviceTree.h"
 #include "Environ.h"
-#include "devFS.h"
 #include <pci/pci.h>
-
 #include "Blk.h"
 #include "Net.h"
- 
+#include "Serial.h"
 
 typedef struct _PCIDriver
 {
     IODriver base;
     u_int8_t inQEMU;
 } PCIDriver;
-
-
-static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
-static int consWrite(File *file, const void *buf, size_t numBytes);
-
-static FileOps _consoleOps = 
-{
-    .asyncRead = 1,
-    .Read = consRead,
-    .Write = consWrite
-};
 
 static PCIDriver _pciDriver;
 
@@ -65,6 +52,8 @@ static void _checkFWCF(PCIDriver* drv, IONode * fwcfNode)
     }
 }
 
+
+
 static void _checkISA(PCIDriver* drv, IONode * isaNode)
 {
     IONode*n = NULL;
@@ -72,24 +61,7 @@ static void _checkISA(PCIDriver* drv, IONode * isaNode)
     {
         if(IONodeEISAIDIs(n, "PNP0501") == 0)
         {
-            IODevice* com = malloc(sizeof(IODevice));
-            if(!com)
-            {
-                KLOG_ERROR("PCI._checkISA: unable to alloc space for device '%s'\n", n->name);
-            }
-            IODeviceInit(com, n->name, IODevice_CharDev);
-            DeviceTreeAddDevice(com);
-
-            DevFile* comFile = malloc(sizeof(DevFile));
-            if(comFile)
-            {
-                memset(comFile, 0, sizeof(DevFile));
-                comFile->name = n->name;
-                comFile->ops = &_consoleOps;
-                DevFSAddDev(comFile);
-            }
-
-            n->driver = (IODriver*) &_pciDriver;
+            AddComDev(drv, n);
         }
     }
 }
@@ -160,57 +132,4 @@ int PCIDriverInit(IONode *n)
     
     n->driver = (IODriver*) &_pciDriver;
     return 0;
-}
-
-
-
-static void onBytesAvailable(size_t size, char until, void* ptr, void* buf)
-{
-    ThreadBase* caller = (ThreadBase*) ptr;
-    assert(caller);
-
-    size_t bytes = SerialCopyAvailableChar(buf, size);
-    ((char*)buf)[bytes] = 0;
-
-    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 3);
-    seL4_SetMR(1, 0);
-    seL4_SetMR(2, bytes);            
-    
-    seL4_Send(caller->replyCap, msg);
-    cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
-    caller->replyCap = 0;
-    caller->state = ThreadState_Running;
-
-}
-
-
-static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
-{
-    KernelTaskContext* env = getKernelTaskContext();
-
-    assert(caller->replyCap == 0);
-
-    seL4_Word slot = get_free_slot(&env->vka);
-    int error = cnode_savecaller(&env->vka, slot);
-    if (error)
-    {
-        KLOG_TRACE("Unable to save caller err=%i\n", error);
-        cnode_delete(&env->vka, slot);
-        return -ENOMEM;
-    }
-
-    caller->replyCap = slot;
-    caller->currentSyscallID = 0;
-    SerialRegisterWaiter(onBytesAvailable, numBytes, '\n', caller, buf);
-    return -1;
-}
-
-static int consWrite(File *file, const void *buf, size_t numBytes)
-{
-    for(size_t i=0;i<numBytes;i++)
-    {
-        putchar(((char*)buf)[i]);
-    }
-    fflush(stdout);
-    return numBytes;
 }

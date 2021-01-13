@@ -55,7 +55,8 @@
 #include "Syscalls/SyscallTable.h"
 #include "Allocator.h"
 #include "Timer.h"
-#include "Drivers/Serial.h"
+
+
 #include "DeviceKit/DeviceTree.h"
 #include "NameServer.h"
 #include <sel4platsupport/arch/io.h>
@@ -85,7 +86,8 @@ static void process_messages()
     KernelTaskContext* env = getKernelTaskContext();
     while (1)
     {   
-        handleSerialInput(env);
+        //handleSerialInput(env);
+        //handleSerialInput2(env);
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env->root_task_endpoint.cptr, &badge);
         seL4_Word label = seL4_MessageInfo_get_label(info);
@@ -202,10 +204,13 @@ void *main_continued(void *arg UNUSED)
     error = DKServiceInit();
     assert(error == 0);
 
-
+#if 0
     error = SerialInit();
     assert(error == 0);
 
+    error = SerialInit2();
+    assert(error == 0);
+#endif
 
     KLOG_INFO("Starting VFSService\n");
     error = VFSServiceInit();
@@ -226,10 +231,13 @@ void *main_continued(void *arg UNUSED)
     VFSMount(getDevFS(), "/dev", &error);    
 
 
+
+
     ProcessInit(&initProcess);
     initProcess.argc = 0;
     spawnApp(&initProcess, "/cpio/init", NULL);
 
+    seL4_DebugDumpScheduler();
     process_messages();    
 
     return NULL;

@@ -107,6 +107,7 @@ struct _KernelTaskContext
     time_manager_t tm;
 
     ps_chardevice_t comDev;
+    ps_chardevice_t comDev2;    
     cspacepath_t handler;
 };
 

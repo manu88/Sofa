@@ -256,6 +256,12 @@ static int VFSServiceClose(Client* client, int handle)
     HASH_DEL(client->files, file);
     int ret = VFSClose(&file->file);
     free(file);
+
+    if(HASH_COUNT(client->files) == 0)
+    {
+        KLOG_DEBUG("Reset fd counter \n");
+        client->fileIndex = 0;
+    }
     return ret;
 }
 
