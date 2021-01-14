@@ -109,6 +109,7 @@ static int devFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     {
 
         file->ops = &_rootFOP;
+        file->size = HASH_COUNT(_devFiles);
         return 0;
     }
     const char* p = path+1;

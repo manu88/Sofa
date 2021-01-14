@@ -64,6 +64,11 @@ static void _checkISA(PCIDriver* drv, IONode * isaNode)
             AddComDev(drv, n);
         }
     }
+
+    IONode* ega = malloc(sizeof(IONode));
+    IONodeInit(ega, "COM6");
+    IONodeAddChild(isaNode, ega);
+    AddComDev(drv, ega);
 }
 
 static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)

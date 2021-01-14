@@ -388,6 +388,25 @@ int processCommand(const char* cmd)
         const char *path = cmd + strlen("ls ");
         return doLs(path);
     }
+    else if(startsWith("write ", cmd))
+    {
+        const char *args = cmd + strlen("write");
+
+        char path[128] = "";
+        char *data = NULL;
+        int n = 0;
+        sscanf(args, "%s %n", path, & n);
+
+        data = args + n;
+
+
+        FILE* f = fopen(path,"w");
+        if(f == NULL)
+            return errno;
+        fprintf(f, "%s", data);
+        fclose(f);
+        return 0;
+    }
     else if(startsWith("spawn", cmd))
     {
         char *strApp = (char*)(cmd + strlen("spawn "));

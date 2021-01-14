@@ -20,7 +20,7 @@
 #include "IONode.h"
 
 #include "PCI.h"
-#include "EGA.h"
+
 #include <platsupport/plat/acpi/acpi.h>
 #include <platsupport/plat/acpi/tables/madt.h>
 #include <AMLDecompiler.h>
@@ -38,7 +38,6 @@ int PlatformExpertConstructTree(IONode *root)
 {
     ACPIParse(root);
 
-    InitEGADriver();
     return 0;    
 }
 

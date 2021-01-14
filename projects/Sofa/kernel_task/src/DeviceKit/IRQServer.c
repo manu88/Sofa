@@ -29,6 +29,7 @@ static const char tName[] = "IRQServer";
 typedef struct _IRQInstance 
 {
     struct _IRQInstance *next;
+    int irqN;
 
     IODevice* recipient;
     seL4_CPtr irqAckHandler;
@@ -80,7 +81,25 @@ static int _irqMain(KThread* th, void* arg)
     {   
         seL4_Word sender = 0;
         seL4_Wait(_server.irq_aep_obj.cptr, &sender);
-        
+        int irqN = sender;
+
+        int once = 1;
+        IRQInstance* i = NULL;
+        LL_FOREACH(server->irqInstances, i)
+        {
+            if(i->irqN == irqN)
+            {   
+                if(once)
+                {
+                    seL4_IRQHandler_Ack(i->irqAckHandler);
+                    once = 0;
+                }
+                i->recipient->ops->handleIRQ(i->recipient, irqN);
+
+            }
+        }
+
+#if 0        
         IRQInstance* instance = (IRQInstance*) sender; 
         assert(instance);
         assert(instance->recipient);
@@ -88,6 +107,7 @@ static int _irqMain(KThread* th, void* arg)
         seL4_IRQHandler_Ack(instance->irqAckHandler);
         
         instance->recipient->ops->handleIRQ(instance->recipient, -1);
+#endif
     }
     
 }
@@ -96,34 +116,53 @@ int IRQServerRegisterIRQ(IODevice* dev, int irqN)
 {
     KLOG_INFO("IODeviceRegisterIRQ %i for '%s'\n", irqN, dev->name);
 
-    KernelTaskContext* context = getKernelTaskContext();
+    int createIrqHandler = 1;
+    IRQInstance* i = NULL;
+    LL_FOREACH(_server.irqInstances, i)
+    {
+        if(i->irqN == irqN)
+        {
+            KLOG_INFO("IRQ %i already registered\n", irqN);
+            createIrqHandler = 0;
+            break;
+        }
+    }
 
-    cspacepath_t irq_handler_path = { 0 };
-    seL4_CPtr irq_handler;
 
-    int error = vka_cspace_alloc(&context->vka, &irq_handler);
-    assert(error == 0);
-    vka_cspace_make_path(&context->vka, irq_handler, &irq_handler_path);
-
-    error = simple_get_IRQ_handler(&context->simple, irqN, irq_handler_path);
-    assert(error == 0);
 
     IRQInstance* instance = malloc(sizeof(IRQInstance));
     assert(instance);
     memset(instance, 0, sizeof(IRQInstance));
     instance->recipient = dev;
-    
-    seL4_CPtr capMint = get_free_slot(&context->vka);
-    error = cnode_mint(&context->vka, _server.irq_aep_obj.cptr, capMint, seL4_AllRights, (seL4_Word) instance);
-    assert(error == 0);
-
-
-    error = seL4_IRQHandler_SetNotification(irq_handler_path.capPtr, capMint);
-    assert(error == 0);
-
-    instance->irqAckHandler = irq_handler_path.capPtr; 
-
+    instance->irqN = irqN;
     LL_APPEND(_server.irqInstances, instance);
+
+    if(createIrqHandler)
+    {
+        KernelTaskContext* context = getKernelTaskContext();
+
+        cspacepath_t irq_handler_path = { 0 };
+        seL4_CPtr irq_handler;
+
+
+        int error = vka_cspace_alloc(&context->vka, &irq_handler);
+        assert(error == 0);
+        vka_cspace_make_path(&context->vka, irq_handler, &irq_handler_path);
+
+        error = simple_get_IRQ_handler(&context->simple, irqN, irq_handler_path);
+        assert(error == 0);
+
+        seL4_CPtr capMint = get_free_slot(&context->vka);
+        error = cnode_mint(&context->vka, _server.irq_aep_obj.cptr, capMint, seL4_AllRights, (seL4_Word) irqN);
+        assert(error == 0);
+
+
+        error = seL4_IRQHandler_SetNotification(irq_handler_path.capPtr, capMint);
+        assert(error == 0);
+
+        instance->irqAckHandler = irq_handler_path.capPtr; 
+
+    }
 
     size_t numIrqInstance = 0;
     IRQInstance* t = NULL;
