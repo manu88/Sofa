@@ -25,6 +25,8 @@ typedef enum
     IODevice_BlockDev,
     IODevice_CharDev,
 
+// Not real Device types, can't be used for setting type, notably in IODeviceNew or IODeviceInit
+    IODevice_AllTypes,
     IODevice_Last // keep last!
 
 } IODeviceType;

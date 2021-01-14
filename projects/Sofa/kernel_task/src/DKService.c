@@ -53,7 +53,7 @@ static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
     DKDeviceList* outList = (DKDeviceList*) clt->buff;
     FOR_EACH_DEVICE(dev)
     {
-        if(dev->type == type)
+        if(type == IODevice_AllTypes || dev->type == type)
         {   
             if(!onlyCount)
             {
