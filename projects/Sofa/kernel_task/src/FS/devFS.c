@@ -43,6 +43,20 @@ VFSFileSystem* getDevFS()
     return &_fs;
 }
 
+DevFile* DevFSGetFileForDevice( const IODevice* dev)
+{
+    DevFile* f = NULL;
+    DevFile* tmp = NULL;
+    HASH_ITER(hh, _devFiles, f, tmp)
+    {
+        if(f->device == dev)
+        {
+            return f;
+        }
+    } 
+    return NULL;
+}
+
 int DevFSAddDev(DevFile* file)
 {
     KLOG_DEBUG("DevFSAddDev add device %s\n", file->name);

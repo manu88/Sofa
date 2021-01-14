@@ -157,12 +157,31 @@ static int doDK(const char* cmds)
         }
         int type = atoi(strType);
 
-        Printf("DK Enum for type %i\n", type);
         size_t numDev = 0;
-        int ret = DKClientEnumDevices(type, &numDev);
+        int ret = DKClientEnumDevices(type, NULL, &numDev);
         if(ret == 0)
         {
             Printf("Found %zi devices matching type %i\n", numDev, type);
+            if(numDev)
+            {
+                DKDeviceList *list = malloc(sizeof(DKDeviceList) + (sizeof(DKDeviceHandle)*numDev));
+                assert(list);
+                size_t numDev2 = 0;
+                ret = DKClientEnumDevices(type, list, &numDev2);
+                assert(numDev2 == numDev);
+                assert(numDev == list->count);
+
+                for(size_t i=0; i<list->count; i++)
+                {
+                    char* name = DKDeviceGetName(list->handles[i]);
+                    char* devFile = DKDeviceGetDevFile(list->handles[i]);
+                    Printf("DKDevice at %zi %s %s\n", i, name, devFile);
+                    free(name);
+                    free(devFile);
+                }
+
+                free(list);
+            }
         }
         return ret;
     }

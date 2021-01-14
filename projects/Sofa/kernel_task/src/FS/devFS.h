@@ -32,3 +32,5 @@ typedef struct _DevFile
 VFSFileSystem* getDevFS(void);
 
 int DevFSAddDev(DevFile* file);
+
+DevFile* DevFSGetFileForDevice( const IODevice* dev);
