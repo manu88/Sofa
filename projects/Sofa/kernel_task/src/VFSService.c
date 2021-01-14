@@ -196,7 +196,7 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
         {
             free(realP);
         }
-        return -ret;
+        return ret;
     }
     FileHandle* f = malloc(sizeof(FileHandle));
     assert(f);

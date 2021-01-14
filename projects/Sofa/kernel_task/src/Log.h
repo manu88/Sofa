@@ -16,8 +16,11 @@
 #pragma once
 #include <stdio.h>
 
-#define KLOG_INFO(args...) printf(args)
-#define KLOG_TRACE(args...) printf(args)
-#define KLOG_ERROR(args...) printf(args)
-#define KLOG_DEBUG(args...) printf(args)
+
+#define kprintf printf
+
+#define KLOG_INFO(args...)  kprintf(args)
+#define KLOG_TRACE(args...) kprintf(args)
+#define KLOG_ERROR(args...) kprintf(args)
+#define KLOG_DEBUG(args...) kprintf(args)
 

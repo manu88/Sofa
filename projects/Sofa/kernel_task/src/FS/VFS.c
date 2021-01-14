@@ -282,13 +282,13 @@ int VFSOpen(const char* path, int mode, File* file)
 
     if (!Unpack_Path(path, prefix, &suffix))
     {
-	    return ENOENT;
+	    return -ENOENT;
     }
 
     VFSMountPoint* mnt = _GetMountPoint(prefix);
     if(mnt == NULL)
     {
-        return ENOENT;
+        return -ENOENT;
     }
     assert(mnt->fs);
     return mnt->fs->ops->Open(mnt->fs, suffix, mode, file);

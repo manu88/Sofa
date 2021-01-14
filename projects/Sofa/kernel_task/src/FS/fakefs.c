@@ -92,7 +92,7 @@ static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
         return 0;   
 
     }
-    return ENOENT;
+    return -ENOENT;
 }
 
 static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
@@ -164,10 +164,10 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
                 file->mode = files[i].mode;
                 return 0;
             }
-            return EACCES;
+            return -EACCES;
         }
     }
-    return ENOENT;
+    return -ENOENT;
 }
 
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes)

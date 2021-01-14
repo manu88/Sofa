@@ -16,6 +16,7 @@
 #include "ext2FS.h"
 #include "ext2.h"
 #include "IODevice.h"
+#include "Log.h"
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -51,6 +52,7 @@ VFSFileSystem* getExt2FS()
 
 static int ext2FSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat)
 {
+    KLOG_DEBUG("ext2FSStat\n");
     IODevice* dev = fs->data;
     assert(dev);
 
@@ -117,7 +119,8 @@ static int ext2FSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
 }
 static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
-    return -1;
+    KLOG_DEBUG("ext2FS Open for '%s'\n", path);
+    return -ENOENT;
 }
 static int ext2FSRead(File *file, void *buf, size_t numBytes)
 {

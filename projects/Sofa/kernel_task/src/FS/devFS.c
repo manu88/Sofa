@@ -72,7 +72,7 @@ static int devFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, 
         return 0;   
 
     }
-    return ENOENT;
+    return -ENOENT;
 }
 
 static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)

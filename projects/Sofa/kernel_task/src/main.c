@@ -157,9 +157,11 @@ static void process_messages()
 
 void *main_continued(void *arg UNUSED)
 {
+    int error;
+
     KLOG_INFO("\n------Sofa------\n");
     KLOG_INFO("----------------\n");
-    int error;
+
     seL4_SetUserData(&_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
@@ -175,9 +177,6 @@ void *main_continued(void *arg UNUSED)
     env->_sysState = SystemState_Running;
 // Base system init    
     error = NameServerInit();
-    assert(error == 0);
-
-    error = IOInit();
     assert(error == 0);
 
     error = DeviceKitInit();
@@ -317,6 +316,10 @@ int main(void)
 #ifdef CONFIG_DEBUG_BUILD
     seL4_DebugNameThread(seL4_CapInitThreadTCB, "kernel_task");
 #endif
+
+    error = IOInit();
+    assert(error == 0);
+
 
     error = TimerInit();
     assert(error == 0);

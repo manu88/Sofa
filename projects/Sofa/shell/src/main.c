@@ -128,6 +128,7 @@ static int doSpawn(char* cmd)
 static int doLs(const char* path)
 {
     DIR *folder = opendir(path);
+    Printf("Shell.Opendir returned %p\n", folder);
     if(folder == NULL)
     {
         return errno;

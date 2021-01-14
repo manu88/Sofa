@@ -44,7 +44,6 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
     KLOG_DEBUG("DKService: msg from kernel_task!\n");
 }
 
-
 static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
 {
     IODevice* dev = NULL;
@@ -59,9 +58,7 @@ static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
             {
                 outList->handles[count] = dev;    
             }
-
             count++;
-
         }
     }
     if(!onlyCount)
@@ -78,7 +75,6 @@ static long doDKDeviceDetails(BaseService* service, ThreadBase* caller, seL4_Mes
     assert(clt);
     const IODevice* dev = (const IODevice*) seL4_GetMR(1);
     DKDeviceDetails code = (DKDeviceDetails) seL4_GetMR(2);
-
 
     switch (code)
     {
