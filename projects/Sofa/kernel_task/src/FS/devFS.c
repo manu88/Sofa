@@ -81,6 +81,10 @@ static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
     size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
     size_t numOfDirents = numDirentPerBuff > remainFilesToList? remainFilesToList:numDirentPerBuff;
    
+    if(remainFilesToList == 0)
+    {
+        return 0;
+    }
     struct dirent *dirp = buf;
 
     size_t nextOff = 0;
@@ -98,14 +102,14 @@ static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
         snprintf(d->d_name, 256, "%s", f->name);
         acc += sizeof(struct dirent);
         d->d_off = acc;
-        d->d_type = DT_DIR;
+        d->d_type = DT_CHR;
         d->d_reclen = sizeof(struct dirent);
-
+        i++;
         if(i >= numOfDirents)
         {
             break;
         }
-        i++;
+
     }
     file->readPos += numOfDirents;
     return acc;

@@ -103,7 +103,6 @@ static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
    
     struct dirent *dirp = buf;
 
-    size_t nextOff = 0;
     size_t acc = 0;
 
     for(int i=0;i<numOfDirents;i++)
@@ -188,6 +187,11 @@ static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes
     if(!f)
     {
         return -1;
+    }
+
+    if(file->readPos == file->size)
+    {
+        return -1; // EOF
     }
 
     assert(file->ops->asyncRead == 0);
