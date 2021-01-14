@@ -227,7 +227,6 @@ static int doCat(const char* path)
         }
         else
         {
-            Printf("Read error %li\n", ret);
             done = 1;
         }
 

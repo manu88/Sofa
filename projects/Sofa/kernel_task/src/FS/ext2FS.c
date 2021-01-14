@@ -61,6 +61,7 @@ VFSFileSystem* getExt2FS()
 
 static int ext2FSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat)
 {
+    return 0;
     assert(0);
     KLOG_DEBUG("ext2FSStat\n");
     IODevice* dev = fs->data;
@@ -164,8 +165,6 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     }
 
     const char *fPath = path+1;
-    KLOG_DEBUG("ext2FS Open for '%s'\n", fPath);
-
     
     uint8_t* root_buf = (uint8_t *)malloc(getExtPriv()->blocksize);
     assert(root_buf);
@@ -188,7 +187,6 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
             tmpName[dir->namelength] = 0;
             if(strcmp(tmpName, fPath) == 0)
             {
-                KLOG_DEBUG("Found file %s at inode %u\n", fPath, dir->inode);
                 free(root_buf);
 
                 file->inode = malloc(sizeof(inode_t));
@@ -240,28 +238,33 @@ static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
     inode_t* inode = file->inode;
     assert(dev);
     assert(inode);
-    KLOG_DEBUG("ext2FSRead request\n");
 
-    for(int i = 0; i < 12; i++)
-	{
-		uint32_t b = inode->dbp[i];
-        if(b==0)
-        {
-            // EOF
-            KLOG_DEBUG("EOF at b=%i\n",i);
-            return 0;
-        }
-        if(b > getExtPriv()->sb.blocks) 
-        {
-            KLOG_DEBUG("block %d outside range (max: %d)!\n",  b, getExtPriv()->sb.blocks);
-        }
-		printf("Reading block: %d (size %zi)\n", b, getExtPriv()->blocksize);
-        char buf[4096] = "";
-        if(ext2_read_block(buf, b, dev, getExtPriv()))
-        {
-            KLOG_DEBUG("Content '%s'\n", buf);
-        }
+    file->size = inode->size;
+
+    if(file->readPos >= file->size)
+    {
+        return 0;
     }
+    size_t indexOfBlockToRead = (size_t)file->readPos / getExtPriv()->sb.blocks;
+    int i = indexOfBlockToRead;
+    uint32_t b = inode->dbp[i];
+    if(b==0)
+    {
+        // EOF
+        return 0;
+    }
+    if(b > getExtPriv()->sb.blocks) 
+    {
+        KLOG_DEBUG("block %d outside range (max: %d)!\n",  b, getExtPriv()->sb.blocks);
+    }
+    char tempBuf[4096] = "";
+    if(ext2_read_block(tempBuf, b, dev, getExtPriv()))
+    {
+        memcpy(buf, tempBuf, file->size);
+        file->readPos += file->size;
+        return file->size;
+    }
+    
     if(inode->singly_block)
     {
         KLOG_DEBUG("Singly block\n");
@@ -279,5 +282,6 @@ static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
 }
 static int ext2FSClose(File *file)
 {
+    free(file->inode);
     return -1;
 }
