@@ -141,3 +141,5 @@ uint8_t ext2_read_block(uint8_t *buf, uint32_t block, IODevice *dev, ext2_priv_d
 
 
 uint8_t ext2_read_inode(inode_t *inode_buf, uint32_t inode, IODevice *dev, ext2_priv_data *priv);
+
+uint8_t ext2_read_file(char *fn, char *buffer, IODevice *dev, ext2_priv_data *priv);

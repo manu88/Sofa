@@ -294,6 +294,13 @@ uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *
 
 uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_priv_data *priv)
 {
+	if(!inode) inode = (inode_t *)malloc(sizeof(inode_t));
+
+	if(!root_buf)
+    { 
+        root_buf = (uint8_t *)malloc(priv->blocksize);
+    }
+
 	if(priv == NULL)
 	{
 		priv == &__ext2_data;
@@ -315,7 +322,7 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 		n--;
 		while(n--)
 		{
-			printf("Looking for: %s\n", filename);
+			printf("Looking for: %s %s\n",ff, filename);
 			for(int i = 0; i < 12; i++)
 			{
 				uint32_t b = inode->dbp[i];
@@ -323,6 +330,7 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 				{
 					break;
 				}
+				assert(root_buf);
 				ext2_read_block(root_buf, b, dev, priv);
 				uint32_t rc = ext2_read_directory(filename, (ext2_dir *)root_buf, dev, priv);
 				if(!rc)

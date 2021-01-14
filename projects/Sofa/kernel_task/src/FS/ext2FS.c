@@ -23,10 +23,12 @@
 #include <errno.h>
 
 
+static inode_t *rootInode = NULL;
+
 static int ext2FSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
 static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
-static int ext2FSRead(File *file, void *buf, size_t numBytes);
+static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes);
 static int ext2FSClose(File *file);
 
 static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes);
@@ -132,30 +134,74 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
 }
 static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
-    KLOG_DEBUG("ext2FS Open for '%s'\n", path);
-
     IODevice* dev = fs->data;
     assert(dev);
-    if(strcmp(path, "/") == 0)
+
+
+    if(rootInode == NULL)
     {
-        inode_t *ino = malloc(sizeof(inode_t));
-        uint8_t ret = ext2_read_inode(ino, 2, dev, getExtPriv());
+        rootInode = malloc(sizeof(inode_t));
+    
+        assert(rootInode);
+        uint8_t ret = ext2_read_inode(rootInode, 2, dev, getExtPriv());
         if(ret != 1) // err
         {
-            free(ino);
             return -ENOENT;
         }
-        if((ino->type & 0xF000) != INODE_TYPE_DIRECTORY)
+    }
+    
+    if(strcmp(path, "/") == 0)
+    {
+        if((rootInode->type & 0xF000) != INODE_TYPE_DIRECTORY)
         {
-            free(ino);
             return -ENOTDIR;
         }
+
         file->impl = dev;
-        file->inode = ino;
-//        file->inodeNum = 2;
+        file->inode = rootInode;
         file->ops = &_dirOP;
+        return 0;
     }
-    return 0;
+
+    const char *fPath = path+1;
+    KLOG_DEBUG("ext2FS Open for '%s'\n", fPath);
+
+    
+    uint8_t* root_buf = (uint8_t *)malloc(getExtPriv()->blocksize);
+    assert(root_buf);
+
+    char tmpName[256] = "";
+    for(int i = 0;i < 12; i++)
+	{
+		uint32_t b = rootInode->dbp[i];
+		if(b == 0)
+        {
+            break;
+        }
+		uint8_t ret = ext2_read_block(root_buf, b, dev, getExtPriv());
+        assert(ret == 1);
+        ext2_dir* dir = (ext2_dir*) root_buf;
+        
+        while(dir->inode != 0) 
+        {
+            memcpy(tmpName, &dir->reserved+1, dir->namelength);
+            tmpName[dir->namelength] = 0;
+            if(strcmp(tmpName, fPath) == 0)
+            {
+                KLOG_DEBUG("Found file %s at inode %u\n", fPath, dir->inode);
+                free(root_buf);
+
+                file->inode = malloc(sizeof(inode_t));
+                file->impl = dev;
+                file->ops = &_fileOps;
+                return ext2_read_inode(file->inode, dir->inode, dev, getExtPriv())? 0:-EIO;
+            }
+            dir = (ext2_dir *)((uint32_t)dir + dir->size);
+        }
+    }
+    free(root_buf);
+
+    return -ENOENT;
 #if 0
     uint8_t* root_buf = (uint8_t *)malloc(getExtPriv()->blocksize);
     assert(root_buf);
@@ -188,9 +234,48 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 }
 
 
-static int ext2FSRead(File *file, void *buf, size_t numBytes)
+static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
 {
-    return -1;
+    IODevice* dev = file->impl;
+    inode_t* inode = file->inode;
+    assert(dev);
+    assert(inode);
+    KLOG_DEBUG("ext2FSRead request\n");
+
+    for(int i = 0; i < 12; i++)
+	{
+		uint32_t b = inode->dbp[i];
+        if(b==0)
+        {
+            // EOF
+            KLOG_DEBUG("EOF at b=%i\n",i);
+            return 0;
+        }
+        if(b > getExtPriv()->sb.blocks) 
+        {
+            KLOG_DEBUG("block %d outside range (max: %d)!\n",  b, getExtPriv()->sb.blocks);
+        }
+		printf("Reading block: %d (size %zi)\n", b, getExtPriv()->blocksize);
+        char buf[4096] = "";
+        if(ext2_read_block(buf, b, dev, getExtPriv()))
+        {
+            KLOG_DEBUG("Content '%s'\n", buf);
+        }
+    }
+    if(inode->singly_block)
+    {
+        KLOG_DEBUG("Singly block\n");
+    }
+    if(inode->doubly_block)
+    {
+        KLOG_DEBUG("Doubly block\n");
+    }
+    if(inode->triply_block)
+    {
+        KLOG_DEBUG("Triply block\n");
+    }
+
+    return 0;
 }
 static int ext2FSClose(File *file)
 {
