@@ -25,6 +25,8 @@ typedef enum
     IODevice_BlockDev,
     IODevice_CharDev,
 
+    IODevice_Last // keep last!
+
 } IODeviceType;
 
 struct _IODevice;

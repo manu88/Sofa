@@ -146,28 +146,29 @@ static int doDK(const char* cmds)
 {
     if(strcmp(cmds, "list") == 0)
     {
-        int ret = DKClientInit();
+        int ret = DKClientTempListDevices();
+    }
+    else if(startsWith("enum", cmds))
+    {
+        const char* strType = cmds + strlen("enum ");
+        if(strlen(strType)==0)
+        {
+            return -EINVAL;
+        }
+        int type = atoi(strType);
+
+        Printf("DK Enum for type %i\n", type);
+        size_t numDev = 0;
+        int ret = DKClientEnumDevices(type, &numDev);
         if(ret == 0)
         {
-            DKClientEnumDevices();
+            Printf("Found %zi devices matching type %i\n", numDev, type);
         }
-        else
-        {
-            Printf("DKClientInit error %i\n", ret);
-        }
+        return ret;
     }
     else if(strcmp(cmds, "tree") == 0)
     {
-        int ret = DKClientInit();
-        if(ret == 0)
-        {
-            DKClientEnumTree();
-        }
-        else
-        {
-            Printf("DKClientInit error %i\n", ret);
-        }
-        
+        return DKClientEnumTree();
     }
     return 0;
 }
@@ -482,8 +483,9 @@ int main(int argc, char *argv[])
     argc -=2;
     argv = &argv[2];
     VFSClientInit();
-
+    DKClientInit();
     Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
+
 
     if(argc > 1)
     {

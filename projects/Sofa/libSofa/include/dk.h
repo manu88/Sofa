@@ -20,11 +20,16 @@ typedef enum
     DKRequest_Register,
     DKRequest_List,
     DKRequest_Tree,
+    DKRequest_Enum,
 }DKRequest;
 
 #define DeviceKitServiceName (const char*)"deviceKit"
 
 int DKClientInit(void);
 
-int DKClientEnumDevices(void);
+int DKClientTempListDevices(void);
 int DKClientEnumTree(void);
+
+typedef seL4_Word DKDeviceHandle;
+
+int DKClientEnumDevices(int type, size_t* numDevices);

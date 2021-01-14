@@ -42,6 +42,42 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
     KLOG_DEBUG("DKService: msg from kernel_task!\n");
 }
 
+
+static int DKEnumRequest(IODeviceType type)
+{
+    KLOG_DEBUG("DKEnumRequest for type %i\n", type);
+
+    IODevice* dev = NULL;
+    int count = 0;
+    FOR_EACH_DEVICE(dev)
+    {
+        if(dev->type == type)
+        {   
+            KLOG_INFO("'%s'\n", dev->name);
+            count++;
+        }
+    }
+
+    return count;
+}
+static int doDKEnumRequest(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+
+    int type = seL4_GetMR(1);
+    int ret = 0;
+    if(type >= IODevice_Last)
+    {
+        ret = -EINVAL;
+    }
+    else
+    {
+        ret = DKEnumRequest(type);
+    }
+    
+    seL4_SetMR(1, ret);
+    seL4_Reply(msg);
+}
+
 static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
 {
     KernelTaskContext* env = getKernelTaskContext();
@@ -83,6 +119,10 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
     {
         KLOG_DEBUG("DKService: IONode tree request\n");
         DeviceTreePrint(DeviceTreeGetRoot());
+    }
+    else if(seL4_GetMR(0) == DKRequest_Enum)
+    {
+        doDKEnumRequest(service, caller, msg);
     }
 }
 

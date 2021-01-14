@@ -45,11 +45,28 @@ int DKClientInit()
     return -1;
 }
 
-int DKClientEnumDevices(void)
+int DKClientTempListDevices(void)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
     seL4_SetMR(0, DKRequest_List);
     seL4_Send(dkCap, info);
+    return 0;
+}
+
+int DKClientEnumDevices(int type, size_t* numDevices)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, DKRequest_Enum);
+    seL4_SetMR(1, type);
+    seL4_Call(dkCap, info);
+    seL4_Word ret = seL4_GetMR(1);
+    if((int)ret < 0)
+    {
+        return ret;
+    }
+    
+    *numDevices = ret;
+    
     return 0;
 }
 
