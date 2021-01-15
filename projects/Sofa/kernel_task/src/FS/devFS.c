@@ -22,9 +22,9 @@
 #include <assert.h>
 #include "Log.h"
 #include "../utils.h"
+#include "IODevice.h"
 
-
-static int devFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
+static int devFSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat);
 static int devFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
 static VFSFileSystemOps _ops =
@@ -64,15 +64,33 @@ int DevFSAddDev(DevFile* file)
     return 0;
 }
 
-static int devFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat)
+static int devFSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
 {
-    if(numPathSegments == 0) // root
+    if(strcmp(path, "/") == 0)
     {
         stat->type = FileType_Dir;
-        return 0;   
-
+        return 0;
     }
-    return -ENOENT;
+
+    const char* p = path+1;
+    DevFile* f = NULL;
+    HASH_FIND_STR(_devFiles, p, f);
+
+    if(!f)
+    {
+        return -ENOENT;
+    }
+
+    if(f->device->type == IODevice_BlockDev)
+    {
+        stat->type = FileType_Block;
+    }
+    else if(f->device->type == IODevice_CharDev)
+    {
+        stat->type = FileType_Char;
+    }
+    
+    return 0;
 }
 
 static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)

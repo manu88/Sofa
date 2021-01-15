@@ -23,6 +23,8 @@ typedef enum
 {
     FileType_Regular,
     FileType_Dir,
+    FileType_Block,
+    FileType_Char,
 }FileType;
 
 typedef struct _VFS_File_Stat
@@ -36,11 +38,8 @@ typedef struct _File File;
 typedef struct _VFSFileSystemOps 
 {
     int (*Open)(VFSFileSystem *fs, const char *path, int mode, File *file);
-    //int (*Create_Directory)(VFSFileSystem *fs, const char *path);
-    //int (*Open_Directory)(VFSFileSystem *fs, const char *path, struct File **pDir);
-    int (*Stat)(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
-    //int (*Sync)(struct Mount_Point *mountPoint);
-    //int (*Delete)(struct Mount_Point *mountPoint, const char *path);
+    int (*Stat)(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat);
+
 }VFSFileSystemOps;
 
 typedef struct _VFSFileSystem
@@ -86,6 +85,8 @@ int VFSInit(void);
 VFSMountPoint* VFSMount(VFSFileSystem* fs, const char* mntPoint, int*err);
 
 int VFSStat(const char *path, VFS_File_Stat *stat);
+
+
 int VFSOpen(const char* path, int mode, File* file);
 
 ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, int * async_later);

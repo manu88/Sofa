@@ -16,6 +16,7 @@
 #pragma once
 #include <stddef.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 int VFSClientInit(void);
 
@@ -27,6 +28,7 @@ ssize_t VFSClientWrite(int handle, const char* data, size_t size);
 
 int VFSClientSeek(int handle, size_t pos);
 
+int VFSClientStat(const char *pathname, struct stat *statbuf);
 
 char* VFSClientGetCWD(char *buf, size_t size);
 int VFSClientChDir(const char* path);

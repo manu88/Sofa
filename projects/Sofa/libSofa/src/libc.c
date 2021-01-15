@@ -241,6 +241,13 @@ static long sf_chdir(va_list ap)
     return VFSClientChDir(path);
 }
 
+static long sf_stat(va_list ap)
+{
+    const char *pathname = va_arg(ap, char*);
+    struct stat *statbuf = va_arg(ap, struct stat *);
+    return VFSClientStat(pathname, statbuf);
+}
+
 long sofa_vsyscall(long sysnum, ...)
 {
     va_list al;
@@ -248,6 +255,9 @@ long sofa_vsyscall(long sysnum, ...)
     long ret = -1;
     switch (sysnum)
     {
+    case __NR_stat:
+        ret = sf_stat(al);
+        break;
     case __NR_getpid:
         ret = SFGetPid();
         break;

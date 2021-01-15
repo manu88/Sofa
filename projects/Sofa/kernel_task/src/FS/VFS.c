@@ -20,7 +20,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include "Log.h"
-#define MAX_PREFIX_LEN 16
+#define MAX_PREFIX_LEN 256
 
 static VFSMountPoint* _mountPoints = NULL;
 
@@ -176,6 +176,7 @@ static char** _splitPath(const char* _path, int* numSegs)
     return segments;
 }
 
+
 int VFSStat(const char *path, VFS_File_Stat *stat)
 {
     if(strcmp(path, "/") == 0)
@@ -183,48 +184,27 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
         stat->type = FileType_Dir;
         return 0;
     }
-
-    int numPathSegs = -1;
-    char** segments = _splitPath(path, &numPathSegs);
-    if(numPathSegs == 0)
-    {
-        return EINVAL;
-    }
     char prefix[MAX_PREFIX_LEN + 1];
     const char *suffix;
 
     if (!Unpack_Path(path, prefix, &suffix))
     {
-        for(int i=0;i<numPathSegs;i++)
-        {
-            free(segments[i]);
-        }
-        free(segments);
-	    return ENOENT;
+	    return -ENOENT;
     }
 
-    VFSMountPoint* mnt =  _GetMountPoint(segments[0]);
-
+    VFSMountPoint* mnt = _GetMountPoint(prefix);
     if(mnt == NULL)
     {
-        printf("[VFS] fs not found for '%s'\n", prefix);
-        for(int i=0;i<numPathSegs;i++)
-        {
-            free(segments[i]);
-        }
-        free(segments);
-        return ENOENT;
+        return -ENOENT;
     }
     assert(mnt->fs);
-    int ret = mnt->fs->ops->Stat(mnt->fs, segments + 1, numPathSegs-1, stat);
-    
-    for(int i=0;i<numPathSegs;i++)
-    {
-        free(segments[i]);
-    }
-    free(segments);
-    return ret;
 
+    if(mnt->fs->ops->Stat)
+    {
+        return mnt->fs->ops->Stat(mnt->fs, suffix, stat);
+    }
+    KLOG_DEBUG("VFS: unimplemented Stat for %s\n", mnt->mountPath);
+    return -ENODEV;
 }
 
 static int VFSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)

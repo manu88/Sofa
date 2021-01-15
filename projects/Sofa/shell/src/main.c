@@ -13,7 +13,7 @@
 #include <dk.h>
 #include <init.h>
 #include <sys/wait.h>
-
+#include <sys/stat.h>
 
 int fOut = -1;
 static int lastCmdRet = 0;
@@ -135,9 +135,52 @@ static int doLs(const char* path)
         return errno;
     }
     struct dirent *entry = NULL;
-    while( (entry=readdir(folder)) )
+    struct stat buffer;
+
+    char pathB[256] = "";
+    while( (entry=readdir(folder)))
     {
-        Printf("%s\n", entry->d_name);
+        pathB[0] = 0;
+        if(strlen(path))
+        {
+            strcat(pathB, path);
+            size_t pathLen = strlen(pathB);
+            if(pathB[pathLen-1] != '/')
+            {
+                strcat(pathB, "/");
+            }
+        }
+
+        strcat(pathB, entry->d_name);
+        int status = stat(pathB, &buffer);
+        Printf("%s ", entry->d_name);
+        if(status == 0)
+        {
+            switch (buffer.st_mode & S_IFMT)
+            {
+                case S_IFBLK:  Printf("block device");            
+                    break;
+                case S_IFCHR:  Printf("character device");        
+                    break;
+                case S_IFDIR:  Printf("directory");               
+                    break;
+                case S_IFIFO:  Printf("FIFO/pipe");               
+                    break;
+                case S_IFLNK:  Printf("symlink");                 
+                    break;
+                case S_IFREG:  Printf("regular file");            
+                    break;
+                case S_IFSOCK: Printf("socket");                  
+                    break;
+                default:       Printf("unknown(%X)", buffer.st_mode & S_IFMT);                
+                    break;
+           }
+        }
+        else
+        {
+            Printf(" stat error=%i", status);
+        }
+        Printf("\n");
     }
     closedir(folder);
 

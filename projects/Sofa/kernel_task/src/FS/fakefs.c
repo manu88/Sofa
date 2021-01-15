@@ -22,7 +22,7 @@
 #include <assert.h>
 #include "../utils.h"
 
-static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
+static int fakeFSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat);
 static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
 static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes);
@@ -84,15 +84,25 @@ VFSFileSystem* getFakeFS()
     return &_fs;
 }
 
-static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat)
+static int fakeFSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
 {
-    if(numPathSegments == 0) // root
+    if(strcmp(path, "/") == 0)
     {
         stat->type = FileType_Dir;
-        return 0;   
-
+        return 0;
     }
-    return -ENOENT;
+
+    const char* p = path+1;
+
+    for(int i=0;i<NumFiles;i++)
+    {
+        if(strcmp(p, files[i].name) == 0)
+        {
+            stat->type = FileType_Regular;
+            return 0;
+        }
+    }
+    return -EINVAL;
 }
 
 static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)

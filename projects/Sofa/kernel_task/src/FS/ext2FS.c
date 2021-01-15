@@ -25,7 +25,8 @@
 
 static inode_t *rootInode = NULL;
 
-static int ext2FSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
+static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat);
+
 static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
 static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes);
@@ -59,14 +60,23 @@ VFSFileSystem* getExt2FS()
     return &_fs;
 }
 
-static int ext2FSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat)
+static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
 {
-    return 0;
-    assert(0);
-    KLOG_DEBUG("ext2FSStat\n");
+    if(strcmp(path, "/") == 0)
+    {
+        stat->type = FileType_Dir;
+        return 0;
+    }
     IODevice* dev = fs->data;
-    
+    assert(dev);
+
+    const char* p = path+1;
+
+
+
+    return -EINVAL;
 }
+
 
 static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
