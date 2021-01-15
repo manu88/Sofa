@@ -13,6 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * Implementation inspired by: 
+ * Levente Kurusa <levex@linux.com> 
+ * From https://github.com/levex/osdev/blob/master/include/ext2.h
+ * **/
 #include "Ext2.h"
 #include "Log.h"
 
@@ -26,9 +31,45 @@ typedef struct
 
 static Block* _blockCache = NULL;
 
+
+static ext2_priv_data __ext2_data;
+
+ext2_priv_data* getExtPriv()
+{
+	return &__ext2_data;
+}
+
+static uint8_t doReadBlock(uint8_t *buf, uint32_t block, IODevice *dev, ext2_priv_data *priv)
+{
+	uint32_t sectors_per_block = priv->sectors_per_block;
+	if(!sectors_per_block)
+    {
+        sectors_per_block = 1;
+    }
+
+    uint32_t startSect = block*sectors_per_block;
+    uint32_t numSectors = block*sectors_per_block + sectors_per_block - startSect;
+
+    buf[(numSectors*512)-1] = 0;
+
+    uint8_t *bufPos = buf;
+    size_t acc = 0;
+    for(uint32_t i=0;i<numSectors;i++)
+    {
+        ssize_t ret = IODeviceRead(dev, startSect+i, bufPos, 512);
+		if(ret <= 0)
+		{
+			return 0;// error
+		}
+        bufPos += ret;
+        acc += ret;
+    }
+	return 1;
+}
+
 int Ext2ReadBlock(uint8_t *buf, uint32_t blockID, IODevice *dev)
 {
-    return ext2_read_block(buf, blockID, dev, getExtPriv());
+    return doReadBlock(buf, blockID, dev, getExtPriv());
 }
 
 
@@ -101,5 +142,93 @@ uint8_t Ext2ReadInode(inode_t *inode_buf, uint32_t inode, IODevice *dev)
     //printf("Found the inode\n");
 
 	memcpy(inode_buf, _inode, sizeof(inode_t));
+	return 1;
+}
+
+
+uint8_t Ext2Probe(IODevice *dev)
+{
+	/* Read in supposed superblock location and check sig */
+	if(!dev->ops)
+	{
+		printf("Device has no operations, skipped.\n");
+		return 0;
+	}
+    if(!dev->ops->read)
+	{
+		printf("Device has no read, skipped.\n");
+		return 0;
+	}
+	uint8_t *buf = (uint8_t *)malloc(1024);
+    IODeviceRead(dev, 2, buf, 512);
+    IODeviceRead(dev, 3, buf+512, 512);
+
+	superblock_t *sb = (superblock_t *)buf;
+	if(sb->ext2_sig != EXT2_SIGNATURE)
+	{
+		printf("Invalid EXT2 signature, have: 0x%x!\n", sb->ext2_sig);
+		return 0;
+	}
+	printf("Valid EXT2 signature!\n");
+	
+    ext2_priv_data *priv = getExtPriv();
+
+	memcpy(&priv->sb, sb, sizeof(superblock_t));
+	/* Calculate volume length */
+	uint32_t blocksize = 1024 << sb->blocksize_hint;
+	printf("Size of a block: %d bytes\n", blocksize);
+	priv->blocksize = blocksize;
+	priv->inodes_per_block = blocksize / sizeof(inode_t);
+	priv->sectors_per_block = blocksize / 512;
+	printf("Size of volume: %d bytes\n", blocksize*(sb->blocks));
+	/* Calculate the number of block groups */
+	uint32_t number_of_bgs0 = sb->blocks / sb->blocks_in_blockgroup;
+	if(!number_of_bgs0) number_of_bgs0 = 1;
+	printf("There are %d block group(s).\n", number_of_bgs0);
+	priv->number_of_bgs = number_of_bgs0;
+	/* Now, we have the size of a block,
+	 * calculate the location of the Block Group Descriptor
+	 * The BGDT is located directly after the SB, so obtain the
+	 * block of the SB first. This is located in the SB.
+	 */
+	uint32_t block_bgdt = sb->superblock_id + (sizeof(superblock_t) / blocksize);
+	priv->first_bgd = 1;//block_bgdt;
+    printf("first_bgd is at %u\n", priv->first_bgd);
+    
+/*
+	fs->name = "EXT2";
+	fs->probe = (uint8_t(*)(device_t*)) ext2_probe;
+	fs->mount = (uint8_t(*)(device_t*, void *)) ext2_mount;
+	fs->read = (uint8_t(*)(char *, char *, device_t *, void *)) ext2_read_file;
+	fs->exist = (uint8_t(*)(char *, device_t*, void *)) ext2_exist;
+	fs->read_dir = (uint8_t(*)(char * , char *, device_t *, void *)) ext2_list_directory;
+	fs->touch = (uint8_t(*)(char *, device_t *, void *)) ext2_touch;
+	fs->writefile = (uint8_t(*)(char *, char *m, uint32_t, device_t *, void *)) ext2_writefile;
+	fs->priv_data = (void *)priv;
+*/
+	//dev->fs = fs;
+	printf("Device %s is with EXT2 filesystem. Probe successful.\n", dev->name);
+	free(buf);
+	//free(buffer);
+	return 1;
+}
+
+uint8_t Ext2Mount(IODevice *dev)
+{
+	printf("Mounting ext2 on device %s\n", dev->name);
+
+	inode_t ino;
+	if(Ext2ReadInode(&ino, 2, dev) == 0)
+	{
+		return 0;
+	}
+
+	if((ino.type & 0xF000) != INODE_TYPE_DIRECTORY)
+	{
+		printf("FATAL: Root directory is not a directory!\n");
+		return 0;
+	}
+
+
 	return 1;
 }

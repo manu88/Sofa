@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "ext2FS.h"
-#include "ext2.h"
+//#include "ext2.h"
 #include "Ext2.h"
 #include "IODevice.h"
 #include "Log.h"
@@ -106,7 +106,7 @@ static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
             {
                 inode_t ino;
 
-                int retRead = ext2_read_inode(&ino, dir->inode, dev, getExtPriv()); 
+                int retRead = Ext2ReadInode(&ino, dir->inode, dev); 
  
                 if(retRead)
                 {
@@ -249,11 +249,11 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
                 file->impl = dev;
                 file->ops = &_fileOps;
 
-                int ret = ext2_read_inode(file->inode, dir->inode, dev, getExtPriv());
-
-                file->size = ((inode_t*) file->inode)->size;
-                KLOG_DEBUG("EXT2Open file size is %zi\n", file->size);
-                 
+                int ret = Ext2ReadInode(file->inode, dir->inode, dev);
+                if(ret)
+                {
+                    file->size = ((inode_t*) file->inode)->size;
+                }
                 return ret? 0:-EIO;
             }
             dir = (ext2_dir *)((uint32_t)dir + dir->size);
@@ -266,12 +266,7 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 
 static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
 {
-#if 0
-    KLOG_DEBUG("ext2FSRead for %zi bytes, pos %zi size %zi\n",
-            numBytes,
-            file->readPos,
-            file->size);
-#endif
+
     IODevice* dev = file->impl;
     inode_t* inode = file->inode;
     assert(dev);
@@ -285,11 +280,6 @@ static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
     }
     size_t indexOfBlockToRead = (size_t)file->readPos / getExtPriv()->blocksize;
     int i = indexOfBlockToRead;
-#if 0
-    KLOG_DEBUG("index %i (ino size is %zi, block size %zi)\n",
-                i,
-                inode->size, getExtPriv()->blocksize);
-#endif
 
     if(i<12)
     {
@@ -339,7 +329,7 @@ static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
 
             if(block[i] == 0)
             {
-                KLOG_DEBUG("block[%i] is 0\n", i);
+                KLOG_DEBUG("block[%i] is 0 ?\n", i);
             }
             else
             {

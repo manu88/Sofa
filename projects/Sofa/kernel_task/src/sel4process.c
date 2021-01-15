@@ -519,7 +519,7 @@ static char* GetFileVFS( const char* path, size_t *size)
     KThread* caller = (KThread*) seL4_GetUserData();
     assert(caller);
 
-#define READ_SIZE 1024
+#define READ_SIZE 4096
     char buf[READ_SIZE] = "";
     while (!done)
     {

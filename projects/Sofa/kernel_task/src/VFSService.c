@@ -21,7 +21,8 @@
 #include <string.h>
 #include <sel4/sel4.h>
 #include <vka/capops.h>
-#include "ext2.h"
+//#include "ext2.h"
+#include "Ext2.h"
 #include "KThread.h"
 #include "DeviceTree.h"
 #include "NameServer.h"
@@ -343,9 +344,9 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
 {
     assert(fsType);
 
-    if(ext2_probe(dev))
+    if(Ext2Probe(dev))
     {
-        if(ext2_mount(dev, NULL))
+        if(Ext2Mount(dev))
         {
             KLOG_DEBUG("[VFSMount] ext2\n");
             getExt2FS()->data = dev;
