@@ -30,7 +30,6 @@ typedef struct
 } Block;
 
 static Block* _blockCache = NULL;
-static size_t lastReport = 0;
 
 static ext2_priv_data __ext2_data;
 
@@ -93,12 +92,6 @@ uint8_t* Ext2ReadBlockCached(uint32_t blockID, IODevice* dev)
     HASH_ADD_INT(_blockCache, blockID, blk);
 	assert(blk->blockID == blockID);
 
-
-	lastReport+=1;
-	if(lastReport % 5 == 0)
-	{
-		KLOG_DEBUG("Ext2 Block cache count %zi\n", HASH_COUNT(_blockCache));
-	}
     return blk->data;
 }
 
