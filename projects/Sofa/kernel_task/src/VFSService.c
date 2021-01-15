@@ -584,11 +584,11 @@ static int mainVFS(KThread* thread, void *arg)
 
                 int asyncLater = -1;
                 ssize_t ret = VFSServiceRead(clt, handle, size, &asyncLater);
-                if(asyncLater)
+                if(asyncLater == 1)
                 {
                     continue;
                 }
-                int err = ret<0? -ret:0;
+                int err = ret<0? ret:0;
                 size = ret >=0? ret:0; 
                 seL4_SetMR(1, err);
                 seL4_SetMR(2, size);            

@@ -185,7 +185,7 @@ ssize_t VFSClientRead(int handle, char* data, size_t size)
         return readSize;
     }
 
-    return -err;
+    return err;
 }
 
 

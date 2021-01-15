@@ -37,6 +37,7 @@ typedef struct _File File;
 /* Operations that can be performed on a mounted filesystem. */
 typedef struct _VFSFileSystemOps 
 {
+    int (*Mount)(VFSFileSystem *fs, const char *dev_name);
     int (*Open)(VFSFileSystem *fs, const char *path, int mode, File *file);
     int (*Stat)(VFSFileSystem *fs, const char *path, VFS_File_Stat *stat);
 

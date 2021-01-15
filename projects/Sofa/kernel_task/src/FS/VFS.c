@@ -108,6 +108,14 @@ VFSMountPoint* VFSMount(VFSFileSystem* fs, const char* mntPoint, int*err)
     assert(fs);
     assert(mntPoint);
 
+    if(fs->ops->Mount)
+    {
+        if(fs->ops->Mount(fs, NULL) != 0)
+        {
+            return NULL;
+        }
+    }
+
     VFSMountPoint *pt = malloc(sizeof(VFSMountPoint));
     if(pt == NULL)
     {
@@ -276,12 +284,16 @@ int VFSOpen(const char* path, int mode, File* file)
         return -ENOENT;
     }
     assert(mnt->fs);
-    return mnt->fs->ops->Open(mnt->fs, suffix, mode, file);
+    if(mnt->fs->ops && mnt->fs->ops->Open)
+    {
+        return mnt->fs->ops->Open(mnt->fs, suffix, mode, file);
+    }
+    return -EACCES;
 }
 
 int VFSClose(File* file)
 {
-    if(file->ops->Close == NULL)
+    if(file->ops == NULL || file->ops->Close == NULL)
     {
         return 0;
     }
@@ -306,6 +318,10 @@ int VFSSeek(File* file, size_t pos)
 
 ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 {
+    if(!file->ops ||!file->ops->Write)
+    {
+        return -EACCES;
+    }
     if(file->mode == O_WRONLY || file->mode == O_RDWR)
     {
         return file->ops->Write(file, buf, sizeToWrite);
@@ -316,6 +332,10 @@ ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 
 ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, int *async_later)
 {
+    if(!file->ops ||!file->ops->Read)
+    {
+        return -EACCES;
+    }
     assert(file->readPos <= file->size);
     if(async_later)
     {
