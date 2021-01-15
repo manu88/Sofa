@@ -110,7 +110,7 @@ uint8_t ext2_read_inode(inode_t *inode_buf, uint32_t inode, device_t *dev, ext2_
         block_buf = (uint8_t *)malloc(priv->blocksize);
     }
     assert(block_buf);
-
+	
 	uint8_t ret = ext2_read_block(block_buf, priv->first_bgd, dev, priv);
 	if(ret == 0)
 	{

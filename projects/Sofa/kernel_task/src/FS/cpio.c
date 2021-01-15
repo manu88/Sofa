@@ -190,8 +190,9 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 
 static int cpioFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
+    assert(file);
     void* fData = file->impl;
-
+    assert(fData);
     size_t effectiveSize = file->size - file->readPos;
     if(numBytes < effectiveSize)
     {
@@ -199,6 +200,6 @@ static int cpioFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes
     } 
 
     memcpy(buf, fData + file->readPos, effectiveSize);
-
+    file->readPos += effectiveSize;
     return effectiveSize;
 }

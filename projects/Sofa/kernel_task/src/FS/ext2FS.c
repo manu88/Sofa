@@ -15,6 +15,7 @@
  */
 #include "ext2FS.h"
 #include "ext2.h"
+#include "Ext2.h"
 #include "IODevice.h"
 #include "Log.h"
 #include <string.h>
@@ -22,8 +23,8 @@
 #include <dirent.h>
 #include <errno.h>
 
-
-static inode_t *rootInode = NULL;
+static inode_t _rootInode;
+static int _reReadRootInode = 1;
 
 static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat);
 
@@ -60,6 +61,7 @@ VFSFileSystem* getExt2FS()
     return &_fs;
 }
 
+
 static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
 {
     if(strcmp(path, "/") == 0)
@@ -70,13 +72,63 @@ static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
     IODevice* dev = fs->data;
     assert(dev);
 
-    const char* p = path+1;
+    const char* fPath = path+1;
 
+    if(_reReadRootInode)
+    {
+        if(!Ext2ReadInode(&_rootInode, 2, dev))
+        {
+            return -EIO;
+        }
+        _reReadRootInode = 0;
+    }
 
+    
+    char tmpName[256] = "";
+    for(int i = 0;i < 12; i++)
+	{
+		uint32_t b = _rootInode.dbp[i];
+		if(b == 0)
+        {
+            break;
+        }
 
-    return -EINVAL;
+        uint8_t* root_buf = Ext2ReadBlockCached(b, dev);
+        assert(root_buf);
+
+        ext2_dir* dir = (ext2_dir*) root_buf;
+
+        while(dir->inode != 0) 
+        {
+            memcpy(tmpName, &dir->reserved+1, dir->namelength);
+            tmpName[dir->namelength] = 0;
+            if(strcmp(tmpName, fPath) == 0)
+            {
+                inode_t ino;
+
+                int retRead = ext2_read_inode(&ino, dir->inode, dev, getExtPriv()); 
+ 
+                if(retRead)
+                {
+
+                    if((ino.type & 0xF000) == INODE_TYPE_DIRECTORY)
+                    {
+                        stat->type = FileType_Dir;
+                    }
+                    else if((ino.type & 0xF000) == INODE_TYPE_FILE)
+                    {
+                        stat->type = FileType_Regular;
+                    }
+                }                
+                return retRead? 0: -EIO;
+            }
+            dir = (ext2_dir *)((uint32_t)dir + dir->size);
+        }
+    }
+
+    return -ENOENT;
+
 }
-
 
 static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
@@ -84,8 +136,6 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
     {
         return 0;
     }
-
-    KLOG_DEBUG("ext2FSReadDir request\n");
     size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
     size_t numOfDirents = numDirentPerBuff;
    
@@ -102,11 +152,7 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
     size_t acc = 0;
 
 
-    uint8_t* root_buf = (uint8_t *)malloc(getExtPriv()->blocksize);
-    assert(root_buf);
-
     char tmpName[256] = "";
-    struct dirent *d = NULL;
     int ii=0;
     for(int i = 0;i < 12; i++)
 	{
@@ -115,80 +161,82 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
         {
             break;
         }
-		uint8_t ret = ext2_read_block(root_buf, b, dev, getExtPriv());
-        assert(ret == 1);
+        uint8_t* root_buf = Ext2ReadBlockCached(b, dev);
+        assert(root_buf);
         ext2_dir* dir = (ext2_dir*) root_buf;
         
         while(dir->inode != 0) 
         {
-            memcpy(tmpName, &dir->reserved+1, dir->namelength);
-            tmpName[dir->namelength] = 0;
-            if(strcmp(tmpName, ".") != 0 && strcmp(tmpName, "..") != 0 )
+            if(dir->namelength < 255)
             {
-                d = dirp + ii;
-                snprintf(d->d_name, 256, "%s", tmpName);
-                acc += sizeof(struct dirent);
-                d->d_off = acc;
-                d->d_type = DT_DIR;
-                d->d_reclen = sizeof(struct dirent);
+                memcpy(tmpName, &dir->reserved+1, dir->namelength);
+                tmpName[dir->namelength] = 0;
 
-                file->size +=1;
-                ii+=1;
+                if(strlen(tmpName) && 
+                   strcmp(tmpName, ".") != 0 &&
+                   strcmp(tmpName, "..") != 0 )
+                {
+                    struct dirent *d = dirp + ii;
+                    snprintf(d->d_name, 256, "%s", tmpName);
+
+                    if(strlen(tmpName) == dir->namelength)
+                    {
+                        acc += sizeof(struct dirent);
+                        d->d_off = acc;
+                        d->d_type = DT_DIR;
+                        d->d_reclen = sizeof(struct dirent);
+
+                        file->size +=1;
+                        ii+=1;
+                    }
+                }
             }
 
             dir = (ext2_dir *)((uint32_t)dir + dir->size);
         }
     }
-    free(root_buf);
 
     return acc;
 }
+
 static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
     IODevice* dev = fs->data;
     assert(dev);
 
-
-    if(rootInode == NULL)
+    if(_reReadRootInode)
     {
-        rootInode = malloc(sizeof(inode_t));
-    
-        assert(rootInode);
-        uint8_t ret = ext2_read_inode(rootInode, 2, dev, getExtPriv());
-        if(ret != 1) // err
+        if(!Ext2ReadInode(&_rootInode, 2, dev))
         {
-            return -ENOENT;
+            return -EIO;
         }
+        _reReadRootInode = 0;
     }
     
     if(strcmp(path, "/") == 0)
     {
-        if((rootInode->type & 0xF000) != INODE_TYPE_DIRECTORY)
+        if((_rootInode.type & 0xF000) != INODE_TYPE_DIRECTORY)
         {
             return -ENOTDIR;
         }
 
         file->impl = dev;
-        file->inode = rootInode;
+        file->inode = &_rootInode;
         file->ops = &_dirOP;
         return 0;
     }
-
     const char *fPath = path+1;
     
-    uint8_t* root_buf = (uint8_t *)malloc(getExtPriv()->blocksize);
-    assert(root_buf);
-
     char tmpName[256] = "";
     for(int i = 0;i < 12; i++)
 	{
-		uint32_t b = rootInode->dbp[i];
+		uint32_t b = _rootInode.dbp[i];
 		if(b == 0)
         {
             break;
         }
-		uint8_t ret = ext2_read_block(root_buf, b, dev, getExtPriv());
-        assert(ret == 1);
+		uint8_t* root_buf = Ext2ReadBlockCached(b, dev);
+        assert(root_buf);
         ext2_dir* dir = (ext2_dir*) root_buf;
         
         while(dir->inode != 0) 
@@ -197,101 +245,123 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
             tmpName[dir->namelength] = 0;
             if(strcmp(tmpName, fPath) == 0)
             {
-                free(root_buf);
-
                 file->inode = malloc(sizeof(inode_t));
                 file->impl = dev;
                 file->ops = &_fileOps;
-                return ext2_read_inode(file->inode, dir->inode, dev, getExtPriv())? 0:-EIO;
+
+                int ret = ext2_read_inode(file->inode, dir->inode, dev, getExtPriv());
+
+                file->size = ((inode_t*) file->inode)->size;
+                KLOG_DEBUG("EXT2Open file size is %zi\n", file->size);
+                 
+                return ret? 0:-EIO;
             }
             dir = (ext2_dir *)((uint32_t)dir + dir->size);
         }
     }
-    free(root_buf);
 
     return -ENOENT;
-#if 0
-    uint8_t* root_buf = (uint8_t *)malloc(getExtPriv()->blocksize);
-    assert(root_buf);
-    for(int i = 0;i < 12; i++)
-	{
-		uint32_t b = ino.dbp[i];
-		if(b == 0)
-        {
-            break;
-        }
-
-		ret = ext2_read_block(root_buf, b, dev, getExtPriv());
-        assert(ret == 1);
-        ext2_dir* dir = (ext2_dir*) root_buf; 
-        while(dir->inode != 0) 
-        {
-            char *name = (char *)malloc(dir->namelength + 1);
-            assert(name);
-            memcpy(name, &dir->reserved+1, dir->namelength);
-            name[dir->namelength] = 0;
-            KLOG_DEBUG("Got '%s'\n", name);
-            free(name);
-            dir = (ext2_dir *)((uint32_t)dir + dir->size);
-        }
-    }
-    free(root_buf);
-    KLOG_DEBUG("r=%u\n", ret);
-    return -ENOENT;
-#endif
 }
 
 
 static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
 {
+#if 0
+    KLOG_DEBUG("ext2FSRead for %zi bytes, pos %zi size %zi\n",
+            numBytes,
+            file->readPos,
+            file->size);
+#endif
     IODevice* dev = file->impl;
     inode_t* inode = file->inode;
     assert(dev);
     assert(inode);
 
-    file->size = inode->size;
+
 
     if(file->readPos >= file->size)
     {
         return 0;
     }
-    size_t indexOfBlockToRead = (size_t)file->readPos / getExtPriv()->sb.blocks;
+    size_t indexOfBlockToRead = (size_t)file->readPos / getExtPriv()->blocksize;
     int i = indexOfBlockToRead;
-    uint32_t b = inode->dbp[i];
-    if(b==0)
+#if 0
+    KLOG_DEBUG("index %i (ino size is %zi, block size %zi)\n",
+                i,
+                inode->size, getExtPriv()->blocksize);
+#endif
+
+    if(i<12)
     {
-        // EOF
-        return 0;
+        uint32_t b = inode->dbp[i];
+        if(b==0)
+        {
+            KLOG_DEBUG("EOF For read\n");
+            // EOF
+            return 0;
+        }
+        if(b > getExtPriv()->sb.blocks) 
+        {
+            KLOG_DEBUG("block %d outside range (max: %d)!\n",  b, getExtPriv()->sb.blocks);
+        }
+        uint8_t* tempBuf = Ext2ReadBlockCached(b, dev);
+        if(tempBuf)
+        {
+            size_t sizeToCopy = file->size - file->readPos;
+            if(sizeToCopy > numBytes)
+            {
+                sizeToCopy = numBytes;
+            }
+            size_t chunkToCopy = file->readPos % getExtPriv()->blocksize;
+            memcpy(buf, tempBuf + chunkToCopy, sizeToCopy);
+            file->readPos += sizeToCopy;
+            return sizeToCopy;
+        }
     }
-    if(b > getExtPriv()->sb.blocks) 
+    else if(i >= 12)
     {
-        KLOG_DEBUG("block %d outside range (max: %d)!\n",  b, getExtPriv()->sb.blocks);
-    }
-    char tempBuf[4096] = "";
-    if(ext2_read_block(tempBuf, b, dev, getExtPriv()))
-    {
-        memcpy(buf, tempBuf, file->size);
-        file->readPos += file->size;
-        return file->size;
+        if(inode->doubly_block)
+        {
+            KLOG_DEBUG("Doubly block, to implement :)\n");
+            assert(0);
+        }
+        if(inode->triply_block)
+        {
+            KLOG_DEBUG("Triply block, to implement :)\n");
+            assert(0);
+        }
+        if(inode->singly_block)
+        {
+            i -= 12;
+
+            uint32_t *block = Ext2ReadBlockCached(inode->singly_block, dev);
+            uint32_t maxblocks = ((getExtPriv()->blocksize) / (sizeof(uint32_t)));
+
+            if(block[i] == 0)
+            {
+                KLOG_DEBUG("block[%i] is 0\n", i);
+            }
+            else
+            {
+                uint8_t* data = Ext2ReadBlockCached(block[i], dev);
+
+                size_t sizeToCopy = file->size - file->readPos;
+                if(sizeToCopy > numBytes)
+                {
+                    sizeToCopy = numBytes;
+                }
+                size_t chunkToCopy = file->readPos % getExtPriv()->blocksize;
+                memcpy(buf, data + chunkToCopy, sizeToCopy);
+                file->readPos += sizeToCopy;
+                return sizeToCopy;
+            }
+        }
     }
     
-    if(inode->singly_block)
-    {
-        KLOG_DEBUG("Singly block\n");
-    }
-    if(inode->doubly_block)
-    {
-        KLOG_DEBUG("Doubly block\n");
-    }
-    if(inode->triply_block)
-    {
-        KLOG_DEBUG("Triply block\n");
-    }
-
     return 0;
 }
 static int ext2FSClose(File *file)
 {
-    free(file->inode);
+    //free(file->inode);
     return -1;
 }

@@ -90,12 +90,7 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
     int consumed_untypeds = process_set_up(NULL, p, imgName,(seL4_Word) &p->main);
 
     ProcessCreateSofaIPCBuffer(p, &p->main.ipcBuffer, &p->init->mainIPCBuffer);
-/*
-    p->main.ipcBuffer = (uint8_t*) vspace_new_pages(&envir->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
-    assert(p->main.ipcBuffer);
-    p->init->mainIPCBuffer = vspace_share_mem(&envir->vspace, &p->native.vspace, p->main.ipcBuffer, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
-    assert(p->init->mainIPCBuffer);
-*/
+
     if(parent != NULL)
     {
         ProcessAddChild(parent, p);
