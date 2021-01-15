@@ -25,6 +25,10 @@ typedef enum
     IODevice_BlockDev,
     IODevice_CharDev,
 
+// Not real Device types, can't be used for setting type, notably in IODeviceNew or IODeviceInit
+    IODevice_AllTypes,
+    IODevice_Last // keep last!
+
 } IODeviceType;
 
 struct _IODevice;
@@ -32,10 +36,13 @@ struct _IODevice;
 typedef ssize_t (*ReadDevice)(struct _IODevice* dev, size_t sector, char* buf, size_t bufSize);
 typedef ssize_t (*WriteDevice)(struct _IODevice* dev, size_t sector, const char* buf, size_t bufSize);
 
+typedef void (*HandleIRQ)(struct _IODevice* dev, int irqN);
+
 typedef struct
 {
      ReadDevice read;
      WriteDevice write;
+     HandleIRQ handleIRQ;
 } IODeviceOperations;
 
 
@@ -66,3 +73,5 @@ static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type)
 }
 ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize);
 ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize);
+
+

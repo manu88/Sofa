@@ -196,7 +196,7 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
         {
             free(realP);
         }
-        return -ret;
+        return ret;
     }
     FileHandle* f = malloc(sizeof(FileHandle));
     assert(f);
@@ -256,6 +256,12 @@ static int VFSServiceClose(Client* client, int handle)
     HASH_DEL(client->files, file);
     int ret = VFSClose(&file->file);
     free(file);
+
+    if(HASH_COUNT(client->files) == 0)
+    {
+        KLOG_DEBUG("Reset fd counter \n");
+        client->fileIndex = 0;
+    }
     return ret;
 }
 

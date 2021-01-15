@@ -229,6 +229,11 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
 
 static int VFSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
+    if(file->readPos == file->size)
+    {
+        return -1; // EOF
+    }
+
     size_t remainFilesToList = file->size - file->readPos;
     size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
     size_t numOfDirents = numDirentPerBuff > remainFilesToList? remainFilesToList:numDirentPerBuff;
@@ -259,7 +264,6 @@ static int VFSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes
     }
     file->readPos += numOfDirents;
     return acc;
-
 }
 
 
@@ -283,13 +287,13 @@ int VFSOpen(const char* path, int mode, File* file)
 
     if (!Unpack_Path(path, prefix, &suffix))
     {
-	    return ENOENT;
+	    return -ENOENT;
     }
 
     VFSMountPoint* mnt = _GetMountPoint(prefix);
     if(mnt == NULL)
     {
-        return ENOENT;
+        return -ENOENT;
     }
     assert(mnt->fs);
     return mnt->fs->ops->Open(mnt->fs, suffix, mode, file);
@@ -306,6 +310,7 @@ int VFSClose(File* file)
 
 int VFSSeek(File* file, size_t pos)
 {
+    assert(0);
     if(file->ops->Seek == NULL)
     {
         size_t effectiveOffset = pos;
@@ -321,11 +326,12 @@ int VFSSeek(File* file, size_t pos)
 
 ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 {
-    if(file->mode != O_WRONLY)
+    if(file->mode == O_WRONLY || file->mode == O_RDWR)
     {
-        return -EACCES;
+        return file->ops->Write(file, buf, sizeToWrite);
     }
-    return file->ops->Write(file, buf, sizeToWrite);
+    return -EACCES;
+    
 }
 
 ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, int *async_later)
@@ -335,11 +341,6 @@ ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, in
     {
         *async_later = file->ops->asyncRead;
     }
-    if(file->readPos == file->size)
-    {
-        return -1; // EOF
-    }
-    ssize_t ret = file->ops->Read(caller, file, buf, sizeToRead);
 
-    return ret;
+    return file->ops->Read(caller, file, buf, sizeToRead);
 }

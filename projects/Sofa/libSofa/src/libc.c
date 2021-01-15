@@ -79,8 +79,6 @@ static long sf_open(va_list ap)
 //    return 0;
 }
 
-static int c = 4;
-static int numSent = 0;
 
 static long sf_getdents64(va_list ap)
 {
@@ -88,30 +86,8 @@ static long sf_getdents64(va_list ap)
     struct dirent *dirp = va_arg(ap, struct dirent *);
     unsigned int count = va_arg(ap, unsigned int);
 
-    return VFSClientRead(fd, dirp, count);
-    if(numSent >= c)
-    {
-        return 0;
-    }
-    size_t numDirentPerBuff = count / sizeof(struct dirent);
-    size_t numOfDirents = numDirentPerBuff > c? c:numDirentPerBuff;
-
-    size_t nextOff = 0;
-    size_t acc = 0;
-    for(size_t i=0;i<numOfDirents;i++)
-    {
-        struct dirent *d = dirp + i;
-
-        snprintf(d->d_name, 256, "File%i", i);
-        acc += sizeof(struct dirent);
-        d->d_off = acc;
-        d->d_type = DT_DIR;
-        d->d_reclen = sizeof(struct dirent);
-
-        
-    }
-    numSent += numOfDirents;
-    return acc;
+    ssize_t ret = VFSClientRead(fd, dirp, count);
+    return ret;
     //On success, the number of bytes read is returned.
     //On end of directory, 0 is returned. On error, -1 is returned, 
     //and errno is set appropriately. 

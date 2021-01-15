@@ -21,9 +21,11 @@
 #include "Process.h"
 #include "DeviceKit/DeviceTree.h"
 #include "BaseService.h"
+#include "devFS.h"
 #include <dk.h>
 
 BaseService _dkService;
+
 
 static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
 static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
@@ -42,47 +44,136 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
     KLOG_DEBUG("DKService: msg from kernel_task!\n");
 }
 
-static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
+static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
 {
-    KernelTaskContext* env = getKernelTaskContext();
-    if(seL4_GetMR(0) == DKRequest_Register)
+    IODevice* dev = NULL;
+    int count = 0;
+    assert(clt->buff);
+    DKDeviceList* outList = (DKDeviceList*) clt->buff;
+    FOR_EACH_DEVICE(dev)
     {
-        KLOG_DEBUG("DKService: Register request\n");
-        char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
-        assert(buff);
-        void* buffShared = vspace_share_mem(&env->vspace,
-                                            &caller->process->native.vspace,
-                                            buff,
-                                            1,
-                                            PAGE_BITS_4K,
-                                            seL4_ReadWrite,
-                                            1
-                                            );
-        assert(buffShared);
-        ServiceClient* client = malloc(sizeof(ServiceClient));
-        assert(client);
-        memset(client, 0, sizeof(ServiceClient));
-        client->caller = caller;
-        client->buff = buff;
-        client->service = &_dkService.service;
-        //HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
-        ThreadBaseAddServiceClient(caller, client);
-        seL4_SetMR(1, (seL4_Word) buffShared);
-        seL4_Reply(msg);
-    }
-    else if(seL4_GetMR(0) == DKRequest_List)
-    {
-        KLOG_DEBUG("DKService: Dev Enum request\n");
-        IODevice* dev = NULL;
-        FOR_EACH_DEVICE(dev)
-        {
-            KLOG_INFO("'%s' type %i\n", dev->name, dev->type);
+        if(type == IODevice_AllTypes || dev->type == type)
+        {   
+            if(!onlyCount)
+            {
+                outList->handles[count] = dev;    
+            }
+            count++;
         }
     }
-    else if(seL4_GetMR(0) == DKRequest_Tree)
+    if(!onlyCount)
     {
-        KLOG_DEBUG("DKService: IONode tree request\n");
-        DeviceTreePrint(DeviceTreeGetRoot());
+        outList->count = count;
+    }
+
+    return count;
+}
+
+static long doDKDeviceDetails(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    ServiceClient* clt = BaseServiceGetClient(service, caller);
+    assert(clt);
+    const IODevice* dev = (const IODevice*) seL4_GetMR(1);
+    DKDeviceDetails code = (DKDeviceDetails) seL4_GetMR(2);
+
+    switch (code)
+    {
+        case DKDeviceDetail_GetName:
+            strcpy(clt->buff, dev->name);
+            return strlen(dev->name);
+
+        case DKDeviceDetail_GetDevFile:
+        {
+            DevFile* f = DevFSGetFileForDevice(dev);
+            if(f)
+            {
+                strcpy(clt->buff, f->name);
+                return strlen(f->name);
+            }
+            return 0;
+        }
+        default:
+            KLOG_DEBUG("doDKDeviceDetails Unknown DKDeviceDetails code %i on %s\n", code, dev->name);
+            return -EINVAL;
+            break;
+    }
+}
+
+static int doDKEnumRequest(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+
+    int type = seL4_GetMR(1);
+    int onlyCount = seL4_GetMR(2);
+    int ret = 0;
+    if(type >= IODevice_Last)
+    {
+        ret = -EINVAL;
+    }
+    else
+    {
+        ServiceClient* clt = BaseServiceGetClient(service, caller);
+        assert(clt);
+        ret = DKEnumRequest(clt, type, onlyCount);
+    }
+    
+    seL4_SetMR(1, ret);
+    seL4_Reply(msg);
+}
+
+static void onRegister(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+{
+    ServiceClient* client = malloc(sizeof(ServiceClient));
+    assert(client);
+    int err = BaseServiceCreateClientContext(service, sender, client, 1);
+    if(err != 0)
+    {
+        free(client);
+    }
+    seL4_SetMR(1, err == 0? client->buffClientAddr:-1);
+    seL4_Reply(msg);
+}
+
+static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    DKRequest req = (DKRequest) seL4_GetMR(0);
+
+    switch (req)
+    {
+        case DKRequest_Register:
+        {
+            onRegister(service, caller, msg);
+            break;
+        }
+        case DKRequest_List:
+        {
+            KLOG_DEBUG("DKService: Dev Enum request\n");
+            IODevice* dev = NULL;
+            FOR_EACH_DEVICE(dev)
+            {
+                KLOG_INFO("'%s' type %i\n", dev->name, dev->type);
+            }
+
+            break;
+        }
+        case DKRequest_Tree:
+        {
+            KLOG_DEBUG("DKService: IONode tree request\n");
+            DeviceTreePrint(DeviceTreeGetRoot());
+
+            break;
+        }
+        case DKRequest_DeviceDetails:
+        {
+            long ret = doDKDeviceDetails(service, caller, msg);
+            seL4_SetMR(2, ret);
+            seL4_Reply(msg);
+            break;
+        }
+        case DKRequest_Enum:
+        {
+            doDKEnumRequest(service, caller, msg);
+            break;
+        }
     }
 }
 

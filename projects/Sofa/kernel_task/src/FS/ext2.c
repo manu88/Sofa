@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include "ext2.h"
 #include "IODevice.h"
+#include "Log.h"
+
 
 static size_t strsplit(char* str, char delim)
 {
@@ -44,6 +46,11 @@ static uint8_t *block_buf = 0;
 
 
 static ext2_priv_data __ext2_data;
+
+ext2_priv_data* getExtPriv()
+{
+	return &__ext2_data;
+}
 
 typedef IODevice device_t;
 
@@ -193,6 +200,7 @@ uint32_t ext2_get_inode_block(uint32_t inode, uint32_t *b, uint32_t *ioff, devic
 
 uint32_t ext2_read_directory(char *filename, ext2_dir *dir, device_t *dev, ext2_priv_data *priv)
 {
+	KLOG_DEBUG("ext2_read_directory for '%s'\n", filename);
 	if(priv == NULL)
 	{
 		priv == &__ext2_data;
@@ -203,10 +211,9 @@ uint32_t ext2_read_directory(char *filename, ext2_dir *dir, device_t *dev, ext2_
     {
 		char *name = (char *)malloc(dir->namelength + 1);
         assert(name);
-
 		memcpy(name, &dir->reserved+1, dir->namelength);
 		name[dir->namelength] = 0;
-	    printf("DIR: %s (%d)\n", name, dir->size);
+	    printf("ENTRY: %s (%d) ino=%u\n", name, dir->size, dir->inode);
         //printf("Compare with '%s'\n", filename);
 		if(filename && strcmp(filename, name) == 0)
 		{
@@ -287,6 +294,13 @@ uint8_t ext2_read_root_directory(char *filename, device_t *dev, ext2_priv_data *
 
 uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_priv_data *priv)
 {
+	if(!inode) inode = (inode_t *)malloc(sizeof(inode_t));
+
+	if(!root_buf)
+    { 
+        root_buf = (uint8_t *)malloc(priv->blocksize);
+    }
+
 	if(priv == NULL)
 	{
 		priv == &__ext2_data;
@@ -308,7 +322,7 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 		n--;
 		while(n--)
 		{
-			printf("Looking for: %s\n", filename);
+			printf("Looking for: %s %s\n",ff, filename);
 			for(int i = 0; i < 12; i++)
 			{
 				uint32_t b = inode->dbp[i];
@@ -316,6 +330,7 @@ uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, device_t *dev, ext2_p
 				{
 					break;
 				}
+				assert(root_buf);
 				ext2_read_block(root_buf, b, dev, priv);
 				uint32_t rc = ext2_read_directory(filename, (ext2_dir *)root_buf, dev, priv);
 				if(!rc)
@@ -868,12 +883,5 @@ uint8_t ext2_mount(device_t *dev, void *privd)
 	}
 
 
-	printf("Did read inode 2\n");
 	return 1;
-	if(ext2_read_root_directory((char *)1, dev, priv))
-	{
-		printf("ext2_read_root_directory is ok\n");
-		return 1;
-	}
-	return 0;
 }

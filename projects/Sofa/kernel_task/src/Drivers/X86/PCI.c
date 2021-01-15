@@ -19,10 +19,9 @@
 #include "DeviceTree.h"
 #include "Environ.h"
 #include <pci/pci.h>
-
 #include "Blk.h"
 #include "Net.h"
- 
+#include "Serial.h"
 
 typedef struct _PCIDriver
 {
@@ -53,6 +52,8 @@ static void _checkFWCF(PCIDriver* drv, IONode * fwcfNode)
     }
 }
 
+
+
 static void _checkISA(PCIDriver* drv, IONode * isaNode)
 {
     IONode*n = NULL;
@@ -60,17 +61,14 @@ static void _checkISA(PCIDriver* drv, IONode * isaNode)
     {
         if(IONodeEISAIDIs(n, "PNP0501") == 0)
         {
-            IODevice* com = malloc(sizeof(IODevice));
-            if(!com)
-            {
-                KLOG_ERROR("PCI._checkISA: unable to alloc space for device '%s'\n", n->name);
-            }
-            IODeviceInit(com, n->name, IODevice_CharDev);
-            DeviceTreeAddDevice(com);
-
-            n->driver = (IODriver*) &_pciDriver;
+            AddComDev(drv, n);
         }
     }
+
+    IONode* ega = malloc(sizeof(IONode));
+    IONodeInit(ega, "COM6");
+    IONodeAddChild(isaNode, ega);
+    AddComDev(drv, ega);
 }
 
 static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)

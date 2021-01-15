@@ -77,8 +77,9 @@ typedef struct _File
     size_t readPos;
     ssize_t size; // -1 means inf. stream
     FileOps* ops;
-
+//    uint32_t inodeNum;
     void* impl;
+    void* inode;
 }File;
 
 int VFSInit(void);

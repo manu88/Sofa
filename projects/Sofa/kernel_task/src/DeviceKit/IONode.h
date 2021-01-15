@@ -42,6 +42,7 @@ typedef struct
 
 
 typedef struct _IODriver IODriver;
+typedef struct _DevFile DevFile;
 
 typedef struct _IONode
 {
@@ -52,6 +53,8 @@ typedef struct _IONode
     IOVariant hid;
 
     IODriver* driver;
+
+    DevFile* devFile; // if any
 } IONode;
 
 

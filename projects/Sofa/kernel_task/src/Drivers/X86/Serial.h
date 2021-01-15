@@ -13,19 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "IODevice.h"
-#include "Log.h"
-#include "KThread.h"
-#include "Environ.h"
-#include "utils.h"
+#pragma once
+#include "VFS.h"
+#include "IONode.h"
 
 
-ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize)
-{
-    return dev->ops->read(dev, sector, buf, bufSize);
-}
 
-ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize)
-{
-    return dev->ops->write(dev, sector, buf, bufSize);
-}
+
+void AddComDev(IODriver *drv, IONode * n);

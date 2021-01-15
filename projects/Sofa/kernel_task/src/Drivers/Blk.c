@@ -607,7 +607,8 @@ int BlkInit(uint32_t iobase)
 
     add_status(&dev, VIRTIO_CONFIG_S_DRIVER_OK);
 
-    KLOG_INFO("Dev status %u\n", get_status(&dev));
+    uint8_t defStatus = get_status(&dev);
+    KLOG_INFO("Dev status %u\n", defStatus);
 
     DeviceTreeAddDevice(&_blk);
 

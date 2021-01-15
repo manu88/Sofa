@@ -20,11 +20,40 @@ typedef enum
     DKRequest_Register,
     DKRequest_List,
     DKRequest_Tree,
+    DKRequest_Enum,
+
+    DKRequest_DeviceDetails,
 }DKRequest;
+
+
+typedef enum
+{
+    DKDeviceDetail_GetName,
+    DKDeviceDetail_GetDevFile,
+} DKDeviceDetails;
 
 #define DeviceKitServiceName (const char*)"deviceKit"
 
 int DKClientInit(void);
 
-int DKClientEnumDevices(void);
+int DKClientTempListDevices(void);
 int DKClientEnumTree(void);
+
+typedef seL4_Word DKDeviceHandle;
+
+
+typedef struct
+{
+    size_t count;
+    DKDeviceHandle handles[];
+}DKDeviceList;
+
+
+// pass list = NULL to only count devices
+int DKClientEnumDevices(int type, DKDeviceList* list, size_t* numDevices);
+
+
+
+/* Per device operations*/
+char* DKDeviceGetName(DKDeviceHandle devHandle);
+char* DKDeviceGetDevFile(DKDeviceHandle devHandle);

@@ -22,7 +22,7 @@ list(SORT deps)
 add_executable(kernel_task ${deps} archive.o)
 
 target_include_directories(kernel_task PRIVATE src)
-target_include_directories(kernel_task PRIVATE src/DeviceKit src/Drivers src/FS src/NameServer)
+target_include_directories(kernel_task PRIVATE src/DeviceKit src/Drivers src/FS src/NameServer src/helpers)
 
 # X86 include specifics
 target_include_directories(kernel_task PRIVATE src/Drivers/X86)

@@ -55,7 +55,8 @@
 #include "Syscalls/SyscallTable.h"
 #include "Allocator.h"
 #include "Timer.h"
-#include "Drivers/Serial.h"
+
+
 #include "DeviceKit/DeviceTree.h"
 #include "NameServer.h"
 #include <sel4platsupport/arch/io.h>
@@ -63,8 +64,10 @@
 #include <Sofa.h>
 #include <signal.h>
 #include "VFS.h"
+#include "devFS.h"
 #include "cpio.h"
 
+#include "DeviceKit.h"
 #include "DKService.h"
 #include "VFSService.h"
 #include "NetService.h"
@@ -84,7 +87,6 @@ static void process_messages()
     KernelTaskContext* env = getKernelTaskContext();
     while (1)
     {   
-        handleSerialInput(env);
         seL4_Word badge = 0;
         seL4_MessageInfo_t info = seL4_Recv(env->root_task_endpoint.cptr, &badge);
         seL4_Word label = seL4_MessageInfo_get_label(info);
@@ -155,9 +157,11 @@ static void process_messages()
 
 void *main_continued(void *arg UNUSED)
 {
+    int error;
+
     KLOG_INFO("\n------Sofa------\n");
     KLOG_INFO("----------------\n");
-    int error;
+
     seL4_SetUserData(&_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
@@ -175,8 +179,9 @@ void *main_continued(void *arg UNUSED)
     error = NameServerInit();
     assert(error == 0);
 
-    error = IOInit();
+    error = DeviceKitInit();
     assert(error == 0);
+
 
 // base services init
 
@@ -201,10 +206,13 @@ void *main_continued(void *arg UNUSED)
     error = DKServiceInit();
     assert(error == 0);
 
-
+#if 0
     error = SerialInit();
     assert(error == 0);
 
+    error = SerialInit2();
+    assert(error == 0);
+#endif
 
     KLOG_INFO("Starting VFSService\n");
     error = VFSServiceInit();
@@ -222,13 +230,16 @@ void *main_continued(void *arg UNUSED)
 // 'user-space' bootstrap
     VFSMount(getFakeFS(), "/fake", &error);
     VFSMount(getCpioFS(), "/cpio", &error);
-    VFSMount(getCpioFS(), "/lib", &error);    
+    VFSMount(getDevFS(), "/dev", &error);    
+
+
 
 
     ProcessInit(&initProcess);
     initProcess.argc = 0;
     spawnApp(&initProcess, "/cpio/init", NULL);
 
+    seL4_DebugDumpScheduler();
     process_messages();    
 
     return NULL;
@@ -305,6 +316,10 @@ int main(void)
 #ifdef CONFIG_DEBUG_BUILD
     seL4_DebugNameThread(seL4_CapInitThreadTCB, "kernel_task");
 #endif
+
+    error = IOInit();
+    assert(error == 0);
+
 
     error = TimerInit();
     assert(error == 0);

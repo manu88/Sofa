@@ -117,8 +117,15 @@ static int doSpawn(char* cmd)
             Printf("%s (pid %i) returned %i\n", cmd, pid, appStatus);
         }
     }
+    else
+    {
+        Printf("[ ] %i\n", pid);
+    }
+    
     return 0;
 }
+
+
 
 static int doLs(const char* path)
 {
@@ -141,28 +148,48 @@ static int doDK(const char* cmds)
 {
     if(strcmp(cmds, "list") == 0)
     {
-        int ret = DKClientInit();
+        int ret = DKClientTempListDevices();
+    }
+    else if(startsWith("enum", cmds))
+    {
+        const char* strType = cmds + strlen("enum ");
+        if(strlen(strType)==0)
+        {
+            return -EINVAL;
+        }
+        int type = atoi(strType);
+
+        size_t numDev = 0;
+        int ret = DKClientEnumDevices(type, NULL, &numDev);
         if(ret == 0)
         {
-            DKClientEnumDevices();
+            Printf("Found %zi devices matching type %i\n", numDev, type);
+            if(numDev)
+            {
+                DKDeviceList *list = malloc(sizeof(DKDeviceList) + (sizeof(DKDeviceHandle)*numDev));
+                assert(list);
+                size_t numDev2 = 0;
+                ret = DKClientEnumDevices(type, list, &numDev2);
+                assert(numDev2 == numDev);
+                assert(numDev == list->count);
+
+                for(size_t i=0; i<list->count; i++)
+                {
+                    char* name = DKDeviceGetName(list->handles[i]);
+                    char* devFile = DKDeviceGetDevFile(list->handles[i]);
+                    Printf("DKDevice at %zi %s %s\n", i, name, devFile);
+                    free(name);
+                    free(devFile);
+                }
+
+                free(list);
+            }
         }
-        else
-        {
-            Printf("DKClientInit error %i\n", ret);
-        }
+        return ret;
     }
     else if(strcmp(cmds, "tree") == 0)
     {
-        int ret = DKClientInit();
-        if(ret == 0)
-        {
-            DKClientEnumTree();
-        }
-        else
-        {
-            Printf("DKClientInit error %i\n", ret);
-        }
-        
+        return DKClientEnumTree();
     }
     return 0;
 }
@@ -200,7 +227,6 @@ static int doCat(const char* path)
         }
         else
         {
-            Printf("Read error %li\n", ret);
             done = 1;
         }
 
@@ -383,6 +409,25 @@ int processCommand(const char* cmd)
         const char *path = cmd + strlen("ls ");
         return doLs(path);
     }
+    else if(startsWith("write ", cmd))
+    {
+        const char *args = cmd + strlen("write");
+
+        char path[128] = "";
+        char *data = NULL;
+        int n = 0;
+        sscanf(args, "%s %n", path, & n);
+
+        data = args + n;
+
+
+        FILE* f = fopen(path,"w");
+        if(f == NULL)
+            return errno;
+        fprintf(f, "%s", data);
+        fclose(f);
+        return 0;
+    }
     else if(startsWith("spawn", cmd))
     {
         char *strApp = (char*)(cmd + strlen("spawn "));
@@ -458,8 +503,20 @@ int main(int argc, char *argv[])
     argc -=2;
     argv = &argv[2];
     VFSClientInit();
-
+    DKClientInit();
     Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
+
+
+    if(argc > 1)
+    {
+        close(2);
+        close(1);
+        close(0);
+
+        open("/dev/tty1", O_RDONLY);  // 0
+        open("/dev/tty1", O_WRONLY);  // 1
+        open("/dev/tty1", O_WRONLY);  // 2        
+    }
 
     ProcClientInit();
 

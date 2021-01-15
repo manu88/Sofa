@@ -63,14 +63,14 @@ static int parseCpio()
     int err = cpio_info(_cpio_archive, archLen, &info);
     if(err !=0)
     {
-        return ENOMEM;
+        return -ENOMEM;
     }
 
     _files = malloc(sizeof(char*)*info.file_count);
     if(!_files)
     {
         printf("malloc error\n");
-        return ENOMEM;
+        return -ENOMEM;
     }
     for(int i=0;i<info.file_count;i++)
     {
@@ -171,7 +171,7 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 
     if(mode != O_RDONLY)
     {
-        return EROFS;
+        return -EROFS;
     }
 
     if(strcmp(path, "/") == 0)
@@ -189,7 +189,7 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
             file->impl = cpio_get_file(_cpio_archive, _cpio_archive_end - _cpio_archive, p, &fSize);
             if(file->impl == NULL)
             {
-                return EFAULT;
+                return -EFAULT;
             }
             file->size = fSize;
 
@@ -197,12 +197,11 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
         }
     }
 
-    return ENOENT;
+    return -ENOENT;
 }
 
 static int cpioFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
-    
     void* fData = file->impl;
 
     size_t effectiveSize = file->size - file->readPos;

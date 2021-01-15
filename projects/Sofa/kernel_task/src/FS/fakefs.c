@@ -20,7 +20,6 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <assert.h>
-#include "Serial.h"
 #include "../utils.h"
 
 static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
@@ -44,11 +43,6 @@ static FileOps _fileOps =
     .asyncRead = 0
 };
 
-static FileOps _consoleOps = 
-{
-    .asyncRead = 1,
-    .Read = consRead,
-};
 
 static VFSFileSystem _fs = {.ops = &_ops};
 
@@ -82,18 +76,8 @@ static const FakeFile const files[] =
         .mode = O_RDONLY,
         .ops = &_fileOps
     },
-    {
-        .name = "cons",
-        .mode = O_WRONLY,
-        .ops = &_fileOps
-    },
-    {
-        .name = "consin",
-        .mode = O_RDONLY,
-        .ops = &_consoleOps
-    },
 };
-#define NumFiles 5
+#define NumFiles 3
 
 VFSFileSystem* getFakeFS()
 {
@@ -108,7 +92,7 @@ static int fakeFSStat(VFSFileSystem *fs, const char **path, int numPathSegments,
         return 0;   
 
     }
-    return ENOENT;
+    return -ENOENT;
 }
 
 static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
@@ -119,7 +103,6 @@ static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
    
     struct dirent *dirp = buf;
 
-    size_t nextOff = 0;
     size_t acc = 0;
 
     for(int i=0;i<numOfDirents;i++)
@@ -180,55 +163,10 @@ static int fakeFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
                 file->mode = files[i].mode;
                 return 0;
             }
-            return EACCES;
+            return -EACCES;
         }
     }
-    return ENOENT;
-}
-
-
-static void onBytesAvailable(size_t size, char until, void* ptr, void* buf)
-{
-    ThreadBase* caller = (ThreadBase*) ptr;
-    assert(caller);
-
-    size_t bytes = SerialCopyAvailableChar(buf, size);
-    ((char*)buf)[bytes] = 0;
-
-    seL4_MessageInfo_t msg = seL4_MessageInfo_new(0, 0, 0, 3);
-    seL4_SetMR(1, 0);
-    seL4_SetMR(2, bytes);            
-    
-    seL4_Send(caller->replyCap, msg);
-    cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
-    caller->replyCap = 0;
-    caller->state = ThreadState_Running;
-
-}
-
-
-static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
-{
-    KernelTaskContext* env = getKernelTaskContext();
-
-    assert(caller->replyCap == 0);
-
-    seL4_Word slot = get_free_slot(&env->vka);
-    int error = cnode_savecaller(&env->vka, slot);
-    if (error)
-    {
-        KLOG_TRACE("Unable to save caller err=%i\n", error);
-        cnode_delete(&env->vka, slot);
-        return -ENOMEM;
-    }
-
-    caller->replyCap = slot;
-    caller->currentSyscallID = 0;
-    SerialRegisterWaiter(onBytesAvailable, numBytes, '\n', caller, buf);
-    //SerialRegisterController(onControlChar, caller);
-
-
-    return -1;
+    return -ENOENT;
 }
 
 static int fakeFSWrite(File *file, const void *buf, size_t numBytes)
@@ -249,6 +187,11 @@ static int fakeFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes
     if(!f)
     {
         return -1;
+    }
+
+    if(file->readPos == file->size)
+    {
+        return -1; // EOF
     }
 
     assert(file->ops->asyncRead == 0);

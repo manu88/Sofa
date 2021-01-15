@@ -20,11 +20,13 @@
 #include <proc.h>
 #include <VFSService.h> // for PathIsAbsolute and ConcPath
 
+static BaseService _service;
+
 int doKill(pid_t pidToKill, ThreadBase* sender, int signal);
 long doSpawn(ThreadBase* caller, const char* dataBuf);
 long doWait(Process* process, pid_t pidToWait, int options, int *retCode);
 
-static BaseService _service;
+
 
 static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
 static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);

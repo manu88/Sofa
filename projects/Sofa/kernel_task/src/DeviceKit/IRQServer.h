@@ -13,19 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 #include "IODevice.h"
-#include "Log.h"
-#include "KThread.h"
-#include "Environ.h"
-#include "utils.h"
 
 
-ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize)
-{
-    return dev->ops->read(dev, sector, buf, bufSize);
-}
-
-ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize)
-{
-    return dev->ops->write(dev, sector, buf, bufSize);
-}
+int IRQServerInit(void);
+int IRQServerRegisterIRQ(IODevice* dev, int irqN);
