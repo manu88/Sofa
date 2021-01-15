@@ -123,6 +123,11 @@ static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
                 return retRead? 0: -EIO;
             }
             dir = (ext2_dir *)((uint32_t)dir + dir->size);
+            ptrdiff_t dif = (char*) dir - (char*) root_buf;
+            if( dif >= getExtPriv()->blocksize)
+            {
+                return -EIO;
+            }
         }
     }
 
@@ -132,6 +137,7 @@ static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
 
 static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
+
     if(file->size)
     {
         return 0;
@@ -151,7 +157,8 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
     size_t nextOff = 0;
     size_t acc = 0;
 
-
+    //uint8_t* root_buf = (uint8_t *)malloc(getExtPriv()->blocksize);
+    //assert(root_buf);
     char tmpName[256] = "";
     int ii=0;
     for(int i = 0;i < 12; i++)
@@ -161,10 +168,10 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
         {
             break;
         }
-        uint8_t* root_buf = Ext2ReadBlockCached(b, dev);
+        uint8_t*root_buf=  Ext2ReadBlockCached(b, dev);
         assert(root_buf);
         ext2_dir* dir = (ext2_dir*) root_buf;
-        
+
         while(dir->inode != 0) 
         {
             if(dir->namelength < 255)
@@ -188,11 +195,20 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
 
                         file->size +=1;
                         ii+=1;
+                        if(ii >numDirentPerBuff)
+                        {
+                            return acc;
+                        }
                     }
                 }
             }
 
             dir = (ext2_dir *)((uint32_t)dir + dir->size);
+            ptrdiff_t dif = (char*) dir - (char*) root_buf;
+            if( dif >= getExtPriv()->blocksize)
+            {
+                return acc;
+            }
         }
     }
 
@@ -236,7 +252,11 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
             break;
         }
 		uint8_t* root_buf = Ext2ReadBlockCached(b, dev);
-        assert(root_buf);
+        if(!root_buf)
+        {
+            return -EIO;
+        }
+
         ext2_dir* dir = (ext2_dir*) root_buf;
         
         while(dir->inode != 0) 
@@ -257,6 +277,11 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
                 return ret? 0:-EIO;
             }
             dir = (ext2_dir *)((uint32_t)dir + dir->size);
+            ptrdiff_t dif = (char*) dir - (char*) root_buf;
+            if( dif >= getExtPriv()->blocksize)
+            {
+                return -EIO;
+            }
         }
     }
 
@@ -324,7 +349,7 @@ static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
         {
             i -= 12;
 
-            uint32_t *block = Ext2ReadBlockCached(inode->singly_block, dev);
+            uint32_t *block = (uint32_t *) Ext2ReadBlockCached(inode->singly_block, dev);
             uint32_t maxblocks = ((getExtPriv()->blocksize) / (sizeof(uint32_t)));
 
             if(block[i] == 0)

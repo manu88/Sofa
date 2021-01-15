@@ -155,7 +155,6 @@ static long onProcSpawn(BaseService* service, ThreadBase* sender, seL4_MessageIn
     ServiceClient* client = BaseServiceGetClient(service, sender);
     assert(client);
 
-    KLOG_DEBUG("onProcSpawn for '%s'\n", client->buff);
     long ret = 0;
     if(PathIsAbsolute(client->buff))
     {

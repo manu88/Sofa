@@ -500,7 +500,6 @@ static int create_fault_endpoint(vka_t *vka, sel4utils_process_t *process)
 
 static char* GetFileVFS( const char* path, size_t *size)
 {
-    KLOG_DEBUG("GetFileVFS file '%s'\n",path);
     File file = {0};
     int ret = VFSOpen(path, 0, &file);
     if(ret != 0)
@@ -550,7 +549,6 @@ static char* GetFileVFS( const char* path, size_t *size)
 int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
                                        vspace_t *spawner_vspace, sel4utils_process_config_t config)
 {
-    KLOG_DEBUG("sel4utils_configure_process_custom from '%s'\n", config.image_name);
     int error;
     sel4utils_alloc_data_t *data = NULL;
     memset(process, 0, sizeof(sel4utils_process_t));
@@ -606,13 +604,12 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
     } else {
         memcpy(&process->vspace, config.vspace, sizeof(process->vspace));
     }
-    KLOG_DEBUG("Do elf load from '%s'\n", config.image_name);
+
     /* finally elf load */
     if (config.is_elf) {
         unsigned long size;
 
         process->prgData = GetFileVFS(config.image_name, &size);
-        KLOG_DEBUG("Program size is %zi\n", size);
         assert(process->prgData);
         
         elf_t elf;
