@@ -16,6 +16,7 @@
 #include "Process.h"
 #include "utils.h"
 #include "VFS.h"
+#include "Log.h"
 
 static char** tokenizeArgs(const char *args, int* numSegs)
 {
@@ -61,10 +62,11 @@ long doSpawn(ThreadBase* caller, const char* dataBuf)
         return -st;
     }
 
-    if(stat.type == FileType_Dir)
+    if(stat.type != FileType_Regular)
     {
         return -EISDIR;
     }
+
 
     Process* newProc = kmalloc(sizeof(Process));
     ProcessInit(newProc);

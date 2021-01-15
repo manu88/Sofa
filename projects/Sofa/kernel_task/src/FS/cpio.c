@@ -29,7 +29,7 @@ extern char _cpio_archive_end[];
 static char** _files = NULL;
 static size_t numFiles = 0;
 
-static int cpioFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
+static int cpioFSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat);
 static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
 
 
@@ -81,37 +81,25 @@ static int parseCpio()
     return 0;
 }
 
-static int cpioFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat)
+static int cpioFSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
 {
-    if(!_files)
-    {
-        int ret = parseCpio();
-        if(ret != 0)
-        {
-            return ret;
-        }
-    }
-    if(numPathSegments == 0)
+    if(strcmp(path, "/") == 0)
     {
         stat->type = FileType_Dir;
         return 0;
     }
-    if(numPathSegments == 1 && strcmp(path[0], "/") == 0)
-    {
-        return 0;
-    }
-    if(numPathSegments > 1)
-    {
-        return -ENOENT;
-    }
+
+    const char* p = path + 1;// skip 1st '/'
     for(int i=0;i<numFiles;i++)
     {
-        if(strcmp(path[0], _files[i]) == 0)
+        if(strcmp(p, _files[i]) == 0)
         {
+            stat->type = FileType_Regular;
             return 0;
         }
     }
-    return -ENOENT;
+
+    return -EINVAL;
 }
 
 static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
@@ -202,8 +190,9 @@ static int cpioFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 
 static int cpioFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
+    assert(file);
     void* fData = file->impl;
-
+    assert(fData);
     size_t effectiveSize = file->size - file->readPos;
     if(numBytes < effectiveSize)
     {
@@ -211,6 +200,6 @@ static int cpioFSRead(ThreadBase* caller, File *file, void *buf, size_t numBytes
     } 
 
     memcpy(buf, fData + file->readPos, effectiveSize);
-
+    file->readPos += effectiveSize;
     return effectiveSize;
 }

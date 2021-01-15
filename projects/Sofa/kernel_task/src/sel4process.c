@@ -502,14 +502,46 @@ static char* GetFileVFS( const char* path, size_t *size)
 {
     File file = {0};
     int ret = VFSOpen(path, 0, &file);
+    if(ret != 0)
+    {
+        KLOG_ERROR("GetFileVFS unable to open file '%s'\n", path);
+        return NULL;
+    }
     assert(file.ops);
-    char* prgData = malloc(file.size);
-    assert(prgData);
+
+    char* prgData = NULL;
+    
+    size_t sizeAccum = 0;
+    size_t posToCopy = 0;
+    int done = 0;
 
     KThread* caller = (KThread*) seL4_GetUserData();
     assert(caller);
-    ssize_t readFile = VFSRead(&caller->_base, &file, prgData, file.size, NULL);
-    *size = file.size;
+
+#define READ_SIZE 4096
+    char buf[READ_SIZE] = "";
+    while (!done)
+    {
+        ssize_t ret = VFSRead(&caller->_base, &file, buf, READ_SIZE, NULL);
+
+        if(ret > 0)
+        {
+            sizeAccum+= ret;
+            prgData = realloc(prgData, sizeAccum);
+            assert(prgData);
+            memcpy(prgData + posToCopy, buf, ret);
+            posToCopy += ret;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+
+    VFSClose(&file);
+
+    *size = sizeAccum;
     return prgData;
 
 }
@@ -578,10 +610,11 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
         unsigned long size;
 
         process->prgData = GetFileVFS(config.image_name, &size);
-
+        assert(process->prgData);
+        
         elf_t elf;
         elf_newFile(process->prgData, size, &elf);
-
+        
         if (config.do_elf_load) {
             process->entry_point = sel4utils_elf_load(&process->vspace, spawner_vspace, vka, vka, &elf);
         } else {

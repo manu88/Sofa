@@ -20,7 +20,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include "Log.h"
-#define MAX_PREFIX_LEN 16
+#define MAX_PREFIX_LEN 256
 
 static VFSMountPoint* _mountPoints = NULL;
 
@@ -108,6 +108,14 @@ VFSMountPoint* VFSMount(VFSFileSystem* fs, const char* mntPoint, int*err)
     assert(fs);
     assert(mntPoint);
 
+    if(fs->ops->Mount)
+    {
+        if(fs->ops->Mount(fs, NULL) != 0)
+        {
+            return NULL;
+        }
+    }
+
     VFSMountPoint *pt = malloc(sizeof(VFSMountPoint));
     if(pt == NULL)
     {
@@ -176,6 +184,7 @@ static char** _splitPath(const char* _path, int* numSegs)
     return segments;
 }
 
+
 int VFSStat(const char *path, VFS_File_Stat *stat)
 {
     if(strcmp(path, "/") == 0)
@@ -183,48 +192,27 @@ int VFSStat(const char *path, VFS_File_Stat *stat)
         stat->type = FileType_Dir;
         return 0;
     }
-
-    int numPathSegs = -1;
-    char** segments = _splitPath(path, &numPathSegs);
-    if(numPathSegs == 0)
-    {
-        return EINVAL;
-    }
     char prefix[MAX_PREFIX_LEN + 1];
     const char *suffix;
 
     if (!Unpack_Path(path, prefix, &suffix))
     {
-        for(int i=0;i<numPathSegs;i++)
-        {
-            free(segments[i]);
-        }
-        free(segments);
-	    return ENOENT;
+	    return -ENOENT;
     }
 
-    VFSMountPoint* mnt =  _GetMountPoint(segments[0]);
-
+    VFSMountPoint* mnt = _GetMountPoint(prefix);
     if(mnt == NULL)
     {
-        printf("[VFS] fs not found for '%s'\n", prefix);
-        for(int i=0;i<numPathSegs;i++)
-        {
-            free(segments[i]);
-        }
-        free(segments);
-        return ENOENT;
+        return -ENOENT;
     }
     assert(mnt->fs);
-    int ret = mnt->fs->ops->Stat(mnt->fs, segments + 1, numPathSegs-1, stat);
-    
-    for(int i=0;i<numPathSegs;i++)
-    {
-        free(segments[i]);
-    }
-    free(segments);
-    return ret;
 
+    if(mnt->fs->ops->Stat)
+    {
+        return mnt->fs->ops->Stat(mnt->fs, suffix, stat);
+    }
+    KLOG_DEBUG("VFS: unimplemented Stat for %s\n", mnt->mountPath);
+    return -ENODEV;
 }
 
 static int VFSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
@@ -296,12 +284,16 @@ int VFSOpen(const char* path, int mode, File* file)
         return -ENOENT;
     }
     assert(mnt->fs);
-    return mnt->fs->ops->Open(mnt->fs, suffix, mode, file);
+    if(mnt->fs->ops && mnt->fs->ops->Open)
+    {
+        return mnt->fs->ops->Open(mnt->fs, suffix, mode, file);
+    }
+    return -EACCES;
 }
 
 int VFSClose(File* file)
 {
-    if(file->ops->Close == NULL)
+    if(file->ops == NULL || file->ops->Close == NULL)
     {
         return 0;
     }
@@ -326,6 +318,10 @@ int VFSSeek(File* file, size_t pos)
 
 ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 {
+    if(!file->ops ||!file->ops->Write)
+    {
+        return -EACCES;
+    }
     if(file->mode == O_WRONLY || file->mode == O_RDWR)
     {
         return file->ops->Write(file, buf, sizeToWrite);
@@ -336,6 +332,10 @@ ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite)
 
 ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, int *async_later)
 {
+    if(!file->ops ||!file->ops->Read)
+    {
+        return -EACCES;
+    }
     assert(file->readPos <= file->size);
     if(async_later)
     {

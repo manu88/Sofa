@@ -65,6 +65,7 @@
 #include <signal.h>
 #include "VFS.h"
 #include "devFS.h"
+#include "fakefs.h"
 #include "cpio.h"
 
 #include "DeviceKit.h"

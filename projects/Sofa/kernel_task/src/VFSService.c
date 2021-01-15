@@ -15,11 +15,14 @@
  */
 #include "VFSService.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include <sel4/sel4.h>
 #include <vka/capops.h>
-#include "ext2.h"
+//#include "ext2.h"
+#include "Ext2.h"
 #include "KThread.h"
 #include "DeviceTree.h"
 #include "NameServer.h"
@@ -165,6 +168,78 @@ static int VFSServiceChDIR(Client* clt)
 
 }
 
+static int modifyBit(int n, int p, int b) 
+{ 
+    int mask = 1 << p; 
+    return (n & ~mask) | ((b << p) & mask); 
+} 
+
+static int _doVFSStatToStructStat( const VFS_File_Stat* statIn, struct stat* statOut)
+{
+    int mode = 0;
+    switch (statIn->type)
+    {
+    case FileType_Regular:
+        mode = S_IFREG;
+        break;
+    case FileType_Dir:
+        mode = S_IFDIR;
+        break;
+    case FileType_Block:
+        mode = S_IFBLK;
+        break;
+    case FileType_Char:
+        mode = S_IFCHR;
+        break;
+    default:
+        KLOG_ERROR("_doVFSStatToStructStat: unhandled file type %i\n", statIn->type);
+        assert(0);
+        break;
+    }
+
+    statOut->st_mode = mode;// | S_IFMT;
+    return 0;
+}
+
+static int VFSServiceStat(Client* client, const char* path)
+{
+    char *realP = NULL;
+    int freeRealP = 0;
+    int absolute = PathIsAbsolute(path);
+    if(absolute)
+    {
+        realP = path;
+    }
+    else if (strlen(path) == 0)
+    {
+        realP = client->workingDir;
+    }
+    else
+    {
+        realP = ConcPath(client->workingDir, path);
+        if(!realP)
+        {
+            return -ENOMEM;
+        }
+        freeRealP = 1;
+    }
+
+    VFS_File_Stat st;
+    int ret = VFSStat(realP, &st);
+
+    if(freeRealP)
+    {
+        free(realP);
+    }
+    if(ret != 0)
+    {
+        return ret;
+    }
+    
+    ret = _doVFSStatToStructStat(&st, client->_clt.buff);
+
+    return ret;
+}
 static int VFSServiceOpen(Client* client, const char* path, int mode)
 {
     char *realP = NULL;
@@ -269,9 +344,9 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
 {
     assert(fsType);
 
-    if(ext2_probe(dev))
+    if(Ext2Probe(dev))
     {
-        if(ext2_mount(dev, NULL))
+        if(Ext2Mount(dev))
         {
             KLOG_DEBUG("[VFSMount] ext2\n");
             getExt2FS()->data = dev;
@@ -475,6 +550,14 @@ static int mainVFS(KThread* thread, void *arg)
                 seL4_Reply(msg);
 
             }
+            else if(seL4_GetMR(0) == VFSRequest_Stat)
+            {
+                const char* path = clt->_clt.buff;
+   
+                int err = VFSServiceStat(clt, path);    
+                seL4_SetMR(1, err);
+                seL4_Reply(msg);         
+            }
             else if(seL4_GetMR(0) == VFSRequest_Close)
             {
                 int handle = seL4_GetMR(1);
@@ -502,11 +585,11 @@ static int mainVFS(KThread* thread, void *arg)
 
                 int asyncLater = -1;
                 ssize_t ret = VFSServiceRead(clt, handle, size, &asyncLater);
-                if(asyncLater)
+                if(asyncLater == 1)
                 {
                     continue;
                 }
-                int err = ret<0? -ret:0;
+                int err = ret<0? ret:0;
                 size = ret >=0? ret:0; 
                 seL4_SetMR(1, err);
                 seL4_SetMR(2, size);            

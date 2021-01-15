@@ -151,6 +151,7 @@ static void onProcWait(BaseService* service, ThreadBase* sender, seL4_MessageInf
 
 static long onProcSpawn(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
 {
+
     ServiceClient* client = BaseServiceGetClient(service, sender);
     assert(client);
 

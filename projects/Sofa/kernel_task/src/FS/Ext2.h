@@ -13,17 +13,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-/** 
- * @author Levente Kurusa <levex@linux.com> 
- * From https://github.com/levex/osdev/blob/master/include/ext2.h
- * **/
 #pragma once
-
+#include <utils/uthash.h>
 #include <stdint.h>
 #include "IODevice.h"
+
 #define EXT2_SIGNATURE 0xEF53
 
-typedef struct {
+typedef struct 
+{
 	uint32_t inodes;
 	uint32_t blocks;
 	uint32_t reserved_for_root;
@@ -52,15 +50,15 @@ typedef struct {
 	uint8_t unused[940];
 } __attribute__((packed)) superblock_t;
 
-typedef struct {
-	uint32_t block_of_block_usage_bitmap;
-	uint32_t block_of_inode_usage_bitmap;
-	uint32_t block_of_inode_table;
-	uint16_t num_of_unalloc_block;
-	uint16_t num_of_unalloc_inode;
-	uint16_t num_of_dirs;
-	uint8_t unused[14];
-} __attribute__((packed)) block_group_desc_t;
+typedef struct __ext2_priv_data 
+{
+	superblock_t sb;
+	uint32_t first_bgd;
+	uint32_t number_of_bgs;
+	uint32_t blocksize;
+	uint32_t sectors_per_block;
+	uint32_t inodes_per_block;
+} __attribute__((packed)) ext2_priv_data;
 
 
 #define INODE_TYPE_FIFO 0x1000
@@ -70,7 +68,9 @@ typedef struct {
 #define INODE_TYPE_FILE 0x8000
 #define INODE_TYPE_SYMLINK 0xA000
 #define INODE_TYPE_SOCKET 0xC000
-typedef struct {
+
+typedef struct 
+{
 	uint16_t type;
 	uint16_t uid;
 	uint32_t size;
@@ -84,18 +84,6 @@ typedef struct {
 	uint32_t flags;
 	uint32_t ossv1;
 	uint32_t dbp[12];
-	/*uint32_t dbp0;
-	uint32_t dbp1;
-	uint32_t dbp2;
-	uint32_t dbp3;
-	uint32_t dbp4;
-	uint32_t dbp5;
-	uint32_t dbp6;
-	uint32_t dbp7;
-	uint32_t dbp8;
-	uint32_t dbp9;
-	uint32_t dbp10;
-	uint32_t dbp11;*/
 	uint32_t singly_block;
 	uint32_t doubly_block;
 	uint32_t triply_block;
@@ -106,7 +94,8 @@ typedef struct {
 	uint8_t ossv2[12];
 } __attribute__((packed)) inode_t;
 
-typedef struct __ext2_dir_entry {
+typedef struct __ext2_dir_entry 
+{
 	uint32_t inode;
 	uint16_t size;
 	uint8_t namelength;
@@ -114,32 +103,23 @@ typedef struct __ext2_dir_entry {
 	/* name here */
 } __attribute__((packed)) ext2_dir;
 
-typedef struct __ext2_priv_data {
-	superblock_t sb;
-	uint32_t first_bgd;
-	uint32_t number_of_bgs;
-	uint32_t blocksize;
-	uint32_t sectors_per_block;
-	uint32_t inodes_per_block;
-} __attribute__((packed)) ext2_priv_data;
+typedef struct 
+{
+	uint32_t block_of_block_usage_bitmap;
+	uint32_t block_of_inode_usage_bitmap;
+	uint32_t block_of_inode_table;
+	uint16_t num_of_unalloc_block;
+	uint16_t num_of_unalloc_inode;
+	uint16_t num_of_dirs;
+	uint8_t unused[14];
+} __attribute__((packed)) block_group_desc_t;
+
 
 ext2_priv_data* getExtPriv(void);
 
-uint8_t ext2_probe(IODevice* dev);
-uint8_t ext2_mount(IODevice *dev, void *priv);
-uint8_t ext2_find_file_inode(char *ff, inode_t *inode_buf, IODevice *dev, ext2_priv_data *priv);
+uint8_t Ext2Mount(IODevice *dev);
+uint8_t Ext2Probe(IODevice *dev);
 
-uint32_t ext2_read_directory(char *filename, ext2_dir *dir, IODevice *dev, ext2_priv_data *priv);
-
-
-uint8_t ext2_exist(char *file, IODevice *dev, ext2_priv_data *priv);
-uint8_t ext2_read_root_directory(char *filename, IODevice *dev, ext2_priv_data *priv);
-void ext2_list_directory(char *dd, char *buffer, IODevice *dev, ext2_priv_data *priv);
-
-uint32_t ext2_get_inode_block(uint32_t inode, uint32_t *b, uint32_t *ioff, IODevice *dev, ext2_priv_data *priv);
-uint8_t ext2_read_block(uint8_t *buf, uint32_t block, IODevice *dev, ext2_priv_data *priv);
-
-
-uint8_t ext2_read_inode(inode_t *inode_buf, uint32_t inode, IODevice *dev, ext2_priv_data *priv);
-
-uint8_t ext2_read_file(char *fn, char *buffer, IODevice *dev, ext2_priv_data *priv);
+int Ext2ReadBlock(uint8_t *buf, uint32_t blockID, IODevice *dev);
+uint8_t* Ext2ReadBlockCached(uint32_t blockID, IODevice* dev);
+uint8_t Ext2ReadInode(inode_t *inode_buf, uint32_t inode, IODevice *dev);

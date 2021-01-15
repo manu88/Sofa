@@ -22,17 +22,59 @@
 #include <assert.h>
 #include "Log.h"
 #include "../utils.h"
+#include "IODevice.h"
 
-
-static int devFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat);
+static int devFSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat);
 static int devFSOpen(VFSFileSystem *fs, const char *path, int mode, File *file);
+static int devFSMount(VFSFileSystem *fs, const char *dev_name);
 
 static VFSFileSystemOps _ops =
 {
+    .Mount = devFSMount,
     .Stat = devFSStat,
     .Open = devFSOpen,
 };
 
+static int ZeroRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
+{
+    memset(buf, 0, numBytes);
+    return numBytes;
+}
+
+static int NullRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
+{
+    return 0;
+}
+static int BlackHoleWrite(File *file, const void *buf, size_t numBytes)
+{
+    return numBytes;
+}
+
+static IODevice zeroDev = IODeviceNew("zero", IODevice_CharDev, NULL);
+
+static FileOps _zeroOps = {
+    .Read =  ZeroRead,
+    .asyncRead = 0,
+    .Write =  BlackHoleWrite
+};
+
+static FileOps _nullOps = {
+    .Read =  NullRead,
+    .asyncRead = 0,
+    .Write =  BlackHoleWrite
+};
+
+static DevFile zeroFile = {
+    .name = "zero",
+    .device = &zeroDev,
+    .ops = &_zeroOps
+};
+
+static DevFile nullFile = {
+    .name = "null",
+    .device = &zeroDev,
+    .ops = &_nullOps
+};
 
 static VFSFileSystem _fs = {.ops = &_ops};
 
@@ -41,6 +83,13 @@ static DevFile* _devFiles = NULL;
 VFSFileSystem* getDevFS()
 {
     return &_fs;
+}
+
+static int devFSMount(VFSFileSystem *fs, const char *dev_name)
+{
+    HASH_ADD_STR(_devFiles, name, &zeroFile);
+    HASH_ADD_STR(_devFiles, name, &nullFile);
+    return 0;
 }
 
 DevFile* DevFSGetFileForDevice( const IODevice* dev)
@@ -64,15 +113,33 @@ int DevFSAddDev(DevFile* file)
     return 0;
 }
 
-static int devFSStat(VFSFileSystem *fs, const char **path, int numPathSegments, VFS_File_Stat *stat)
+static int devFSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
 {
-    if(numPathSegments == 0) // root
+    if(strcmp(path, "/") == 0)
     {
         stat->type = FileType_Dir;
-        return 0;   
-
+        return 0;
     }
-    return -ENOENT;
+
+    const char* p = path+1;
+    DevFile* f = NULL;
+    HASH_FIND_STR(_devFiles, p, f);
+
+    if(!f)
+    {
+        return -ENOENT;
+    }
+
+    if(f->device->type == IODevice_BlockDev)
+    {
+        stat->type = FileType_Block;
+    }
+    else if(f->device->type == IODevice_CharDev)
+    {
+        stat->type = FileType_Char;
+    }
+    
+    return 0;
 }
 
 static int _ReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
