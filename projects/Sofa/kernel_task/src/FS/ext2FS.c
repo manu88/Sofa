@@ -94,6 +94,7 @@ inode_t * ReadInode(uint32_t inode, IODevice *dev)
     free(ino);
     return NULL;
 }
+
 static inode_t * getInodeNamed(IODevice* dev, inode_t* inode, const char* path)
 {
     for(int i = 0;i < 12; i++)
@@ -305,7 +306,6 @@ static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
     inode_t* inode =  _GetInodeForPath(fs, path);
     if(!inode)
     {
-        KLOG_DEBUG("ext2FSOpen: Inode for path '%s' NOT FOUND\n", path);
         return -ENOENT;
     }
 

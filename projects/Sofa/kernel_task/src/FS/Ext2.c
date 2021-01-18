@@ -68,7 +68,13 @@ static uint8_t doReadBlock(uint8_t *buf, uint32_t block, IODevice *dev, ext2_pri
 
 int Ext2ReadBlock(uint8_t *buf, uint32_t blockID, IODevice *dev)
 {
-    return doReadBlock(buf, blockID, dev, getExtPriv());
+	int r = doReadBlock(buf, blockID, dev, getExtPriv()); 
+    if(!r)
+	{
+		KLOG_DEBUG("Ext2ReadBlock read error, retry once\n");
+		return doReadBlock(buf, blockID, dev, getExtPriv());
+	}
+	return r;
 }
 
 
