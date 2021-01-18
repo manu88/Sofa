@@ -18,6 +18,7 @@
 #include "KThread.h"
 #include "Environ.h"
 #include "Log.h"
+#include "BaseService.h"
 #include "ProcessList.h"
 #include <lwip/udp.h>
 #include <lwip/init.h>
@@ -30,6 +31,10 @@
 #include <lwip/udp.h>
 #include "Net.h"
 #include "utils.h"
+
+
+static BaseService _service;
+static char _netName[] = "NET";
 
 typedef struct _MsgUDP
 {
@@ -70,29 +75,25 @@ typedef struct _Client
     int sockIndex;
 
     KMutex rxBuffMutex;
-    //size_t waitingSize;
 }Client;
 
+static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
+static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
+static void _OnVFSStart(BaseService* service);
 
-static ServiceClient* _clients = NULL;
-
-static KThread _netServiceThread;
-static Service _netService;
-static char _netName[] = "NET";
+static BaseServiceCallbacks _servOps = 
+{
+    .onServiceStart = NULL,
+    .onSystemMsg = _OnSystemMsg,
+    .onClientMsg = _OnClientMsg
+};
 
 int NetServiceInit()
 {
     lwip_init();
     udp_init();
 
-
-    int error = 0;
-    ServiceInit(&_netService, getKernelTaskProcess() );
-    _netService.name = _netName;
-
-    ServiceCreateKernelTask(&_netService);
-    NameServerRegister(&_netService);
-    return 0;
+    return BaseServiceCreate(&_service, _netName, &_servOps);
 }
 
 static size_t CopyMemUDPToUser(const MsgUDP* msg, Client* client, size_t size)
@@ -141,10 +142,9 @@ static ssize_t doRecvFrom(Client* client, SocketHandle* sock, size_t size ,size_
 }
 static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*)_clt;
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
+
 
     int handle = seL4_GetMR(1);
     SocketHandle* sock = NULL;
@@ -173,9 +173,6 @@ static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_SetMR(1, ret);
     seL4_SetMR(2, addrSize);
     seL4_Reply(msg);
-
-
-
 }
 
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
@@ -297,10 +294,8 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     (3, protoc);
     (4, port);
 */
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*) _clt;
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
     int handle = seL4_GetMR(1);
     size_t addrLen = seL4_GetMR(2);
     const struct sockaddr *addr = (const struct sockaddr *) clt->_clt.buff;
@@ -348,10 +343,8 @@ static ssize_t doClose(Client* client, int handle)
 
 static void _Close(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*) _clt;
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
 
     int handle = seL4_GetMR(1);
 
@@ -362,10 +355,8 @@ static void _Close(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*) _clt;
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
 
 
     SocketHandle* sock = malloc(sizeof(SocketHandle));
@@ -390,11 +381,8 @@ static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* client = (Client*) _clt;
+    Client* client = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(client);
 
     int handle = seL4_GetMR(1);
     SocketHandle* sock = NULL;
@@ -441,42 +429,38 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_SetMR(2, err);
     seL4_SetMR(3, sentSize);
     seL4_Reply(msg);
-
 }
 
 
 static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    KernelTaskContext* env = getKernelTaskContext();
-    char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
-    assert(buff);
-    void* buffShared = vspace_share_mem(&env->vspace,
-                                        &caller->process->native.vspace,
-                                        buff,
-                                        1,
-                                        PAGE_BITS_4K,
-                                        seL4_ReadWrite,
-                                        1
-                                        );
-    assert(buffShared);
     Client* client = malloc(sizeof(Client));
-    assert(client);
-    memset(client, 0, sizeof(Client));
-    client->_clt.caller = caller;
-    client->_clt.buff = buff;
-    client->_clt.service = &_netService;
-    KMutexNew(&client->rxBuffMutex);
+    if(!client)
+    {
+        seL4_SetMR(1, (seL4_Word) -1);
+        seL4_Reply(msg);
 
-    HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
-    seL4_SetMR(1, (seL4_Word) buffShared);
+        return;
+    }
+    memset(client, 0, sizeof(Client));
+    int err = BaseServiceCreateClientContext(&_service, caller,(ServiceClient*) client, 1);
+    if(err != 0)
+    {
+        free(client);
+        seL4_SetMR(1, (seL4_Word) err);
+        seL4_Reply(msg);
+        return;
+    }
+    KMutexNew(&client->rxBuffMutex);
+    
+    seL4_SetMR(1, client? (seL4_Word)client->_clt.buffClientAddr: (seL4_Word) -1);        
     seL4_Reply(msg);
 
-    ThreadBaseAddServiceClient(caller, (ServiceClient*) client);
+    
 }
 
 static void ClientCleanup(ServiceClient *clt)
 {
-    HASH_DEL(_clients, clt);
     Client* c = (Client*)clt;
 
     SocketHandle* elt = NULL;
@@ -492,69 +476,52 @@ static void ClientCleanup(ServiceClient *clt)
     free(c);
 }
 
-static int mainNet(KThread* thread, void *arg)
+static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    KernelTaskContext* env = getKernelTaskContext();
-
-    while (1)
-    {
-        seL4_Word sender;
-        seL4_MessageInfo_t msg = seL4_Recv(_netService.baseEndpoint, &sender);
-        ThreadBase* caller =(ThreadBase*) sender;
-        assert(caller->process);
-
-        if (caller->process == getKernelTaskProcess())
+        NetRequest req = (NetRequest) seL4_GetMR(0);
+        switch (req)
         {
-            ServiceNotification notif = seL4_GetMR(0);
-            if(notif == ServiceNotification_ClientExit)
-            {
-                ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
-                ClientCleanup(clt);
-            }
-            else if(notif == ServiceNotification_WillStop)
-            {
-                KLOG_DEBUG("[NetService] will stop\n");
-            }
+        case NetRequest_Register:
+            _Register(caller, msg);
+            break;
+        case NetRequest_Socket:
+            _Socket(caller, msg);
+            break;
+        case NetRequest_Bind:
+            _Bind(caller, msg);
+            break;
+        case NetRequest_RecvFrom:
+            _RecvFrom(caller, msg);
+            break;
+        case NetRequest_SendTo:
+            _SendTo(caller, msg);
+            break;
+        case NetRequest_Close:
+            _Close(caller, msg);
+            break;
+        default:
+            KLOG_TRACE("[NetService] Received unknown code %i\n", req);
+            assert(0);
+            break;
         }
-        else
-        {        
-            NetRequest req = (NetRequest) seL4_GetMR(0);
-            switch (req)
-            {
-            case NetRequest_Register:
-                _Register(caller, msg);
-                break;
-            case NetRequest_Socket:
-                _Socket(caller, msg);
-                break;
-            case NetRequest_Bind:
-                _Bind(caller, msg);
-                break;
-            case NetRequest_RecvFrom:
-                _RecvFrom(caller, msg);
-                break;
-            case NetRequest_SendTo:
-                _SendTo(caller, msg);
-                break;
-            case NetRequest_Close:
-                _Close(caller, msg);
-                break;
-            default:
-                KLOG_TRACE("[NetService] Received unknown code %i from %li\n", req, sender);
-                assert(0);
-                break;
-            }
-        }
+}
+
+static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
+{
+    ServiceNotification notif = seL4_GetMR(0);
+    if(notif == ServiceNotification_ClientExit)
+    {
+        ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
+        ClientCleanup(clt);
+    }
+    else if(notif == ServiceNotification_WillStop)
+    {
+        KLOG_DEBUG("[NetService] will stop\n");
     }
 }
 
 
 int NetServiceStart()
 {
-    KThreadInit(&_netServiceThread);
-    _netServiceThread.mainFunction = mainNet;
-    _netServiceThread.name = "NetD";
-    int error = KThreadRun(&_netServiceThread, 254, NULL);
-
-    return error;
+    return BaseServiceStart(&_service);
 }
