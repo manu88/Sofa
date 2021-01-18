@@ -21,12 +21,21 @@
 #include "Environ.h"
 #include "Net.h"
 #include "Log.h"
-#include "KThread.h"
+#include "IRQServer.h"
 #include "DeviceTree.h"
 
-IODevice _netDevice = IODeviceNew("Virtio-net-pci", IODevice_Net, NULL);
 
-static KThread netThread;
+static void _handleIRQ(IODevice* dev, int irqN);
+
+IODeviceOperations _netDevOps = 
+{
+    .handleIRQ = _handleIRQ,
+    .read = NULL,
+    .write = NULL
+};
+
+IODevice _netDevice = IODeviceNew("Virtio-net-pci", IODevice_Net, &_netDevOps);
+
 static NetworkDriver _driver = {0};
 lwip_iface_t lwip_driver;
 
@@ -44,13 +53,10 @@ native_ethdriver_init(
 }
 
 
-
 static void handle_irq(void *state, int irq_num)
 {
     ethif_lwip_handle_irq(state, irq_num);
 }
-
-static int threadStart(KThread* thread, void *arg);
 
 void NetInit(uint32_t iobase0)
 {
@@ -72,28 +78,6 @@ void NetInit(uint32_t iobase0)
     _driver.handle_irq_fn = handle_irq;
     _driver.irq_num = 11;
 
-/**/
-    cspacepath_t irq_path = { 0 };
-    seL4_CPtr irq;
-
-    int error = vka_cspace_alloc(&env->vka, &irq);
-    assert(error == 0);
-    vka_cspace_make_path(&env->vka, irq, &irq_path);
-
-    error = simple_get_IRQ_handler(&env->simple, _driver.irq_num, irq_path);
-    assert(error == 0);
-
-    vka_object_t irq_aep_obj = { 0 };
-
-    error = vka_alloc_notification(&env->vka, &irq_aep_obj);
-    assert(error == 0);
-
-    seL4_CPtr irq_aep = irq_aep_obj.cptr;
-    error = seL4_IRQHandler_SetNotification(irq_path.capPtr, irq_aep);
-    assert(error == 0);
-
-// add interface
-
     ip_addr_t addr, gw, mask;
 
     //FIXME: THis needs to be dynamic
@@ -110,32 +94,12 @@ void NetInit(uint32_t iobase0)
     netif_set_up(lwip_driver.netif);
     netif_set_default(lwip_driver.netif);
 
-// New thread
-    KThreadInit(&netThread);
-    netThread.name = "virtio-pci";
-    netThread.mainFunction = threadStart;
-
-    seL4_CPtr *args = malloc(sizeof(seL4_CPtr)*2);
-    args[0] = irq_aep;
-    args[1] = irq;
-    KThreadRun(&netThread, 254, args);
-
     DeviceTreeAddDevice(&_netDevice);
+    IRQServerRegisterIRQ(&_netDevice, 11);
 
 }
 
-static int threadStart(KThread* thread, void *arg)
+static void _handleIRQ(IODevice* dev, int irqN)
 {
-    seL4_CPtr *args = arg;
-    seL4_CPtr irq_aep = args[0];
-    seL4_CPtr irq =  args[1];
-    free(args);
-    
-    while(1)
-    {
-	    seL4_Wait(irq_aep,NULL);
-        seL4_IRQHandler_Ack(irq);
-        _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
-    }
-    return 0;
+    _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
 }

@@ -35,7 +35,6 @@ struct _IODevice;
 
 typedef ssize_t (*ReadDevice)(struct _IODevice* dev, size_t sector, char* buf, size_t bufSize);
 typedef ssize_t (*WriteDevice)(struct _IODevice* dev, size_t sector, const char* buf, size_t bufSize);
-
 typedef void (*HandleIRQ)(struct _IODevice* dev, int irqN);
 
 typedef struct
