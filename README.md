@@ -34,7 +34,7 @@ Because we use `musl`, the current goal is to be as much as possible POSIX compl
 
 ## Services
 * Process: Enum, Spawn, Kill
-* VFS
+* VFS (read-only for now)
 * net (udp only)
 * DeviceKit
 * init: pretty much empty for now, serves as a use case to implement servers

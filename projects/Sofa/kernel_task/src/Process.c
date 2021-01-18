@@ -29,6 +29,7 @@
 #include <autoconf.h>
 
 #include <sel4debug/register_dump.h>
+#include <sel4utils/vspace_internal.h>
 #include <vka/capops.h>
 #include <Sofa.h>
 #include "Environ.h"
@@ -37,6 +38,8 @@
 #include "Panic.h"
 #include "Log.h"
 #include "NameServer.h"
+#include "Timer.h"
+
 
 extern Process initProcess;
 
@@ -63,7 +66,7 @@ static int ProcessCloneServices(Process* parent, Process* p)
     LL_FOREACH_SAFE(t->_base._clients, clt, tmp)
     {
         assert(clt->service);
-
+        assert(clt->service->name);
         if(ServiceHasFlag(clt->service, ServiceFlag_Clone))
         {
             seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
@@ -89,7 +92,7 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
 
     int consumed_untypeds = process_set_up(NULL, p, imgName,(seL4_Word) &p->main);
 
-    ProcessCreateSofaIPCBuffer(p, &p->main.ipcBuffer, &p->init->mainIPCBuffer);
+    ProcessCreateSofaIPCBuffer(p,(void**) &p->main.ipcBuffer, (void**) &p->init->mainIPCBuffer);
 
     if(parent != NULL)
     {
@@ -253,7 +256,10 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
 //    
     
     error = sel4utils_configure_process_custom(&process->native, &env->vka, &env->vspace, config);
-    assert(error == 0);
+    if(error != 0)
+    {
+        return error;
+    }
 
     /* set up caps about the process */
     process->init->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
@@ -351,8 +357,8 @@ void process_run(const char *name, Process* process)
 
     argv[0] = string_args[0];
     argv[1] = string_args[1];    
-    snprintf(argv[0], WORD_STRING_SIZE, "%"PRIuPTR"", process->main.process_endpoint);
-    snprintf(argv[1], WORD_STRING_SIZE, "%"PRIuPTR"", process->init_remote_vaddr);
+    snprintf(argv[0], WORD_STRING_SIZE, "%"PRIuPTR"", (long unsigned int) process->main.process_endpoint);
+    snprintf(argv[1], WORD_STRING_SIZE, "%"PRIuPTR"", (long unsigned int) process->init_remote_vaddr);
     for(int i=0;i<process->argc;i++)
     {
         argv[i+2] = (char*) process->argv[i];

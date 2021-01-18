@@ -412,11 +412,6 @@ int processCommand(const char* cmd)
         cmdHelp();
         return 0;
     }
-    else if(startsWith("vfs", cmd))
-    {
-        VFSClientDebug();
-        return 0;
-    }
     else if(startsWith("kill", cmd))
     {
         const char *args = cmd + strlen("kill ");
@@ -528,6 +523,11 @@ int processCommand(const char* cmd)
         }
         return ret;
     }
+        else if(startsWith("traces", cmd))
+    {
+        SFDebug(SofaDebugCode_EnableSyscallTraces);
+        return 0;
+    }
     else if(startsWith("dump", cmd))
     {
         SFDebug(SofaDebugCode_DumpSched);
@@ -547,8 +547,7 @@ int main(int argc, char *argv[])
     argv = &argv[2];
     VFSClientInit();
     DKClientInit();
-    Printf("[%i] Shell has %i args \n", SFGetPid(), argc);
-
+    Printf("[%i] Shell has %i args \n", getpid(), argc);
 
     if(argc > 1)
     {

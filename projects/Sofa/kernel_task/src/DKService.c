@@ -31,7 +31,7 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
 static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
 
 
-static BaseServiceCallbacks _dkOps = {.onSystemMsg=_OnSystemMsg, .onClientMsg=_OnClientMsg};
+static BaseServiceCallbacks _dkOps = {.onServiceStart=NULL, .onSystemMsg=_OnSystemMsg, .onClientMsg=_OnClientMsg};
 
 int DKServiceInit()
 {

@@ -23,7 +23,19 @@
 #include <dirent.h>
 #include <errno.h>
 
-static inode_t _rootInode;
+#define ROOT_INODE_ID 2
+
+
+typedef struct
+{
+    inode_t ino;
+    
+    uint32_t inoId;
+    UT_hash_handle hh;
+} Inode;
+
+static Inode* _inodes;
+
 static int _reReadRootInode = 1;
 
 static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat);
@@ -62,85 +74,154 @@ VFSFileSystem* getExt2FS()
 }
 
 
-static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
+inode_t * ReadInode(uint32_t inode, IODevice *dev)
 {
-    if(strcmp(path, "/") == 0)
+    Inode * ino = NULL;
+    HASH_FIND_INT(_inodes, &inode, ino);
+    if(ino)
     {
-        stat->type = FileType_Dir;
-        return 0;
-    }
-    IODevice* dev = fs->data;
-    assert(dev);
-
-    const char* fPath = path+1;
-
-    if(_reReadRootInode)
-    {
-        if(!Ext2ReadInode(&_rootInode, 2, dev))
-        {
-            return -EIO;
-        }
-        _reReadRootInode = 0;
+        return &ino->ino;
     }
 
+    ino = malloc(sizeof(Inode));
     
-    char tmpName[256] = "";
+    if(Ext2ReadInode(&ino->ino, inode, dev))
+    {
+        ino->inoId = inode;
+        HASH_ADD_INT(_inodes, inoId, ino);
+        return &ino->ino;
+    }
+    free(ino);
+    return NULL;
+}
+
+static inode_t * getInodeNamed(IODevice* dev, inode_t* inode, const char* path)
+{
     for(int i = 0;i < 12; i++)
 	{
-		uint32_t b = _rootInode.dbp[i];
+		uint32_t b = inode->dbp[i];
 		if(b == 0)
         {
             break;
         }
 
-        uint8_t* root_buf = Ext2ReadBlockCached(b, dev);
-        if(!root_buf)
+        uint8_t* blockData = Ext2ReadBlockCached(b, dev);
+        if(!blockData)
         {
-            return -EIO;
+            return NULL;
         }
 
-        ext2_dir* dir = (ext2_dir*) root_buf;
+        ext2_dir* dir = (ext2_dir*) blockData;
 
+        char tmpName[256] = "";
         while(dir->inode != 0) 
         {
             memcpy(tmpName, &dir->reserved+1, dir->namelength);
             tmpName[dir->namelength] = 0;
-            if(strcmp(tmpName, fPath) == 0)
+
+            if(strcmp(tmpName, path) == 0)
             {
-                inode_t ino;
+                inode_t *ino = ReadInode(dir->inode, dev);
 
-                int retRead = Ext2ReadInode(&ino, dir->inode, dev); 
- 
-                if(retRead)
-                {
-
-                    if((ino.type & 0xF000) == INODE_TYPE_DIRECTORY)
-                    {
-                        stat->type = FileType_Dir;
-                    }
-                    else if((ino.type & 0xF000) == INODE_TYPE_FILE)
-                    {
-                        stat->type = FileType_Regular;
-                    }
-                }                
-                return retRead? 0: -EIO;
+                return ino;
             }
             dir = (ext2_dir *)((uint32_t)dir + dir->size);
-            ptrdiff_t dif = (char*) dir - (char*) root_buf;
+            ptrdiff_t dif = (char*) dir - (char*) blockData;
             if( dif >= getExtPriv()->blocksize)
             {
-                return -EIO;
+                return NULL;
             }
         }
     }
 
-    return -ENOENT;
+    return NULL;
+}
 
+static inode_t _rootInode;
+static inode_t * _GetInodeForPath(VFSFileSystem* fs, const char* path)
+{
+    IODevice* dev = fs->data;
+    assert(dev);
+
+    if(_reReadRootInode)
+    {
+        if(!Ext2ReadInode(&_rootInode, ROOT_INODE_ID, dev))
+        {
+            return NULL;
+        }
+        _reReadRootInode = 0;
+    }
+
+    if(strcmp(path, "/") == 0)
+    {
+        return &_rootInode;
+    }
+
+    inode_t* currentInode = &_rootInode;
+
+    size_t numSegs = 0;
+    char** paths = VFSSplitPath(path, &numSegs);
+    if(paths == NULL)
+    {
+        return NULL;
+    }
+    for(size_t i = 0;i<numSegs;++i)
+    {
+        inode_t* nextInode = getInodeNamed(dev, currentInode, paths[i]);
+        if(nextInode)
+        {
+            // not last and not a dir!
+            if(i < numSegs-1 && (nextInode->type & 0xF000) != INODE_TYPE_DIRECTORY)
+            {
+                currentInode = NULL;
+                goto cleanup;
+            }
+            currentInode = nextInode;
+        }
+        else
+        {
+            currentInode = NULL;
+            goto cleanup;
+        }   
+    }
+
+cleanup:
+    for(size_t i = 0;i<numSegs;++i)
+    {
+        free(paths[i]);
+    }
+    free(paths);
+    return currentInode;
+}
+
+
+static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
+{
+    inode_t* inode =  _GetInodeForPath(fs, path);
+    if(inode)
+    {
+        if((inode->type & 0xF000) == INODE_TYPE_DIRECTORY)
+        {
+            stat->type = FileType_Dir;
+        }
+        else if((inode->type & 0xF000) == INODE_TYPE_FILE)
+        {
+            stat->type = FileType_Regular;
+        }
+        else 
+        {
+            KLOG_DEBUG("Other file type %X\n", (inode->type & 0xF000));
+            assert(0);
+        }
+
+        return 0;
+    }
+    return -ENOENT;
 }
 
 static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
-
+    inode_t* ino = file->inode;    
     if(file->size)
     {
         return 0;
@@ -150,7 +231,7 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
    
     struct dirent *dirp = buf;
 
-    inode_t* ino = file->inode;
+
     IODevice* dev = file->impl;
     if(ino == NULL)
     {
@@ -160,8 +241,6 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
     size_t nextOff = 0;
     size_t acc = 0;
 
-    //uint8_t* root_buf = (uint8_t *)malloc(getExtPriv()->blocksize);
-    //assert(root_buf);
     char tmpName[256] = "";
     int ii=0;
     for(int i = 0;i < 12; i++)
@@ -171,12 +250,12 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
         {
             break;
         }
-        uint8_t*root_buf=  Ext2ReadBlockCached(b, dev);
-        if(!root_buf)
+        uint8_t*dir_buf=  Ext2ReadBlockCached(b, dev);
+        if(!dir_buf)
         {
             return -EIO;
         }
-        ext2_dir* dir = (ext2_dir*) root_buf;
+        ext2_dir* dir = (ext2_dir*) dir_buf;
 
         while(dir->inode != 0) 
         {
@@ -184,7 +263,6 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
             {
                 memcpy(tmpName, &dir->reserved+1, dir->namelength);
                 tmpName[dir->namelength] = 0;
-
                 if(strlen(tmpName) && 
                    strcmp(tmpName, ".") != 0 &&
                    strcmp(tmpName, "..") != 0 )
@@ -210,7 +288,7 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
             }
 
             dir = (ext2_dir *)((uint32_t)dir + dir->size);
-            ptrdiff_t dif = (char*) dir - (char*) root_buf;
+            ptrdiff_t dif = (char*) dir - (char*) dir_buf;
             if( dif >= getExtPriv()->blocksize)
             {
                 return acc;
@@ -221,89 +299,41 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
     return acc;
 }
 
+
 static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
-    IODevice* dev = fs->data;
-    assert(dev);
-
-    if(_reReadRootInode)
+    IODevice* dev = fs->data;    
+    inode_t* inode =  _GetInodeForPath(fs, path);
+    if(!inode)
     {
-        if(!Ext2ReadInode(&_rootInode, 2, dev))
-        {
-            return -EIO;
-        }
-        _reReadRootInode = 0;
+        return -ENOENT;
     }
-    
-    if(strcmp(path, "/") == 0)
-    {
-        if((_rootInode.type & 0xF000) != INODE_TYPE_DIRECTORY)
-        {
-            return -ENOTDIR;
-        }
 
-        file->impl = dev;
-        file->inode = &_rootInode;
+    file->impl = dev;
+    file->inode = inode;
+
+    if((inode->type & 0xF000) == INODE_TYPE_DIRECTORY)
+    {
         file->ops = &_dirOP;
         return 0;
     }
-    const char *fPath = path+1;
-    
-    char tmpName[256] = "";
-    for(int i = 0;i < 12; i++)
-	{
-		uint32_t b = _rootInode.dbp[i];
-		if(b == 0)
-        {
-            break;
-        }
-		uint8_t* root_buf = Ext2ReadBlockCached(b, dev);
-        if(!root_buf)
-        {
-            return -EIO;
-        }
-
-        ext2_dir* dir = (ext2_dir*) root_buf;
-        
-        while(dir->inode != 0) 
-        {
-            memcpy(tmpName, &dir->reserved+1, dir->namelength);
-            tmpName[dir->namelength] = 0;
-            if(strcmp(tmpName, fPath) == 0)
-            {
-                file->inode = malloc(sizeof(inode_t));
-                file->impl = dev;
-                file->ops = &_fileOps;
-
-                int ret = Ext2ReadInode(file->inode, dir->inode, dev);
-                if(ret)
-                {
-                    file->size = ((inode_t*) file->inode)->size;
-                }
-                return ret? 0:-EIO;
-            }
-            dir = (ext2_dir *)((uint32_t)dir + dir->size);
-            ptrdiff_t dif = (char*) dir - (char*) root_buf;
-            if( dif >= getExtPriv()->blocksize)
-            {
-                return -EIO;
-            }
-        }
+    else if((inode->type & 0xF000) == INODE_TYPE_FILE)
+    {
+        file->ops = &_fileOps;       
+        file->size = inode->size;                                        
+        return 0;
     }
-
+    assert(0);
     return -ENOENT;
 }
 
 
 static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
 {
-
     IODevice* dev = file->impl;
     inode_t* inode = file->inode;
     assert(dev);
     assert(inode);
-
-
 
     if(file->readPos >= file->size)
     {

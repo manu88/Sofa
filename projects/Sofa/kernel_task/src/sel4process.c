@@ -534,6 +534,16 @@ static char* GetFileVFS( const char* path, size_t *size)
         }
         else
         {
+            if(ret < 0)
+            {
+                if(prgData)
+                {
+                    free(prgData);
+                }
+                VFSClose(&file);
+                *size = 0;
+                return NULL;
+            }
             break;
         }
     }
@@ -610,7 +620,10 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
         unsigned long size;
 
         process->prgData = GetFileVFS(config.image_name, &size);
-        assert(process->prgData);
+        if(process->prgData == NULL)
+        {
+            goto error;
+        }
         
         elf_t elf;
         elf_newFile(process->prgData, size, &elf);
@@ -720,6 +733,10 @@ error:
 
     if (process->elf_phdrs) {
         free(process->elf_phdrs);
+    }
+
+    if (process->prgData) {
+        free(process->prgData);
     }
 
     if (data != NULL) {

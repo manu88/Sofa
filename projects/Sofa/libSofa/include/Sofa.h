@@ -56,6 +56,7 @@ typedef enum
 {
     SofaDebugCode_ListServices,
     SofaDebugCode_DumpSched,
+    SofaDebugCode_EnableSyscallTraces,
 }SofaDebugCode;
 
 typedef enum 
@@ -73,7 +74,6 @@ typedef enum
     VFSRequest_Read,
     VFSRequest_Write,
     VFSRequest_Seek,
-    VFSRequest_Debug,
     VFSRequest_GetCWD,
     VFSRequest_ChDir,
     VFSRequest_Stat,

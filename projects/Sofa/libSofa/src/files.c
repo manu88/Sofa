@@ -40,21 +40,6 @@ int VFSClientInit()
     return -1;
 }
 
-void VFSClientDebug()
-{
-    if(vfsCap == 0)
-    {
-        Printf("[shell] VFS client not registered (no cap)\n");
-    }
-    if(vfsBuf == NULL)
-    {
-        Printf("[shell] VFS client not registered(no buff)\n");
-    }
-
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
-    seL4_SetMR(0, VFSRequest_Debug);
-    seL4_Send(vfsCap, info);
-}
 
 int VFSClientOpen(const char* path, int mode)
 {

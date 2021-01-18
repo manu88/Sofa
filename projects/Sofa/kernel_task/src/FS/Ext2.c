@@ -68,7 +68,13 @@ static uint8_t doReadBlock(uint8_t *buf, uint32_t block, IODevice *dev, ext2_pri
 
 int Ext2ReadBlock(uint8_t *buf, uint32_t blockID, IODevice *dev)
 {
-    return doReadBlock(buf, blockID, dev, getExtPriv());
+	int r = doReadBlock(buf, blockID, dev, getExtPriv()); 
+    if(!r)
+	{
+		KLOG_DEBUG("Ext2ReadBlock read error, retry once\n");
+		return doReadBlock(buf, blockID, dev, getExtPriv());
+	}
+	return r;
 }
 
 
@@ -108,15 +114,14 @@ uint8_t Ext2ReadInode(inode_t *inode_buf, uint32_t inode, IODevice *dev)
         return 0;
     }
 	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
-	//printf("We seek BG %d\n", bg);
-	/* Seek to the BG's desc */
+
 	for(i = 0; i < bg; i++)
 		bgd++;
-	/* Find the index and seek to the inode */
+
 	uint32_t index = (inode - 1) % priv->sb.inodes_in_blockgroup;
-	//printf("Index of our inode is %d\n", index);
+
 	uint32_t block = (index * sizeof(inode_t))/ priv->blocksize;
-	//printf("Relative: %d, Absolute: %d\n", block, bgd->block_of_inode_table + block);
+
     block_buf = Ext2ReadBlockCached(bgd->block_of_inode_table + block, dev);
     if(block_buf == NULL)
     {
@@ -125,23 +130,18 @@ uint8_t Ext2ReadInode(inode_t *inode_buf, uint32_t inode, IODevice *dev)
 
 	inode_t* _inode = (inode_t *)block_buf;
 	index = index % priv->inodes_per_block;
-    //printf("Index is %i\n", index);
+
 	for(i = 0; i < index; i++)
 	{
 		_inode++;
 	}
- 
-	/* We have found the inode! */
-    //printf("Found the inode\n");
 
 	memcpy(inode_buf, _inode, sizeof(inode_t));
 	return 1;
 }
 
-
 uint8_t Ext2Probe(IODevice *dev)
 {
-	/* Read in supposed superblock location and check sig */
 	if(!dev->ops)
 	{
 		printf("Device has no operations, skipped.\n");

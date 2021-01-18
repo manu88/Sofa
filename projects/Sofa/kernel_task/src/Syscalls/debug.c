@@ -21,6 +21,9 @@
 #include "NameServer.h"
 #include "DeviceTree.h"
 
+
+int _do_traces = 0;
+
 static char getProcessStateStr(ProcessState s)
 {
     switch (s)
@@ -43,6 +46,17 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
     SofaDebugCode op = seL4_GetMR(1);
     switch (op)
     {
+    case SofaDebugCode_EnableSyscallTraces:
+        if(_do_traces == 0)
+        {
+            _do_traces = 1;
+        }
+        else
+        {
+            _do_traces = 0;
+        }
+        KLOG_INFO("Set sycall traces to %i\n", _do_traces);
+        break;
     case SofaDebugCode_DumpSched:
         seL4_DebugDumpScheduler();
         break;

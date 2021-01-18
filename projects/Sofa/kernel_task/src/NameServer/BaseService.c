@@ -15,6 +15,7 @@
  */
 #include "BaseService.h"
 #include "Environ.h"
+#include "Log.h"
 #include "Process.h"
 #include <utils/uthash.h>
 
@@ -35,6 +36,11 @@ int BaseServiceCreate(BaseService*s, const char*name, BaseServiceCallbacks* ops)
 static int mainBaseService(KThread* thread, void *arg)
 {
     BaseService* service = (BaseService*) arg;
+
+    if(service->callbacks->onServiceStart)
+    {
+        service->callbacks->onServiceStart(service);
+    }
     while (1)
     {
         seL4_Word sender;
@@ -82,10 +88,11 @@ int BaseServiceCreateClientContext(BaseService* service, ThreadBase* sender, Ser
     client->caller = sender;
     client->buff = buff;
     client->buffClientAddr = buffShared;
-    client->service = service;
+    client->service = &service->service;
 
     HASH_ADD_PTR(service->_clients, caller, client);
 
+    ThreadBaseAddServiceClient(sender, client);
 
     return 0;
 }
