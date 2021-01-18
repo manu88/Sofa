@@ -26,6 +26,7 @@
 #include "KThread.h"
 #include "DeviceTree.h"
 #include "NameServer.h"
+#include "BaseService.h"
 #include "Environ.h"
 #include "ProcessList.h"
 #include "utils.h"
@@ -56,29 +57,31 @@ typedef struct
 
 }Client;
 
-static KThread _vfsThread;
-static Service _vfsService;
-static char _vfsName[] = "VFS";
 
-static ServiceClient* _clients = NULL;
+
+static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
+static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
+static void _OnVFSStart(BaseService* service);
+
+static BaseServiceCallbacks _servOps = 
+{
+    .onServiceStart = _OnVFSStart,
+    .onSystemMsg = _OnSystemMsg,
+    .onClientMsg = _OnClientMsg
+};
+
+static BaseService _vfsService;
+static char _vfsName[] = "VFS";
 
 int VFSServiceInit()
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
-
-    ServiceInit(&_vfsService, getKernelTaskProcess());
-    _vfsService.name = _vfsName;
-    ServiceSetFlag(&_vfsService, ServiceFlag_Clone);
-
-    assert( (_vfsService.flags >> ServiceFlag_Clone) &1U);
-    assert( ServiceHasFlag(&_vfsService, ServiceFlag_Clone));
-    ServiceCreateKernelTask(&_vfsService);
-
-    NameServerRegister(&_vfsService);
-    return 0;
+    int r = BaseServiceCreate(&_vfsService, _vfsName, &_servOps);
+    if(r==0)
+    {
+        ServiceSetFlag(&_vfsService.service, ServiceFlag_Clone);
+    }
+    return r;
 }
-
-static IODevice* _dev = NULL;
 
 
 int PathIsAbsolute(const char* path)
@@ -236,7 +239,7 @@ static int VFSServiceStat(Client* client, const char* path)
         return ret;
     }
     
-    ret = _doVFSStatToStructStat(&st, client->_clt.buff);
+    ret = _doVFSStatToStructStat(&st, (struct stat*) client->_clt.buff);
 
     return ret;
 }
@@ -368,7 +371,6 @@ static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
 int VFSAddDEvice(IODevice *dev)
 {
     KLOG_DEBUG("[VFS] add device '%s'\n", dev->name);
-    _dev = dev;
 
     VFSSupported type = VFSSupported_Unknown;
     int test = _VFSCheckSuperBlock(dev, &type);
@@ -381,55 +383,41 @@ int VFSAddDEvice(IODevice *dev)
 
 }
 
-
-static void ClientCleanup(ServiceClient *clt)
+int VFSServiceGetClientCWD(ThreadBase* sender, char** pat_ret)
 {
-    HASH_DEL(_clients, clt);
-    Client* c = (Client*) clt;
-
-    FileHandle* f = NULL;
-    FileHandle* tmp = NULL;
-    HASH_ITER(hh, c->files, f, tmp)
+    Client* client = (Client*) BaseServiceGetClient(&_vfsService, sender);
+    if(client == NULL)
     {
-        KLOG_DEBUG("close File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
-        VFSClose(&f->file);
-        free(f);
+        return -ESRCH;
     }
-    free(c->workingDir);
-    free(c);
+    if(client->workingDir == NULL)
+    {
+        return -EINVAL;
+    }
+    *pat_ret = client->workingDir;
+    return 0;
 }
-
 
 static Client* RegisterClient(ThreadBase* caller)
 {
-    KernelTaskContext* env = getKernelTaskContext();
-
-    char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
-    assert(buff);
-    void* buffShared = vspace_share_mem(&env->vspace,
-                                        &caller->process->native.vspace,
-                                        buff,
-                                        1,
-                                        PAGE_BITS_4K,
-                                        seL4_ReadWrite,
-                                        1
-                                        );
-    assert(buffShared);
     Client* client = malloc(sizeof(Client));
-    assert(client);
+    if(!client)
+    {
+        return NULL;
+    }
     memset(client, 0, sizeof(Client));
-    client->_clt.caller = caller;
-    client->_clt.buff = buff;
-    client->_clt.buffClientAddr = buffShared;
-    client->_clt.service = &_vfsService;
-
-    client->workingDir = strdup("/");
-    HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
-
-    ThreadBaseAddServiceClient(caller, (ServiceClient*) client);
+    int err = BaseServiceCreateClientContext(&_vfsService, caller,(ServiceClient*) client, 1);
+    if(err == 0)
+    {
+        client->workingDir = strdup("/");
+    }
+    else
+    {
+        free(client);
+        return NULL;
+    }
     return client;
 }
-
 
 static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
 {
@@ -439,11 +427,7 @@ static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
     Client* newClient = RegisterClient(newProc);
     assert(newClient);
 
-
-    ServiceClient* _parentClient = NULL;
-    HASH_FIND_PTR(_clients, &parent, _parentClient);
-    assert(_parentClient);
-    Client* parentClient = (Client*) _parentClient;
+    Client* parentClient = (Client*) BaseServiceGetClient(&_vfsService, parent);
 
 
     FileHandle* f = NULL;
@@ -461,30 +445,182 @@ static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
     }
     newClient->fileIndex = parentClient->fileIndex;
     newClient->workingDir = strdup(parentClient->workingDir);
-
 }
 
-
-int VFSServiceGetClientCWD(ThreadBase* sender, char** pat_ret)
+static void ClientCleanup(ServiceClient *clt)
 {
-    assert(pat_ret);
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &sender, _clt );
-    if(_clt == NULL)
+    Client* c = (Client*) clt;
+
+    FileHandle* f = NULL;
+    FileHandle* tmp = NULL;
+    HASH_ITER(hh, c->files, f, tmp)
     {
-        return -ESRCH;
+        KLOG_DEBUG("close File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
+        VFSClose(&f->file);
+        free(f);
     }
-    Client* clt = (Client*) _clt;
-    
-    *pat_ret = clt->workingDir;
-    return 0;
+    free(c->workingDir);
+    free(c);
 }
 
-static int mainVFS(KThread* thread, void *arg)
+static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
+{
+    ServiceNotification notif = seL4_GetMR(0);
+    if(notif == ServiceNotification_ClientExit)
+    {
+        ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
+        ClientCleanup(clt);
+    }
+    else if(notif == ServiceNotification_WillStop)
+    {
+        KLOG_DEBUG("[VFSService] will stop\n");
+    }
+    else if(notif == ServiceNotification_Clone)
+    {
+        ThreadBase* parent =(ThreadBase*) seL4_GetMR(1);
+        ThreadBase* newProc =(ThreadBase*) seL4_GetMR(2);
+        ClientClone(parent, newProc);
+    }
+}
+
+static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg)
+{
+    VFSRequest req = (VFSRequest) seL4_GetMR(0); 
+
+    switch (req)
+    {
+    case VFSRequest_Register:
+    {
+        int err = 0;
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        if(client == NULL)
+        {
+            client = RegisterClient(sender);
+        }
+        seL4_SetMR(1, client? (seL4_Word)client->_clt.buffClientAddr: (seL4_Word) -1);        
+        seL4_Reply(msg);
+    }
+        break;
+    case VFSRequest_Open:
+    {
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        assert(client);
+        const char* path = client->_clt.buff;
+        int ret = VFSServiceOpen(client, path, seL4_GetMR(1));
+        int handle = ret>=0?ret:0;
+        int err = ret <0? -ret:0;
+        seL4_SetMR(1, err);
+        seL4_SetMR(2, handle);            
+        seL4_Reply(msg);
+    }
+        break;
+    case VFSRequest_Close:
+    {
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        assert(client);
+        int handle = seL4_GetMR(1);
+        int ret = VFSServiceClose(client, handle);
+        seL4_SetMR(1, ret);            
+        seL4_Reply(msg);
+    }
+        break;
+    case VFSRequest_Read:
+    {
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        assert(client);
+        int handle = seL4_GetMR(1);
+        int size = seL4_GetMR(2);
+
+        int asyncLater = -1;
+        ssize_t ret = VFSServiceRead(client, handle, size, &asyncLater);
+        if(asyncLater == 1)
+        {
+            // VFS Backend will handle the reply to this msg later
+            return;
+        }
+        int err = ret<0? ret:0;
+        size = ret >=0? ret:0; 
+        seL4_SetMR(1, err);
+        seL4_SetMR(2, size);            
+        seL4_Reply(msg);
+    }
+
+        break;
+    case VFSRequest_Write:
+    {
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        assert(client);
+
+        int handle = seL4_GetMR(1);
+        int size = seL4_GetMR(2);
+
+        ssize_t ret = VFSServiceWrite(client, handle, size);
+        int err = ret<0? -ret:0;
+        size = ret >=0? ret:0; 
+        seL4_SetMR(1, err);
+        seL4_SetMR(2, size);            
+        seL4_Reply(msg);
+    }
+        break;
+    case VFSRequest_Seek:
+    {
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        assert(client);
+        int handle = seL4_GetMR(1);
+        size_t offset = seL4_GetMR(2);
+        int ret = VFSServiceSeek(client, handle, offset);
+        seL4_SetMR(1, ret);
+        seL4_Reply(msg);
+    }
+        break;
+    case VFSRequest_GetCWD:
+    {
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        assert(client);
+
+        size_t maxSize = seL4_GetMR(1);
+        size_t pathSize = strlen(client->workingDir);
+        if(pathSize < maxSize)
+        {
+            maxSize = pathSize;
+        }
+        strncpy(client->_clt.buff, client->workingDir, maxSize);
+        client->_clt.buff[maxSize] = 0;
+        seL4_SetMR(1, maxSize);
+        seL4_Reply(msg);
+    }
+        break;
+    case VFSRequest_ChDir:
+    {
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        assert(client);
+        int r = VFSServiceChDIR(client);
+        seL4_SetMR(1, r);
+        seL4_Reply(msg);
+    }
+        break;
+    case VFSRequest_Stat:
+    {
+        Client* client = (Client*) BaseServiceGetClient(service, sender);
+        assert(client);
+        const char* path = client->_clt.buff;
+        int err = VFSServiceStat(client, path);    
+        seL4_SetMR(1, err);
+        seL4_Reply(msg);         
+    }
+        break;
+    
+    default:
+    assert(0);
+        break;
+    }
+}
+
+static void _OnVFSStart(BaseService* service)
 {
     KernelTaskContext* env = getKernelTaskContext();
 
-    KLOG_INFO("VFS Thread started\n");
+    KLOG_INFO("VFSService started\n");
     IODevice* dev = NULL;
     FOR_EACH_DEVICE(dev)
     {
@@ -493,167 +629,10 @@ static int mainVFS(KThread* thread, void *arg)
             int r = VFSAddDEvice(dev);
         }
     }
-    while (1)
-    {
-        seL4_Word sender;
-        seL4_MessageInfo_t msg = seL4_Recv(_vfsService.baseEndpoint, &sender);
 
-        ThreadBase* caller =(ThreadBase*) sender;
-        assert(caller->process);
-        // Specific message sent by kernel_task to notify the service about the client killed
-        if (caller->process == getKernelTaskProcess())
-        {
-            ServiceNotification notif = seL4_GetMR(0);
-            if(notif == ServiceNotification_ClientExit)
-            {
-                ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
-                ClientCleanup(clt);
-            }
-            else if(notif == ServiceNotification_WillStop)
-            {
-                KLOG_DEBUG("[VFSService] will stop\n");
-            }
-            else if(notif == ServiceNotification_Clone)
-            {
-                ThreadBase* parent =(ThreadBase*) seL4_GetMR(1);
-                ThreadBase* newProc =(ThreadBase*) seL4_GetMR(2);
-                ClientClone(parent, newProc);
-            }
-
-        }
-        else if(seL4_GetMR(0) == VFSRequest_Register)
-        {
-            ServiceClient* _clt = NULL;
-            HASH_FIND_PTR(_clients, &caller, _clt );
-            if(_clt == NULL)
-            {
-                _clt = RegisterClient(caller);
-            }
-            void* addr = _clt->buffClientAddr;
-            seL4_SetMR(1, (seL4_Word) addr);
-            seL4_Reply(msg);
-        }
-        else
-        {
-            ServiceClient* _clt = NULL;
-            HASH_FIND_PTR(_clients, &caller, _clt );
-            assert(_clt);
-            Client* clt = (Client*) _clt;
-            if(seL4_GetMR(0) == VFSRequest_Open)
-            {
-                const char* path = clt->_clt.buff;
-                int ret = VFSServiceOpen(clt, path, seL4_GetMR(1));
-                int handle = ret>=0?ret:0;
-                int err = ret <0? -ret:0;
-                seL4_SetMR(1, err);
-                seL4_SetMR(2, handle);            
-                seL4_Reply(msg);
-
-            }
-            else if(seL4_GetMR(0) == VFSRequest_Stat)
-            {
-                const char* path = clt->_clt.buff;
-   
-                int err = VFSServiceStat(clt, path);    
-                seL4_SetMR(1, err);
-                seL4_Reply(msg);         
-            }
-            else if(seL4_GetMR(0) == VFSRequest_Close)
-            {
-                int handle = seL4_GetMR(1);
-                int ret = VFSServiceClose(clt, handle);
-                seL4_SetMR(1, ret);            
-                seL4_Reply(msg);
-            }
-            else if(seL4_GetMR(0) == VFSRequest_Write)
-            {
-                int handle = seL4_GetMR(1);
-                int size = seL4_GetMR(2);
-
-                ssize_t ret = VFSServiceWrite(clt, handle, size);
-                int err = ret<0? -ret:0;
-                size = ret >=0? ret:0; 
-                seL4_SetMR(1, err);
-                seL4_SetMR(2, size);            
-                seL4_Reply(msg);
-
-            }
-            else if(seL4_GetMR(0) == VFSRequest_Read)
-            {
-                int handle = seL4_GetMR(1);
-                int size = seL4_GetMR(2);
-
-                int asyncLater = -1;
-                ssize_t ret = VFSServiceRead(clt, handle, size, &asyncLater);
-                if(asyncLater == 1)
-                {
-                    continue;
-                }
-                int err = ret<0? ret:0;
-                size = ret >=0? ret:0; 
-                seL4_SetMR(1, err);
-                seL4_SetMR(2, size);            
-                seL4_Reply(msg);
-            }
-            else if(seL4_GetMR(0) == VFSRequest_Seek)
-            {
-                int handle = seL4_GetMR(1);
-                size_t offset = seL4_GetMR(2);
-                int ret = VFSServiceSeek(clt, handle, offset);
-                seL4_SetMR(1, ret);
-                seL4_Reply(msg);
-            }
-            else if(seL4_GetMR(0) == VFSRequest_ChDir)
-            {
-                int r = VFSServiceChDIR(clt);
-                seL4_SetMR(1, r);
-                seL4_Reply(msg);                
-            }
-            else if(seL4_GetMR(0) == VFSRequest_GetCWD)
-            {
-                size_t maxSize = seL4_GetMR(1);
-                size_t pathSize = strlen(clt->workingDir);
-                if(pathSize < maxSize)
-                {
-                    maxSize = pathSize;
-                }
-                strncpy(clt->_clt.buff, clt->workingDir, maxSize);
-                clt->_clt.buff[maxSize] = 0;
-                seL4_SetMR(1, maxSize);
-                seL4_Reply(msg);
-
-            }
-            else if(seL4_GetMR(0) == VFSRequest_Debug)
-            {
-                KLOG_DEBUG("VFS Client Debug\n");
-
-                KLOG_DEBUG("VFS has %i clients\n", HASH_COUNT(_clients));
-                FileHandle* f = NULL;
-                FileHandle* tmp = NULL;
-                KLOG_DEBUG("Current index %i\n", clt->fileIndex);
-                HASH_ITER(hh, clt->files, f, tmp)
-                {
-                    KLOG_DEBUG("File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
-                }
-            }
-            else
-            {
-                KLOG_DEBUG("Other VFS request %lu\n", seL4_GetMR(0));
-                seL4_Reply(msg);
-            }
-        }
-    }
-    
-    return 42;
 }
 
 int VFSServiceStart()
 {
-    KLOG_INFO("--> Start VFSD thread\n");
-    KThreadInit(&_vfsThread);
-    _vfsThread.mainFunction = mainVFS;
-    _vfsThread.name = "VFSD";
-    int error = KThreadRun(&_vfsThread, 254, NULL);
-
-    return error;
+    return BaseServiceStart(&_vfsService);
 }

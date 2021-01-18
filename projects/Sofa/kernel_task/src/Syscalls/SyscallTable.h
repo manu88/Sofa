@@ -75,9 +75,13 @@ static SyscallMethod syscallTable[] =
     SysCall_Reboot,
 };
 
+extern int _do_traces;
 
 static inline void Syscall_perform(int rpcID, Thread* caller, seL4_MessageInfo_t info)
 {
-    //LOG_TRACE("--> Syscall %i\n", rpcID);
+    if(_do_traces)
+    {
+        KLOG_TRACE("--> Syscall %i\n", rpcID);
+    }
     syscallTable[rpcID](caller, info);
 }

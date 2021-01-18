@@ -20,12 +20,13 @@
 
 
 typedef struct _BaseService BaseService;
-
+typedef void (*OnServiceStart)(BaseService* service);
 typedef void (*OnSystemMsg)(BaseService* service, seL4_MessageInfo_t msg);
 typedef void (*OnClientMsg)(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
 
 typedef struct
 {
+    OnServiceStart onServiceStart;
     OnSystemMsg onSystemMsg;
     OnClientMsg onClientMsg;
 }BaseServiceCallbacks;
@@ -48,4 +49,5 @@ int BaseServiceStart(BaseService*s);
 
 
 int BaseServiceCreateClientContext(BaseService* service, ThreadBase* caller, ServiceClient* client, size_t numPages);
+
 ServiceClient* BaseServiceGetClient(BaseService*s, ThreadBase* caller);

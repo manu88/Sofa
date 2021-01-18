@@ -163,7 +163,7 @@ void *main_continued(void *arg UNUSED)
     KLOG_INFO("\n------Sofa------\n");
     KLOG_INFO("----------------\n");
 
-    seL4_SetUserData(&_mainThread);
+    seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
     error = vka_alloc_endpoint(&env->vka, &env->root_task_endpoint);

@@ -29,5 +29,5 @@ void ThreadCleanupTimer(Thread* t)
 
 void ThreadBaseAddServiceClient(ThreadBase*t, ServiceClient* client)
 {
-    LL_APPEND(t->_clients, (ServiceClient*) client);
+    LL_APPEND(t->_clients, client);
 }
