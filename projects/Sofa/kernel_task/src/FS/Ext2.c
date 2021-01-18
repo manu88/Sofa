@@ -153,8 +153,8 @@ uint8_t Ext2Probe(IODevice *dev)
 		return 0;
 	}
 	uint8_t *buf = (uint8_t *)malloc(1024);
-    IODeviceRead(dev, 2, buf, 512);
-    IODeviceRead(dev, 3, buf+512, 512);
+    ssize_t ret = IODeviceRead(dev, 2, buf, 512);
+    ret = IODeviceRead(dev, 3, buf+512, 512);
 
 	superblock_t *sb = (superblock_t *)buf;
 	if(sb->ext2_sig != EXT2_SIGNATURE)

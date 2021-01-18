@@ -94,7 +94,10 @@ static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
         }
 
         uint8_t* root_buf = Ext2ReadBlockCached(b, dev);
-        assert(root_buf);
+        if(!root_buf)
+        {
+            return -EIO;
+        }
 
         ext2_dir* dir = (ext2_dir*) root_buf;
 
@@ -169,7 +172,10 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
             break;
         }
         uint8_t*root_buf=  Ext2ReadBlockCached(b, dev);
-        assert(root_buf);
+        if(!root_buf)
+        {
+            return -EIO;
+        }
         ext2_dir* dir = (ext2_dir*) root_buf;
 
         while(dir->inode != 0) 
@@ -320,18 +326,19 @@ static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
             KLOG_DEBUG("block %d outside range (max: %d)!\n",  b, getExtPriv()->sb.blocks);
         }
         uint8_t* tempBuf = Ext2ReadBlockCached(b, dev);
-        if(tempBuf)
+        if(!tempBuf)
         {
-            size_t sizeToCopy = file->size - file->readPos;
-            if(sizeToCopy > numBytes)
-            {
-                sizeToCopy = numBytes;
-            }
-            size_t chunkToCopy = file->readPos % getExtPriv()->blocksize;
-            memcpy(buf, tempBuf + chunkToCopy, sizeToCopy);
-            file->readPos += sizeToCopy;
-            return sizeToCopy;
+            return -EIO;
         }
+        size_t sizeToCopy = file->size - file->readPos;
+        if(sizeToCopy > numBytes)
+        {
+            sizeToCopy = numBytes;
+        }
+        size_t chunkToCopy = file->readPos % getExtPriv()->blocksize;
+        memcpy(buf, tempBuf + chunkToCopy, sizeToCopy);
+        file->readPos += sizeToCopy;
+        return sizeToCopy;
     }
     else if(i >= 12)
     {
@@ -350,6 +357,10 @@ static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
             i -= 12;
 
             uint32_t *block = (uint32_t *) Ext2ReadBlockCached(inode->singly_block, dev);
+            if(!block)
+            {
+                return -EIO;
+            }
             uint32_t maxblocks = ((getExtPriv()->blocksize) / (sizeof(uint32_t)));
 
             if(block[i] == 0)
@@ -360,6 +371,10 @@ static int ext2FSRead(ThreadBase* caller,File *file, void *buf, size_t numBytes)
             {
                 uint8_t* data = Ext2ReadBlockCached(block[i], dev);
 
+                if(!data)
+                {
+                    return -EIO;
+                }
                 size_t sizeToCopy = file->size - file->readPos;
                 if(sizeToCopy > numBytes)
                 {
