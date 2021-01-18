@@ -25,7 +25,17 @@
 
 #define ROOT_INODE_ID 2
 
-static inode_t _rootInode;
+
+typedef struct
+{
+    inode_t ino;
+    
+    uint32_t inoId;
+    UT_hash_handle hh;
+} Inode;
+
+static Inode* _inodes;
+
 static int _reReadRootInode = 1;
 
 static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat);
@@ -63,6 +73,27 @@ VFSFileSystem* getExt2FS()
     return &_fs;
 }
 
+
+inode_t * ReadInode(uint32_t inode, IODevice *dev)
+{
+    Inode * ino = NULL;
+    HASH_FIND_INT(_inodes, &inode, ino);
+    if(ino)
+    {
+        return &ino->ino;
+    }
+
+    ino = malloc(sizeof(Inode));
+    
+    if(Ext2ReadInode(&ino->ino, inode, dev))
+    {
+        ino->inoId = inode;
+        HASH_ADD_INT(_inodes, inoId, ino);
+        return &ino->ino;
+    }
+    free(ino);
+    return NULL;
+}
 static inode_t * getInodeNamed(IODevice* dev, inode_t* inode, const char* path)
 {
     for(int i = 0;i < 12; i++)
@@ -89,9 +120,7 @@ static inode_t * getInodeNamed(IODevice* dev, inode_t* inode, const char* path)
 
             if(strcmp(tmpName, path) == 0)
             {
-                inode_t *ino = malloc(sizeof(inode_t));
-                assert(ino);
-                int retRead = Ext2ReadInode(ino, dir->inode, dev);
+                inode_t *ino = ReadInode(dir->inode, dev);
 
                 return ino;
             }
@@ -107,6 +136,7 @@ static inode_t * getInodeNamed(IODevice* dev, inode_t* inode, const char* path)
     return NULL;
 }
 
+static inode_t _rootInode;
 static inode_t * _GetInodeForPath(VFSFileSystem* fs, const char* path)
 {
     IODevice* dev = fs->data;
@@ -139,6 +169,7 @@ static inode_t * _GetInodeForPath(VFSFileSystem* fs, const char* path)
         inode_t* nextInode = getInodeNamed(dev, currentInode, paths[i]);
         if(nextInode)
         {
+            // not last and not a dir!
             if(i < numSegs-1 && (nextInode->type & 0xF000) != INODE_TYPE_DIRECTORY)
             {
                 currentInode = NULL;
