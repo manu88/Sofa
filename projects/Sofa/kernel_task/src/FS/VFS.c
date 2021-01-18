@@ -160,13 +160,13 @@ int VFSInit()
 }
 
 
-static char** _splitPath(const char* _path, int* numSegs)
+char** VFSSplitPath(const char* _path, size_t* numSegs)
 {
     char delim[] = "/";
 
     char* path = strdup(_path);
     char *ptr = strtok(path, delim);
-    int num = 0;
+    size_t num = 0;
 
     char** segments = NULL;
     while(ptr != NULL)

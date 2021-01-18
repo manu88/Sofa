@@ -256,7 +256,10 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
 //    
     
     error = sel4utils_configure_process_custom(&process->native, &env->vka, &env->vspace, config);
-    assert(error == 0);
+    if(error != 0)
+    {
+        return error;
+    }
 
     /* set up caps about the process */
     process->init->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
