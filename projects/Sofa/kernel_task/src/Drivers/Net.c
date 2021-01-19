@@ -34,7 +34,8 @@ IODeviceOperations _netDevOps =
     .write = NULL
 };
 
-IODevice _netDevice = IODeviceNew("Virtio-net-pci", IODevice_Net, &_netDevOps);
+static const char _devName[] = "Virtio-net-pci";
+
 
 static NetworkDriver _driver = {0};
 lwip_iface_t lwip_driver;
@@ -58,8 +59,16 @@ static void handle_irq(void *state, int irq_num)
     ethif_lwip_handle_irq(state, irq_num);
 }
 
-void NetInit(uint32_t iobase0)
+IODevice* NetInit(uint32_t iobase0)
 {
+
+    IODevice* dev = malloc(sizeof(IODevice));
+    if(!dev)
+    {
+        return NULL;
+    }
+
+    IODeviceInit(dev, _devName, IODevice_Net, &_netDevOps);
 
     LWIP_DEBUG_ENABLED(LWIP_DBG_LEVEL_ALL);
     KernelTaskContext* env = getKernelTaskContext();
@@ -71,12 +80,14 @@ void NetInit(uint32_t iobase0)
     if(_driver.driver == NULL)
     {
         KLOG_INFO("ERROR unable to create lwip driver\n");
-        return;
+        free(dev);
+        return NULL;
     }
 
     _driver.init_fn = ethif_get_ethif_init(&lwip_driver);
     _driver.handle_irq_fn = handle_irq;
-    _driver.irq_num = 11;
+    IRQServerRegisterIRQ(dev, 11);
+    return dev;
 
     ip_addr_t addr, gw, mask;
 
@@ -94,12 +105,13 @@ void NetInit(uint32_t iobase0)
     netif_set_up(lwip_driver.netif);
     netif_set_default(lwip_driver.netif);
 
-    DeviceTreeAddDevice(&_netDevice);
-    IRQServerRegisterIRQ(&_netDevice, 11);
+
+    
+    return dev;
 
 }
 
 static void _handleIRQ(IODevice* dev, int irqN)
 {
-    _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
+    _driver.handle_irq_fn(_driver.driver, irqN);
 }

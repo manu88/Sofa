@@ -15,7 +15,6 @@
  */
 #include "NetService.h"
 #include "NameServer.h"
-#include "KThread.h"
 #include "Environ.h"
 #include "Log.h"
 #include "BaseService.h"
@@ -31,6 +30,9 @@
 #include <lwip/udp.h>
 #include "Net.h"
 #include "utils.h"
+#include "DeviceTree.h"
+#include "IODevice.h"
+#include "net.h"
 
 
 static BaseService _service;
@@ -79,11 +81,11 @@ typedef struct _Client
 
 static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
 static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
-static void _OnVFSStart(BaseService* service);
+static void _OnServiceStart(BaseService* service);
 
 static BaseServiceCallbacks _servOps = 
 {
-    .onServiceStart = NULL,
+    .onServiceStart = _OnServiceStart,
     .onSystemMsg = _OnSystemMsg,
     .onClientMsg = _OnClientMsg
 };
@@ -308,6 +310,34 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 }
 
+static int _ConfigInterface(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
+
+    void *devHandle = seL4_GetMR(1);
+    KLOG_DEBUG("NetService Config interface request for device %p\n", devHandle);
+    IODevice* dev = NULL;
+    FOR_EACH_DEVICE(dev)
+    {
+        if(dev == devHandle)
+        {
+            break;
+        }
+    }
+    if(!dev)
+    {
+        return -1;
+    }
+
+    KLOG_DEBUG("NetService got device %p %s\n", dev, dev->name);
+    const ConfigureInterfacePayload* payload = (const ConfigureInterfacePayload*) clt->_clt.buff;
+    KLOG_DEBUG("add '%s' gw '%s' mask '%s'\n", payload->addr, payload->gw, payload->mask);
+
+    return 0;
+
+}
+
 static int closeUdp(SocketHandle* sock)
 {
     if(sock->_udp)
@@ -476,6 +506,20 @@ static void ClientCleanup(ServiceClient *clt)
     free(c);
 }
 
+static void _OnServiceStart(BaseService* service)
+{
+    KLOG_INFO("NetService started\n");
+    IODevice* dev = NULL;
+    FOR_EACH_DEVICE(dev)
+    {
+        if(dev->type == IODevice_Net)
+        {
+            KLOG_DEBUG("NetService-> register device %s\n", dev->name);
+            
+        }
+    }
+}
+
 static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
 {
         NetRequest req = (NetRequest) seL4_GetMR(0);
@@ -498,6 +542,13 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
             break;
         case NetRequest_Close:
             _Close(caller, msg);
+            break;
+        case NetRequest_ConfigInterface:
+        {
+            int ret = _ConfigInterface(caller, msg);
+            seL4_SetMR(1, ret);
+            seL4_Reply(msg);
+        }
             break;
         default:
             KLOG_TRACE("[NetService] Received unknown code %i\n", req);

@@ -45,14 +45,6 @@ int DKClientInit()
     return -1;
 }
 
-int DKClientTempListDevices(void)
-{
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 1);
-    seL4_SetMR(0, DKRequest_List);
-    seL4_Send(dkCap, info);
-    return 0;
-}
-
 int DKClientEnumDevices(int type, DKDeviceList* list, size_t* numDevices)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
@@ -114,4 +106,44 @@ int DKClientEnumTree()
     seL4_SetMR(0, DKRequest_Tree);
     seL4_Send(dkCap, info);
     return 0;
+}
+
+
+DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, int type)
+{
+    size_t numDev = 0;
+    int ret = DKClientEnumDevices(type, NULL, &numDev);
+
+    if(ret != 0)
+    {
+        return DKDeviceHandle_Invalid; 
+    }
+    if(numDev == 0)
+    {
+        return DKDeviceHandle_Invalid;
+    }
+
+    DKDeviceList *list = malloc(sizeof(DKDeviceList) + (sizeof(DKDeviceHandle)*numDev));
+    if(!list)
+    {
+        return DKDeviceHandle_Invalid;
+    }
+
+    size_t numDev2 = 0;
+    ret = DKClientEnumDevices(type, list, &numDev2);
+    assert(numDev2 == numDev);
+    assert(numDev == list->count);
+
+    DKDeviceHandle retHandle = DKDeviceHandle_Invalid;
+    for(size_t i=0; i<list->count; i++)
+    {
+        char* name = DKDeviceGetName(list->handles[i]);
+        if(strcmp(name, deviceName) == 0)
+        {
+            retHandle = list->handles[i];
+            break;
+        }
+    }
+    free(list);
+    return retHandle;
 }

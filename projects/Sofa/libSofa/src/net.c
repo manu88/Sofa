@@ -182,3 +182,19 @@ ssize_t NetClientRecvFrom(int handle, void *buf, size_t len, int flags, struct s
 
     return -1;
 }
+
+
+int NetClientConfigureInterface(DKDeviceHandle deviceHandle, const char*addr, const char*mask, const char*gw)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, NetRequest_ConfigInterface);
+    seL4_SetMR(1, deviceHandle);
+
+    ConfigureInterfacePayload* payload = (ConfigureInterfacePayload*) netBuf;
+    strcpy(payload->addr, addr);
+    strcpy(payload->mask, mask);
+    strcpy(payload->gw, gw);
+    seL4_Call(netCap, info);
+
+    return seL4_GetMR(1);
+}

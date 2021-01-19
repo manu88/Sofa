@@ -17,7 +17,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-
+#include <dk.h>
 
 int NetClientInit(void);
 
@@ -29,3 +29,12 @@ ssize_t NetClientRecvFrom(int handle, void *buf, size_t len, int flags, struct s
 
 ssize_t NetClientSendTo(int handle, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
 
+
+typedef struct 
+{
+    char addr[255];
+    char mask[255];
+    char gw[255];
+} ConfigureInterfacePayload;
+
+int NetClientConfigureInterface(DKDeviceHandle deviceHandle, const char*addr, const char*mask, const char*gw);

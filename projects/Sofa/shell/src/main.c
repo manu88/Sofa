@@ -14,6 +14,7 @@
 #include <init.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <net.h>
 
 int fOut = -1;
 static int lastCmdRet = 0;
@@ -189,11 +190,7 @@ static int doLs(const char* path)
 
 static int doDK(const char* cmds)
 {
-    if(strcmp(cmds, "list") == 0)
-    {
-        int ret = DKClientTempListDevices();
-    }
-    else if(startsWith("enum", cmds))
+    if(startsWith("enum", cmds))
     {
         const char* strType = cmds + strlen("enum ");
         if(strlen(strType)==0)
@@ -533,6 +530,25 @@ int processCommand(const char* cmd)
         SFDebug(SofaDebugCode_DumpSched);
         return 0;
     }
+    else if(startsWith("net", cmd))
+    {
+        const char* args = cmd + strlen("net ");
+        char devName[256] = "";
+        if(sscanf(args, "%s", devName) != 1)
+        {
+            return -1;
+        }
+
+        DKDeviceHandle devHandle = DKClientGetDeviceNamed(devName, 1/*IODevice_Net*/);
+
+        if(devHandle == DKDeviceHandle_Invalid)
+        {
+            Printf("net: invalid dev handle");
+            return -1;
+        }
+        Printf("Got dev handle %lu for %s\n", devHandle, devName);
+        return NetClientConfigureInterface(devHandle, "10.0.2.15", "192.168.0.1", "255.255.255.*");
+    }
     else
     {
         Printf("Unknown command '%s'\n", cmd);
@@ -547,6 +563,7 @@ int main(int argc, char *argv[])
     argv = &argv[2];
     VFSClientInit();
     DKClientInit();
+    NetClientInit();
     Printf("[%i] Shell has %i args \n", getpid(), argc);
 
     if(argc > 1)

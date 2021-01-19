@@ -618,8 +618,6 @@ static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageI
 
 static void _OnVFSStart(BaseService* service)
 {
-    KernelTaskContext* env = getKernelTaskContext();
-
     KLOG_INFO("VFSService started\n");
     IODevice* dev = NULL;
     FOR_EACH_DEVICE(dev)
@@ -629,7 +627,6 @@ static void _OnVFSStart(BaseService* service)
             int r = VFSAddDEvice(dev);
         }
     }
-
 }
 
 int VFSServiceStart()

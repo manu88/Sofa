@@ -90,6 +90,8 @@ typedef enum
     NetRequest_RecvFrom,
     NetRequest_SendTo,
     NetRequest_Debug,
+
+    NetRequest_ConfigInterface,
 } NetRequest;
 
 int SFSleep(int ms);

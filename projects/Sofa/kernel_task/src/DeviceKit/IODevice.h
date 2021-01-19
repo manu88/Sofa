@@ -64,11 +64,12 @@ typedef struct _IODevice
 #define IODeviceNew(name_, type_, ops_) {.name = name_ ,.type = type_, .ops = ops_ }
 
 
-static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type)
+static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type, IODeviceOperations* ops)
 {
     memset(d, 0, sizeof(IODevice));
     d->name = name;
     d->type = type;
+    d->ops = ops;
 }
 ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize);
 ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize);
