@@ -38,3 +38,5 @@ typedef struct
 } ConfigureInterfacePayload;
 
 int NetClientConfigureInterface(DKDeviceHandle deviceHandle, const char*addr, const char*mask, const char*gw);
+
+int NetClientEnumInterfaces(void);

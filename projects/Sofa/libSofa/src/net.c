@@ -136,8 +136,8 @@ ssize_t NetClientSendTo(int handle, const void *buf, size_t bufLen, int flags, c
     memcpy(netBuf + addrlen, buf, bufLen);
     info = seL4_Call(netCap, info);
 
-    int sentLen = seL4_GetMR(2);
-    int err = seL4_GetMR(3);
+    int sentLen = seL4_GetMR(3);
+    int err = seL4_GetMR(2);
 
     if(err == 0)
     {
@@ -183,6 +183,13 @@ ssize_t NetClientRecvFrom(int handle, void *buf, size_t len, int flags, struct s
     return -1;
 }
 
+int NetClientEnumInterfaces()
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 2);
+    seL4_SetMR(0, NetRequest_EnumInterfaces);
+    seL4_Call(netCap, info);
+    return seL4_GetMR(1);
+}
 
 int NetClientConfigureInterface(DKDeviceHandle deviceHandle, const char*addr, const char*mask, const char*gw)
 {

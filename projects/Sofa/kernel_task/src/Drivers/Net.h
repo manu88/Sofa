@@ -17,19 +17,5 @@
 #include <lwip/netif.h>
 #include "IODevice.h"
 
-
-
-typedef void (*netif_handle_irq_fn)(void *state, int irq_num);
-
-typedef struct
-{
-    netif_init_fn init_fn;
-    void *driver;
-    netif_handle_irq_fn handle_irq_fn;
-
-}NetworkDriver;
-
-
-
 IODevice* NetInit(uint32_t iobase0);
 

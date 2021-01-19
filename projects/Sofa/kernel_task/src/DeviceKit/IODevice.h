@@ -37,11 +37,16 @@ typedef ssize_t (*ReadDevice)(struct _IODevice* dev, size_t sector, char* buf, s
 typedef ssize_t (*WriteDevice)(struct _IODevice* dev, size_t sector, const char* buf, size_t bufSize);
 typedef void (*HandleIRQ)(struct _IODevice* dev, int irqN);
 
+
+typedef int (*RegisterIface)(struct _IOdevice* dev, void* netInterface, const /*ip_addr_t*/void* addr, const /*ip_addr_t*/void*gw, const /*ip_addr_t*/void* mask);
+
 typedef struct
 {
      ReadDevice read;
      WriteDevice write;
      HandleIRQ handleIRQ;
+
+     RegisterIface regIface;
 } IODeviceOperations;
 
 

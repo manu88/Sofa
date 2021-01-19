@@ -15,6 +15,9 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <net.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 int fOut = -1;
 static int lastCmdRet = 0;
@@ -529,6 +532,38 @@ int processCommand(const char* cmd)
     {
         SFDebug(SofaDebugCode_DumpSched);
         return 0;
+    }
+    else if(startsWith("ip", cmd))
+    {
+        return NetClientEnumInterfaces();
+    }
+    else if(startsWith("sendto", cmd))
+    {
+        int sock;
+        if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) 
+        {
+            Printf("could not create socket\n");
+            return errno;
+        }
+        struct sockaddr_in si_other;
+        memset((char *) &si_other, 0, sizeof(si_other));
+        si_other.sin_family = AF_INET;
+        si_other.sin_port = htons(3000);
+        if (inet_aton("127.0.0.1" , &si_other.sin_addr) == 0) 
+        {
+            fprintf(stderr, "inet_aton() failed\n");
+            return errno;
+        }
+
+        const char buffer[] = "hello world";
+        ssize_t retSend = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&si_other,
+		       sizeof(si_other));
+        if(retSend == -1)
+        {
+            return errno;
+        }
+        return retSend;
+
     }
     else if(startsWith("net", cmd))
     {

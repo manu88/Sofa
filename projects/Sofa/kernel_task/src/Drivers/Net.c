@@ -26,19 +26,17 @@
 
 
 static void _handleIRQ(IODevice* dev, int irqN);
+static int _RegisterIface(IODevice* dev, void* netInterface, const ip_addr_t* addr, const ip_addr_t*gw, const ip_addr_t* mask);
 
 IODeviceOperations _netDevOps = 
 {
     .handleIRQ = _handleIRQ,
     .read = NULL,
-    .write = NULL
+    .write = NULL,
+    .regIface = _RegisterIface
 };
 
 static const char _devName[] = "Virtio-net-pci";
-
-
-static NetworkDriver _driver = {0};
-lwip_iface_t lwip_driver;
 
 static int
 native_ethdriver_init(
@@ -54,14 +52,8 @@ native_ethdriver_init(
 }
 
 
-static void handle_irq(void *state, int irq_num)
-{
-    ethif_lwip_handle_irq(state, irq_num);
-}
-
 IODevice* NetInit(uint32_t iobase0)
 {
-
     IODevice* dev = malloc(sizeof(IODevice));
     if(!dev)
     {
@@ -76,42 +68,37 @@ IODevice* NetInit(uint32_t iobase0)
     ethif_virtio_pci_config_t cfg = {0};
     cfg.io_base = iobase0;    
 
-    _driver.driver =  ethif_new_lwip_driver_no_malloc(env->ops, NULL, native_ethdriver_init, &cfg, &lwip_driver);
-    if(_driver.driver == NULL)
+    lwip_iface_t *lWipIface = ethif_new_lwip_driver(env->ops, NULL, native_ethdriver_init, &cfg);
+
+    if(lWipIface == NULL)
     {
         KLOG_INFO("ERROR unable to create lwip driver\n");
         free(dev);
         return NULL;
     }
+    dev->impl = lWipIface;
 
-    _driver.init_fn = ethif_get_ethif_init(&lwip_driver);
-    _driver.handle_irq_fn = handle_irq;
     IRQServerRegisterIRQ(dev, 11);
     return dev;
+}
 
-    ip_addr_t addr, gw, mask;
-
-    //FIXME: THis needs to be dynamic
-    ipaddr_aton("192.168.0.1",   &gw);
-    ipaddr_aton("10.0.2.15",     &addr);
-    ipaddr_aton("255.255.255.*", &mask);
-
-    assert(lwip_driver.netif == NULL);
-    lwip_driver.netif = malloc(sizeof(struct netif));
-    assert(lwip_driver.netif);
-
-    netif_add(lwip_driver.netif, &addr, &mask, &gw, _driver.driver, _driver.init_fn, ethernet_input);
-    assert(lwip_driver.netif);
-    netif_set_up(lwip_driver.netif);
-    netif_set_default(lwip_driver.netif);
-
-
-    
-    return dev;
-
+static int _RegisterIface(IODevice* dev, void* netInterface, const ip_addr_t* addr, const ip_addr_t*gw, const ip_addr_t* mask)
+{
+    struct netif *ret = netif_add(netInterface, addr, mask, gw, dev->impl, ethif_get_ethif_init(dev->impl), ethernet_input);
+    if(ret == NULL)
+    {
+        return -1;
+    }
+    return 0;
 }
 
 static void _handleIRQ(IODevice* dev, int irqN)
 {
-    _driver.handle_irq_fn(_driver.driver, irqN);
+    lwip_iface_t *iface = dev->impl;
+    if(!iface->netif)
+    {
+        KLOG_DEBUG("Net.HandleIRQ: iface for %s not setup!\n", dev->name);
+        return;
+    }
+    ethif_lwip_handle_irq(iface, irqN);
 }

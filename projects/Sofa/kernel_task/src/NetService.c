@@ -19,6 +19,9 @@
 #include "Log.h"
 #include "BaseService.h"
 #include "ProcessList.h"
+
+#include <ethdrivers/lwip.h>
+#include <netif/etharp.h>
 #include <lwip/udp.h>
 #include <lwip/init.h>
 #include <Sofa.h>
@@ -89,6 +92,21 @@ static BaseServiceCallbacks _servOps =
     .onSystemMsg = _OnSystemMsg,
     .onClientMsg = _OnClientMsg
 };
+
+static int LWipErrToErrno(err_t err)
+{
+    switch (err)
+    {
+    case ERR_ARG:
+        return -EINVAL;
+    case ERR_RTE:
+        return -EINVAL;
+    default:
+        KLOG_ERROR("LWipErrToErrno unhandled lwip err_t %i\n", err);
+        assert(0);
+        break;
+    }
+}
 
 int NetServiceInit()
 {
@@ -310,6 +328,73 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 }
 
+static int _EnumInterfaces(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    KLOG_DEBUG("NetService enum interface\n");
+    char b[64];
+    struct netif* interface = NULL;
+    NETIF_FOREACH(interface)
+    {
+        KLOG_DEBUG("%i: ", interface->num);    
+        const char *strAddr = ipaddr_ntoa_r(&interface->ip_addr, b, 64);
+        KLOG_DEBUG("inet %s ", strAddr);
+        KLOG_DEBUG("mtu %u ", interface->mtu);
+        KLOG_DEBUG("\n");
+    }
+    return 0;
+}
+
+static err_t _LoopbackNetifInit(struct netif *netif)
+{
+    return 0;
+}
+
+static int _createLoopbackInterface()
+{
+    ip_addr_t addr, mask;
+    ipaddr_aton("127.0.0.1",   &addr);
+    //ipaddr_aton("255.", &addr);
+    ipaddr_aton("255.255.255.0", &mask);
+
+    struct netif* netiface = malloc(sizeof(struct netif));
+    if(!netiface)
+    {
+        return -ENOMEM;
+    }
+
+    if(netif_add(netiface, &addr, &mask, NULL,NULL, _LoopbackNetifInit, ethernet_input) != netiface)
+    {
+        KLOG_ERROR("NetService: Loopback interface creation error\n");
+        return -1;
+    }
+    return 0;
+}
+static int _doAddIface(IODevice* dev, const char* addrStr, const char* gwStr, const char* maskStr)
+{
+    KLOG_DEBUG("_doAddIface '%s' gw '%s' mask '%s'\n", addrStr, gwStr, maskStr);
+
+    ip_addr_t addr, gw, mask;
+    ipaddr_aton(gwStr,   &gw);
+    ipaddr_aton(addrStr, &addr);
+    ipaddr_aton(maskStr, &mask);
+
+    struct netif* netiface = malloc(sizeof(struct netif));
+    if(!netiface)
+    {
+        return -ENOMEM;
+    }
+
+    int retRegister = dev->ops->regIface(dev, netiface, &addr, &gw, &mask);
+    if(retRegister == 0)
+    {
+        netif_set_up(netiface);
+        netif_set_default(netiface);
+    }
+    return retRegister;
+}
+
+
+
 static int _ConfigInterface(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
     Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
@@ -317,14 +402,7 @@ static int _ConfigInterface(ThreadBase* caller, seL4_MessageInfo_t msg)
 
     void *devHandle = seL4_GetMR(1);
     KLOG_DEBUG("NetService Config interface request for device %p\n", devHandle);
-    IODevice* dev = NULL;
-    FOR_EACH_DEVICE(dev)
-    {
-        if(dev == devHandle)
-        {
-            break;
-        }
-    }
+    IODevice* dev = DeviceTreeGetDeviceFromHandle(devHandle);
     if(!dev)
     {
         return -1;
@@ -332,10 +410,7 @@ static int _ConfigInterface(ThreadBase* caller, seL4_MessageInfo_t msg)
 
     KLOG_DEBUG("NetService got device %p %s\n", dev, dev->name);
     const ConfigureInterfacePayload* payload = (const ConfigureInterfacePayload*) clt->_clt.buff;
-    KLOG_DEBUG("add '%s' gw '%s' mask '%s'\n", payload->addr, payload->gw, payload->mask);
-
-    return 0;
-
+    return _doAddIface(dev, payload->addr, payload->gw, payload->mask);
 }
 
 static int closeUdp(SocketHandle* sock)
@@ -437,13 +512,15 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
     assert(ipaddr_aton(inet_ntoa(addr->sin_addr), &dst_ip));
 
     err_t err = ERR_MEM;
+    assert(sock->_udp == NULL);
+    sock->_udp = udp_new();
 
     size_t sentSize = 0;
     struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, dataSize, PBUF_RAM);
     if(p)
     {
         memcpy(p->payload, dataPos, dataSize);
-        err_t err = udp_sendto(sock->_udp, p, &dst_ip, addr->sin_port);
+        err = udp_sendto(sock->_udp, p, &dst_ip, addr->sin_port);
         pbuf_free(p);
         sentSize = dataSize;
     }
@@ -456,7 +533,7 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
     //int err = seL4_GetMR(3);
 
     
-    seL4_SetMR(2, err);
+    seL4_SetMR(2, LWipErrToErrno(err));
     seL4_SetMR(3, sentSize);
     seL4_Reply(msg);
 }
@@ -509,15 +586,8 @@ static void ClientCleanup(ServiceClient *clt)
 static void _OnServiceStart(BaseService* service)
 {
     KLOG_INFO("NetService started\n");
-    IODevice* dev = NULL;
-    FOR_EACH_DEVICE(dev)
-    {
-        if(dev->type == IODevice_Net)
-        {
-            KLOG_DEBUG("NetService-> register device %s\n", dev->name);
-            
-        }
-    }
+
+    _createLoopbackInterface();
 }
 
 static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
@@ -546,6 +616,13 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
         case NetRequest_ConfigInterface:
         {
             int ret = _ConfigInterface(caller, msg);
+            seL4_SetMR(1, ret);
+            seL4_Reply(msg);
+        }
+            break;
+        case NetRequest_EnumInterfaces:
+        {
+            int ret = _EnumInterfaces(caller, msg);
             seL4_SetMR(1, ret);
             seL4_Reply(msg);
         }
