@@ -21,14 +21,22 @@
 #include "Environ.h"
 #include "Net.h"
 #include "Log.h"
-#include "KThread.h"
+#include "IRQServer.h"
 #include "DeviceTree.h"
 
-IODevice _netDevice = IODeviceNew("Virtio-net-pci", IODevice_Net, NULL);
 
-static KThread netThread;
-static NetworkDriver _driver = {0};
-lwip_iface_t lwip_driver;
+static void _handleIRQ(IODevice* dev, int irqN);
+static int _RegisterIface(IODevice* dev, void* netInterface, const ip_addr_t* addr, const ip_addr_t*gw, const ip_addr_t* mask);
+
+IODeviceOperations _netDevOps = 
+{
+    .handleIRQ = _handleIRQ,
+    .read = NULL,
+    .write = NULL,
+    .regIface = _RegisterIface
+};
+
+static const char _devName[] = "Virtio-net-pci";
 
 static int
 native_ethdriver_init(
@@ -44,16 +52,15 @@ native_ethdriver_init(
 }
 
 
-
-static void handle_irq(void *state, int irq_num)
+IODevice* NetInit(uint32_t iobase0)
 {
-    ethif_lwip_handle_irq(state, irq_num);
-}
+    IODevice* dev = malloc(sizeof(IODevice));
+    if(!dev)
+    {
+        return NULL;
+    }
 
-static int threadStart(KThread* thread, void *arg);
-
-void NetInit(uint32_t iobase0)
-{
+    IODeviceInit(dev, _devName, IODevice_Net, &_netDevOps);
 
     LWIP_DEBUG_ENABLED(LWIP_DBG_LEVEL_ALL);
     KernelTaskContext* env = getKernelTaskContext();
@@ -61,81 +68,37 @@ void NetInit(uint32_t iobase0)
     ethif_virtio_pci_config_t cfg = {0};
     cfg.io_base = iobase0;    
 
-    _driver.driver =  ethif_new_lwip_driver_no_malloc(env->ops, NULL, native_ethdriver_init, &cfg, &lwip_driver);
-    if(_driver.driver == NULL)
+    lwip_iface_t *lWipIface = ethif_new_lwip_driver(env->ops, NULL, native_ethdriver_init, &cfg);
+
+    if(lWipIface == NULL)
     {
         KLOG_INFO("ERROR unable to create lwip driver\n");
-        return;
+        free(dev);
+        return NULL;
     }
+    dev->impl = lWipIface;
 
-    _driver.init_fn = ethif_get_ethif_init(&lwip_driver);
-    _driver.handle_irq_fn = handle_irq;
-    _driver.irq_num = 11;
-
-/**/
-    cspacepath_t irq_path = { 0 };
-    seL4_CPtr irq;
-
-    int error = vka_cspace_alloc(&env->vka, &irq);
-    assert(error == 0);
-    vka_cspace_make_path(&env->vka, irq, &irq_path);
-
-    error = simple_get_IRQ_handler(&env->simple, _driver.irq_num, irq_path);
-    assert(error == 0);
-
-    vka_object_t irq_aep_obj = { 0 };
-
-    error = vka_alloc_notification(&env->vka, &irq_aep_obj);
-    assert(error == 0);
-
-    seL4_CPtr irq_aep = irq_aep_obj.cptr;
-    error = seL4_IRQHandler_SetNotification(irq_path.capPtr, irq_aep);
-    assert(error == 0);
-
-// add interface
-
-    ip_addr_t addr, gw, mask;
-
-    //FIXME: THis needs to be dynamic
-    ipaddr_aton("192.168.0.1",   &gw);
-    ipaddr_aton("10.0.2.15",     &addr);
-    ipaddr_aton("255.255.255.*", &mask);
-
-    assert(lwip_driver.netif == NULL);
-    lwip_driver.netif = malloc(sizeof(struct netif));
-    assert(lwip_driver.netif);
-
-    netif_add(lwip_driver.netif, &addr, &mask, &gw, _driver.driver, _driver.init_fn, ethernet_input);
-    assert(lwip_driver.netif);
-    netif_set_up(lwip_driver.netif);
-    netif_set_default(lwip_driver.netif);
-
-// New thread
-    KThreadInit(&netThread);
-    netThread.name = "virtio-pci";
-    netThread.mainFunction = threadStart;
-
-    seL4_CPtr *args = malloc(sizeof(seL4_CPtr)*2);
-    args[0] = irq_aep;
-    args[1] = irq;
-    KThreadRun(&netThread, 254, args);
-
-    DeviceTreeAddDevice(&_netDevice);
-
+    IRQServerRegisterIRQ(dev, 11);
+    return dev;
 }
 
-static int threadStart(KThread* thread, void *arg)
+static int _RegisterIface(IODevice* dev, void* netInterface, const ip_addr_t* addr, const ip_addr_t*gw, const ip_addr_t* mask)
 {
-    seL4_CPtr *args = arg;
-    seL4_CPtr irq_aep = args[0];
-    seL4_CPtr irq =  args[1];
-    free(args);
-    
-    while(1)
+    struct netif *ret = netif_add(netInterface, addr, mask, gw, dev->impl, ethif_get_ethif_init(dev->impl), ethernet_input);
+    if(ret == NULL)
     {
-	    seL4_Wait(irq_aep,NULL);
-        seL4_IRQHandler_Ack(irq);
-        _driver.handle_irq_fn(_driver.driver, _driver.irq_num);
+        return -1;
     }
     return 0;
+}
+
+static void _handleIRQ(IODevice* dev, int irqN)
+{
+    lwip_iface_t *iface = dev->impl;
+    if(!iface->netif)
+    {
+        KLOG_DEBUG("Net.HandleIRQ: iface for %s not setup!\n", dev->name);
+        return;
+    }
+    ethif_lwip_handle_irq(iface, irqN);
 }

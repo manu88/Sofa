@@ -24,8 +24,6 @@
 static const char tName[] = "IRQServer";
 
 
-
-
 typedef struct _IRQInstance 
 {
     struct _IRQInstance *next;
@@ -33,6 +31,8 @@ typedef struct _IRQInstance
 
     IODevice* recipient;
     seL4_CPtr irqAckHandler;
+
+    uint64_t count;
 } IRQInstance;
 
 
@@ -95,19 +95,10 @@ static int _irqMain(KThread* th, void* arg)
                     once = 0;
                 }
                 i->recipient->ops->handleIRQ(i->recipient, irqN);
+                i->count++;
 
             }
         }
-
-#if 0        
-        IRQInstance* instance = (IRQInstance*) sender; 
-        assert(instance);
-        assert(instance->recipient);
-        assert(instance->irqAckHandler);
-        seL4_IRQHandler_Ack(instance->irqAckHandler);
-        
-        instance->recipient->ops->handleIRQ(instance->recipient, -1);
-#endif
     }
     
 }
@@ -127,8 +118,6 @@ int IRQServerRegisterIRQ(IODevice* dev, int irqN)
             break;
         }
     }
-
-
 
     IRQInstance* instance = malloc(sizeof(IRQInstance));
     assert(instance);

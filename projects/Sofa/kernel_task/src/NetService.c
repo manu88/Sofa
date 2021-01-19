@@ -15,10 +15,13 @@
  */
 #include "NetService.h"
 #include "NameServer.h"
-#include "KThread.h"
 #include "Environ.h"
 #include "Log.h"
+#include "BaseService.h"
 #include "ProcessList.h"
+
+#include <ethdrivers/lwip.h>
+#include <netif/etharp.h>
 #include <lwip/udp.h>
 #include <lwip/init.h>
 #include <Sofa.h>
@@ -30,6 +33,13 @@
 #include <lwip/udp.h>
 #include "Net.h"
 #include "utils.h"
+#include "DeviceTree.h"
+#include "IODevice.h"
+#include "net.h"
+
+
+static BaseService _service;
+static char _netName[] = "NET";
 
 typedef struct _MsgUDP
 {
@@ -70,29 +80,40 @@ typedef struct _Client
     int sockIndex;
 
     KMutex rxBuffMutex;
-    //size_t waitingSize;
 }Client;
 
+static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg);
+static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageInfo_t msg);
+static void _OnServiceStart(BaseService* service);
 
-static ServiceClient* _clients = NULL;
+static BaseServiceCallbacks _servOps = 
+{
+    .onServiceStart = _OnServiceStart,
+    .onSystemMsg = _OnSystemMsg,
+    .onClientMsg = _OnClientMsg
+};
 
-static KThread _netServiceThread;
-static Service _netService;
-static char _netName[] = "NET";
+static int LWipErrToErrno(err_t err)
+{
+    switch (err)
+    {
+    case ERR_ARG:
+        return -EINVAL;
+    case ERR_RTE:
+        return -EINVAL;
+    default:
+        KLOG_ERROR("LWipErrToErrno unhandled lwip err_t %i\n", err);
+        assert(0);
+        break;
+    }
+}
 
 int NetServiceInit()
 {
     lwip_init();
     udp_init();
 
-
-    int error = 0;
-    ServiceInit(&_netService, getKernelTaskProcess() );
-    _netService.name = _netName;
-
-    ServiceCreateKernelTask(&_netService);
-    NameServerRegister(&_netService);
-    return 0;
+    return BaseServiceCreate(&_service, _netName, &_servOps);
 }
 
 static size_t CopyMemUDPToUser(const MsgUDP* msg, Client* client, size_t size)
@@ -141,10 +162,9 @@ static ssize_t doRecvFrom(Client* client, SocketHandle* sock, size_t size ,size_
 }
 static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*)_clt;
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
+
 
     int handle = seL4_GetMR(1);
     SocketHandle* sock = NULL;
@@ -173,9 +193,6 @@ static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_SetMR(1, ret);
     seL4_SetMR(2, addrSize);
     seL4_Reply(msg);
-
-
-
 }
 
 static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
@@ -297,10 +314,8 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     (3, protoc);
     (4, port);
 */
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*) _clt;
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
     int handle = seL4_GetMR(1);
     size_t addrLen = seL4_GetMR(2);
     const struct sockaddr *addr = (const struct sockaddr *) clt->_clt.buff;
@@ -311,6 +326,91 @@ static void _Bind(ThreadBase* caller, seL4_MessageInfo_t msg)
     seL4_Reply(msg);
     return;
 
+}
+
+static int _EnumInterfaces(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    KLOG_DEBUG("NetService enum interface\n");
+    char b[64];
+    struct netif* interface = NULL;
+    NETIF_FOREACH(interface)
+    {
+        KLOG_DEBUG("%i: ", interface->num);    
+        const char *strAddr = ipaddr_ntoa_r(&interface->ip_addr, b, 64);
+        KLOG_DEBUG("inet %s ", strAddr);
+        KLOG_DEBUG("mtu %u ", interface->mtu);
+        KLOG_DEBUG("\n");
+    }
+    return 0;
+}
+
+static err_t _LoopbackNetifInit(struct netif *netif)
+{
+    return 0;
+}
+
+static int _createLoopbackInterface()
+{
+    ip_addr_t addr, mask;
+    ipaddr_aton("127.0.0.1",   &addr);
+    //ipaddr_aton("255.", &addr);
+    ipaddr_aton("255.255.255.0", &mask);
+
+    struct netif* netiface = malloc(sizeof(struct netif));
+    if(!netiface)
+    {
+        return -ENOMEM;
+    }
+
+    if(netif_add(netiface, &addr, &mask, NULL,NULL, _LoopbackNetifInit, ethernet_input) != netiface)
+    {
+        KLOG_ERROR("NetService: Loopback interface creation error\n");
+        return -1;
+    }
+    return 0;
+}
+static int _doAddIface(IODevice* dev, const char* addrStr, const char* gwStr, const char* maskStr)
+{
+    KLOG_DEBUG("_doAddIface '%s' gw '%s' mask '%s'\n", addrStr, gwStr, maskStr);
+
+    ip_addr_t addr, gw, mask;
+    ipaddr_aton(gwStr,   &gw);
+    ipaddr_aton(addrStr, &addr);
+    ipaddr_aton(maskStr, &mask);
+
+    struct netif* netiface = malloc(sizeof(struct netif));
+    if(!netiface)
+    {
+        return -ENOMEM;
+    }
+
+    int retRegister = dev->ops->regIface(dev, netiface, &addr, &gw, &mask);
+    if(retRegister == 0)
+    {
+        netif_set_up(netiface);
+        netif_set_default(netiface);
+    }
+    return retRegister;
+}
+
+
+
+static int _ConfigInterface(ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
+
+    void *devHandle = seL4_GetMR(1);
+    KLOG_DEBUG("NetService Config interface request for device %p\n", devHandle);
+    IODevice* dev = DeviceTreeGetDeviceFromHandle(devHandle);
+    if(!dev)
+    {
+        return -1;
+    }
+
+    KLOG_DEBUG("NetService got device %p %s\n", dev, dev->name);
+    const ConfigureInterfacePayload* payload = (const ConfigureInterfacePayload*) clt->_clt.buff;
+    return _doAddIface(dev, payload->addr, payload->gw, payload->mask);
 }
 
 static int closeUdp(SocketHandle* sock)
@@ -348,10 +448,8 @@ static ssize_t doClose(Client* client, int handle)
 
 static void _Close(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*) _clt;
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
 
     int handle = seL4_GetMR(1);
 
@@ -362,10 +460,8 @@ static void _Close(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* clt = (Client*) _clt;
+    Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(clt);
 
 
     SocketHandle* sock = malloc(sizeof(SocketHandle));
@@ -390,11 +486,8 @@ static void _Socket(ThreadBase* caller, seL4_MessageInfo_t msg)
 
 static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-
-    ServiceClient* _clt = NULL;
-    HASH_FIND_PTR(_clients, &caller, _clt );
-    assert(_clt);
-    Client* client = (Client*) _clt;
+    Client* client = (Client*) BaseServiceGetClient(&_service, caller);
+    assert(client);
 
     int handle = seL4_GetMR(1);
     SocketHandle* sock = NULL;
@@ -419,13 +512,15 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
     assert(ipaddr_aton(inet_ntoa(addr->sin_addr), &dst_ip));
 
     err_t err = ERR_MEM;
+    assert(sock->_udp == NULL);
+    sock->_udp = udp_new();
 
     size_t sentSize = 0;
     struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, dataSize, PBUF_RAM);
     if(p)
     {
         memcpy(p->payload, dataPos, dataSize);
-        err_t err = udp_sendto(sock->_udp, p, &dst_ip, addr->sin_port);
+        err = udp_sendto(sock->_udp, p, &dst_ip, addr->sin_port);
         pbuf_free(p);
         sentSize = dataSize;
     }
@@ -438,45 +533,41 @@ static void _SendTo(ThreadBase* caller, seL4_MessageInfo_t msg)
     //int err = seL4_GetMR(3);
 
     
-    seL4_SetMR(2, err);
+    seL4_SetMR(2, LWipErrToErrno(err));
     seL4_SetMR(3, sentSize);
     seL4_Reply(msg);
-
 }
 
 
 static void _Register(ThreadBase* caller, seL4_MessageInfo_t msg)
 {
-    KernelTaskContext* env = getKernelTaskContext();
-    char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, 1, PAGE_BITS_4K);
-    assert(buff);
-    void* buffShared = vspace_share_mem(&env->vspace,
-                                        &caller->process->native.vspace,
-                                        buff,
-                                        1,
-                                        PAGE_BITS_4K,
-                                        seL4_ReadWrite,
-                                        1
-                                        );
-    assert(buffShared);
     Client* client = malloc(sizeof(Client));
-    assert(client);
-    memset(client, 0, sizeof(Client));
-    client->_clt.caller = caller;
-    client->_clt.buff = buff;
-    client->_clt.service = &_netService;
-    KMutexNew(&client->rxBuffMutex);
+    if(!client)
+    {
+        seL4_SetMR(1, (seL4_Word) -1);
+        seL4_Reply(msg);
 
-    HASH_ADD_PTR(_clients, caller,(ServiceClient*) client);
-    seL4_SetMR(1, (seL4_Word) buffShared);
+        return;
+    }
+    memset(client, 0, sizeof(Client));
+    int err = BaseServiceCreateClientContext(&_service, caller,(ServiceClient*) client, 1);
+    if(err != 0)
+    {
+        free(client);
+        seL4_SetMR(1, (seL4_Word) err);
+        seL4_Reply(msg);
+        return;
+    }
+    KMutexNew(&client->rxBuffMutex);
+    
+    seL4_SetMR(1, client? (seL4_Word)client->_clt.buffClientAddr: (seL4_Word) -1);        
     seL4_Reply(msg);
 
-    ThreadBaseAddServiceClient(caller, (ServiceClient*) client);
+    
 }
 
 static void ClientCleanup(ServiceClient *clt)
 {
-    HASH_DEL(_clients, clt);
     Client* c = (Client*)clt;
 
     SocketHandle* elt = NULL;
@@ -492,69 +583,73 @@ static void ClientCleanup(ServiceClient *clt)
     free(c);
 }
 
-static int mainNet(KThread* thread, void *arg)
+static void _OnServiceStart(BaseService* service)
 {
-    KernelTaskContext* env = getKernelTaskContext();
+    KLOG_INFO("NetService started\n");
 
-    while (1)
-    {
-        seL4_Word sender;
-        seL4_MessageInfo_t msg = seL4_Recv(_netService.baseEndpoint, &sender);
-        ThreadBase* caller =(ThreadBase*) sender;
-        assert(caller->process);
+    _createLoopbackInterface();
+}
 
-        if (caller->process == getKernelTaskProcess())
+static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+        NetRequest req = (NetRequest) seL4_GetMR(0);
+        switch (req)
         {
-            ServiceNotification notif = seL4_GetMR(0);
-            if(notif == ServiceNotification_ClientExit)
-            {
-                ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
-                ClientCleanup(clt);
-            }
-            else if(notif == ServiceNotification_WillStop)
-            {
-                KLOG_DEBUG("[NetService] will stop\n");
-            }
+        case NetRequest_Register:
+            _Register(caller, msg);
+            break;
+        case NetRequest_Socket:
+            _Socket(caller, msg);
+            break;
+        case NetRequest_Bind:
+            _Bind(caller, msg);
+            break;
+        case NetRequest_RecvFrom:
+            _RecvFrom(caller, msg);
+            break;
+        case NetRequest_SendTo:
+            _SendTo(caller, msg);
+            break;
+        case NetRequest_Close:
+            _Close(caller, msg);
+            break;
+        case NetRequest_ConfigInterface:
+        {
+            int ret = _ConfigInterface(caller, msg);
+            seL4_SetMR(1, ret);
+            seL4_Reply(msg);
         }
-        else
-        {        
-            NetRequest req = (NetRequest) seL4_GetMR(0);
-            switch (req)
-            {
-            case NetRequest_Register:
-                _Register(caller, msg);
-                break;
-            case NetRequest_Socket:
-                _Socket(caller, msg);
-                break;
-            case NetRequest_Bind:
-                _Bind(caller, msg);
-                break;
-            case NetRequest_RecvFrom:
-                _RecvFrom(caller, msg);
-                break;
-            case NetRequest_SendTo:
-                _SendTo(caller, msg);
-                break;
-            case NetRequest_Close:
-                _Close(caller, msg);
-                break;
-            default:
-                KLOG_TRACE("[NetService] Received unknown code %i from %li\n", req, sender);
-                assert(0);
-                break;
-            }
+            break;
+        case NetRequest_EnumInterfaces:
+        {
+            int ret = _EnumInterfaces(caller, msg);
+            seL4_SetMR(1, ret);
+            seL4_Reply(msg);
         }
+            break;
+        default:
+            KLOG_TRACE("[NetService] Received unknown code %i\n", req);
+            assert(0);
+            break;
+        }
+}
+
+static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
+{
+    ServiceNotification notif = seL4_GetMR(0);
+    if(notif == ServiceNotification_ClientExit)
+    {
+        ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
+        ClientCleanup(clt);
+    }
+    else if(notif == ServiceNotification_WillStop)
+    {
+        KLOG_DEBUG("[NetService] will stop\n");
     }
 }
 
 
 int NetServiceStart()
 {
-    KThreadInit(&_netServiceThread);
-    _netServiceThread.mainFunction = mainNet;
-    _netServiceThread.name = "NetD";
-    int error = KThreadRun(&_netServiceThread, 254, NULL);
-
-    return error;
+    return BaseServiceStart(&_service);
 }

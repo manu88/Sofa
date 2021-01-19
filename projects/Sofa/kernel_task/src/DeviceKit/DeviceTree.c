@@ -40,6 +40,22 @@ const IONode* DeviceTreeGetRoot()
     return &_rootNode;
 }
 
+IODevice* DeviceTreeGetDeviceFromHandle(const void* handle)
+{
+    if(!handle)
+    {
+        return NULL;
+    }
+    IODevice* dev = NULL;
+    FOR_EACH_DEVICE(dev)
+    {
+        if(dev == handle)
+        {
+            return dev;
+        }
+    }
+    return NULL;
+}
 IODevice* DeviceTreeGetDevices()
 {
     return _deviceList;

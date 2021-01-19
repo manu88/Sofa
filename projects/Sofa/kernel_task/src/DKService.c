@@ -144,17 +144,6 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
             onRegister(service, caller, msg);
             break;
         }
-        case DKRequest_List:
-        {
-            KLOG_DEBUG("DKService: Dev Enum request\n");
-            IODevice* dev = NULL;
-            FOR_EACH_DEVICE(dev)
-            {
-                KLOG_INFO("'%s' type %i\n", dev->name, dev->type);
-            }
-
-            break;
-        }
         case DKRequest_Tree:
         {
             KLOG_DEBUG("DKService: IONode tree request\n");

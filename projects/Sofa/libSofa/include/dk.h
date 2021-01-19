@@ -14,11 +14,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <sel4/types.h>
 
 typedef enum
 {
     DKRequest_Register,
-    DKRequest_List,
     DKRequest_Tree,
     DKRequest_Enum,
 
@@ -36,10 +36,11 @@ typedef enum
 
 int DKClientInit(void);
 
-int DKClientTempListDevices(void);
+
 int DKClientEnumTree(void);
 
 typedef seL4_Word DKDeviceHandle;
+#define DKDeviceHandle_Invalid 0
 
 
 typedef struct
@@ -57,3 +58,6 @@ int DKClientEnumDevices(int type, DKDeviceList* list, size_t* numDevices);
 /* Per device operations*/
 char* DKDeviceGetName(DKDeviceHandle devHandle);
 char* DKDeviceGetDevFile(DKDeviceHandle devHandle);
+
+
+DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, int type);

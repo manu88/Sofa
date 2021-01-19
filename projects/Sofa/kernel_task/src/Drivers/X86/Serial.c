@@ -237,7 +237,7 @@ void AddComDev(IODriver *drv, IONode * n)
         KLOG_ERROR("PCI._AddComDev: unable to alloc space for device '%s'\n", n->name);
         return;
     }
-    IODeviceInit(com, n->name, IODevice_CharDev);
+    IODeviceInit(com, n->name, IODevice_CharDev, &_comDevOps);
     DeviceTreeAddDevice(com);
 
     CircularBufferInit(com->inputBuffer, SERIAL_CIRCULAR_BUFFER_SIZE);
@@ -247,7 +247,7 @@ void AddComDev(IODriver *drv, IONode * n)
     assert(comDev);
 
     int comID = n->name[3] - '0';
-    com->dev.ops = &_comDevOps;
+
     com->dev.impl = ps_cdev_init(comID -1 , &context->ops , comDev);
     assert(com->dev.impl);
 

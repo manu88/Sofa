@@ -24,6 +24,9 @@ int DeviceTreeInit(void);
 
 int DeviceTreeX86Start(void);
 
+
+IODevice* DeviceTreeGetDeviceFromHandle(const void* handle);
+
 IODevice* DeviceTreeGetDevices(void);
 
 #define FOR_EACH_DEVICE(dev) DL_FOREACH(DeviceTreeGetDevices(), dev)

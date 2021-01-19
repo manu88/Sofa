@@ -35,14 +35,18 @@ struct _IODevice;
 
 typedef ssize_t (*ReadDevice)(struct _IODevice* dev, size_t sector, char* buf, size_t bufSize);
 typedef ssize_t (*WriteDevice)(struct _IODevice* dev, size_t sector, const char* buf, size_t bufSize);
-
 typedef void (*HandleIRQ)(struct _IODevice* dev, int irqN);
+
+
+typedef int (*RegisterIface)(struct _IOdevice* dev, void* netInterface, const /*ip_addr_t*/void* addr, const /*ip_addr_t*/void*gw, const /*ip_addr_t*/void* mask);
 
 typedef struct
 {
      ReadDevice read;
      WriteDevice write;
      HandleIRQ handleIRQ;
+
+     RegisterIface regIface;
 } IODeviceOperations;
 
 
@@ -65,11 +69,12 @@ typedef struct _IODevice
 #define IODeviceNew(name_, type_, ops_) {.name = name_ ,.type = type_, .ops = ops_ }
 
 
-static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type)
+static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type, IODeviceOperations* ops)
 {
     memset(d, 0, sizeof(IODevice));
     d->name = name;
     d->type = type;
+    d->ops = ops;
 }
 ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize);
 ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize);

@@ -1,5 +1,6 @@
 #include "helpers.h"
 #include "runtime.h"
+#include <unistd.h>
 #include <Sofa.h>
 #include <Thread.h>
 #include "net.h"
@@ -12,7 +13,7 @@ int main(int argc, char *argv[])
 {   
     
     RuntimeInit2(argc, argv);
-    SFPrintf("[%i] started\n", SFGetPid());
+    SFPrintf("[%i] started\n", getpid());
 
     argc -=2;
     argv = &argv[2];

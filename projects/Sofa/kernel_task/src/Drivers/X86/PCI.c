@@ -61,14 +61,14 @@ static void _checkISA(PCIDriver* drv, IONode * isaNode)
     {
         if(IONodeEISAIDIs(n, "PNP0501") == 0)
         {
-            AddComDev(drv, n);
+            AddComDev((IODriver*) drv, n);
         }
     }
 
     IONode* ega = malloc(sizeof(IONode));
     IONodeInit(ega, "COM6");
     IONodeAddChild(isaNode, ega);
-    AddComDev(drv, ega);
+    AddComDev((IODriver*) drv, ega);
 }
 
 static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
@@ -97,7 +97,12 @@ static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
             && pciDev->subsystem_id == 1)
     {
         KLOG_DEBUG("Got VIRTIO NET DEVICE\n");
-        NetInit(iobase0);
+
+        IODevice* netDev = NetInit(iobase0);
+        if(netDev)
+        {
+            DeviceTreeAddDevice(netDev);
+        }
     }
 
 }
