@@ -26,7 +26,7 @@ int VFSClientClose(int handle);
 ssize_t VFSClientRead(int handle, char* data, size_t size);
 ssize_t VFSClientWrite(int handle, const char* data, size_t size);
 
-int VFSClientSeek(int handle, size_t pos);
+off_t VFSClientSeek(int handle, off_t offset, int whence);
 
 int VFSClientStat(const char *pathname, struct stat *statbuf);
 

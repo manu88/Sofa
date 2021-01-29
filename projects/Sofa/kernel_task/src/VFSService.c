@@ -289,16 +289,16 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
     return f->index;
 }
 
-static int VFSServiceSeek(Client* client, int handle, size_t pos)
+static int VFSServiceSeek(Client* client, int handle, off_t pos, int whence)
 {
     FileHandle* file = NULL;
     HASH_FIND_INT(client->files, &handle, file);
     if(file == NULL)
     {
-        return EINVAL;
+        return -EINVAL;
     }
 
-    return VFSSeek(&file->file, pos);
+    return VFSSeek(&file->file, pos, whence);
 }
 
 static ssize_t VFSServiceWrite(Client* client, int handle, int size)
@@ -421,10 +421,8 @@ static Client* RegisterClient(ThreadBase* caller)
 
 static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
 {
-    printf("VFS Client Clone %i\n", newProc->process->state);
     if(newProc->process->state != ProcessState_Running)
     {
-        printf("VFS: new proc is not running, cancel clone\n");
         return;
     }
     assert(parent->process);
@@ -574,8 +572,9 @@ static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageI
         Client* client = (Client*) BaseServiceGetClient(service, sender);
         assert(client);
         int handle = seL4_GetMR(1);
-        size_t offset = seL4_GetMR(2);
-        int ret = VFSServiceSeek(client, handle, offset);
+        off_t offset = seL4_GetMR(2);
+        int whence = seL4_GetMR(3);
+        int ret = VFSServiceSeek(client, handle, offset, whence);
         seL4_SetMR(1, ret);
         seL4_Reply(msg);
     }

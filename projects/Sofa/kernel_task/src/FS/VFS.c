@@ -300,18 +300,26 @@ int VFSClose(File* file)
     return file->ops->Close(file);
 }
 
-int VFSSeek(File* file, size_t pos)
+int VFSSeek(File* file, size_t pos, int whence)
 {
-    assert(0);
     if(file->ops->Seek == NULL)
     {
-        size_t effectiveOffset = pos;
-        if(effectiveOffset > file->size)
+        // SEEK_SET The file offset is set to offset bytes.
+        // SEEK_CUR The file offset is set to its current location plus offset bytes.
+        // SEEK_END The file offset is set to the size of the file plus offset bytes.
+        if(whence == SEEK_SET)
         {
-            effectiveOffset = file->size;
+            file->readPos = pos;
         }
-        file->readPos = effectiveOffset;
-        return 0;
+        else if(whence == SEEK_CUR)
+        {
+            file->readPos += pos;
+        }
+        else if(whence == SEEK_END)
+        {
+            file->readPos = -1;
+        }
+        return file->readPos;
     }
     return file->ops->Seek(file, pos);
 }
@@ -341,6 +349,5 @@ ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, in
     {
         *async_later = file->ops->asyncRead;
     }
-
     return file->ops->Read(caller, file, buf, sizeToRead);
 }

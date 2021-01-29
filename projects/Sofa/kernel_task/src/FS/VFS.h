@@ -94,7 +94,7 @@ ssize_t VFSRead(ThreadBase* caller, File* file, char* buf, size_t sizeToRead, in
 ssize_t VFSWrite(File* file, const char* buf, size_t sizeToWrite);
 
 int VFSClose(File* file);
-int VFSSeek(File* file, size_t pos);
+int VFSSeek(File* file, size_t pos, int whence);
 
 // free the retured strings!
 char** VFSSplitPath(const char* _path, size_t* numSegs);

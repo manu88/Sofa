@@ -70,6 +70,49 @@ static long sf_read(va_list ap)
 
     return VFSClientRead(fd, buf, bufSize);
 }
+
+static long sf_lseek(va_list ap)
+{
+    int fd = va_arg(ap, int);
+    off_t offset = va_arg(ap, off_t);
+    int whence = va_arg(ap, int);
+
+    return VFSClientSeek(fd, offset, whence);
+}
+
+static long sf_pread64(va_list ap)
+{
+    int fd = va_arg(ap, int);
+    void *buf = va_arg(ap, void*);
+    size_t count = va_arg(ap, size_t);
+    off_t offset = va_arg(ap, off_t);
+
+    off_t old_offset = lseek (fd, 0, SEEK_CUR);
+    if (old_offset == (off_t) -1)
+        return -1;
+    /* Set to wanted position.  */
+    if (lseek (fd, offset, SEEK_SET) == (off_t) -1)
+    {
+        return -1;
+    }
+
+    ssize_t result = read (fd, buf, count);
+
+    int save_errno = errno;
+
+    if (lseek (fd, old_offset, SEEK_SET) == (off_t) -1)
+    {
+        if (result == -1)
+        {
+            errno = save_errno;
+        }
+        return -1;
+    }
+    errno = save_errno;
+    return result;
+}
+
+
 static long sf_open(va_list ap)
 {
     const char *pathname = va_arg(ap, const char *);
@@ -278,6 +321,12 @@ long sofa_vsyscall(long sysnum, ...)
         break;
     case __NR_readv:
         ret = sf_readv(al);
+        break;
+    case __NR_pread64:
+        ret = sf_pread64(al);
+        break;
+    case __NR_lseek:
+        ret = sf_lseek(al);
         break;
     case __NR_writev:
         ret = sf_writev(al);

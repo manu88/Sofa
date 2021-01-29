@@ -87,7 +87,7 @@ int VFSClientClose(int handle)
     return -err;
 }
 
-int VFSClientSeek(int handle, size_t pos)
+off_t VFSClientSeek(int handle, off_t offset, int whence)
 {
     if(vfsCap == 0)
     {
@@ -98,19 +98,15 @@ int VFSClientSeek(int handle, size_t pos)
         Printf("[shell] VFS client not registered(no buff)\n");
     }
 
-    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
     seL4_SetMR(0, VFSRequest_Seek);
     seL4_SetMR(1, handle);
-    seL4_SetMR(2, pos);
+    seL4_SetMR(2, offset);
+    seL4_SetMR(3, whence);
     seL4_Call(vfsCap, info);
-    int err = seL4_GetMR(1);
-    int offset = seL4_GetMR(2);
+    off_t ret = seL4_GetMR(1);
 
-    if(err == 0)
-    {
-        return offset;
-    }
-    return -err;
+    return ret;
 }
 
 ssize_t VFSClientWrite(int handle, const char* data, size_t size)
