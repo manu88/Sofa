@@ -56,7 +56,7 @@ static uint16_t in16(uint16_t port)
     return (uint16_t) result;
 }
 
-IODriver* BGAInit(IONode*n, void* fbuf)
+IODriver* BGAInit(void* fbuf)
 {
 
     BGADevice* dev = malloc(sizeof(BGADevice));
@@ -64,20 +64,45 @@ IODriver* BGAInit(IONode*n, void* fbuf)
 
     dev->bga = bga_init(fbuf, out16, in16);
 
+    uint16_t version = bga_version(dev->bga);
+    KLOG_DEBUG("BGA version is %X\n", version);
     DeviceTreeAddDevice((IODevice*) dev);
 
     return &drv;
 }
 
 
-static ssize_t _Read(IODevice* dev, size_t sector, char* buf, size_t bufSize)
+static ssize_t _Read(IODevice* dev, size_t index, char* buf, size_t bufSize)
 {
-    KLOG_DEBUG("BGADevice Read request\n");
+    KLOG_DEBUG("BGADevice Read request index %zi data size %zi\n", index, bufSize);
     return bufSize;
 }
 
-static ssize_t _Write(IODevice* dev, size_t sector, const char* buf, size_t bufSize)
+static int a = 0;
+static ssize_t _Write(IODevice* _dev, size_t index, const char* buf, size_t bufSize)
 {
-    KLOG_DEBUG("BGADevice Write request\n");
+
+    BGADevice* dev = (BGADevice*) _dev; 
+    KLOG_DEBUG("BGADevice Write request index %zi data size %zi\n", index, bufSize);
+
+    if(a == 0)
+    {
+        //bga_set_mode(dev->bga, 1024, 768, 24);
+        bga_set_mode(dev->bga, 640, 480, 8);
+    }
+    else
+    {     
+        char *fb = bga_get_framebuffer(dev->bga);
+        fb[a] = 255;
+/*      
+        char purple[] = { 210, 101, 141 };
+
+        for(int i=0;i<50;i++)
+        {
+            bga_set_pixel(dev->bga, 100+i , 100+i, purple);
+        }
+*/
+    }
+    a++;
     return bufSize;
 }

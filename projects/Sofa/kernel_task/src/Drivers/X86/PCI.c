@@ -106,6 +106,13 @@ static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
             DeviceTreeAddDevice(netDev);
         }
     }
+    else if(pciDev->vendor_id==0x1234
+            && pciDev->device_id==0x1111)
+    {
+        KLOG_DEBUG("Got VGA dev at %x\n", iobase0);
+    
+        IODriver* bgaDev = BGAInit(iobase0);
+    }
 
 }
 
@@ -143,52 +150,7 @@ int PCIDriverInit(IONode *n)
 
     _scanPCIBus(&_pciDriver);
 
-    IONode* ega = malloc(sizeof(IONode));
-    IONodeInit(ega, "EGA");
-    IONodeAddChild(isaNode, ega);
-
-    IODriver* bgaDev = BGAInit(ega, (void *)0x1000000);
-    if(bgaDev)
-    {
-        ega->driver = bgaDev;
-    }
     
     n->driver = (IODriver*) &_pciDriver;
-
-#if 0
-    void *bga_ptr = (void *)0x1000000;
-    bga_p bga = bga_init(bga_ptr, out16, in16);
-    bga_set_mode(bga, 1024, 768, 24);
-
-    char purple[] = { 210, 101, 141 };
-    char blue[] = { 197, 103, 0 };
-
-
-#define CHAR_WIDTH 14
-#define CHAR_HEIGHT 26
-#define WIDTH 312
-#define HEIGHT 300
-    for (unsigned int i = 100; i < 100 + WIDTH; i++) {
-        for (unsigned int j = 100; j < 100 + 4 + CHAR_HEIGHT; j++) {
-            bga_set_pixel(bga, i, j, purple);
-        }
-        bga_set_pixel(bga, i, 100 + HEIGHT, purple);
-    }
-    for (unsigned int i = 100; i < 100 + HEIGHT; i++) {
-        bga_set_pixel(bga, 100, i, purple);
-        bga_set_pixel(bga, 100 + WIDTH, i, purple);
-    }
-
-    for (unsigned int i = 200 + WIDTH; i < 200 + 2 * WIDTH; i++) {
-        for (unsigned int j = 100; j < 100 + 4 + CHAR_HEIGHT; j++) {
-            bga_set_pixel(bga, i, j, blue);
-        }
-        bga_set_pixel(bga, i, 100 + HEIGHT, blue);
-    }
-    for (unsigned int i = 100; i < 100 + HEIGHT; i++) {
-        bga_set_pixel(bga, 200 + WIDTH, i, blue);
-        bga_set_pixel(bga, 200 + 2 * WIDTH, i, blue);
-    }
-#endif
     return 0;
 }

@@ -69,6 +69,22 @@ static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
     return count;
 }
 
+static ssize_t doDKDeviceWrite(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
+{
+    ServiceClient* clt = BaseServiceGetClient(service, caller);
+    assert(clt);
+    void* handle = seL4_GetMR(1);
+    size_t index = seL4_GetMR(2);
+    size_t dataSize = seL4_GetMR(3);
+
+    IODevice* dev = DeviceTreeGetDeviceFromHandle(handle);
+    if(dev == NULL)
+    {
+        return -ENODEV;
+    }
+    return IODeviceWrite(dev, index, clt->buff, dataSize);
+}
+
 static long doDKDeviceDetails(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
 {
     ServiceClient* clt = BaseServiceGetClient(service, caller);
@@ -163,6 +179,13 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
             doDKEnumRequest(service, caller, msg);
             break;
         }
+        case DKRequest_Write:
+        {
+            ssize_t ret = doDKDeviceWrite(service, caller, msg);
+            seL4_SetMR(1, ret);
+            seL4_Reply(msg);
+        }
+            break;
     }
 }
 

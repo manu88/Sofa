@@ -147,3 +147,21 @@ DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, int type)
     free(list);
     return retHandle;
 }
+
+
+
+ssize_t DKDeviceRead(DKDeviceHandle handle, size_t index, char* buf, size_t bufSize)
+{
+    return 0;
+}
+ssize_t DKDeviceWrite(DKDeviceHandle handle, size_t index, const char* buf, size_t bufSize)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 4);
+    seL4_SetMR(0, DKRequest_Write);
+    seL4_SetMR(1, handle);
+    seL4_SetMR(2, index);
+    seL4_SetMR(3, bufSize);
+    memcpy(dkBuf, buf, bufSize);
+    seL4_Call(dkCap, info);
+    return seL4_GetMR(1);
+}

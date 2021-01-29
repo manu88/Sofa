@@ -70,7 +70,7 @@ uint16_t bga_version(bga_p device)
     const uint16_t index_id = 0x0000; /* Index to read version information. */
     const uint16_t mask = (uint16_t)~0xb0c0;
     uint16_t result = read_data(device, index_id);
-    return result & mask;
+    return result;// & mask;
 }
 
 bga_p bga_init(void *framebuffer,

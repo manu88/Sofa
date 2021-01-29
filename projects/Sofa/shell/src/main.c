@@ -220,7 +220,7 @@ static int doDK(const char* cmds)
                 {
                     char* name = DKDeviceGetName(list->handles[i]);
                     char* devFile = DKDeviceGetDevFile(list->handles[i]);
-                    Printf("DKDevice at %zi %s %s\n", i, name, devFile);
+                    Printf("DKDevice at %lu %s %s\n", list->handles[i], name, devFile);
                     free(name);
                     free(devFile);
                 }
@@ -229,6 +229,15 @@ static int doDK(const char* cmds)
             }
         }
         return ret;
+    }
+    else if(startsWith("write", cmds))
+    {
+        const char* params = cmds + strlen("write ");
+
+        DKDeviceHandle handle = atoll(params);
+
+        const char data[] = "Hello device";
+        return DKDeviceWrite(handle, 0, data, strlen(data));
     }
     else if(strcmp(cmds, "tree") == 0)
     {

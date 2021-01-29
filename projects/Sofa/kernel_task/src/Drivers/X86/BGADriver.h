@@ -17,4 +17,4 @@
 #include "IODevice.h"
 #include "IONode.h"
 
-IODriver* BGAInit(IONode*n, void* fbuf);
+IODriver* BGAInit(void* fbuf);

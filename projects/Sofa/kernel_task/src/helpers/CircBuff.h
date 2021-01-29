@@ -45,3 +45,14 @@ static inline char CircularBufferGet(CircularBuffer* buffer)
 {
     return circ_buf_get((circ_buf_t *) buffer);
 }
+
+
+static inline void circ_buf_rem(circ_buf_t *cb)
+{
+    cb->tail = (cb->tail - 1) % cb->size;
+}
+
+static inline void CircularBufferRemove(CircularBuffer* buffer)
+{
+    circ_buf_rem((circ_buf_t *) buffer);
+}
