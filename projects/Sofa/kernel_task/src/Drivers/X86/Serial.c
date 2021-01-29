@@ -92,14 +92,19 @@ void ComHandleInput(ComDevice* dev)
                 }
             }
 #endif
+//            printf("Char %X\n", data);
+            if(data == 0X7F)
+            {
+                CircularBufferRemove(dev->inputBuffer);
+            }
             if(data == '\r')
+            {
                 data = '\n';
-
+            }
             CircularBufferPut(dev->inputBuffer, data);
 
             if(dev->waiter.waiter &&  dev->waiter.size)
             {
-
                 ps_cdev_putchar(charDev, data);
 
                 if(dev->waiter.until && data == dev->waiter.until)
@@ -113,7 +118,6 @@ void ComHandleInput(ComDevice* dev)
                     memset(&dev->waiter, 0, sizeof(SerialWaiter));
                 }
             }
-
         }
     }
 }

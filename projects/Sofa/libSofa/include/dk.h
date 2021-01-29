@@ -23,6 +23,9 @@ typedef enum
     DKRequest_Enum,
 
     DKRequest_DeviceDetails,
+
+    DKRequest_Read,
+    DKRequest_Write,
 }DKRequest;
 
 
@@ -59,5 +62,7 @@ int DKClientEnumDevices(int type, DKDeviceList* list, size_t* numDevices);
 char* DKDeviceGetName(DKDeviceHandle devHandle);
 char* DKDeviceGetDevFile(DKDeviceHandle devHandle);
 
+ssize_t DKDeviceRead(DKDeviceHandle handle, size_t index, char* buf, size_t bufSize);
+ssize_t DKDeviceWrite(DKDeviceHandle handle, size_t index, const char* buf, size_t bufSize);
 
 DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, int type);

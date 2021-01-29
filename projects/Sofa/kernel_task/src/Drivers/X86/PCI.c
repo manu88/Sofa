@@ -22,6 +22,7 @@
 #include "Blk.h"
 #include "Net.h"
 #include "Serial.h"
+#include "BGADriver.h"
 
 typedef struct _PCIDriver
 {
@@ -64,11 +65,12 @@ static void _checkISA(PCIDriver* drv, IONode * isaNode)
             AddComDev((IODriver*) drv, n);
         }
     }
-
+/*
     IONode* ega = malloc(sizeof(IONode));
     IONodeInit(ega, "COM6");
     IONodeAddChild(isaNode, ega);
     AddComDev((IODriver*) drv, ega);
+*/
 }
 
 static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
@@ -104,6 +106,13 @@ static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
             DeviceTreeAddDevice(netDev);
         }
     }
+    else if(pciDev->vendor_id==0x1234
+            && pciDev->device_id==0x1111)
+    {
+        KLOG_DEBUG("Got VGA dev at %x\n", iobase0);
+    
+        IODriver* bgaDev = BGAInit(iobase0);
+    }
 
 }
 
@@ -119,6 +128,7 @@ static int _scanPCIBus(PCIDriver* driver)
     }
 
 }
+
 
 int PCIDriverInit(IONode *n)
 {
@@ -139,6 +149,7 @@ int PCIDriverInit(IONode *n)
     }
 
     _scanPCIBus(&_pciDriver);
+
     
     n->driver = (IODriver*) &_pciDriver;
     return 0;

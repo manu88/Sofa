@@ -25,6 +25,8 @@ typedef enum
     IODevice_BlockDev,
     IODevice_CharDev,
 
+    IODevice_FrameBuffer,
+
 // Not real Device types, can't be used for setting type, notably in IODeviceNew or IODeviceInit
     IODevice_AllTypes,
     IODevice_Last // keep last!
@@ -38,7 +40,7 @@ typedef ssize_t (*WriteDevice)(struct _IODevice* dev, size_t sector, const char*
 typedef void (*HandleIRQ)(struct _IODevice* dev, int irqN);
 
 
-typedef int (*RegisterIface)(struct _IOdevice* dev, void* netInterface, const /*ip_addr_t*/void* addr, const /*ip_addr_t*/void*gw, const /*ip_addr_t*/void* mask);
+typedef int (*RegisterIface)(struct _IODevice* dev, void* netInterface, const /*ip_addr_t*/void* addr, const /*ip_addr_t*/void*gw, const /*ip_addr_t*/void* mask);
 
 typedef struct
 {
