@@ -421,6 +421,12 @@ static Client* RegisterClient(ThreadBase* caller)
 
 static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
 {
+    printf("VFS Client Clone %i\n", newProc->process->state);
+    if(newProc->process->state != ProcessState_Running)
+    {
+        printf("VFS: new proc is not running, cancel clone\n");
+        return;
+    }
     assert(parent->process);
     assert(newProc->process);
     
@@ -449,6 +455,7 @@ static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
 
 static void ClientCleanup(ServiceClient *clt)
 {
+    printf("VFS Client Cleanup\n");
     Client* c = (Client*) clt;
 
     FileHandle* f = NULL;
