@@ -95,7 +95,8 @@ char* ConcPath(const char* workingDir, const char* path)
     size_t wdSize = strlen(workingDir);
     const size_t totalSize = wdSize + strlen(path);
 
-    char* realP = malloc(totalSize);
+    char* realP = malloc(totalSize+1);
+    memset(realP, 0, totalSize+1);
     if(!realP)
     {
         return NULL;
@@ -232,7 +233,7 @@ static int VFSServiceStat(Client* client, const char* path)
 
     if(freeRealP)
     {
-        free(realP);
+       free(realP);
     }
     if(ret != 0)
     {
@@ -289,16 +290,16 @@ static int VFSServiceOpen(Client* client, const char* path, int mode)
     return f->index;
 }
 
-static int VFSServiceSeek(Client* client, int handle, size_t pos)
+static int VFSServiceSeek(Client* client, int handle, off_t pos, int whence)
 {
     FileHandle* file = NULL;
     HASH_FIND_INT(client->files, &handle, file);
     if(file == NULL)
     {
-        return EINVAL;
+        return -EINVAL;
     }
 
-    return VFSSeek(&file->file, pos);
+    return VFSSeek(&file->file, pos, whence);
 }
 
 static ssize_t VFSServiceWrite(Client* client, int handle, int size)
@@ -421,6 +422,10 @@ static Client* RegisterClient(ThreadBase* caller)
 
 static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
 {
+    if(newProc->process->state != ProcessState_Running)
+    {
+        return;
+    }
     assert(parent->process);
     assert(newProc->process);
     
@@ -455,7 +460,6 @@ static void ClientCleanup(ServiceClient *clt)
     FileHandle* tmp = NULL;
     HASH_ITER(hh, c->files, f, tmp)
     {
-        KLOG_DEBUG("close File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
         VFSClose(&f->file);
         free(f);
     }
@@ -567,8 +571,9 @@ static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageI
         Client* client = (Client*) BaseServiceGetClient(service, sender);
         assert(client);
         int handle = seL4_GetMR(1);
-        size_t offset = seL4_GetMR(2);
-        int ret = VFSServiceSeek(client, handle, offset);
+        off_t offset = seL4_GetMR(2);
+        int whence = seL4_GetMR(3);
+        int ret = VFSServiceSeek(client, handle, offset, whence);
         seL4_SetMR(1, ret);
         seL4_Reply(msg);
     }

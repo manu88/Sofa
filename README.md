@@ -5,7 +5,6 @@ Sofa is built atop SeL4 microkernel and provides a set of userland servers and a
 ## Features:
 ### System:
 * IPC Model between root server ('*kernel_task*') and applications
-* process spawn from CPIO archive
 * Thread in processes
 * UDP stack with virtio device
 * virtio-pci-blk driver (IRQ Not working, polling only for now)
@@ -22,6 +21,7 @@ Sofa is built atop SeL4 microkernel and provides a set of userland servers and a
 * threads
 * VFS: mount, open, close, read
 * Net: socket, bind, recvfrom, sendto
+* module loader
 
 ### POSIX status
 Because we use `musl`, the current goal is to be as much as possible POSIX compliant. Except for:

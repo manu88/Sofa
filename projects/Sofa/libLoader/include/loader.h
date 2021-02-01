@@ -14,24 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <stddef.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-int VFSClientInit(void);
-
-int VFSClientOpen(const char* path, int mode);
-int VFSClientClose(int handle);
-
-ssize_t VFSClientRead(int handle, char* data, size_t size);
-ssize_t VFSClientWrite(int handle, const char* data, size_t size);
-
-off_t VFSClientSeek(int handle, off_t offset, int whence);
-
-int VFSClientStat(const char *pathname, struct stat *statbuf);
-
-char* VFSClientGetCWD(char *buf, size_t size);
-int VFSClientChDir(const char* path);
 
 
-int Printf(const char *format, ...) __attribute__((format(printf,1,2)));
+void* SF_DLOpen(const char *filename);
+
+void* SF_DLGetFunction(void* handle, int num);
+int SF_DLClose(void* handler);

@@ -147,6 +147,7 @@ void doExit(Process* process, int retCode)
         Panic("init returned");
     }
 // Close all client that belong to the process
+    process->state = ProcessState_Stopped;
     _closeThreadClients(&process->main);
     Thread* thread = NULL;
     PROCESS_FOR_EACH_EXTRA_THREAD(process, thread)

@@ -26,8 +26,9 @@
 
 typedef enum
 {
-    ProcessState_Running,
-    ProcessState_Zombie
+    ProcessState_Running, // This is not 'running' in the sense 'NOT sleeping' but running is the sense 'valid'
+    ProcessState_Zombie,
+    ProcessState_Stopped
 } ProcessState;
 
 typedef struct _Process Process;

@@ -151,7 +151,33 @@ static void process_messages()
         }
         else 
         {
+            const ThreadBase* base = (ThreadBase*) badge;
+
             KLOG_TRACE("Received message with label %lu from %lu\n", label, badge);
+
+            if(base->kernTaskThread)
+            {
+                KLOG_TRACE("This is a kernTask thread\n");
+
+                Service *serv = NULL;
+                Service *tmp = NULL;
+                FOR_EACH_SERVICE(serv, tmp)
+                {
+                    if(serv->kernTaskThread && &serv->kernTaskThread->_base  == base)
+                    {
+                        KLOG_DEBUG("Err from %s\n", serv->name);
+                    }
+                }
+            }
+            else
+            {
+                const Process*p = base->process;
+                KLOG_TRACE("From process %s %i\n", ProcessGetName(p), ProcessGetPID(p));
+            }
+            
+
+            seL4_DebugDumpScheduler();
+
         }   
     }
 }
