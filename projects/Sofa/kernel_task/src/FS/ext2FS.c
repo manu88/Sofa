@@ -213,7 +213,6 @@ static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
             KLOG_DEBUG("Other file type %X\n", (inode->type & 0xF000));
             assert(0);
         }
-
         return 0;
     }
     return -ENOENT;
@@ -221,6 +220,8 @@ static int ext2FSStat(VFSFileSystem* fs, const char*path, VFS_File_Stat* stat)
 
 static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBytes)
 {
+    assert(file);
+    assert(file->inode);
     inode_t* ino = file->inode;    
     if(file->size)
     {
@@ -233,6 +234,7 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
 
 
     IODevice* dev = file->impl;
+    assert(dev);
     if(ino == NULL)
     {
         return -EINVAL;
@@ -302,6 +304,7 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
 
 static int ext2FSOpen(VFSFileSystem *fs, const char *path, int mode, File *file)
 {
+    assert(fs->data);
     IODevice* dev = fs->data;    
     inode_t* inode =  _GetInodeForPath(fs, path);
     if(!inode)

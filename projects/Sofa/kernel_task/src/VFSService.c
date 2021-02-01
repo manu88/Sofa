@@ -95,7 +95,8 @@ char* ConcPath(const char* workingDir, const char* path)
     size_t wdSize = strlen(workingDir);
     const size_t totalSize = wdSize + strlen(path);
 
-    char* realP = malloc(totalSize);
+    char* realP = malloc(totalSize+1);
+    memset(realP, 0, totalSize+1);
     if(!realP)
     {
         return NULL;
@@ -232,7 +233,7 @@ static int VFSServiceStat(Client* client, const char* path)
 
     if(freeRealP)
     {
-        free(realP);
+       free(realP);
     }
     if(ret != 0)
     {
