@@ -454,14 +454,12 @@ static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
 
 static void ClientCleanup(ServiceClient *clt)
 {
-    printf("VFS Client Cleanup\n");
     Client* c = (Client*) clt;
 
     FileHandle* f = NULL;
     FileHandle* tmp = NULL;
     HASH_ITER(hh, c->files, f, tmp)
     {
-        KLOG_DEBUG("close File handle %i (R=%zi/%zi)\n", f->index, f->file.readPos, f->file.size);
         VFSClose(&f->file);
         free(f);
     }

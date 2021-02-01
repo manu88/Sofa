@@ -41,15 +41,24 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
     int fd = seL4_GetMR(5);
     off_t offset = seL4_GetMR(6);
 
+    const size_t numPages = length / 4096;
+
     if(addr)
     {
-        KLOG_INFO("mmap Only support NULL addr for now\n");
+        KLOG_INFO("mmap at addr (%p size=%zi)\n",addr, length);
+
+        reservation_t reservation = sel4utils_reserve_range_at(&process->native.vspace, addr, length, seL4_AllRights, 1);
+        sel4utils_new_pages_at_vaddr(&process->native.vspace,
+                                     addr,
+                                     numPages,
+                                     PAGE_BITS_4K,
+                                     reservation, 0);
         seL4_SetMR(1, -EINVAL);
         seL4_Reply(info);
         return;
 
     }
-    const size_t numPages = length / 4096;
+    
 
     KernelTaskContext* ctx = getKernelTaskContext();
     void* p = process_new_pages(caller->_base.process, seL4_AllRights, numPages);

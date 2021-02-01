@@ -21,7 +21,7 @@
 
 
 typedef struct _Process Process;
-
+typedef struct _KThread KThread;
 
 typedef enum 
 {
@@ -42,6 +42,9 @@ typedef struct _Service
     seL4_CPtr kernTaskEp; // endpoint employed by kernel_task to send messages to the service
 
     int flags;
+
+    // debug prop that may denote a poor design.  Should be removed at some point
+    KThread* kernTaskThread; // kernel task thread IFF not in aother process
 } Service;
 
 

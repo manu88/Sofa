@@ -64,6 +64,7 @@ int BaseServiceStart(BaseService*s)
     KThreadInit(&s->thread);
     s->thread.mainFunction = mainBaseService;
     s->thread.name = s->service.name;
+    s->service.kernTaskThread = &s->thread;
     int error = KThreadRun(&s->thread, 254, s);
 
     return error;
