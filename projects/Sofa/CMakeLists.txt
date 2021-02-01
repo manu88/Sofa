@@ -46,6 +46,7 @@ util_libs_import_libraries()
 sel4_libs_import_libraries()
 
 add_subdirectory(libSofa)
+add_subdirectory(libLoader)
 add_subdirectory(libACPI)
 add_subdirectory(init)
 add_subdirectory(initService)

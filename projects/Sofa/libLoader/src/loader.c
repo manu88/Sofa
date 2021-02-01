@@ -328,7 +328,6 @@ dloader_p api_load(const char *filename)
                          mapLen, /*prot_from_phdr(first_load)*/PROT_READ| PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1,
                          mapOffset);
 
-    perror("mmap");
     assert(realAddr);
 
     ((char*)realAddr)[10] = 0;
