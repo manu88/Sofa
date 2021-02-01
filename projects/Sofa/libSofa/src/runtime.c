@@ -118,6 +118,7 @@ void TLSSet( TLSContext* ctx)
 {
     seL4_SetUserData((seL4_Word) ctx);
 }
+
 TLSContext* TLSGet(void)
 {
     return (TLSContext*) seL4_GetUserData();
