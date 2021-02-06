@@ -47,10 +47,10 @@ extern Process initProcess;
 int ProcessCreateSofaIPCBuffer(Process* p, void** addr, void** procAddr)
 {
     KernelTaskContext* ctx = getKernelTaskContext();
-
-    *addr = (uint8_t*) vspace_new_pages(&ctx->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    vspace_t* mainVSpace = getMainVSpace();
+    *addr = (uint8_t*) vspace_new_pages(mainVSpace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(*addr);
-    *procAddr = vspace_share_mem(&ctx->vspace, &p->native.vspace, *addr, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
+    *procAddr = vspace_share_mem(mainVSpace, &p->native.vspace, *addr, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
     assert(*procAddr);
 
     return 0;
@@ -84,8 +84,8 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
 {
     KernelTaskContext* envir = getKernelTaskContext();
     static int pidPool = 1;
-
-    p->init = (test_init_data_t *) vspace_new_pages(&envir->vspace, seL4_AllRights, 1, PAGE_BITS_4K);
+    vspace_t* mainVSpace = getMainVSpace();
+    p->init = (test_init_data_t *) vspace_new_pages(mainVSpace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(p->init != NULL);
     p->init->pid = pidPool++;
     p->init->priority = seL4_MaxPrio - 1;
@@ -255,8 +255,8 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
 
     config = process_config_fault_cptr(config, badged_ep_path.capPtr);
 //    
-    
-    error = sel4utils_configure_process_custom(&process->native, &env->vka, &env->vspace, config);
+    vspace_t* mainVSpace = getMainVSpace();
+    error = sel4utils_configure_process_custom(&process->native, &env->vka, mainVSpace, config);
     if(error != 0)
     {
         return error;
@@ -314,7 +314,8 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     }
 
     /* map the cap into remote vspace */
-    process->init_remote_vaddr = vspace_share_mem(&env->vspace, &process->native.vspace, process->init, 1, PAGE_BITS_4K,
+
+    process->init_remote_vaddr = vspace_share_mem(mainVSpace, &process->native.vspace, process->init, 1, PAGE_BITS_4K,
                                          seL4_CanRead, 1);
 
     assert(process->init_remote_vaddr != 0);
@@ -370,7 +371,8 @@ void process_run(const char *name, Process* process)
     /* spawn the process */
 
     process->stats.startTime = GetTime();
-    error = sel4utils_spawn_process_v(&process->native, &env->vka, &env->vspace,
+    vspace_t* mainVSpace = getMainVSpace();
+    error = sel4utils_spawn_process_v(&process->native, &env->vka, mainVSpace,
                                       argc, argv, 1);
     ZF_LOGF_IF(error != 0, "Failed to start test process!");
 }
