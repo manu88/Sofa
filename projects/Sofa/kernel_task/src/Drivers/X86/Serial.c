@@ -184,7 +184,6 @@ static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
     assert(file->impl);
     ComDevice* dev = file->impl;
 
-    KernelTaskContext* env = getKernelTaskContext();
     vka_t *mainVKA = getMainVKA();
 
     assert(caller->replyCap == 0);

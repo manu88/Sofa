@@ -46,7 +46,6 @@ extern Process initProcess;
 
 int ProcessCreateSofaIPCBuffer(Process* p, void** addr, void** procAddr)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
     vspace_t* mainVSpace = getMainVSpace();
     *addr = (uint8_t*) vspace_new_pages(mainVSpace, seL4_AllRights, 1, PAGE_BITS_4K);
     assert(*addr);
@@ -82,7 +81,6 @@ static int ProcessCloneServices(Process* parent, Process* p)
 
 void spawnApp(Process* p, const char* imgName, Process* parent)
 {
-    KernelTaskContext* envir = getKernelTaskContext();
     static int pidPool = 1;
     vspace_t* mainVSpace = getMainVSpace();
     p->init = (test_init_data_t *) vspace_new_pages(mainVSpace, seL4_AllRights, 1, PAGE_BITS_4K);
@@ -340,7 +338,6 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
 
 void process_run(const char *name, Process* process)
 {
-    KernelTaskContext* env = getKernelTaskContext();
     int error;
 
     strncpy(process->init->name, name, TEST_NAME_MAX);
@@ -382,8 +379,6 @@ void process_run(const char *name, Process* process)
 
 void process_tear_down(Process* process)
 {
-    KernelTaskContext* env = getKernelTaskContext();
-
     Thread* elt = NULL;
     Thread* tmp = NULL;
 

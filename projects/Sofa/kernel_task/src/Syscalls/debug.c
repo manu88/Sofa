@@ -40,7 +40,6 @@ static char getProcessStateStr(ProcessState s)
 
 void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
 {
-    KernelTaskContext* env = getKernelTaskContext();
     Process* proc = caller->_base.process;
 
     SofaDebugCode op = seL4_GetMR(1);

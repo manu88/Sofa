@@ -58,7 +58,6 @@ extern KThread _mainThread;
 
 int ServiceCreateKernelTask(Service* s)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
     vka_t *mainVKA = getMainVKA();
     int error = 0;
     vka_object_t ep = {0};

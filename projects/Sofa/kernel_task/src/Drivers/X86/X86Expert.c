@@ -457,7 +457,6 @@ static void walkDev(IONode* n, int indent)
 
 static void ACPIParse(IONode *root)
 {
-    KernelTaskContext* env = getKernelTaskContext();
     vka_t *mainVKA = getMainVKA();
     ps_io_mapper_t io_mapper;
     vspace_t* mainVSpace = getMainVSpace();

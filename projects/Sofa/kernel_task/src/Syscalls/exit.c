@@ -31,7 +31,6 @@ void Syscall_exit(Thread* caller, seL4_MessageInfo_t info)
     }
     else
     {
-        KernelTaskContext* env = getKernelTaskContext();
         Process* process = caller->_base.process;
         doExit(process, MAKE_EXIT_CODE(retCode, 0));
     }
