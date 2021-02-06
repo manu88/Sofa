@@ -20,7 +20,6 @@
 
 static void RequestNotification(Thread* caller, seL4_MessageInfo_t info)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
     vka_t *mainVKA = getMainVKA();
     vka_object_t notifObj = {0};
     seL4_Word err = vka_alloc_notification(mainVKA, &notifObj);
@@ -38,7 +37,6 @@ static void RequestNotification(Thread* caller, seL4_MessageInfo_t info)
 
 static void RequestEndpoint(Thread* caller, seL4_MessageInfo_t info)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
     vka_t *mainVKA = getMainVKA();
     vka_object_t notifObj = {0};
     seL4_Word err = vka_alloc_endpoint(mainVKA, &notifObj);

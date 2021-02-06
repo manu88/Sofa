@@ -57,8 +57,6 @@ int IRQServerInit()
     _server._irqThread.name = tName;
     _server._irqThread.mainFunction = _irqMain;
 
-
-    KernelTaskContext* context = getKernelTaskContext();
     vka_t *mainVKA = getMainVKA();
 
     int error = vka_alloc_notification(mainVKA, &_server.irq_aep_obj);

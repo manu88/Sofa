@@ -79,7 +79,6 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
         return;
     }
 
-    KernelTaskContext* ctx = getKernelTaskContext();
     vka_t *mainVKA = getMainVKA();
     KLOG_DEBUG("Create Kernel task endpoint\n");
     vka_object_t tcb_obj;

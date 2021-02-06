@@ -122,7 +122,6 @@ static void onProcWait(BaseService* service, ThreadBase* sender, seL4_MessageInf
 
     if(r == -EWOULDBLOCK)
     {
-        KernelTaskContext* ctx = getKernelTaskContext();
         vka_t *mainVKA = getMainVKA();
         seL4_Word slot = get_free_slot(mainVKA);
         int error = cnode_savecaller(mainVKA, slot);

@@ -48,7 +48,6 @@ static seL4_CPtr CreateCapTCB(Thread* caller, vka_object_t* tcb)
 
 static void* CreateNewStack(Thread* caller)
 {
-    KernelTaskContext* env = getKernelTaskContext();
     void* p = vspace_new_sized_stack(&caller->_base.process->native.vspace, 1);
     
     return p;
@@ -58,7 +57,7 @@ static void* CreateIPCBuff(Thread* caller, seL4_CPtr* cap)
 {
     Process* process = caller->_base.process;
     assert(process);
-    KernelTaskContext* env = getKernelTaskContext();
+
     seL4_CPtr buf;
     void* bufAddr = vspace_new_ipc_buffer(&caller->_base.process->native.vspace, &buf);
 
@@ -73,7 +72,6 @@ static void* CreateIPCBuff(Thread* caller, seL4_CPtr* cap)
 
 void Syscall_ThreadNew(Thread* caller, seL4_MessageInfo_t info)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
     Process* process = caller->_base.process;
     KLOG_DEBUG("RequestNewThread2 from %i\n", ProcessGetPID(process));
 
