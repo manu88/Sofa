@@ -149,8 +149,11 @@ void Syscall_ThreadExit(Thread* caller, seL4_MessageInfo_t info)
     seL4_TCB_Suspend(caller->tcb.cptr);
     KLOG_DEBUG("start vspace_free_ipc_buffer\n");
     vspace_t* mainVSpace = getMainVSpace();
+
+    MainVSpaceLock();
     vspace_free_ipc_buffer(mainVSpace, (seL4_Word *) caller->ipcBuf2);
-    KLOG_DEBUG("end vspace_free_ipc_buffer\n");
+    MainVSpaceUnlock();
+
     LL_DELETE(process->threads, caller);
     kfree(caller);
 }
