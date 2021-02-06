@@ -58,17 +58,21 @@ vspace_t* getMainVSpace()
     return &_ctx._vspace;
 }
 
+vka_t* getMainVKA()
+{
+    return &_ctx._vka;
+}
 
 int IOInit()
 {
     KernelTaskContext* env = getKernelTaskContext();
 
 
-    int error = sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
+    int error = sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->_vka);
     assert(error == 0);
 
     vspace_t* mainVSpace = getMainVSpace();
-    error = sel4utils_new_page_dma_alloc(&env->vka, mainVSpace, &env->ops.dma_manager);
+    error = sel4utils_new_page_dma_alloc(&env->_vka, mainVSpace, &env->ops.dma_manager);
     assert(error == 0);
 }
 
@@ -92,11 +96,11 @@ static void CONSTRUCTOR(MUSLCSYS_WITH_VSYSCALL_PRIORITY)  init_malloc(void)
     assert(env->allocman);
 
     /* create vka */
-    allocman_make_vka(&env->vka, env->allocman);
+    allocman_make_vka(&env->_vka, env->allocman);
 
     /* create vspace */
     error = sel4utils_bootstrap_vspace_with_bootinfo_leaky(&env->_vspace, &data, simple_get_pd(&env->simple),
-                                                           &env->vka, info);
+                                                           &env->_vka, info);
 
     /* set up malloc */
     error = sel4utils_reserve_range_no_alloc(&env->_vspace, &malloc_res, seL4_LargePageBits, seL4_AllRights, 1,

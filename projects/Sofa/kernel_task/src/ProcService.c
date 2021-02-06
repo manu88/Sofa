@@ -123,12 +123,13 @@ static void onProcWait(BaseService* service, ThreadBase* sender, seL4_MessageInf
     if(r == -EWOULDBLOCK)
     {
         KernelTaskContext* ctx = getKernelTaskContext();
-        seL4_Word slot = get_free_slot(&ctx->vka);
-        int error = cnode_savecaller(&ctx->vka, slot);
+        vka_t *mainVKA = getMainVKA();
+        seL4_Word slot = get_free_slot(mainVKA);
+        int error = cnode_savecaller(mainVKA, slot);
         if (error)
         {
             KLOG_TRACE("[Syscall_wait] Unable to save caller err=%i\n", error);
-            cnode_delete(&ctx->vka, slot);
+            cnode_delete(mainVKA, slot);
             seL4_SetMR(1, -error);
             seL4_Reply(msg);
             return;

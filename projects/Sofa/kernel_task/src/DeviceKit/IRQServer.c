@@ -59,8 +59,9 @@ int IRQServerInit()
 
 
     KernelTaskContext* context = getKernelTaskContext();
+    vka_t *mainVKA = getMainVKA();
 
-    int error = vka_alloc_notification(&context->vka, &_server.irq_aep_obj);
+    int error = vka_alloc_notification(mainVKA, &_server.irq_aep_obj);
     if(error != 0)
     {
         return error;
@@ -133,16 +134,16 @@ int IRQServerRegisterIRQ(IODevice* dev, int irqN)
         cspacepath_t irq_handler_path = { 0 };
         seL4_CPtr irq_handler;
 
-
-        int error = vka_cspace_alloc(&context->vka, &irq_handler);
+        vka_t *mainVKA = getMainVKA();
+        int error = vka_cspace_alloc(mainVKA, &irq_handler);
         assert(error == 0);
-        vka_cspace_make_path(&context->vka, irq_handler, &irq_handler_path);
+        vka_cspace_make_path(mainVKA, irq_handler, &irq_handler_path);
 
         error = simple_get_IRQ_handler(&context->simple, irqN, irq_handler_path);
         assert(error == 0);
 
-        seL4_CPtr capMint = get_free_slot(&context->vka);
-        error = cnode_mint(&context->vka, _server.irq_aep_obj.cptr, capMint, seL4_AllRights, (seL4_Word) irqN);
+        seL4_CPtr capMint = get_free_slot(mainVKA);
+        error = cnode_mint(mainVKA, _server.irq_aep_obj.cptr, capMint, seL4_AllRights, (seL4_Word) irqN);
         assert(error == 0);
 
 

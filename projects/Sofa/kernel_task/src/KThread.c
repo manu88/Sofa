@@ -50,22 +50,23 @@ int KThreadRun(KThread* t, int prio, void* arg)
 {
     int error;
     KernelTaskContext* env = getKernelTaskContext();
+    vka_t *mainVKA = getMainVKA();
     vspace_t* mainVSpace = getMainVSpace();    
     sel4utils_thread_config_t thConf = thread_config_new(&env->simple);
   //  thConf = thread_config_cspace(thConf, simple_get_cnode(&env->simple), 0);
 
     // create a minted enpoint for the thread
     cspacepath_t srcPath;
-    vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr, &srcPath);
+    vka_cspace_make_path(mainVKA, env->root_task_endpoint.cptr, &srcPath);
 
-    t->ep = get_free_slot(&env->vka);
+    t->ep = get_free_slot(mainVKA);
     cspacepath_t dstPath;
-    vka_cspace_make_path(&env->vka, t->ep, &dstPath);
+    vka_cspace_make_path(mainVKA, t->ep, &dstPath);
 
     vka_cnode_mint(&dstPath, &srcPath, seL4_AllRights, (seL4_Word) t);
     thConf = thread_config_fault_endpoint(thConf, t->ep);
 
-    error = sel4utils_configure_thread_config(&env->vka,
+    error = sel4utils_configure_thread_config(mainVKA,
                                               mainVSpace,
                                               mainVSpace,
                                               thConf ,
@@ -99,10 +100,9 @@ int KThreadRun(KThread* t, int prio, void* arg)
 
 void KThreadCleanup(KThread* t)
 {
-    KernelTaskContext* env = getKernelTaskContext();
-
+    vka_t *mainVKA = getMainVKA();
     vspace_t* mainVSpace = getMainVSpace();
-    sel4utils_clean_up_thread(&env->vka, mainVSpace, &t->native);
+    sel4utils_clean_up_thread(mainVKA, mainVSpace, &t->native);
     
 }
 
@@ -140,12 +140,14 @@ void KThreadExit(KThread* thread, int code)
 
 int KMutexNew(KMutex* mutex)
 {
-    return sync_recursive_mutex_new(&getKernelTaskContext()->vka, mutex);
+    vka_t *mainVKA = getMainVKA();
+    return sync_recursive_mutex_new(mainVKA, mutex);
 }
 
 int KMutexDelete(KMutex* mutex)
 {
-    return sync_recursive_mutex_destroy(&getKernelTaskContext()->vka, mutex);
+    vka_t *mainVKA = getMainVKA();
+    return sync_recursive_mutex_destroy(mainVKA, mutex);
 }
 
 int KMutexLock(KMutex* mutex)

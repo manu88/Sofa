@@ -119,7 +119,8 @@ static void replyToWaitingParent(Thread* onThread, int pid, int retCode)
     seL4_SetMR(1, pid);
     seL4_SetMR(2, retCode);
     seL4_Send(onThread->_base.replyCap, tag);
-    cnode_delete(&getKernelTaskContext()->vka, onThread->_base.replyCap);
+
+    cnode_delete(getMainVKA(), onThread->_base.replyCap);
     onThread->_base.replyCap = 0;
 }
 
@@ -234,6 +235,7 @@ void doExit(Process* process, int retCode)
 int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char* imgName, seL4_Word badge)
 {
     KernelTaskContext* env = getKernelTaskContext();
+    vka_t *mainVKA = getMainVKA();
     int error;
 
     //root_task_endpoint
@@ -244,11 +246,11 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     config = process_config_create_cnode(config, TEST_PROCESS_CSPACE_SIZE_BITS);
 // create a badged faut ep
     cspacepath_t badged_ep_path;
-    error = vka_cspace_alloc_path(&env->vka, &badged_ep_path);
+    error = vka_cspace_alloc_path(mainVKA, &badged_ep_path);
     ZF_LOGF_IFERR(error, "Failed to allocate path\n");
     assert(error == 0);
     cspacepath_t ep_path = {0};
-    vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr, &ep_path);
+    vka_cspace_make_path(mainVKA, env->root_task_endpoint.cptr, &ep_path);
 
     error = vka_cnode_mint(&badged_ep_path, &ep_path, seL4_AllRights, badge);
     assert(error == 0);
@@ -256,7 +258,7 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     config = process_config_fault_cptr(config, badged_ep_path.capPtr);
 //    
     vspace_t* mainVSpace = getMainVSpace();
-    error = sel4utils_configure_process_custom(&process->native, &env->vka, mainVSpace, config);
+    error = sel4utils_configure_process_custom(&process->native, mainVKA, mainVSpace, config);
     if(error != 0)
     {
         return error;
@@ -265,18 +267,18 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     /* set up caps about the process */
     process->init->stack_pages = CONFIG_SEL4UTILS_STACK_SIZE / PAGE_SIZE_4K;
     process->init->stack = process->native.thread.stack_top - CONFIG_SEL4UTILS_STACK_SIZE;
-    process->init->page_directory = sel4utils_copy_cap_to_process(&process->native, &env->vka, process->native.pd.cptr);
+    process->init->page_directory = sel4utils_copy_cap_to_process(&process->native, mainVKA, process->native.pd.cptr);
     process->init->root_cnode = SEL4UTILS_CNODE_SLOT;
-    process->init->tcb = sel4utils_copy_cap_to_process(&process->native, &env->vka, process->native.thread.tcb.cptr);
+    process->init->tcb = sel4utils_copy_cap_to_process(&process->native, mainVKA, process->native.thread.tcb.cptr);
     if (config_set(CONFIG_HAVE_TIMER)) {
-        process->init->timer_ntfn = sel4utils_copy_cap_to_process(&process->native, &env->vka, env->timer_notify_test.cptr);
+        process->init->timer_ntfn = sel4utils_copy_cap_to_process(&process->native, mainVKA, env->timer_notify_test.cptr);
     }
 
-    process->init->domain = sel4utils_copy_cap_to_process(&process->native, &env->vka, simple_get_init_cap(&env->simple,
+    process->init->domain = sel4utils_copy_cap_to_process(&process->native, mainVKA, simple_get_init_cap(&env->simple,
                                                                                                            seL4_CapDomain));
-    process->init->asid_pool = sel4utils_copy_cap_to_process(&process->native, &env->vka, simple_get_init_cap(&env->simple,
+    process->init->asid_pool = sel4utils_copy_cap_to_process(&process->native, mainVKA, simple_get_init_cap(&env->simple,
                                                                                                               seL4_CapInitThreadASIDPool));
-    process->init->asid_ctrl = sel4utils_copy_cap_to_process(&process->native, &env->vka, simple_get_init_cap(&env->simple,
+    process->init->asid_ctrl = sel4utils_copy_cap_to_process(&process->native, mainVKA, simple_get_init_cap(&env->simple,
                                                                                                               seL4_CapASIDControl));
 #ifdef CONFIG_IOMMU
     env->init->io_space = sel4utils_copy_cap_to_process(&process->native, &env->vka, simple_get_init_cap(&env->simple,
@@ -289,28 +291,28 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     /* copy the sched ctrl caps to the remote process */
     if (config_set(CONFIG_KERNEL_MCS)) {
         seL4_CPtr sched_ctrl = simple_get_sched_ctrl(&env->simple, 0);
-        process->init->sched_ctrl = sel4utils_copy_cap_to_process(&process->native, &env->vka, sched_ctrl);
+        process->init->sched_ctrl = sel4utils_copy_cap_to_process(&process->native, mainVKA, sched_ctrl);
         for (int i = 1; i < process->init->cores; i++) {
             sched_ctrl = simple_get_sched_ctrl(&env->simple, i);
-            sel4utils_copy_cap_to_process(&process->native, &env->vka, sched_ctrl);
+            sel4utils_copy_cap_to_process(&process->native, mainVKA, sched_ctrl);
         }
     }
 
 /* setup data about untypeds */
     int num_untyped_per_process = 0;
 
-    process->init->vspace_root = sel4utils_copy_cap_to_process(&process->native, &env->vka, vspace_get_root(&process->native.vspace));
+    process->init->vspace_root = sel4utils_copy_cap_to_process(&process->native, mainVKA, vspace_get_root(&process->native.vspace));
 
     // create a minted enpoint for the process
     cspacepath_t path;
-    vka_cspace_make_path(&env->vka, env->root_task_endpoint.cptr/* test_process.fault_endpoint.cptr*/, &path);
+    vka_cspace_make_path(mainVKA, env->root_task_endpoint.cptr/* test_process.fault_endpoint.cptr*/, &path);
     
     process->main.process_endpoint = sel4utils_mint_cap_to_process(&process->native, path, seL4_AllRights, badge );
 
 
     /* copy the device frame, if any */
     if (process->init->device_frame_cap) {
-        process->init->device_frame_cap = sel4utils_copy_cap_to_process(&process->native, &env->vka, env->device_obj.cptr);
+        process->init->device_frame_cap = sel4utils_copy_cap_to_process(&process->native, mainVKA, env->device_obj.cptr);
     }
 
     /* map the cap into remote vspace */
@@ -372,7 +374,8 @@ void process_run(const char *name, Process* process)
 
     process->stats.startTime = GetTime();
     vspace_t* mainVSpace = getMainVSpace();
-    error = sel4utils_spawn_process_v(&process->native, &env->vka, mainVSpace,
+    vka_t *mainVKA = getMainVKA();
+    error = sel4utils_spawn_process_v(&process->native, mainVKA, mainVSpace,
                                       argc, argv, 1);
     ZF_LOGF_IF(error != 0, "Failed to start test process!");
 }
@@ -389,14 +392,14 @@ void process_tear_down(Process* process)
         kfree(process->argv[i]);
     }
     kfree(process->argv);
-    
+    vka_t *mainVKA = getMainVKA();
     LL_FOREACH_SAFE(process->threads,elt,tmp) 
     {
         LL_DELETE(process->threads,elt);
         
         seL4_TCB_Suspend(elt->tcb.cptr);
         KLOG_DEBUG("Free TCB thread %p\n", elt);
-        vka_free_object(&env->vka, &elt->tcb);
+        vka_free_object(mainVKA, &elt->tcb);
         KLOG_DEBUG("Did Free TCB thread %p\n", elt);
 
         if(elt->_base.replyCap != 0)
@@ -425,8 +428,9 @@ void process_tear_down(Process* process)
     vspace_unmap_pages(&process->native.vspace, process->init_remote_vaddr, 1, PAGE_BITS_4K, VSPACE_FREE);
     vspace_unmap_pages(&process->native.vspace, process->init->mainIPCBuffer, 1, PAGE_BITS_4K, VSPACE_FREE);
 
+    
     /* destroy the process */
-    sel4utils_destroy_process(&process->native, &env->vka);   
+    sel4utils_destroy_process(&process->native, mainVKA);   
 }
 
 
