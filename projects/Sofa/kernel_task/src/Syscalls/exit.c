@@ -21,7 +21,6 @@
 
 void Syscall_exit(Thread* caller, seL4_MessageInfo_t info)
 {
-    KLOG_DEBUG("-->Syscall exit from %s \n", ProcessGetName(caller->_base.process));
     int retCode = seL4_GetMR(1);
 
     ThreadBase* base = (ThreadBase*) caller;

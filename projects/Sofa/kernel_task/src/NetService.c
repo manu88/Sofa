@@ -581,6 +581,7 @@ static void ClientCleanup(ServiceClient *clt)
     }
 
     free(c);
+
 }
 
 static void _OnServiceStart(BaseService* service)
@@ -636,6 +637,7 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
 
 static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
 {
+    KLOG_DEBUG("NetService _OnSystemMsg\n");
     ServiceNotification notif = seL4_GetMR(0);
     if(notif == ServiceNotification_ClientExit)
     {

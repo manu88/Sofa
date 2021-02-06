@@ -18,6 +18,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+
 
 int fOut = -1;
 static int lastCmdRet = 0;
@@ -607,7 +609,7 @@ int main(int argc, char *argv[])
     argv = &argv[2];
     VFSClientInit();
     DKClientInit();
-    NetClientInit();
+
     Printf("[%i] Shell has %i args \n", getpid(), argc);
 
     if(argc > 1)

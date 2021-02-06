@@ -126,6 +126,18 @@ static void process_messages()
             if(base->kernTaskThread)
             {
                 KLOG_ERROR("Fault in kernel_task thread\n");
+
+
+                Service *serv = NULL;
+                Service *tmp = NULL;
+                FOR_EACH_SERVICE(serv, tmp)
+                {
+                    if(serv->kernTaskThread && &serv->kernTaskThread->_base  == base)
+                    {
+                        KLOG_DEBUG("Err from %s\n", serv->name);
+                    }
+                }
+
                 assert(0);
                 continue;
             }
