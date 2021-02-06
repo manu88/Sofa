@@ -400,7 +400,7 @@ static int _ConfigInterface(ThreadBase* caller, seL4_MessageInfo_t msg)
     Client* clt = (Client*) BaseServiceGetClient(&_service, caller);
     assert(clt);
 
-    void *devHandle = seL4_GetMR(1);
+    void *devHandle = (void*) seL4_GetMR(1);
     KLOG_DEBUG("NetService Config interface request for device %p\n", devHandle);
     IODevice* dev = DeviceTreeGetDeviceFromHandle(devHandle);
     if(!dev)

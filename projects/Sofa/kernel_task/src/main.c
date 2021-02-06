@@ -223,7 +223,9 @@ void *main_continued(void *arg UNUSED)
 
 
 // base services init
-
+    error  = ProcessListInit();
+    assert(error == 0);
+    
     error = ProcServiceInit();
     assert(error == 0);
 

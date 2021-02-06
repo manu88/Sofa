@@ -35,6 +35,7 @@ void doShutdown(void)
 
 // Kill all processes. Hardcore
     Process* p = NULL;
+    ProcessListLock();
     FOR_EACH_PROCESS(p)
     {
         if(p != &initProcess)
@@ -43,6 +44,7 @@ void doShutdown(void)
             doExit(p, -1);
         }
     }
+    ProcessListUnlock();
 
     seL4_DebugDumpScheduler();
 

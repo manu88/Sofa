@@ -134,13 +134,28 @@ static inline uint8_t ThreadIsWaiting(const Thread* t)
 {
     return t->_base.replyCap != 0;
 }
+
 // Process List methods
+
+int ProcessListInit(void);
 Process* getProcessList(void);
+
+// guarded by the process list mutex
 void ProcessListAdd(Process* p);
+
+// guarded by the process list mutex
 void ProcessListRemove(Process* p);
 
+// guarded by the process list mutex
 size_t ProcessListCount(void);
+
+// guarded by the process list mutex
 Process* ProcessListGetByPid(pid_t pid);
 
+
+int ProcessListLock(void);
+int ProcessListUnlock(void);
+
+// caller needs to call ProcessListLock/ ProcessListUnlock !
 #define FOR_EACH_PROCESS(p) LL_FOREACH(getProcessList(),p)
 

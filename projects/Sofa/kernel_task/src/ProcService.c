@@ -73,7 +73,9 @@ static void onProcEnum(BaseService* service, ThreadBase* sender, seL4_MessageInf
     Process*p = NULL;
 
     size_t accSize = 0;
-    char* buff = client->buff; 
+    char* buff = client->buff;
+
+    ProcessListLock();
     FOR_EACH_PROCESS(p)
     {
 
@@ -89,6 +91,7 @@ static void onProcEnum(BaseService* service, ThreadBase* sender, seL4_MessageInf
 
         buff += recSize;
     }
+    ProcessListUnlock();
     seL4_SetMR(1, procCount);
     seL4_Reply(msg);
 }

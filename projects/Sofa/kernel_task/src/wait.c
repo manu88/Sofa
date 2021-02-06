@@ -38,13 +38,12 @@ long doWait(Process* process, pid_t pidToWait, int options, int *retCode)
         if(retCode)
         {
             *retCode = c->retCode;
-            pid_t pid = ProcessGetPID(c);
-            ProcessRemoveChild(process, c);
-            ProcessListRemove(c);
-            kfree(c);
-            return pid;
         }
-        return;
+        pid_t pid = ProcessGetPID(c);
+        ProcessRemoveChild(process, c);
+        ProcessListRemove(c);
+        kfree(c);
+        return pid;
     }
 // Process has children, but no-one exited yet.
     return -EWOULDBLOCK;

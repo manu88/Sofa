@@ -15,8 +15,26 @@
  */
 #include "ProcessList.h"
 #include "Log.h"
+#include "KThread.h" // KMutex
 
+static KMutex _procListMutex;
 static Process* _processes = NULL;
+
+
+int ProcessListInit()
+{
+    return KMutexNew(&_procListMutex);
+}
+
+int ProcessListLock()
+{
+    return KMutexLock(&_procListMutex);
+}
+
+int ProcessListUnlock()
+{
+    return KMutexUnlock(&_procListMutex);
+}
 
 Process* getProcessList()
 {
@@ -25,33 +43,42 @@ Process* getProcessList()
 
 void ProcessListAdd(Process* p)
 {
+    KMutexLock(&_procListMutex);
     LL_APPEND(_processes, p);
+    KMutexUnlock(&_procListMutex);
 }
 
 size_t ProcessListCount()
 {
+    KMutexLock(&_procListMutex);
     Process* el = NULL;
     size_t c = 0;
     LL_COUNT(_processes, el, c);
+    KMutexUnlock(&_procListMutex);
     return c;
 }
 
 void ProcessListRemove(Process* p)
 {
+    KMutexLock(&_procListMutex);    
     LL_DELETE(_processes, p);
+    KMutexUnlock(&_procListMutex);    
 }
 
 
 Process* ProcessListGetByPid(pid_t pid)
 {
+    KMutexLock(&_procListMutex);        
     Process* p= NULL;
     FOR_EACH_PROCESS(p)
     {
         if(ProcessGetPID(p) == pid)
         {
+            KMutexUnlock(&_procListMutex);
             return p;
         }
     }
+    KMutexUnlock(&_procListMutex);
     return NULL;
 }
 
