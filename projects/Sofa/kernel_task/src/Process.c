@@ -47,7 +47,9 @@ extern Process initProcess;
 int ProcessCreateSofaIPCBuffer(Process* p, void** addr, void** procAddr)
 {
     vspace_t* mainVSpace = getMainVSpace();
+    MainVSpaceLock();
     *addr = (uint8_t*) vspace_new_pages(mainVSpace, seL4_AllRights, 1, PAGE_BITS_4K);
+    MainVSpaceUnlock();
     assert(*addr);
     *procAddr = vspace_share_mem(mainVSpace, &p->native.vspace, *addr, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
     assert(*procAddr);
@@ -83,7 +85,9 @@ void spawnApp(Process* p, const char* imgName, Process* parent)
 {
     static int pidPool = 1;
     vspace_t* mainVSpace = getMainVSpace();
+    MainVSpaceLock();
     p->init = (test_init_data_t *) vspace_new_pages(mainVSpace, seL4_AllRights, 1, PAGE_BITS_4K);
+    MainVSpaceUnlock();
     assert(p->init != NULL);
     p->init->pid = pidPool++;
     p->init->priority = seL4_MaxPrio - 1;

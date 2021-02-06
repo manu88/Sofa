@@ -53,7 +53,6 @@ int KThreadRun(KThread* t, int prio, void* arg)
     vka_t *mainVKA = getMainVKA();
     vspace_t* mainVSpace = getMainVSpace();    
     sel4utils_thread_config_t thConf = thread_config_new(&env->simple);
-  //  thConf = thread_config_cspace(thConf, simple_get_cnode(&env->simple), 0);
 
     // create a minted enpoint for the thread
     cspacepath_t srcPath;
@@ -102,8 +101,7 @@ void KThreadCleanup(KThread* t)
 {
     vka_t *mainVKA = getMainVKA();
     vspace_t* mainVSpace = getMainVSpace();
-    sel4utils_clean_up_thread(mainVKA, mainVSpace, &t->native);
-    
+    sel4utils_clean_up_thread(mainVKA, mainVSpace, &t->native);   
 }
 
 int KThreadSleep(KThread* thread, int ms)

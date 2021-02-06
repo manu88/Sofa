@@ -75,7 +75,9 @@ int BaseServiceCreateClientContext(BaseService* service, ThreadBase* sender, Ser
 {
     vspace_t* mainVSpace = getMainVSpace();
 
+    MainVSpaceLock();
     char* buff = vspace_new_pages(mainVSpace, seL4_ReadWrite, numPages, PAGE_BITS_4K);
+    MainVSpaceUnlock();
     assert(buff);
     void* buffShared = vspace_share_mem(mainVSpace,
                                         &sender->process->native.vspace,
