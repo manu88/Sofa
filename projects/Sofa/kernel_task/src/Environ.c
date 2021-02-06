@@ -24,6 +24,7 @@
 
 #include <muslcsys/vsyscall.h>
 #include "ProcessList.h"
+#include "KThread.h"
 
 /* dimensions of virtual memory for the allocator to use */
 #define ALLOCATOR_VIRTUAL_POOL_SIZE ((1 << seL4_PageBits) * 400)
@@ -44,7 +45,7 @@ KernelTaskContext* getKernelTaskContext(void)
     return &_ctx;
 }
 
-
+static KMutex _mainVSpaceLock;
 static Process _kernelTask = {0};
 
 Process* getKernelTaskProcess()
@@ -56,6 +57,16 @@ Process* getKernelTaskProcess()
 vspace_t* getMainVSpace()
 {
     return &_ctx._vspace;
+}
+
+int MainVSpaceLock()
+{
+    return KMutexLock(&_mainVSpaceLock);
+}
+
+int MainVSpaceUnlock()
+{
+    return KMutexUnlock(&_mainVSpaceLock);
 }
 
 vka_t* getMainVKA()
@@ -114,6 +125,8 @@ static void CONSTRUCTOR(MUSLCSYS_WITH_VSYSCALL_PRIORITY)  init_malloc(void)
                                                1, &vaddr);
     assert(virtual_reservation.res);
     bootstrap_configure_virtual_pool(env->allocman, vaddr, ALLOCATOR_VIRTUAL_POOL_SIZE, simple_get_pd(&env->simple));
+
+    KMutexNew(&_mainVSpaceLock);
     
     _env_set = 1;
 
