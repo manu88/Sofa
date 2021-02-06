@@ -52,13 +52,13 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
         return;
     }
 
-
-    seL4_Word slot = get_free_slot(&env->vka);
-    error = cnode_savecaller(&env->vka, slot);
+    vka_t *mainVKA = getMainVKA();
+    seL4_Word slot = get_free_slot(mainVKA);
+    error = cnode_savecaller(mainVKA, slot);
     if (error)
     {
         KLOG_TRACE("Unable to save caller err=%i\n", error);
-        cnode_delete(&env->vka, slot);
+        cnode_delete(mainVKA, slot);
         tm_free_id(&env->tm, timerID);
         seL4_SetMR(1, -error);
         seL4_Reply(info);
@@ -70,7 +70,7 @@ void Syscall_sleep(Thread* caller, seL4_MessageInfo_t info)
     {
         KLOG_TRACE("tm_register_failed, err=%i\n", error);
         tm_free_id(&env->tm, timerID);
-        cnode_delete(&env->vka, slot);
+        cnode_delete(mainVKA, slot);
         seL4_SetMR(1, -error);
         seL4_Reply(info);
         return;

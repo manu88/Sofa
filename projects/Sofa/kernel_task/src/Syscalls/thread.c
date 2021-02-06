@@ -22,8 +22,9 @@
 static seL4_CPtr CreateCapEndoint(Thread* caller)
 {
     KernelTaskContext* ctx = getKernelTaskContext();
+    vka_t *mainVKA = getMainVKA();
     cspacepath_t res;
-    vka_cspace_make_path(&getKernelTaskContext()->vka, ctx->root_task_endpoint.cptr, &res);
+    vka_cspace_make_path(mainVKA, ctx->root_task_endpoint.cptr, &res);
     seL4_CPtr ret = sel4utils_mint_cap_to_process(&caller->_base.process->native, res, seL4_AllRights, (seL4_Word) caller); 
     //seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, &getKernelTaskContext()->vka);
     return ret;
@@ -31,8 +32,8 @@ static seL4_CPtr CreateCapEndoint(Thread* caller)
 
 static seL4_CPtr CreateCapTCB(Thread* caller, vka_object_t* tcb)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
-    int err = vka_alloc_tcb(&getKernelTaskContext()->vka, tcb);
+    vka_t *mainVKA = getMainVKA();
+    int err = vka_alloc_tcb(mainVKA, tcb);
     if(err != 0)
     {
         return 0;
@@ -40,7 +41,7 @@ static seL4_CPtr CreateCapTCB(Thread* caller, vka_object_t* tcb)
     assert(tcb->cptr);
     //cspacepath_t res;
     //vka_cspace_make_path(&ctx->vka, tcb->cptr, &res);
-    seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->_base.process->native, &ctx->vka, tcb->cptr);
+    seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->_base.process->native, mainVKA, tcb->cptr);
     //seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, &ctx->vka);
     return ret;
 }
@@ -62,8 +63,9 @@ static void* CreateIPCBuff(Thread* caller, seL4_CPtr* cap)
     void* bufAddr = vspace_new_ipc_buffer(&caller->_base.process->native.vspace, &buf);
 
     cspacepath_t res;
-    vka_cspace_make_path(&getKernelTaskContext()->vka, buf, &res);
-    seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, &getKernelTaskContext()->vka);
+    vka_t *mainVKA = getMainVKA();
+    vka_cspace_make_path(mainVKA, buf, &res);
+    seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, mainVKA);
 
     *cap = ret;
     return bufAddr;

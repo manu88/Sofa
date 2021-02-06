@@ -204,12 +204,12 @@ void *main_continued(void *arg UNUSED)
     seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
-    error = vka_alloc_endpoint(&env->vka, &env->root_task_endpoint);
+    error = vka_alloc_endpoint(&env->_vka, &env->root_task_endpoint);
     assert(error == 0);
 
     if (config_set(CONFIG_KERNEL_MCS)) 
     {
-        error = vka_alloc_reply(&env->vka, &env->reply);
+        error = vka_alloc_reply(&env->_vka, &env->reply);
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
@@ -351,7 +351,7 @@ int main(void)
     int error;
 
     vspace_t* mainVSpace = getMainVSpace();
-    error = sel4platsupport_new_io_ops(mainVSpace, &env->vka, &env->simple, &env->ops);
+    error = sel4platsupport_new_io_ops(mainVSpace, &env->_vka, &env->simple, &env->ops);
     ZF_LOGF_IF(error, "Failed to initialise IO ops");
     assert(error == 0);
 

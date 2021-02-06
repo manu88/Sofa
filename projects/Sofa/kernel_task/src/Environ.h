@@ -63,7 +63,7 @@ struct _KernelTaskContext
     SystemState _sysState;
     allocman_t *allocman;
     /* An initialised vka that may be used by the test. */
-    vka_t vka;
+    vka_t _vka;
     /* virtual memory management interface */
     vspace_t _vspace;
     /* abtracts over kernel version and boot environment */
@@ -124,6 +124,10 @@ seL4_SlotRegion arch_copy_iospace_caps_to_process(sel4utils_process_t *process, 
 int IOInit(void);
 
 vspace_t* getMainVSpace(void);
+
+vka_t* getMainVKA(void);
+
+
 KernelTaskContext* getKernelTaskContext(void);
 
 typedef struct _Process Process;
