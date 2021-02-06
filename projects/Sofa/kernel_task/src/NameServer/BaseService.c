@@ -73,11 +73,11 @@ int BaseServiceStart(BaseService*s)
 
 int BaseServiceCreateClientContext(BaseService* service, ThreadBase* sender, ServiceClient* client, size_t numPages)
 {
-
+    vspace_t* mainVSpace = getMainVSpace();
     KernelTaskContext* env = getKernelTaskContext();
-    char* buff = vspace_new_pages(&env->vspace, seL4_ReadWrite, numPages, PAGE_BITS_4K);
+    char* buff = vspace_new_pages(mainVSpace, seL4_ReadWrite, numPages, PAGE_BITS_4K);
     assert(buff);
-    void* buffShared = vspace_share_mem(&env->vspace,
+    void* buffShared = vspace_share_mem(mainVSpace,
                                         &sender->process->native.vspace,
                                         buff,
                                         numPages,

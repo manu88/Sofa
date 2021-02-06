@@ -350,7 +350,8 @@ int main(void)
     getKernelTaskProcess()->name = kernelTaskName;
     int error;
 
-    error = sel4platsupport_new_io_ops(&env->vspace, &env->vka, &env->simple, &env->ops);
+    vspace_t* mainVSpace = getMainVSpace();
+    error = sel4platsupport_new_io_ops(mainVSpace, &env->vka, &env->simple, &env->ops);
     ZF_LOGF_IF(error, "Failed to initialise IO ops");
     assert(error == 0);
 
@@ -366,7 +367,8 @@ int main(void)
     assert(error == 0);
 
     void *res;
-    error = sel4utils_run_on_stack(&env->vspace, main_continued, NULL, &res);
+
+    error = sel4utils_run_on_stack(mainVSpace, main_continued, NULL, &res);
     assert(error == 0);
     assert(res == 0);
 

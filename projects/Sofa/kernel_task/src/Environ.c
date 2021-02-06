@@ -53,6 +53,12 @@ Process* getKernelTaskProcess()
 }
 
 
+vspace_t* getMainVSpace()
+{
+    return &_ctx._vspace;
+}
+
+
 int IOInit()
 {
     KernelTaskContext* env = getKernelTaskContext();
@@ -61,7 +67,8 @@ int IOInit()
     int error = sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
     assert(error == 0);
 
-    error = sel4utils_new_page_dma_alloc(&env->vka, &env->vspace, &env->ops.dma_manager);
+    vspace_t* mainVSpace = getMainVSpace();
+    error = sel4utils_new_page_dma_alloc(&env->vka, mainVSpace, &env->ops.dma_manager);
     assert(error == 0);
 }
 
@@ -88,18 +95,18 @@ static void CONSTRUCTOR(MUSLCSYS_WITH_VSYSCALL_PRIORITY)  init_malloc(void)
     allocman_make_vka(&env->vka, env->allocman);
 
     /* create vspace */
-    error = sel4utils_bootstrap_vspace_with_bootinfo_leaky(&env->vspace, &data, simple_get_pd(&env->simple),
+    error = sel4utils_bootstrap_vspace_with_bootinfo_leaky(&env->_vspace, &data, simple_get_pd(&env->simple),
                                                            &env->vka, info);
 
     /* set up malloc */
-    error = sel4utils_reserve_range_no_alloc(&env->vspace, &malloc_res, seL4_LargePageBits, seL4_AllRights, 1,
+    error = sel4utils_reserve_range_no_alloc(&env->_vspace, &malloc_res, seL4_LargePageBits, seL4_AllRights, 1,
                                              &muslc_brk_reservation_start);
-    muslc_this_vspace = &env->vspace;
+    muslc_this_vspace = &env->_vspace;
     muslc_brk_reservation.res = &malloc_res;
     ZF_LOGF_IF(error, "Failed to set up dynamic malloc");
 
     void *vaddr;
-    reservation_t virtual_reservation = vspace_reserve_range(&env->vspace, ALLOCATOR_VIRTUAL_POOL_SIZE, seL4_AllRights,
+    reservation_t virtual_reservation = vspace_reserve_range(&env->_vspace, ALLOCATOR_VIRTUAL_POOL_SIZE, seL4_AllRights,
                                                1, &vaddr);
     assert(virtual_reservation.res);
     bootstrap_configure_virtual_pool(env->allocman, vaddr, ALLOCATOR_VIRTUAL_POOL_SIZE, simple_get_pd(&env->simple));
