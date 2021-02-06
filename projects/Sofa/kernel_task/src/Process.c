@@ -49,10 +49,13 @@ int ProcessCreateSofaIPCBuffer(Process* p, void** addr, void** procAddr)
     vspace_t* mainVSpace = getMainVSpace();
     MainVSpaceLock();
     *addr = (uint8_t*) vspace_new_pages(mainVSpace, seL4_AllRights, 1, PAGE_BITS_4K);
-    MainVSpaceUnlock();
     assert(*addr);
+    MainVSpaceUnlock();
+
+    MainVSpaceLock();    
     *procAddr = vspace_share_mem(mainVSpace, &p->native.vspace, *addr, 1, PAGE_BITS_4K, seL4_ReadWrite, 1);
     assert(*procAddr);
+    MainVSpaceUnlock();    
 
     return 0;
 }
@@ -196,7 +199,6 @@ void doExit(Process* process, int retCode)
             KLOG_TRACE("%i is waiting on %i, but no reply cap present\n", ProcessGetPID(parent), ProcessGetPID(process));
         }
         
-//        assert(waitingThread->_base.replyCap != 0);
         freeProcess = 1;
 
         ProcessRemoveChild(parent, process);
@@ -260,7 +262,9 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
     config = process_config_fault_cptr(config, badged_ep_path.capPtr);
 //    
     vspace_t* mainVSpace = getMainVSpace();
+    MainVSpaceLock();
     error = sel4utils_configure_process_custom(&process->native, mainVKA, mainVSpace, config);
+    MainVSpaceUnlock();
     if(error != 0)
     {
         return error;
@@ -319,9 +323,11 @@ int process_set_up(uint8_t* untyped_size_bits_list, Process* process,const char*
 
     /* map the cap into remote vspace */
 
+    MainVSpaceLock();
     process->init_remote_vaddr = vspace_share_mem(mainVSpace, &process->native.vspace, process->init, 1, PAGE_BITS_4K,
                                          seL4_CanRead, 1);
 
+    MainVSpaceUnlock();
     assert(process->init_remote_vaddr != 0);
 
     /* WARNING: DO NOT COPY MORE CAPS TO THE PROCESS BEYOND THIS POINT,
@@ -376,8 +382,10 @@ void process_run(const char *name, Process* process)
     process->stats.startTime = GetTime();
     vspace_t* mainVSpace = getMainVSpace();
     vka_t *mainVKA = getMainVKA();
+    MainVSpaceLock();
     error = sel4utils_spawn_process_v(&process->native, mainVKA, mainVSpace,
                                       argc, argv, 1);
+    MainVSpaceUnlock();
     ZF_LOGF_IF(error != 0, "Failed to start test process!");
 }
 

@@ -65,11 +65,13 @@ int KThreadRun(KThread* t, int prio, void* arg)
     vka_cnode_mint(&dstPath, &srcPath, seL4_AllRights, (seL4_Word) t);
     thConf = thread_config_fault_endpoint(thConf, t->ep);
 
+    MainVSpaceLock();
     error = sel4utils_configure_thread_config(mainVKA,
                                               mainVSpace,
                                               mainVSpace,
                                               thConf ,
                                               &t->native);
+    MainVSpaceUnlock();    
     if(error != 0)
     {
         return error;
@@ -101,7 +103,9 @@ void KThreadCleanup(KThread* t)
 {
     vka_t *mainVKA = getMainVKA();
     vspace_t* mainVSpace = getMainVSpace();
+    MainVSpaceLock();
     sel4utils_clean_up_thread(mainVKA, mainVSpace, &t->native);   
+    MainVSpaceUnlock();
 }
 
 int KThreadSleep(KThread* thread, int ms)

@@ -461,7 +461,9 @@ static void ACPIParse(IONode *root)
     ps_io_mapper_t io_mapper;
     vspace_t* mainVSpace = getMainVSpace();
 
+    MainVSpaceLock();
     int error =  sel4platsupport_new_io_mapper(mainVSpace, mainVKA, &io_mapper);
+    MainVSpaceUnlock();
     assert(error == 0);
     
     acpi_t* acpi = acpi_init(io_mapper);
