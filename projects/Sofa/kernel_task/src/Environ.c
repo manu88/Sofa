@@ -46,6 +46,8 @@ KernelTaskContext* getKernelTaskContext(void)
 }
 
 static KMutex _mainVSpaceLock;
+static KMutex _mainVKALock;
+
 static Process _kernelTask = {0};
 
 Process* getKernelTaskProcess()
@@ -72,6 +74,24 @@ int MainVSpaceUnlock()
 vka_t* getMainVKA()
 {
     return &_ctx._vka;
+}
+
+//static int c = 0;
+
+int MainVKALock()
+{
+    KThread* self = (KThread*) seL4_GetUserData();
+//    c++;
+//    printf("---> MainVKALock (%i) from '%s'\n", c, self->name);
+    return KMutexLock(&_mainVKALock);
+}
+
+int MainVKAUnlock()
+{
+    KThread* self = (KThread*) seL4_GetUserData();
+//    c--;
+//    printf("---> MainVKAUnlock (%i) from '%s'\n", c, self->name);
+    return KMutexUnlock(&_mainVKALock);
 }
 
 int IOInit()
@@ -126,8 +146,12 @@ static void CONSTRUCTOR(MUSLCSYS_WITH_VSYSCALL_PRIORITY)  init_malloc(void)
     assert(virtual_reservation.res);
     bootstrap_configure_virtual_pool(env->allocman, vaddr, ALLOCATOR_VIRTUAL_POOL_SIZE, simple_get_pd(&env->simple));
 
-    KMutexNew(&_mainVSpaceLock);
+    error = KMutexNew(&_mainVSpaceLock);
+    assert(error == 0);
     
+    error = KMutexNew(&_mainVKALock);
+    assert(error == 0);
+
     _env_set = 1;
 
 }
