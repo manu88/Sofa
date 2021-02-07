@@ -36,6 +36,7 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
 
     vka_t *mainVKA = getMainVKA();
 
+    MainVKALock();
     seL4_CPtr capMint = get_free_slot(mainVKA);
     int err = cnode_mint(mainVKA, service->baseEndpoint, capMint, seL4_AllRights, (seL4_Word) caller);
     assert(err == 0);
@@ -43,7 +44,7 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
     vka_cspace_make_path(mainVKA, capMint, &path);
 
     seL4_CPtr cap = sel4utils_move_cap_to_process(&caller->_base.process->native, path, mainVKA);
-
+    MainVKAUnlock();
     seL4_SetMR(1, 0);
     seL4_SetMR(2, cap);
     seL4_Reply(info);

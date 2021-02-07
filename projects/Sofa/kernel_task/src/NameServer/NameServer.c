@@ -59,6 +59,9 @@ extern KThread _mainThread;
 int ServiceCreateKernelTask(Service* s)
 {
     vka_t *mainVKA = getMainVKA();
+
+    MainVKALock();
+
     int error = 0;
     vka_object_t ep = {0};
     error = vka_alloc_endpoint(mainVKA, &ep);
@@ -71,6 +74,6 @@ int ServiceCreateKernelTask(Service* s)
     
     s->kernTaskEp = get_free_slot(mainVKA);
     cnode_mint(mainVKA, ep.cptr, s->kernTaskEp, seL4_CanWrite, (seL4_Word)&_mainThread);
-
+    MainVKAUnlock();
     return 0;
 }

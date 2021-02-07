@@ -18,7 +18,7 @@
 #include "KThread.h"
 #include "Environ.h"
 #include "utlist.h"
-
+#include "utils.h"
 
 
 static const char tName[] = "IRQServer";
@@ -133,6 +133,7 @@ int IRQServerRegisterIRQ(IODevice* dev, int irqN)
         seL4_CPtr irq_handler;
 
         vka_t *mainVKA = getMainVKA();
+        MainVKALock();
         int error = vka_cspace_alloc(mainVKA, &irq_handler);
         assert(error == 0);
         vka_cspace_make_path(mainVKA, irq_handler, &irq_handler_path);
@@ -143,7 +144,7 @@ int IRQServerRegisterIRQ(IODevice* dev, int irqN)
         seL4_CPtr capMint = get_free_slot(mainVKA);
         error = cnode_mint(mainVKA, _server.irq_aep_obj.cptr, capMint, seL4_AllRights, (seL4_Word) irqN);
         assert(error == 0);
-
+        MainVKAUnlock();
 
         error = seL4_IRQHandler_SetNotification(irq_handler_path.capPtr, capMint);
         assert(error == 0);

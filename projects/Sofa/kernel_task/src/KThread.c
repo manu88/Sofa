@@ -23,7 +23,7 @@
 #include <Sofa.h>
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
-Calls to KSleep will ensure that they are never called from main*/
+Calls to KSleep will ensure that they are never called from main*/ 
 KThread _mainThread;
 
 
@@ -55,6 +55,7 @@ int KThreadRun(KThread* t, int prio, void* arg)
     sel4utils_thread_config_t thConf = thread_config_new(&env->simple);
 
     // create a minted enpoint for the thread
+    MainVKALock();
     cspacepath_t srcPath;
     vka_cspace_make_path(mainVKA, env->root_task_endpoint.cptr, &srcPath);
 
@@ -64,6 +65,7 @@ int KThreadRun(KThread* t, int prio, void* arg)
 
     vka_cnode_mint(&dstPath, &srcPath, seL4_AllRights, (seL4_Word) t);
     thConf = thread_config_fault_endpoint(thConf, t->ep);
+    MainVKAUnlock();
 
     MainVSpaceLock();
     error = sel4utils_configure_thread_config(mainVKA,
@@ -123,7 +125,7 @@ int KSleep(int ms)
     KThread* t = (KThread*) seL4_GetUserData();
     if(t == &_mainThread)
     {
-        Panic("KSleep called from the main kernel_task thread, abord\n");
+        Panic("KSleep called from the main kernel_task thread, abort\n");
     }
     return KThreadSleep((KThread*) seL4_GetUserData(), ms);
 }

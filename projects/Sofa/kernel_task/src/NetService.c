@@ -185,8 +185,10 @@ static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
         sock->waitingSize = size;
 
         vka_t *mainVKA = getMainVKA();
+        MainVKALock();
         clt->replyCap = get_free_slot(mainVKA);
         int error = cnode_savecaller(mainVKA, clt->replyCap);
+        MainVKAUnlock();
         return;
     }
 

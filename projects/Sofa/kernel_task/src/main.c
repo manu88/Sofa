@@ -86,6 +86,7 @@ Process initProcess;
 static void process_messages()
 {
     KernelTaskContext* env = getKernelTaskContext();
+
     while (1)
     {   
         seL4_Word badge = 0;
@@ -220,11 +221,12 @@ void *main_continued(void *arg UNUSED)
 
     error = DeviceKitInit();
     assert(error == 0);
-
+    printf("DeviceKitInit ok \n");
 
 // base services init
     error  = ProcessListInit();
     assert(error == 0);
+    printf("ProcessListInit ok \n");
     
     error = ProcServiceInit();
     assert(error == 0);
@@ -341,9 +343,12 @@ static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4
     }
 }
 
+static const char _mainThreadName[] = "kerneltask.main";
+
 int main(void)
 {
     _mainThread._base.process = getKernelTaskProcess();
+    _mainThread.name = _mainThreadName;
     seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
