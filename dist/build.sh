@@ -5,8 +5,7 @@ IMG_NAME=sofa.img
 MOUNT_PATH=mountPt
 
 dd if=/dev/zero of=$IMG_NAME bs=400M count=1
-mkfs.fat $IMG_NAME
-syslinux $IMG_NAME
+mkfs.ext2 $IMG_NAME
 mkdir -p $MOUNT_PATH
 
 echo "----> mount stuff"
@@ -16,7 +15,7 @@ LOOP_ID=$(losetup -j $IMG_NAME | awk '{sub(/:/,"",$1); print $1}')
 echo $LOOP_ID
 
 mount -o loop $LOOP_ID $MOUNT_PATH
-
+extlinux --install $MOUNT_PATH
 echo "----> copy files"
 
 cp /usr/lib/syslinux/modules/bios/mboot.c32 $MOUNT_PATH
