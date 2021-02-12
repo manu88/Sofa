@@ -69,6 +69,13 @@ start the `udpecho` program and test it by sending messages from the host:
 nc  -u 127.0.0.1 3000
 ```
 
+## Create a fat image:
+after build, in the `dist` folder:
+```
+sudo sh build.sh
+# on sucess:
+qemu-system-x86_64 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce -hdd sofa.img -serial stdio
+```
 
 ## Resources
 * [camkes-VM](https://github.com/seL4/camkes-vm/blob/master/components/Init/src/main.c),

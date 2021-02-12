@@ -8,6 +8,7 @@ projects/util_libs/
 projects/sel4runtime/
 projects/Sofa/libACPI/
 projects/libliwip/
+dist/sofa.img
 *.qcow2
 .vscode
 .sel4_cache
