@@ -422,12 +422,17 @@ static Client* RegisterClient(ThreadBase* caller)
 
 static void ClientClone(ThreadBase* parent, ThreadBase* newProc)
 {
+    assert(parent->process);
+    assert(newProc->process);
     if(newProc->process->state != ProcessState_Running)
     {
         return;
     }
-    assert(parent->process);
-    assert(newProc->process);
+    if(parent->process->state != ProcessState_Running)
+    {
+        return;
+    }
+
     
     Client* newClient = RegisterClient(newProc);
     assert(newClient);
@@ -473,7 +478,9 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
     if(notif == ServiceNotification_ClientExit)
     {
         ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
+        KLOG_DEBUG("VFSService: start cleanup\n");
         ClientCleanup(clt);
+        KLOG_DEBUG("VFSService: end cleanup\n");
     }
     else if(notif == ServiceNotification_WillStop)
     {
@@ -483,7 +490,11 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
     {
         ThreadBase* parent =(ThreadBase*) seL4_GetMR(1);
         ThreadBase* newProc =(ThreadBase*) seL4_GetMR(2);
+        KLOG_DEBUG("VFSService: start clone\n");
         ClientClone(parent, newProc);
+        KLOG_DEBUG("VFSService: end clone\n");
+
+        seL4_Reply(msg);
     }
 }
 
@@ -553,6 +564,10 @@ static void _OnClientMsg(BaseService* service, ThreadBase* sender, seL4_MessageI
     case VFSRequest_Write:
     {
         Client* client = (Client*) BaseServiceGetClient(service, sender);
+        if(!client)
+        {
+            KLOG_ERROR("Client not found for sender %i\n", ProcessGetPID(sender->process));
+        }
         assert(client);
 
         int handle = seL4_GetMR(1);

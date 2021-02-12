@@ -125,7 +125,12 @@ static inline Process* ProcessGetChildren(Process* p)
     return p->children;
 }
 
-#define PROCESS_FOR_EACH_CHILD(proc, c) LL_FOREACH(proc->children,c) 
+#define PROCESS_FOR_EACH_CHILD(proc, c) LL_FOREACH(proc->children,c)
+
+
+
+int ProcessSuspend(Process* p);
+int ProcessResume(Process* p);
 
 // Thread methods
 

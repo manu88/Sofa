@@ -80,7 +80,7 @@ vka_t* getMainVKA()
 
 int MainVKALock()
 {
-    KThread* self = (KThread*) seL4_GetUserData();
+//    KThread* self = (KThread*) seL4_GetUserData();
 //    c++;
 //    printf("---> MainVKALock (%i) from '%s'\n", c, self->name);
     return KMutexLock(&_mainVKALock);
@@ -88,7 +88,7 @@ int MainVKALock()
 
 int MainVKAUnlock()
 {
-    KThread* self = (KThread*) seL4_GetUserData();
+//    KThread* self = (KThread*) seL4_GetUserData();
 //    c--;
 //    printf("---> MainVKAUnlock (%i) from '%s'\n", c, self->name);
     return KMutexUnlock(&_mainVKALock);

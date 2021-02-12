@@ -63,10 +63,14 @@ int ProcessCreateSofaIPCBuffer(Process* p, void** addr, void** procAddr)
 static int ProcessCloneServices(Process* parent, Process* p)
 {
     assert(parent);
+
+
+
     ServiceClient* clt = NULL;
     ServiceClient* tmp = NULL;
 
     Thread* t = &parent->main;
+
     LL_FOREACH_SAFE(t->_base._clients, clt, tmp)
     {
         assert(clt->service);
@@ -77,9 +81,11 @@ static int ProcessCloneServices(Process* parent, Process* p)
             seL4_SetMR(0, ServiceNotification_Clone);
             seL4_SetMR(1, (seL4_Word) t); //
             seL4_SetMR(2, (seL4_Word) &p->main);
-            seL4_Send(clt->service->kernTaskEp, info);
+            seL4_Call(clt->service->kernTaskEp, info);
+            KLOG_DEBUG("ProcessCloneServices got reply to clone\n");
         }
     }
+
 
     return 0;
 }

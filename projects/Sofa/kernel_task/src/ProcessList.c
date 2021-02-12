@@ -130,3 +130,14 @@ int ProcessCoundChildren(const Process* p)
     LL_COUNT2(p->children, tmp, counter, nextChild);
     return counter;
 }
+
+
+int ProcessSuspend(Process* p)
+{
+    return seL4_TCB_Suspend(p->native.thread.tcb.cptr);
+}
+
+int ProcessResume(Process* p)
+{
+    return seL4_TCB_Resume(p->native.thread.tcb.cptr);
+}

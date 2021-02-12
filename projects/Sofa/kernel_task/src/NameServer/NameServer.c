@@ -73,7 +73,7 @@ int ServiceCreateKernelTask(Service* s)
     assert(error == 0);
     
     s->kernTaskEp = get_free_slot(mainVKA);
-    cnode_mint(mainVKA, ep.cptr, s->kernTaskEp, seL4_CanWrite, (seL4_Word)&_mainThread);
+    cnode_mint(mainVKA, ep.cptr, s->kernTaskEp, seL4_AllRights, (seL4_Word)&_mainThread);
     MainVKAUnlock();
     return 0;
 }
