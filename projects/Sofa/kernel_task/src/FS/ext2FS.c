@@ -222,16 +222,11 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
 {
     assert(file);
     assert(file->inode);
-    inode_t* ino = file->inode;    
-    if(file->size)
-    {
-        return 0;
-    }
-    size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
-    size_t numOfDirents = numDirentPerBuff;
-   
-    struct dirent *dirp = buf;
+    inode_t* ino = file->inode;
 
+    size_t numDirentPerBuff = numBytes / sizeof(struct dirent);
+
+    struct dirent *dirp = buf;
 
     IODevice* dev = file->impl;
     assert(dev);
@@ -244,7 +239,11 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
     size_t acc = 0;
 
     char tmpName[256] = "";
-    int ii=0;
+    int indexInBuffer=0;
+    
+    int inoIndex = 0;
+    int countEntries = 0;
+
     for(int i = 0;i < 12; i++)
 	{
 		uint32_t b = ino->dbp[i];
@@ -258,7 +257,6 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
             return -EIO;
         }
         ext2_dir* dir = (ext2_dir*) dir_buf;
-
         while(dir->inode != 0) 
         {
             if(dir->namelength < 255)
@@ -269,23 +267,33 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
                    strcmp(tmpName, ".") != 0 &&
                    strcmp(tmpName, "..") != 0 )
                 {
-                    struct dirent *d = dirp + ii;
-                    snprintf(d->d_name, 256, "%s", tmpName);
+                    
+                    ssize_t diffIno = (ssize_t) inoIndex - (ssize_t) file->readPos;
 
-                    if(strlen(tmpName) == dir->namelength)
+                    if(diffIno >= 0)
                     {
-                        acc += sizeof(struct dirent);
-                        d->d_off = acc;
-                        d->d_type = DT_DIR;
-                        d->d_reclen = sizeof(struct dirent);
-
-                        file->size +=1;
-                        ii+=1;
-                        if(ii >numDirentPerBuff)
+                        if(strlen(tmpName) == dir->namelength)
                         {
-                            return acc;
+                            struct dirent *d = dirp + indexInBuffer;
+                            snprintf(d->d_name, 256, "%s", tmpName);
+
+                            acc += sizeof(struct dirent);
+                            d->d_off = acc;
+                            d->d_type = DT_DIR;
+                            d->d_reclen = sizeof(struct dirent);
+
+                            file->size +=1;
+                            countEntries+=1;
+
+                            indexInBuffer+=1;
+                            if(indexInBuffer >= numDirentPerBuff)
+                            {
+                                break;
+                            }
                         }
                     }
+
+                    inoIndex++;
                 }
             }
 
@@ -293,11 +301,12 @@ static int ext2FSReadDir(ThreadBase* caller, File *file, void *buf, size_t numBy
             ptrdiff_t dif = (char*) dir - (char*) dir_buf;
             if( dif >= getExtPriv()->blocksize)
             {
-                return acc;
+                break;
             }
         }
     }
 
+    file->readPos += countEntries;
     return acc;
 }
 

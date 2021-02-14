@@ -162,6 +162,49 @@ static void process_messages()
 
             doExit(process, MAKE_EXIT_CODE(0, SIGSEGV));
         }
+        else if(label == seL4_UserException)
+        {
+            const ThreadBase* base = (ThreadBase*) badge;
+            seL4_Uint64 msgLen = seL4_MessageInfo_get_length(info);
+            KLOG_TRACE("Received User exception from  %lu len=%li\n", badge, msgLen);
+
+// XXX: X86_64 specific!
+            seL4_Word faultIP = seL4_GetMR(seL4_UserException_FaultIP);
+            seL4_Word faultSP = seL4_GetMR(seL4_UserException_SP);
+            seL4_Word flags = seL4_GetMR(seL4_UserException_FLAGS);
+            seL4_Word number = seL4_GetMR(seL4_UserException_Number);
+            seL4_Word code = seL4_GetMR(seL4_UserException_Code);
+
+            KLOG_ERROR("fault IP=%lx\n", faultIP);
+            KLOG_ERROR("fault IS=%lx\n", faultSP);
+            KLOG_ERROR("fault flags=%lx\n", flags);
+            KLOG_ERROR("fault number=%lx\n", number);
+            KLOG_ERROR("fault code=%lx\n", code);
+
+            if(base->kernTaskThread)
+            {
+                KLOG_TRACE("This is a kernTask thread\n");
+
+                Service *serv = NULL;
+                Service *tmp = NULL;
+                FOR_EACH_SERVICE(serv, tmp)
+                {
+                    if(serv->kernTaskThread && &serv->kernTaskThread->_base  == base)
+                    {
+                        KLOG_DEBUG("Err from %s\n", serv->name);
+                    }
+                }
+            }
+            else
+            {
+                Process*p = base->process;
+                KLOG_TRACE("From process %s %i\n", ProcessGetName(p), ProcessGetPID(p));
+                doExit(p, MAKE_EXIT_CODE(0, SIGILL));
+            }
+            
+
+            seL4_DebugDumpScheduler();
+        }
         else 
         {
             const ThreadBase* base = (ThreadBase*) badge;
@@ -184,8 +227,9 @@ static void process_messages()
             }
             else
             {
-                const Process*p = base->process;
+                Process*p = base->process;
                 KLOG_TRACE("From process %s %i\n", ProcessGetName(p), ProcessGetPID(p));
+                doExit(p, MAKE_EXIT_CODE(0, SIGILL));
             }
             
 

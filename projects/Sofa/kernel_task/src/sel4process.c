@@ -766,12 +766,8 @@ void sel4utils_destroy_process(sel4utils_process_t *process, vka_t *vka)
     /* tear down the vspace */
     if (process->own_vspace) 
     {
-        printf("Start of stuf\n");
-
         vspace_tear_down(&process->vspace, VSPACE_FREE);
         /* free any objects created by the vspace */
-
-        printf("End of stuf\n");
 
         clear_objects(process, vka);
     }
