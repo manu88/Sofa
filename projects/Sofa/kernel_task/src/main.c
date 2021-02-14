@@ -86,6 +86,7 @@ Process initProcess;
 static void process_messages()
 {
     KernelTaskContext* env = getKernelTaskContext();
+
     while (1)
     {   
         seL4_Word badge = 0;
@@ -204,12 +205,12 @@ void *main_continued(void *arg UNUSED)
     seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
-    error = vka_alloc_endpoint(&env->vka, &env->root_task_endpoint);
+    error = vka_alloc_endpoint(&env->_vka, &env->root_task_endpoint);
     assert(error == 0);
 
     if (config_set(CONFIG_KERNEL_MCS)) 
     {
-        error = vka_alloc_reply(&env->vka, &env->reply);
+        error = vka_alloc_reply(&env->_vka, &env->reply);
         ZF_LOGF_IF(error, "Failed to allocate reply");
     }
 
@@ -220,11 +221,12 @@ void *main_continued(void *arg UNUSED)
 
     error = DeviceKitInit();
     assert(error == 0);
-
+    printf("DeviceKitInit ok \n");
 
 // base services init
     error  = ProcessListInit();
     assert(error == 0);
+    printf("ProcessListInit ok \n");
     
     error = ProcServiceInit();
     assert(error == 0);
@@ -341,16 +343,20 @@ static int serial_utspace_alloc_at_fn(void *data, const cspacepath_t *dest, seL4
     }
 }
 
+static const char _mainThreadName[] = "kerneltask.main";
+
 int main(void)
 {
     _mainThread._base.process = getKernelTaskProcess();
+    _mainThread.name = _mainThreadName;
     seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
     getKernelTaskProcess()->name = kernelTaskName;
     int error;
 
-    error = sel4platsupport_new_io_ops(&env->vspace, &env->vka, &env->simple, &env->ops);
+    vspace_t* mainVSpace = getMainVSpace();
+    error = sel4platsupport_new_io_ops(mainVSpace, &env->_vka, &env->simple, &env->ops);
     ZF_LOGF_IF(error, "Failed to initialise IO ops");
     assert(error == 0);
 
@@ -366,7 +372,8 @@ int main(void)
     assert(error == 0);
 
     void *res;
-    error = sel4utils_run_on_stack(&env->vspace, main_continued, NULL, &res);
+
+    error = sel4utils_run_on_stack(mainVSpace, main_continued, NULL, &res);
     assert(error == 0);
     assert(res == 0);
 

@@ -56,7 +56,7 @@ static void onRegister(BaseService* service, ThreadBase* sender, seL4_MessageInf
     {
         free(client);
     }
-    seL4_SetMR(1, err == 0? client->buffClientAddr:-1);
+    seL4_SetMR(1, (seL4_Word)(err == 0? client->buffClientAddr:-1));
     seL4_Reply(msg);
 }
 
@@ -122,18 +122,20 @@ static void onProcWait(BaseService* service, ThreadBase* sender, seL4_MessageInf
 
     if(r == -EWOULDBLOCK)
     {
-        KernelTaskContext* ctx = getKernelTaskContext();
-        seL4_Word slot = get_free_slot(&ctx->vka);
-        int error = cnode_savecaller(&ctx->vka, slot);
+        vka_t *mainVKA = getMainVKA();
+        MainVKALock();
+        seL4_Word slot = get_free_slot(mainVKA);
+        int error = cnode_savecaller(mainVKA, slot);
         if (error)
         {
             KLOG_TRACE("[Syscall_wait] Unable to save caller err=%i\n", error);
-            cnode_delete(&ctx->vka, slot);
+            cnode_delete(mainVKA, slot);
+            MainVKAUnlock();
             seL4_SetMR(1, -error);
             seL4_Reply(msg);
             return;
         }
-        
+        MainVKAUnlock();
         sender->replyCap = slot;
         sender->state = ThreadState_Waiting;
     }

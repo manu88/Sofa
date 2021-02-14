@@ -11,6 +11,14 @@
 #include <signal.h>
 #include <Thread.h>
 
+#define DO_LOG 1
+
+#ifdef DO_LOG
+#define TEST_LOG(args...) SFPrintf(args)
+#else
+#define TEST_LOG(args...)
+#endif
+
 static void testMmap()
 {
     char* ptr = mmap(NULL, 4096, 0, 0,-1, 0);
@@ -27,19 +35,32 @@ static void testMalloc(void)
     assert(ptr);
     free(ptr);
 }
+
+//static int h = -1;
 static void testRead(void)
 {
+    char b[11] = "";
     int h = open("/fake/file1", O_RDONLY);
+    int guard = 10;
     assert(h != -1);
+    assert(guard==10);
 
-    char b[10] = "";
     ssize_t ret = read(h, b, 10);
+    assert(guard==10);
+
     while (ret != EOF)
     {
+
         ret = read(h, b, 10);
+        assert(guard==10);
+
         if(ret > 0)
+        {
             b[ret] = 0;
+        }
     }
+
+
     close(h);
 }
 
@@ -131,14 +152,31 @@ static void testThread()
 
 static int baseMain(int argc, char *argv[])
 {
+    TEST_LOG("[Unit tests] test read\n");
     testRead();
+
+    TEST_LOG("[Unit tests] test mmap\n");
     testMmap();
+
+    TEST_LOG("[Unit tests] test read dir \n");
     testReaddir();
+
+    TEST_LOG("[Unit tests] test malloc\n");
     testMalloc();
+
+    TEST_LOG("[Unit tests] test wait\n");
     testWait();
+
+    TEST_LOG("[Unit tests] test spawn\n");
     testSpawn(argv[0]);
+
+    TEST_LOG("[Unit tests] test kill child\n");
     testKillChild(argv[0]);
+
+    TEST_LOG("[Unit tests] test child fault\n");
     testChildFault(argv[0]);
+
+    TEST_LOG("[Unit tests] test time\n");
     testTime();
 
     //testThread();
@@ -175,8 +213,10 @@ int main(int argc, char *argv[])
     VFSClientInit();
     ProcClientInit();
 
+
     if(argc == 1)
     {
+        TEST_LOG("[Unit tests] base main\n");
         return baseMain(argc, argv);
     }
     else
@@ -185,16 +225,20 @@ int main(int argc, char *argv[])
         switch (mode)
         {
         case 1:
+            TEST_LOG("[Unit tests] mode1\n");
             return mode1();
             break;
         case 2:
+            TEST_LOG("[Unit tests] mode2\n");
             return mode2();
             break;
         case 3:
+            TEST_LOG("[Unit tests] mode3\n");
             return mode3();
             break;
         
         default:
+            TEST_LOG("[Unit tests] unknown mode (%i)\n", mode);
             break;
         }
     }

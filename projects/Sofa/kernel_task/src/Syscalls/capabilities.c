@@ -20,15 +20,14 @@
 
 static void RequestNotification(Thread* caller, seL4_MessageInfo_t info)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
-
+    vka_t *mainVKA = getMainVKA();
     vka_object_t notifObj = {0};
-    seL4_Word err = vka_alloc_notification(&ctx->vka, &notifObj);
+    seL4_Word err = vka_alloc_notification(mainVKA, &notifObj);
     if(err == 0)
     {
         cspacepath_t res;
-        vka_cspace_make_path(&getKernelTaskContext()->vka, notifObj.cptr, &res);
-        seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, &ctx->vka);
+        vka_cspace_make_path(mainVKA, notifObj.cptr, &res);
+        seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, mainVKA);
 
         err = ret;
     }
@@ -38,15 +37,14 @@ static void RequestNotification(Thread* caller, seL4_MessageInfo_t info)
 
 static void RequestEndpoint(Thread* caller, seL4_MessageInfo_t info)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
-
+    vka_t *mainVKA = getMainVKA();
     vka_object_t notifObj = {0};
-    seL4_Word err = vka_alloc_endpoint(&ctx->vka, &notifObj);
+    seL4_Word err = vka_alloc_endpoint(mainVKA, &notifObj);
     if(err == 0)
     {
         cspacepath_t res;
-        vka_cspace_make_path(&getKernelTaskContext()->vka, notifObj.cptr, &res);
-        seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, &ctx->vka);
+        vka_cspace_make_path(mainVKA, notifObj.cptr, &res);
+        seL4_CPtr ret = sel4utils_move_cap_to_process(&caller->_base.process->native, res, mainVKA);
 
         err = ret;
     }

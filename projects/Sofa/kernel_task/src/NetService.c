@@ -184,9 +184,11 @@ static void _RecvFrom(ThreadBase* caller, seL4_MessageInfo_t msg)
     {
         sock->waitingSize = size;
 
-        KernelTaskContext* ctx = getKernelTaskContext();
-        clt->replyCap = get_free_slot(&ctx->vka);
-        int error = cnode_savecaller(&ctx->vka, clt->replyCap);
+        vka_t *mainVKA = getMainVKA();
+        MainVKALock();
+        clt->replyCap = get_free_slot(mainVKA);
+        int error = cnode_savecaller(mainVKA, clt->replyCap);
+        MainVKAUnlock();
         return;
     }
 
@@ -233,8 +235,8 @@ static void _on_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_add
         seL4_SetMR(2, addrSize);
         seL4_Send(sock->client->replyCap, info);
         
-        KernelTaskContext* ctx = getKernelTaskContext();
-        cnode_delete(&ctx->vka, sock->client->replyCap);
+        vka_t *mainVKA = getMainVKA();
+        cnode_delete(mainVKA, sock->client->replyCap);
         sock->client->replyCap = 0;
         sock->waitingSize = 0;
 

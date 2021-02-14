@@ -40,6 +40,9 @@ Because we use `musl`, the current goal is to be as much as possible POSIX compl
 * init: pretty much empty for now, serves as a use case to implement servers
 
 ## Build
+See [dependencies.md](dependencies.md) for a list of required software.
+
+
 You should have all the tools and external deps required to build seL4 (some info [here](https://docs.sel4.systems/projects/buildsystem/host-dependencies.html)).
 
 Then call the update.sh script to fetch all the required components (seL4 kernel, libs, etc.)
@@ -69,12 +72,12 @@ start the `udpecho` program and test it by sending messages from the host:
 nc  -u 127.0.0.1 3000
 ```
 
-## Create a fat image:
+## Create an ext2 distribution image:
 after build, in the `dist` folder:
 ```
 sudo sh build.sh
 # on sucess:
-qemu-system-x86_64 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce -hdd sofa.img -serial stdio
+qemu-system-x86_64 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce -device virtio-blk-pci,drive=drive0 -drive file=sofa.img,if=none,id=drive0 -serial stdio
 ```
 
 ## Resources

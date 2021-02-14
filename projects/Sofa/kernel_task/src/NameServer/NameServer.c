@@ -58,19 +58,22 @@ extern KThread _mainThread;
 
 int ServiceCreateKernelTask(Service* s)
 {
-    KernelTaskContext* ctx = getKernelTaskContext();
+    vka_t *mainVKA = getMainVKA();
+
+    MainVKALock();
+
     int error = 0;
     vka_object_t ep = {0};
-    error = vka_alloc_endpoint(&ctx->vka, &ep);
+    error = vka_alloc_endpoint(mainVKA, &ep);
     assert(error == 0);
     s->baseEndpoint = ep.cptr;
 
     vka_object_t ep2 = {0};
-    error = vka_alloc_endpoint(&ctx->vka, &ep2);
+    error = vka_alloc_endpoint(mainVKA, &ep2);
     assert(error == 0);
     
-    s->kernTaskEp = get_free_slot(&ctx->vka);
-    cnode_mint(&ctx->vka, ep.cptr, s->kernTaskEp, seL4_CanWrite, (seL4_Word)&_mainThread);
-
+    s->kernTaskEp = get_free_slot(mainVKA);
+    cnode_mint(mainVKA, ep.cptr, s->kernTaskEp, seL4_AllRights, (seL4_Word)&_mainThread);
+    MainVKAUnlock();
     return 0;
 }

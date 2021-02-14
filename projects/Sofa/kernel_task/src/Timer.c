@@ -28,6 +28,7 @@ static ps_irq_register_fn_t irq_register_fn_copy;
 static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, irq_callback_fn_t callback,
                                             void *callback_data)
 {
+    vka_t *mainVKA = getMainVKA();
     KernelTaskContext* env = getKernelTaskContext();
     static int num_timer_irqs = 0;
 
@@ -38,21 +39,21 @@ static irq_id_t sel4test_timer_irq_register(UNUSED void *cookie, ps_irq_t irq, i
     ZF_LOGF_IF(num_timer_irqs >= MAX_TIMER_IRQS, "Trying to register too many timer IRQs");
 
     /* Allocate the IRQ */
-    error = sel4platsupport_copy_irq_cap(&env->vka, &env->simple, &irq,
+    error = sel4platsupport_copy_irq_cap(mainVKA, &env->simple, &irq,
                                          &env->timer_irqs[num_timer_irqs].handler_path);
     ZF_LOGF_IF(error, "Failed to allocate IRQ handler");
 
     /* Allocate the root notifitcation if we haven't already done so */
     if (env->timer_notification.cptr == seL4_CapNull) {
-        error = vka_alloc_notification(&env->vka, &env->timer_notification);
+        error = vka_alloc_notification(mainVKA, &env->timer_notification);
         ZF_LOGF_IF(error, "Failed to allocate notification object");
     }
 
     /* Mint a notification for the IRQ handler to pair with */
-    error = vka_cspace_alloc_path(&env->vka, &env->badged_timer_notifications[num_timer_irqs]);
+    error = vka_cspace_alloc_path(mainVKA, &env->badged_timer_notifications[num_timer_irqs]);
     ZF_LOGF_IF(error, "Failed to allocate path for the badged notification");
     cspacepath_t root_notification_path = {0};
-    vka_cspace_make_path(&env->vka, env->timer_notification.cptr, &root_notification_path);
+    vka_cspace_make_path(mainVKA, env->timer_notification.cptr, &root_notification_path);
     seL4_Word badge = TIMER_BADGE; // BIT(num_timer_irqs)
     KLOG_INFO("Mint timer with value %lu\n", BIT(num_timer_irqs));
     error = vka_cnode_mint(&env->badged_timer_notifications[num_timer_irqs], &root_notification_path,
@@ -87,7 +88,7 @@ static void init_timer(void)
         error = ltimer_default_init(&env->ltimer, env->ops, NULL, NULL);
         ZF_LOGF_IF(error, "Failed to setup the timers");
 
-        error = vka_alloc_notification(&env->vka, &env->timer_notify_test);
+        error = vka_alloc_notification(&env->_vka, &env->timer_notify_test);
         ZF_LOGF_IF(error, "Failed to allocate notification object for tests");
 
         error = seL4_TCB_BindNotification(simple_get_tcb(&env->simple), env->timer_notification.cptr);

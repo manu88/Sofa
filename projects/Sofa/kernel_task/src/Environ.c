@@ -24,6 +24,7 @@
 
 #include <muslcsys/vsyscall.h>
 #include "ProcessList.h"
+#include "KThread.h"
 
 /* dimensions of virtual memory for the allocator to use */
 #define ALLOCATOR_VIRTUAL_POOL_SIZE ((1 << seL4_PageBits) * 400)
@@ -44,6 +45,8 @@ KernelTaskContext* getKernelTaskContext(void)
     return &_ctx;
 }
 
+static KMutex _mainVSpaceLock;
+static KMutex _mainVKALock;
 
 static Process _kernelTask = {0};
 
@@ -53,15 +56,54 @@ Process* getKernelTaskProcess()
 }
 
 
+vspace_t* getMainVSpace()
+{
+    return &_ctx._vspace;
+}
+
+int MainVSpaceLock()
+{
+    return KMutexLock(&_mainVSpaceLock);
+}
+
+int MainVSpaceUnlock()
+{
+    return KMutexUnlock(&_mainVSpaceLock);
+}
+
+vka_t* getMainVKA()
+{
+    return &_ctx._vka;
+}
+
+//static int c = 0;
+
+int MainVKALock()
+{
+//    KThread* self = (KThread*) seL4_GetUserData();
+//    c++;
+//    printf("---> MainVKALock (%i) from '%s'\n", c, self->name);
+    return KMutexLock(&_mainVKALock);
+}
+
+int MainVKAUnlock()
+{
+//    KThread* self = (KThread*) seL4_GetUserData();
+//    c--;
+//    printf("---> MainVKAUnlock (%i) from '%s'\n", c, self->name);
+    return KMutexUnlock(&_mainVKALock);
+}
+
 int IOInit()
 {
     KernelTaskContext* env = getKernelTaskContext();
 
 
-    int error = sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->vka);
+    int error = sel4platsupport_get_io_port_ops(&env->ops.io_port_ops, &env->simple, &env->_vka);
     assert(error == 0);
 
-    error = sel4utils_new_page_dma_alloc(&env->vka, &env->vspace, &env->ops.dma_manager);
+    vspace_t* mainVSpace = getMainVSpace();
+    error = sel4utils_new_page_dma_alloc(&env->_vka, mainVSpace, &env->ops.dma_manager);
     assert(error == 0);
 }
 
@@ -85,25 +127,31 @@ static void CONSTRUCTOR(MUSLCSYS_WITH_VSYSCALL_PRIORITY)  init_malloc(void)
     assert(env->allocman);
 
     /* create vka */
-    allocman_make_vka(&env->vka, env->allocman);
+    allocman_make_vka(&env->_vka, env->allocman);
 
     /* create vspace */
-    error = sel4utils_bootstrap_vspace_with_bootinfo_leaky(&env->vspace, &data, simple_get_pd(&env->simple),
-                                                           &env->vka, info);
+    error = sel4utils_bootstrap_vspace_with_bootinfo_leaky(&env->_vspace, &data, simple_get_pd(&env->simple),
+                                                           &env->_vka, info);
 
     /* set up malloc */
-    error = sel4utils_reserve_range_no_alloc(&env->vspace, &malloc_res, seL4_LargePageBits, seL4_AllRights, 1,
+    error = sel4utils_reserve_range_no_alloc(&env->_vspace, &malloc_res, seL4_LargePageBits, seL4_AllRights, 1,
                                              &muslc_brk_reservation_start);
-    muslc_this_vspace = &env->vspace;
+    muslc_this_vspace = &env->_vspace;
     muslc_brk_reservation.res = &malloc_res;
     ZF_LOGF_IF(error, "Failed to set up dynamic malloc");
 
     void *vaddr;
-    reservation_t virtual_reservation = vspace_reserve_range(&env->vspace, ALLOCATOR_VIRTUAL_POOL_SIZE, seL4_AllRights,
+    reservation_t virtual_reservation = vspace_reserve_range(&env->_vspace, ALLOCATOR_VIRTUAL_POOL_SIZE, seL4_AllRights,
                                                1, &vaddr);
     assert(virtual_reservation.res);
     bootstrap_configure_virtual_pool(env->allocman, vaddr, ALLOCATOR_VIRTUAL_POOL_SIZE, simple_get_pd(&env->simple));
+
+    error = KMutexNew(&_mainVSpaceLock);
+    assert(error == 0);
     
+    error = KMutexNew(&_mainVKALock);
+    assert(error == 0);
+
     _env_set = 1;
 
 }

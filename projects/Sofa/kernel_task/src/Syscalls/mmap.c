@@ -59,8 +59,6 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
 
     }
     
-
-    KernelTaskContext* ctx = getKernelTaskContext();
     void* p = process_new_pages(caller->_base.process, seL4_AllRights, numPages);
     if(!p)
     {

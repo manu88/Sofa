@@ -161,7 +161,8 @@ static void onBytesAvailable(CircularBuffer* buffer, char until, void* ptr, void
     seL4_SetMR(2, bytes);            
     
     seL4_Send(caller->replyCap, msg);
-    cnode_delete(&getKernelTaskContext()->vka, caller->replyCap);
+    vka_t *mainVKA = getMainVKA();
+    cnode_delete(mainVKA, caller->replyCap);
     caller->replyCap = 0;
     caller->state = ThreadState_Running;
 }
@@ -183,19 +184,20 @@ static int consRead(ThreadBase* caller, File *file, void *buf, size_t numBytes)
     assert(file->impl);
     ComDevice* dev = file->impl;
 
-    KernelTaskContext* env = getKernelTaskContext();
+    vka_t *mainVKA = getMainVKA();
 
     assert(caller->replyCap == 0);
-
-    seL4_Word slot = get_free_slot(&env->vka);
-    int error = cnode_savecaller(&env->vka, slot);
+    MainVKALock();
+    seL4_Word slot = get_free_slot(mainVKA);
+    int error = cnode_savecaller(mainVKA, slot);
     if (error)
     {
         KLOG_TRACE("Unable to save caller err=%i\n", error);
-        cnode_delete(&env->vka, slot);
+        cnode_delete(mainVKA, slot);
+        MainVKAUnlock();
         return -ENOMEM;
     }
-
+    MainVKAUnlock();
     caller->replyCap = slot;
     caller->currentSyscallID = 0;
     ComRegisterWaiter(dev, onBytesAvailable, numBytes, '\n', caller, buf);
@@ -273,7 +275,7 @@ void AddComDev(IODriver *drv, IONode * n)
 
         comFile->ops = &_consoleOps;
 
-        comFile->device = com;
+        comFile->device = (IODevice*) com;
         DevFSAddDev(comFile);
         n->devFile = comFile;
     }

@@ -34,16 +34,17 @@ void Syscall_GetService(Thread* caller, seL4_MessageInfo_t info)
     }
     assert(service->baseEndpoint != seL4_CapNull);
 
-    KernelTaskContext* env = getKernelTaskContext();
+    vka_t *mainVKA = getMainVKA();
 
-    seL4_CPtr capMint = get_free_slot(&env->vka);
-    int err = cnode_mint(&env->vka, service->baseEndpoint, capMint, seL4_AllRights, (seL4_Word) caller);
+    MainVKALock();
+    seL4_CPtr capMint = get_free_slot(mainVKA);
+    int err = cnode_mint(mainVKA, service->baseEndpoint, capMint, seL4_AllRights, (seL4_Word) caller);
     assert(err == 0);
     cspacepath_t path;
-    vka_cspace_make_path(&env->vka, capMint, &path);
+    vka_cspace_make_path(mainVKA, capMint, &path);
 
-    seL4_CPtr cap = sel4utils_move_cap_to_process(&caller->_base.process->native, path, &env->vka);
-
+    seL4_CPtr cap = sel4utils_move_cap_to_process(&caller->_base.process->native, path, mainVKA);
+    MainVKAUnlock();
     seL4_SetMR(1, 0);
     seL4_SetMR(2, cap);
     seL4_Reply(info);
@@ -79,25 +80,24 @@ void Syscall_RegisterService(Thread* caller, seL4_MessageInfo_t info)
         return;
     }
 
-    KernelTaskContext* ctx = getKernelTaskContext();
-
+    vka_t *mainVKA = getMainVKA();
     KLOG_DEBUG("Create Kernel task endpoint\n");
     vka_object_t tcb_obj;
-    vka_alloc_endpoint(&ctx->vka, &tcb_obj);
+    vka_alloc_endpoint(mainVKA, &tcb_obj);
     cspacepath_t res;
-    vka_cspace_make_path(&ctx->vka, tcb_obj.cptr, &res);
+    vka_cspace_make_path(mainVKA, tcb_obj.cptr, &res);
 
 // create a minted enpoint for the thread
     KLOG_DEBUG("Create Process task endpoint\n");
 
     vka_object_t tcb_obj2;
-    vka_alloc_endpoint(&ctx->vka, &tcb_obj2);
+    vka_alloc_endpoint(mainVKA, &tcb_obj2);
     cspacepath_t res2;
-    vka_cspace_make_path(&ctx->vka, tcb_obj2.cptr, &res2);
+    vka_cspace_make_path(mainVKA, tcb_obj2.cptr, &res2);
 
 
     KLOG_DEBUG("Copy cap to process\n");
-    seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->_base.process->native, &ctx->vka, res.capPtr);
+    seL4_CPtr ret = sel4utils_copy_cap_to_process(&caller->_base.process->native, mainVKA, res.capPtr);
     newService->endpoint = ret;
     newService->baseEndpoint = res.capPtr;
     newService->kernTaskEp = res2.capPtr;
