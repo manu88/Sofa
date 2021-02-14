@@ -36,6 +36,10 @@ EOF
 
 # Do what you want with the mounted image :) 
 
+
+
+cp -R root/* $MOUNT_PATH
+
 #
 echo "----> unmount stuff"
 
