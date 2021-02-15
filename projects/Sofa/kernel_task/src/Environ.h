@@ -72,6 +72,8 @@ struct _KernelTaskContext
     /* IO ops for devices */
     ps_io_ops_t ops;
 
+    ps_io_mapper_t io_mapper;
+
     /* logical timer interface */
     ltimer_t ltimer;
 

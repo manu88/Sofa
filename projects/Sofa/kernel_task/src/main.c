@@ -36,7 +36,6 @@
 #include <sel4platsupport/device.h>
 #include <sel4platsupport/platsupport.h>
 #include <platsupport/chardev.h>
-#include <sel4/arch/bootinfo_types.h>
 #include <sel4utils/stack.h>
 
 
@@ -239,6 +238,7 @@ static void process_messages()
     }
 }
 
+
 void *main_continued(void *arg UNUSED)
 {
     int error;
@@ -246,38 +246,6 @@ void *main_continued(void *arg UNUSED)
     KLOG_INFO("\n------Sofa------\n");
     KLOG_INFO("----------------\n");
 
-
-    seL4_BootInfo * bootInfos = platsupport_get_bootinfo();
-    assert(bootInfos);
-    
-    KLOG_DEBUG("Got %li extra len\n", bootInfos->extraLen);
-    if(bootInfos->extraLen)
-    {
-        seL4_Word extraLen = bootInfos->extraLen;
-        size_t sizeOffset = 0;
-        seL4_BootInfoHeader* header = (seL4_BootInfoHeader*)((void*)bootInfos + 4096);
-        int index = 0;
-        while (extraLen)
-        {   
-            KLOG_DEBUG("header %i id=%u len %li\n", index, header->id, header->len);
-            extraLen -= header->len;
-            sizeOffset += header->len;
-            header = ((void*) header + sizeOffset);
-            if(header->len == 0)
-            {
-                break;
-            }
-
-            if(header->id == SEL4_BOOTINFO_HEADER_X86_MBMMAP)
-            {
-                void* data = header + sizeof(seL4_BootInfoHeader);
-                seL4_X86_BootInfo_mmap_t* payload = (seL4_X86_BootInfo_mmap_t*) data;
-                KLOG_DEBUG("got seL4_X86_BootInfo_mmap_t len=%i\n", payload->mmap_length);
-            }
-            index++;
-        }
-        KLOG_DEBUG("BootInfo header parsing done\n");
-    }
 
     seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
@@ -351,9 +319,6 @@ void *main_continued(void *arg UNUSED)
     VFSMount(getFakeFS(), "/fake", &error);
     VFSMount(getCpioFS(), "/cpio", &error);
     VFSMount(getDevFS(), "/dev", &error);    
-
-
-
 
     ProcessInit(&initProcess);
     initProcess.argc = 0;

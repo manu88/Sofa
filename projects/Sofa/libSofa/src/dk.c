@@ -165,3 +165,15 @@ ssize_t DKDeviceWrite(DKDeviceHandle handle, size_t index, const char* buf, size
     seL4_Call(dkCap, info);
     return seL4_GetMR(1);
 }
+
+
+long DKDeviceMMap(DKDeviceHandle handle, int code)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, DKRequest_MMap);
+    seL4_SetMR(1, handle);
+    seL4_SetMR(2, code);
+    seL4_Call(dkCap, info);
+    return seL4_GetMR(1);
+
+}

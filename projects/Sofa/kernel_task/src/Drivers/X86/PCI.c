@@ -22,7 +22,6 @@
 #include "Blk.h"
 #include "Net.h"
 #include "Serial.h"
-#include "BGADriver.h"
 
 typedef struct _PCIDriver
 {
@@ -106,6 +105,7 @@ static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
             DeviceTreeAddDevice(netDev);
         }
     }
+    /*
     else if(pciDev->vendor_id==0x1234
             && pciDev->device_id==0x1111)
     {
@@ -113,7 +113,7 @@ static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
     
         IODriver* bgaDev = BGAInit(iobase0);
     }
-
+    */
 }
 
 static int _scanPCIBus(PCIDriver* driver)

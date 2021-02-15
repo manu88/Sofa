@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     
-    doUnitTests();
+    //doUnitTests();
 
 
     open("/dev/tty0", O_RDONLY);  // 0

@@ -25,7 +25,10 @@
 #include <platsupport/plat/acpi/tables/madt.h>
 #include <AMLDecompiler.h>
 #include <EISAID.h>
+#include <sel4/arch/bootinfo_types.h>
 #include <ctype.h>
+
+#include "Vesa.h"
 
 static void ACPIParse(IONode* root);
 
@@ -35,9 +38,61 @@ int PlatformExpertInit()
     return 0;
 }
 
+static void ProcessVBE(const seL4_X86_BootInfo_VBE* payload)
+{
+    IODevice* vesaDev = VesaInit(payload);
+
+    if(vesaDev)
+    {
+        DeviceTreeAddDevice(vesaDev);
+    }
+}
+
+static void ProcessMultiboot()
+{
+    seL4_BootInfo * bootInfos = platsupport_get_bootinfo();
+    assert(bootInfos);
+    
+    KLOG_DEBUG("Got %li extra len\n", bootInfos->extraLen);
+    if(bootInfos->extraLen)
+    {
+        seL4_Word extraLen = bootInfos->extraLen;
+        size_t sizeOffset = 0;
+        seL4_BootInfoHeader* header = (seL4_BootInfoHeader*)((void*)bootInfos + 4096);
+        int index = 0;
+        while (extraLen)
+        {   
+            KLOG_DEBUG("header %i id=%u len %li\n", index, header->id, header->len);
+
+            header = ((void*) header + sizeOffset);
+            if(header->len == 0)
+            {
+                break;
+            }
+            if(header->id == SEL4_BOOTINFO_HEADER_X86_VBE)
+            {
+                const seL4_X86_BootInfo_VBE* payload = (const seL4_X86_BootInfo_VBE*) header;
+                ProcessVBE(payload);
+            }   
+            else if(header->id == SEL4_BOOTINFO_HEADER_X86_MBMMAP)
+            {
+                const seL4_X86_BootInfo_mmap_t* payload = (const seL4_X86_BootInfo_mmap_t*) header;
+                KLOG_DEBUG("got seL4_X86_BootInfo_mmap_t len=%i\n", payload->mmap_length);
+            }
+            extraLen -= header->len;
+            sizeOffset += header->len;
+            
+            index++;
+        }
+        KLOG_DEBUG("BootInfo header parsing done\n");
+    }
+}
+
+
 int PlatformExpertConstructTree(IONode *root)
 {
     ACPIParse(root);
+    ProcessMultiboot();
 
     return 0;    
 }
@@ -456,17 +511,8 @@ static void walkDev(IONode* n, int indent)
 }
 
 static void ACPIParse(IONode *root)
-{
-    vka_t *mainVKA = getMainVKA();
-    ps_io_mapper_t io_mapper;
-    vspace_t* mainVSpace = getMainVSpace();
-
-    MainVSpaceLock();
-    int error =  sel4platsupport_new_io_mapper(mainVSpace, mainVKA, &io_mapper);
-    MainVSpaceUnlock();
-    assert(error == 0);
-    
-    acpi_t* acpi = acpi_init(io_mapper);
+{    
+    acpi_t* acpi = acpi_init(getKernelTaskContext()->io_mapper);
     
     assert(acpi != NULL);
 
