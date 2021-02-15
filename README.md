@@ -75,9 +75,10 @@ nc  -u 127.0.0.1 3000
 ## Create an ext2 distribution image:
 after build, in the `dist` folder:
 ```
-sudo sh build.sh
+# note that mntP must exist!
+sudo sh build.sh sofa.img mntP/
 # on sucess:
-qemu-system-x86_64 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce -device virtio-blk-pci,drive=drive0 -drive file=sofa.iso,if=none,id=drive0 -serial stdio
+qemu-system-x86_64 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce -device virtio-blk-pci,drive=drive0 -drive file=sofa.img,if=none,id=drive0 -serial stdio
 ```
 
 ## Resources

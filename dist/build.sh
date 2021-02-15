@@ -1,50 +1,77 @@
-#!/bin/sh
+#!/bin/bash
+#
+# Generates and mounts a disk image that is partitioned according to the
+# `./partition_table` file in the same directory as this script. The
+# `./copy_root.sh` script is then used to copy the root filesystem from
+# `./disk` into the first partition of the new disk image.
+# 
+# Argument 1: disk image target name
+# Argument 2: location to temporarally mount the new disk
+# Argument 3: location of old root for ./copy_root.sh
+# Argument 4: The location of kernel images for ./copy_root.sh
+#
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-IMG_NAME=sofa.img
-MOUNT_PATH=mountPt
+DISK_IMG=$1
+DISK_MOUNT=$2
+OLD_ROOT=$3
+EXTRA_ROOT_DIR=$4
+KERNEL_BINS=$5
 
-dd if=/dev/zero of=$IMG_NAME bs=400M count=1
-mkfs.ext2 $IMG_NAME
-mkdir -p $MOUNT_PATH
+echo "DISK: $DISK_IMG"
 
-echo "----> mount stuff"
-losetup -fP $IMG_NAME
+truncate -s 512MB $DISK_IMG \
+    || exit 1
 
-LOOP_ID=$(losetup -f --show -P $IMG_NAME)
+sfdisk $DISK_IMG < $DIR/partition_table \
+    || exit 1
+
+LOOP_DEVICE=$(losetup -f --show -P $DISK_IMG)
 [ $? -eq 0 ] || exit 1
 
-echo $LOOP_ID
+LOOP_DEVICE_PART1=${LOOP_DEVICE}p1
+echo "Loop device: $LOOP_DEVICE"
+echo "Loop partition: $LOOP_DEVICE_PART1"
 
-mount -o loop $LOOP_ID $MOUNT_PATH
-#extlinux --install $MOUNT_PATH
-echo "----> copy files"
-mkdir -p $MOUNT_PATH/boot/grub
-cp /usr/lib/syslinux/modules/bios/mboot.c32 $MOUNT_PATH
-cp /usr/lib/syslinux/modules/bios/libcom32.c32 $MOUNT_PATH
-cp /usr/lib/syslinux/modules/bios/vesamenu.c32 $MOUNT_PATH
-cp /usr/lib/syslinux/modules/bios/libutil.c32 $MOUNT_PATH
-cp ../build/images/kernel-x86_64-pc99 $MOUNT_PATH/kernel
-cp ../build/images/kernel_task-image-x86_64-pc99 $MOUNT_PATH/rootserver
+mkfs.ext2 -b 4096 -O ^large_file,^dir_index,^sparse_super,^resize_inode,filetype $LOOP_DEVICE_PART1 \
+    || exit 1
+
+mount $LOOP_DEVICE_PART1 $DISK_MOUNT \
+    || exit 1
+
+echo $LOOP_DEVICE
+
+#$DIR/copy_root.sh $OLD_ROOT $KERNEL_BINS $EXTRA_ROOT_DIR $DISK_MOUNT \
+#    || exit 1
+
+if [ -x "$(command -v grub-install)" ]; then
+    echo "Installing Grub to image..."
+    grub-install --target=i386-pc --boot-directory="$DISK_MOUNT/boot" $LOOP_DEVICE \
+        || exit 1
+else
+    echo "grub-install not found, skipping GRUB setup!"
+fi
+
+cp ../build/images/kernel-x86_64-pc99 $DISK_MOUNT/boot/kernel
+cp ../build/images/kernel_task-image-x86_64-pc99 $DISK_MOUNT/boot/kernel_task
+
+cat > $DISK_MOUNT/boot/grub/grub.cfg <<EOF
+set timeout=1
+
+menuentry "Sofa" {
+  multiboot /boot/kernel
+  module /boot/kernel_task
+}
+EOF
 
 
+umount $DISK_MOUNT \
+    || exit 1
 
+echo "Unmounting loop: $LOOP_DEVICE"
+losetup -d $LOOP_DEVICE \
+    || exit 1
 
-#correct all file rights
-#sudo chmod -R +r $MOUNT_PATH
-
-# Do what you want with the mounted image :) 
-
-
-
-cp -R root/* $MOUNT_PATH
-
-exit
-echo "----> unmount stuff"
-
-sudo umount $MOUNT_PATH
-rm -r $MOUNT_PATH
-sudo losetup -d $LOOP_ID
-
-sudo chmod a+rwX sofa.img
-echo "----> done"
+chmod 666 $DISK_IMG \
+    || exit 1
