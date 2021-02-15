@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "Image.h"
 #include "runtime.h"
 #include <dk.h>
 #include <Sofa.h>
@@ -24,7 +23,7 @@
 #include <unistd.h>
 
 
-static void* sel4doom_load_file(const char* filename)
+static void* loadFile(const char* filename)
 {
     int fd = open(filename, O_RDONLY);
 
@@ -68,8 +67,18 @@ static void* sel4doom_load_file(const char* filename)
     return data;
 }
 
+
+
 static void putPixel(void* fb, int x, int y, uint8_t r,  uint8_t g, uint8_t b)
 {
+    if(x>= 650 || x < 0)
+    {
+        return;
+    }
+    if(y>= 480 || y < 0)
+    {
+        return;
+    }
 
     unsigned int coord_factor = 4;
     size_t len = 3;
@@ -80,95 +89,71 @@ static void putPixel(void* fb, int x, int y, uint8_t r,  uint8_t g, uint8_t b)
     target[2] = b;
 }
 
-static uint8_t*
-sel4doom_get_ppm(void*fb, const char* filename) 
+static void clear(void* fb, int x, int y, int w, int h)
 {
-
-    void * img = sel4doom_load_file(filename);
-    assert(img);
-
-    int imgx = 0;  // image width (in pixel)
-    int imgy = 0;  // image height
-    //we do not handle comments in the header
-    int n = sscanf(img, "P6\n%d %d\n255\n", &imgx, &imgy);
-    assert (n == 2 && 0 < imgx && imgx < 256 && 0 < imgy && imgy < 256);
-    //assert (n == 2 && imgx > 0 && imgy > 0);
-
-    // find first pixel; header and data are separated by "\n255\n"
-    uint8_t* src = (uint8_t*) strstr(img, "\n255\n");
-    assert(src);
-    // skip over separator
-    src += 5;
-
-    for (int y = 0; y < imgy; y++) 
+    for(int xx=x;xx<x+w;xx++)
     {
-        for (int x = 0; x < imgx; x++) 
+        for(int yy=y;yy<y+h;yy++)
         {
-            uint8_t r = *src++;
-            uint8_t g = *src++;
-            uint8_t b = *src++;
-
-           putPixel(fb, x,y, r,g, b);
+            putPixel(fb, xx, yy, 0,0,0);
         }
     }
-    free(img);
-    return NULL;
 }
 
-#define PPMREADBUFLEN 256
-image get_ppm(FILE *pf)
+static int imgx = 0;
+static int imgy = 0;
+
+typedef struct
 {
-        char buf[PPMREADBUFLEN], *t;
-        image img;
-        unsigned int w, h, d;
-        int r;
- 
-        if (pf == NULL) 
-        {
-            return NULL;
-        }
-        t = fgets(buf, PPMREADBUFLEN, pf);
-        /* the code fails if the white space following "P6" is not '\n' */
-        
-        if ( (t == NULL) || ( strncmp(buf, "P6\n", 3) != 0 ) ) 
-        {
-            return NULL;
-        }
-        do
-        { /* Px formats can have # comments after first line */
-           t = fgets(buf, PPMREADBUFLEN, pf);
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} Pixel;
 
-           if ( t == NULL )
-           { 
-                return NULL;
-           }
-        }
-        while ( strncmp(buf, "#", 1) == 0 );
-        r = sscanf(buf, "%u %u", &w, &h);
-        if ( r < 2 ) 
-        {
-            return NULL;
-        }
- 
-        r = fscanf(pf, "%u", &d);
-        if ( (r < 1) || ( d != 255 ) ) 
-        {
-            return NULL;
-        }
-        fseek(pf, 1, SEEK_CUR); /* skip one byte, should be whitespace */
- 
-        img = alloc_img(w, h);
 
-        if ( img != NULL )
+static Pixel* pixels = NULL;
+
+static void displayPPM(void*fb, void* img, int startX, int startY) 
+{
+    if(pixels == NULL)
+    {
+        //we do not handle comments in the header
+        int n = sscanf(img, "P6\n%d %d\n255\n", &imgx, &imgy);
+        assert (n == 2);
+        assert(0 < imgx);
+        assert(imgx < 256);
+        assert(0 < imgy);
+        assert(imgy < 256);
+        //assert (n == 2 && imgx > 0 && imgy > 0);
+
+        // find first pixel; header and data are separated by "\n255\n"
+        uint8_t* src = (uint8_t*) strstr(img, "\n255\n");
+        assert(src);
+        // skip over separator
+        src += 5;
+
+        pixels = malloc(sizeof(Pixel)*imgx*imgy);
+        assert(pixels);
+        int i=0;
+        for (int y = 0; y < imgy; y++) 
         {
-            size_t rd = fread(img->buf, sizeof(pixel), w*h, pf);
-            if ( rd < w*h )
+            for (int x = 0; x < imgx; x++) 
             {
-               free_img(img);
-               return NULL;
+                pixels[i].r = *src++;
+                pixels[i].g = *src++;
+                pixels[i].b = *src++;
+
+                i++;
             }
-            return img;
         }
+    }
+
+    for(int i=0;i<imgx*imgy;i++)
+    {
+        int x = i % imgx;
+        int y = i / imgx;
+        putPixel(fb, startX + x, startY + y, pixels[i].r, pixels[i].g, pixels[i].b);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -190,7 +175,7 @@ int main(int argc, char *argv[])
     if(devHandle == DKDeviceHandle_Invalid)
     {
         Printf("vga: invalid dev handle");
-        return -1;
+        return 2;
     }
 
     long ret = DKDeviceMMap(devHandle, 1);
@@ -199,7 +184,42 @@ int main(int argc, char *argv[])
     {
         void* fb = (void*) ret;
 
-        sel4doom_get_ppm(fb, argv[1]);
+        void * img = loadFile(argv[1]);
+        if(img == NULL)
+        {
+            return 3;
+        }
+
+        int x = 0;
+        int y = 0;
+
+        int lastX = -1;
+        int lastY = -1;
+
+        while (1)
+        {
+            clear(fb, lastX, lastY, imgx, imgy);
+            displayPPM(fb, img, x, y);
+
+            lastX = x;
+            lastY = y;
+
+            x++;
+            y++;
+
+            if(x>640)
+            {
+                x = 0;
+            }
+            if(y>480)
+            {
+                y = 0;
+            }
+
+            SFSleep(40);
+        }
+        
+        
     }
 
 

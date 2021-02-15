@@ -5,7 +5,7 @@ project(img C)
 
 
 
-add_executable(img src/main.c src/Image.c)
+add_executable(img src/main.c)
 
 target_link_libraries(img sel4 sel4runtime muslc sofa)
 
