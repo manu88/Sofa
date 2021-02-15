@@ -77,7 +77,7 @@ after build, in the `dist` folder:
 ```
 sudo sh build.sh
 # on sucess:
-qemu-system-x86_64 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce -device virtio-blk-pci,drive=drive0 -drive file=sofa.img,if=none,id=drive0 -serial stdio
+qemu-system-x86_64 -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce -device virtio-blk-pci,drive=drive0 -drive file=sofa.iso,if=none,id=drive0 -serial stdio
 ```
 
 ## Resources

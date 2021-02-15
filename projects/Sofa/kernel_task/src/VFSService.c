@@ -33,6 +33,7 @@
 #include <Sofa.h>
 #include <utils/uthash.h>
 #include "VFS.h"
+#include "MBR.h"
 #include "Log.h"
 #include "ext2FS.h"
 
@@ -344,11 +345,90 @@ static int VFSServiceClose(Client* client, int handle)
     return ret;
 }
 
-static int _VFSCheckSuperBlock(IODevice* dev, VFSSupported* fsType)
+
+static int testPartition(IODevice* dev, const PartitionTableEntry* ent)
+{
+    if(ent->active == 0 && 
+       ent->systemID == 0
+    )
+    {
+        KLOG_DEBUG("\t-->Empty partition table\n");
+        return -1;
+    }
+    else
+    {
+        KLOG_DEBUG("\t-->active %X systemID %X num sectors %d lba start %d start sector %X\n", ent->active, ent->systemID, ent->numSectors, ent->lbaStart, ent->startSector);
+        
+        if(Ext2Probe(dev, ent->lbaStart))
+        {
+            if(Ext2Mount(dev))
+            {
+                KLOG_DEBUG("[VFSMount] ext2\n");
+                getExt2FS()->data = dev;
+                int err = 0;
+                VFSMount(getExt2FS(), "/ext", &err);
+                return err;
+            }
+            KLOG_DEBUG("ext2_mount error for '%s'\n", dev->name);
+        }
+        else
+        {
+            KLOG_DEBUG("ext2_probe error for '%s'\n", dev->name);
+            return -1;
+        }
+    }
+
+}
+
+static int _VFSInspectDisk(IODevice* dev, VFSSupported* fsType)
 {
     assert(fsType);
 
-    if(Ext2Probe(dev))
+    uint8_t data[512] = {0};
+    ssize_t ret = IODeviceRead(dev, 0, data, 512);
+    if(ret == 512)
+    {
+        const MBR* mbr = data;
+
+        KLOG_DEBUG("MBR diskID=%X validboot=%X\n", mbr->diskID, mbr->validBoot);
+        // validBoot should be == 0XAA55 and diskID != 0
+        if(mbr->diskID != 0 && mbr->validBoot == 0XAA55)
+        {
+            KLOG_DEBUG("Found a valid MBR, check partitions\n");
+            KLOG_DEBUG("Check partition1\n");
+            testPartition(dev, &mbr->part1);
+            KLOG_DEBUG("Check partition2\n");
+            testPartition(dev, &mbr->part2);
+            KLOG_DEBUG("Check partition3\n");
+            testPartition(dev, &mbr->part3);
+            KLOG_DEBUG("Check partition4\n");
+            testPartition(dev, &mbr->part4);
+        }
+        else // single partition disk
+        {
+            KLOG_DEBUG("No MBR, mount disk directly\n");
+            if(Ext2Probe(dev, 0))
+            {
+                if(Ext2Mount(dev))
+                {
+                    KLOG_DEBUG("[VFSMount] ext2\n");
+                    getExt2FS()->data = dev;
+                    int err = 0;
+                    VFSMount(getExt2FS(), "/ext", &err);
+                    return err;
+                }
+                KLOG_DEBUG("ext2_mount error for '%s'\n", dev->name);
+            }
+            else
+            {
+                KLOG_DEBUG("ext2_probe error for '%s'\n", dev->name);
+            }
+        }
+    }
+    return -1;
+
+
+    if(Ext2Probe(dev, 0))
     {
         if(Ext2Mount(dev))
         {
@@ -374,7 +454,7 @@ int VFSAddDEvice(IODevice *dev)
     KLOG_DEBUG("[VFS] add device '%s'\n", dev->name);
 
     VFSSupported type = VFSSupported_Unknown;
-    int test = _VFSCheckSuperBlock(dev, &type);
+    int test = _VFSInspectDisk(dev, &type);
     if(test != 0)
     {
         return test;

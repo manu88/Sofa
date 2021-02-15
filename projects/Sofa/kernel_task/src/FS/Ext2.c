@@ -55,7 +55,7 @@ static uint8_t doReadBlock(uint8_t *buf, uint32_t block, IODevice *dev, ext2_pri
     size_t acc = 0;
     for(uint32_t i=0;i<numSectors;i++)
     {
-        ssize_t ret = IODeviceRead(dev, startSect+i, bufPos, 512);
+        ssize_t ret = IODeviceRead(dev, priv->lbaStart+startSect+i, bufPos, 512);
 		if(ret <= 0)
 		{
 			return 0;// error
@@ -140,7 +140,7 @@ uint8_t Ext2ReadInode(inode_t *inode_buf, uint32_t inode, IODevice *dev)
 	return 1;
 }
 
-uint8_t Ext2Probe(IODevice *dev)
+uint8_t Ext2Probe(IODevice *dev, size_t lbaStart)
 {
 	if(!dev->ops)
 	{
@@ -153,18 +153,20 @@ uint8_t Ext2Probe(IODevice *dev)
 		return 0;
 	}
 	uint8_t *buf = (uint8_t *)malloc(1024);
-    ssize_t ret = IODeviceRead(dev, 2, buf, 512);
-    ret = IODeviceRead(dev, 3, buf+512, 512);
+    ssize_t ret = IODeviceRead(dev, lbaStart + 2, buf, 512);
+    ret = IODeviceRead(dev, lbaStart + 3, buf+512, 512);
 
 	superblock_t *sb = (superblock_t *)buf;
 	if(sb->ext2_sig != EXT2_SIGNATURE)
 	{
 		printf("Invalid EXT2 signature, have: 0x%x!\n", sb->ext2_sig);
+		free(buf);
 		return 0;
 	}
 	printf("Valid EXT2 signature!\n");
 	
     ext2_priv_data *priv = getExtPriv();
+	priv->lbaStart = lbaStart;
 
 	memcpy(&priv->sb, sb, sizeof(superblock_t));
 	/* Calculate volume length */
@@ -188,21 +190,10 @@ uint8_t Ext2Probe(IODevice *dev)
 	priv->first_bgd = 1;//block_bgdt;
     printf("first_bgd is at %u\n", priv->first_bgd);
     
-/*
-	fs->name = "EXT2";
-	fs->probe = (uint8_t(*)(device_t*)) ext2_probe;
-	fs->mount = (uint8_t(*)(device_t*, void *)) ext2_mount;
-	fs->read = (uint8_t(*)(char *, char *, device_t *, void *)) ext2_read_file;
-	fs->exist = (uint8_t(*)(char *, device_t*, void *)) ext2_exist;
-	fs->read_dir = (uint8_t(*)(char * , char *, device_t *, void *)) ext2_list_directory;
-	fs->touch = (uint8_t(*)(char *, device_t *, void *)) ext2_touch;
-	fs->writefile = (uint8_t(*)(char *, char *m, uint32_t, device_t *, void *)) ext2_writefile;
-	fs->priv_data = (void *)priv;
-*/
-	//dev->fs = fs;
+
 	printf("Device %s is with EXT2 filesystem. Probe successful.\n", dev->name);
 	free(buf);
-	//free(buffer);
+
 	return 1;
 }
 

@@ -4,4 +4,5 @@
 * pip install ply
 
 ## distribution
-* extlinux
+* grub-mkrescue
+* xorriso
