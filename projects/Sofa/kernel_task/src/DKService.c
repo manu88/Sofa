@@ -41,7 +41,7 @@ int DKServiceInit()
 
 static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
 {
-    KLOG_DEBUG("DKService: msg from kernel_task!\n");
+    //KLOG_DEBUG("DKService: msg from kernel_task!\n");
 }
 
 static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
@@ -71,8 +71,6 @@ static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
 
 static long doDKDeviceMMap(BaseService* service, ThreadBase* caller, seL4_Word handle, int code)
 {
-    KLOG_DEBUG("doDKDeviceMMap request for code %i\n", code);
-
     IODevice* dev = DeviceTreeGetDeviceFromHandle((void*) handle);
     if(dev == NULL)
     {

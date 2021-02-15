@@ -144,6 +144,11 @@ ssize_t VFSClientWrite(int handle, const char* data, size_t size)
 
 ssize_t VFSClientRead(int handle, char* data, size_t size)
 {
+    if(size > 4096)
+    {
+        size = 4096;
+    }
+    
     if(vfsCap == 0)
     {
         Printf("[shell] VFS client not registered (no cap)\n");

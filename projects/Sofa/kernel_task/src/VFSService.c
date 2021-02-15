@@ -388,7 +388,7 @@ static int _VFSInspectDisk(IODevice* dev, VFSSupported* fsType)
     ssize_t ret = IODeviceRead(dev, 0, data, 512);
     if(ret == 512)
     {
-        const MBR* mbr = data;
+        const MBR* mbr =(const MBR*) data;
 
         KLOG_DEBUG("MBR diskID=%X validboot=%X\n", mbr->diskID, mbr->validBoot);
         // validBoot should be == 0XAA55 and diskID != 0
@@ -558,9 +558,8 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
     if(notif == ServiceNotification_ClientExit)
     {
         ServiceClient* clt = (ServiceClient*) seL4_GetMR(1);
-        KLOG_DEBUG("VFSService: start cleanup\n");
+
         ClientCleanup(clt);
-        KLOG_DEBUG("VFSService: end cleanup\n");
     }
     else if(notif == ServiceNotification_WillStop)
     {
@@ -570,9 +569,8 @@ static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
     {
         ThreadBase* parent =(ThreadBase*) seL4_GetMR(1);
         ThreadBase* newProc =(ThreadBase*) seL4_GetMR(2);
-        KLOG_DEBUG("VFSService: start clone\n");
+
         ClientClone(parent, newProc);
-        KLOG_DEBUG("VFSService: end clone\n");
 
         seL4_Reply(msg);
     }

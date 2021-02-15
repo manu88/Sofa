@@ -55,9 +55,9 @@ fi
 
 cp ../build/images/kernel-x86_64-pc99 $DISK_MOUNT/boot/kernel
 cp ../build/images/kernel_task-image-x86_64-pc99 $DISK_MOUNT/boot/kernel_task
-
+cp -R ./root/* $DISK_MOUNT
 cat > $DISK_MOUNT/boot/grub/grub.cfg <<EOF
-set timeout=1
+set timeout=0
 
 menuentry "Sofa" {
   multiboot /boot/kernel

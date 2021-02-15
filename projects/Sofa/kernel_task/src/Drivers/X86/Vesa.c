@@ -112,12 +112,11 @@ static long VesaMapMemory(IODevice* _dev, Thread* caller, int code)
 {
     VesaDevice* dev = (VesaDevice*) _dev;
 
-
     size_t size = dev->info->vbeModeInfoBlock.vbe12_part1.yRes * dev->info->vbeModeInfoBlock.vbe30.linBytesPerScanLine;
 
     size_t numPages = (size_t)ceil(size/4096);
-    KLOG_DEBUG("VesaMapMemory request code=%i share %zi (%zi pages)\n", code, size, numPages);
+
     void * ret = vspace_share_mem(getMainVSpace(), &caller->_base.process->native.vspace, dev->fb, numPages, PAGE_BITS_4K, seL4_ReadWrite, 1);
 
-    return ret;
+    return (long) ret;
 }

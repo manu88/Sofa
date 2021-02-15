@@ -82,7 +82,6 @@ static int ProcessCloneServices(Process* parent, Process* p)
             seL4_SetMR(1, (seL4_Word) t); //
             seL4_SetMR(2, (seL4_Word) &p->main);
             seL4_Call(clt->service->kernTaskEp, info);
-            KLOG_DEBUG("ProcessCloneServices got reply to clone\n");
         }
     }
 
@@ -153,7 +152,6 @@ void _closeThreadClients(Thread*t)
 
 void doExit(Process* process, int retCode)
 {
-    KLOG_DEBUG("doExit for process %i\n", ProcessGetPID(process));
     if(ProcessGetPID(process) == 1)
     {
         Panic("init returned");
