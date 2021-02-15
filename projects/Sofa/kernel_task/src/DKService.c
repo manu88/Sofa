@@ -41,7 +41,7 @@ int DKServiceInit()
 
 static void _OnSystemMsg(BaseService* service, seL4_MessageInfo_t msg)
 {
-    KLOG_DEBUG("DKService: msg from kernel_task!\n");
+    //KLOG_DEBUG("DKService: msg from kernel_task!\n");
 }
 
 static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
@@ -67,6 +67,21 @@ static int DKEnumRequest(ServiceClient* clt, IODeviceType type, int onlyCount)
     }
 
     return count;
+}
+
+static long doDKDeviceMMap(BaseService* service, ThreadBase* caller, seL4_Word handle, int code)
+{
+    IODevice* dev = DeviceTreeGetDeviceFromHandle((void*) handle);
+    if(dev == NULL)
+    {
+        return -ENODEV;
+    }
+    if(dev->ops->mapMemory == NULL)
+    {
+        return -EPERM;
+    }
+
+    return dev->ops->mapMemory(dev, caller, code);
 }
 
 static ssize_t doDKDeviceWrite(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
@@ -145,7 +160,7 @@ static void onRegister(BaseService* service, ThreadBase* sender, seL4_MessageInf
     {
         free(client);
     }
-    seL4_SetMR(1, err == 0? client->buffClientAddr:-1);
+    seL4_SetMR(1, err == 0?(seL4_Word)(client->buffClientAddr):(seL4_Word)(-1));
     seL4_Reply(msg);
 }
 
@@ -182,6 +197,15 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
         case DKRequest_Write:
         {
             ssize_t ret = doDKDeviceWrite(service, caller, msg);
+            seL4_SetMR(1, ret);
+            seL4_Reply(msg);
+        }
+            break;
+        case DKRequest_MMap:
+        {
+            seL4_Word handle = seL4_GetMR(1);
+            int code = (int) seL4_GetMR(2);
+            long ret = doDKDeviceMMap(service, caller, handle, code);
             seL4_SetMR(1, ret);
             seL4_Reply(msg);
         }

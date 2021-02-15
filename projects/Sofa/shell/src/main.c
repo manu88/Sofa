@@ -392,6 +392,21 @@ static int doEcho(const char* args)
     return 0;
 }
 
+
+
+
+static void putPixel(void* fb, int x, int y, uint32_t color)
+{
+
+    unsigned int coord_factor = 4;
+    size_t len = 3;
+    char* target = ((char *)fb) + (y * 640 + x) * coord_factor;
+
+    target[0] = color & 255;
+    target[1] = (color >> 8) & 255;
+    target[2] = (color >> 16) & 255;
+}
+
 int processCommand(const char* cmd)
 {
     if(startsWith("exit", cmd))
@@ -575,6 +590,34 @@ int processCommand(const char* cmd)
         }
         return retSend;
 
+    }
+    else if(startsWith("vga", cmd))
+    {
+        static void* fb = NULL;
+
+        if(fb == NULL)
+        {
+            DKDeviceHandle devHandle = DKClientGetDeviceNamed("Framebuffer", 4);
+            if(devHandle == DKDeviceHandle_Invalid)
+            {
+                Printf("vga: invalid dev handle");
+                return -1;
+            }
+
+            long ret = DKDeviceMMap(devHandle, 1);
+            Printf("vga: ret = %li\n", ret);
+            if(ret > 0)
+            {
+                fb = (void*) ret;
+            }
+        }
+        if(fb)
+        {
+            for(int i=0;i<200;i++)
+            {
+                putPixel(fb, i, i, 0X00FF0000);
+            }
+        }
     }
     else if(startsWith("net", cmd))
     {

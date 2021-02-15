@@ -105,6 +105,11 @@ int IOInit()
     vspace_t* mainVSpace = getMainVSpace();
     error = sel4utils_new_page_dma_alloc(&env->_vka, mainVSpace, &env->ops.dma_manager);
     assert(error == 0);
+
+    error =  sel4platsupport_new_io_mapper(mainVSpace, &env->_vka, &env->io_mapper);
+    assert(error == 0);
+
+    return error;
 }
 
 /* globals for malloc */

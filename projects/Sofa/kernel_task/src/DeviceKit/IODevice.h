@@ -34,6 +34,7 @@ typedef enum
 } IODeviceType;
 
 struct _IODevice;
+struct _Thread;
 
 typedef ssize_t (*ReadDevice)(struct _IODevice* dev, size_t sector, char* buf, size_t bufSize);
 typedef ssize_t (*WriteDevice)(struct _IODevice* dev, size_t sector, const char* buf, size_t bufSize);
@@ -42,13 +43,14 @@ typedef void (*HandleIRQ)(struct _IODevice* dev, int irqN);
 
 typedef int (*RegisterIface)(struct _IODevice* dev, void* netInterface, const /*ip_addr_t*/void* addr, const /*ip_addr_t*/void*gw, const /*ip_addr_t*/void* mask);
 
+typedef long (*MapMemory)(struct _IODevice* dev, struct _Thread* caller, int code);
 typedef struct
 {
-     ReadDevice read;
-     WriteDevice write;
-     HandleIRQ handleIRQ;
-
-     RegisterIface regIface;
+    ReadDevice read;
+    WriteDevice write;
+    HandleIRQ handleIRQ;
+    RegisterIface regIface;
+    MapMemory mapMemory;
 } IODeviceOperations;
 
 

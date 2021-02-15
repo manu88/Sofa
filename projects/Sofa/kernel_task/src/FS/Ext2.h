@@ -58,6 +58,8 @@ typedef struct __ext2_priv_data
 	uint32_t blocksize;
 	uint32_t sectors_per_block;
 	uint32_t inodes_per_block;
+
+	size_t lbaStart; // if in a partition, 0 otherwise  
 } __attribute__((packed)) ext2_priv_data;
 
 
@@ -118,7 +120,7 @@ typedef struct
 ext2_priv_data* getExtPriv(void);
 
 uint8_t Ext2Mount(IODevice *dev);
-uint8_t Ext2Probe(IODevice *dev);
+uint8_t Ext2Probe(IODevice *dev, size_t sector);
 
 int Ext2ReadBlock(uint8_t *buf, uint32_t blockID, IODevice *dev);
 uint8_t* Ext2ReadBlockCached(uint32_t blockID, IODevice* dev);

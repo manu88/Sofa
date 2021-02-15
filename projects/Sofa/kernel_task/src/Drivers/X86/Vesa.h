@@ -14,7 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "IODevice.h"
-#include "IONode.h"
 
-IODriver* BGAInit(void* fbuf);
+#include "IODevice.h"
+#include <sel4/sel4.h>
+#include <sel4/arch/bootinfo_types.h> // seL4_X86_BootInfo_VBE
+
+IODevice* VesaInit(const seL4_X86_BootInfo_VBE* info);

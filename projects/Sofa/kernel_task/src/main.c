@@ -36,7 +36,6 @@
 #include <sel4platsupport/device.h>
 #include <sel4platsupport/platsupport.h>
 #include <platsupport/chardev.h>
-
 #include <sel4utils/stack.h>
 
 
@@ -239,12 +238,14 @@ static void process_messages()
     }
 }
 
+
 void *main_continued(void *arg UNUSED)
 {
     int error;
 
     KLOG_INFO("\n------Sofa------\n");
     KLOG_INFO("----------------\n");
+
 
     seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
@@ -318,9 +319,6 @@ void *main_continued(void *arg UNUSED)
     VFSMount(getFakeFS(), "/fake", &error);
     VFSMount(getCpioFS(), "/cpio", &error);
     VFSMount(getDevFS(), "/dev", &error);    
-
-
-
 
     ProcessInit(&initProcess);
     initProcess.argc = 0;

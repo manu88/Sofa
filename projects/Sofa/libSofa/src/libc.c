@@ -42,6 +42,7 @@ static long sf_close(va_list ap)
 
 static long sf_readv(va_list ap)
 {
+
     int fd = va_arg(ap, int);
     const struct iovec *iov = va_arg(ap, struct iovec *);
     int iovcnt = va_arg(ap, int);
@@ -52,8 +53,9 @@ static long sf_readv(va_list ap)
         if(v->iov_len)
         {
             long r = VFSClientRead(fd, v->iov_base, v->iov_len);
-            if(r<=0)
+            if(r<0)
             {
+                Printf("sf_readv VFSClientRead error %li\n", r);                
                 return r;
             }
             acc += r;
@@ -370,6 +372,9 @@ long sofa_vsyscall(long sysnum, ...)
     case __NR_chdir:
         ret = sf_chdir(al);
         break;
+    case __NR_access:
+        SFPrintf("Dummy access syscall returning ok\n");
+        return 0;
     default:
     SFPrintf("Unknown syscall %zi\n", sysnum);
         break;

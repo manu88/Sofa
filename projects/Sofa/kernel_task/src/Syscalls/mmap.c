@@ -13,8 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "SyscallTable.h"
 #include <sel4utils/vspace_internal.h>
+#include <math.h>
+#include "SyscallTable.h"
 #include "Process.h"
 
 
@@ -41,7 +42,7 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
     int fd = seL4_GetMR(5);
     off_t offset = seL4_GetMR(6);
 
-    const size_t numPages = length / 4096;
+    const size_t numPages = (size_t) ceil(length / 4096);
 
     if(addr)
     {

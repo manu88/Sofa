@@ -26,6 +26,7 @@ typedef enum
 
     DKRequest_Read,
     DKRequest_Write,
+    DKRequest_MMap,
 }DKRequest;
 
 
@@ -64,5 +65,8 @@ char* DKDeviceGetDevFile(DKDeviceHandle devHandle);
 
 ssize_t DKDeviceRead(DKDeviceHandle handle, size_t index, char* buf, size_t bufSize);
 ssize_t DKDeviceWrite(DKDeviceHandle handle, size_t index, const char* buf, size_t bufSize);
+long DKDeviceMMap(DKDeviceHandle handle, int code);
 
 DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, int type);
+
+
