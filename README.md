@@ -8,6 +8,7 @@ Sofa is built atop SeL4 microkernel and provides a set of userland servers and a
 * Thread in processes
 * UDP stack with virtio device
 * virtio-pci-blk driver (IRQ Not working, polling only for now)
+* VESA support
 
 ### Process API
 * printf
