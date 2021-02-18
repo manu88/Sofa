@@ -16,6 +16,19 @@
 #pragma once
 #include <sel4/types.h>
 
+
+typedef enum
+{
+    // to keep sync'd with IODeviceType!
+    DKDevice_Unknown = 0,
+    DKDevice_Net,
+    DKDevice_BlockDev,
+    DKDevice_CharDev,
+    DKDevice_FrameBuffer,
+
+    DKDevice_AllTypes,
+} DKDeviceType;
+
 typedef enum
 {
     DKRequest_Register,
@@ -55,7 +68,7 @@ typedef struct
 
 
 // pass list = NULL to only count devices
-int DKClientEnumDevices(int type, DKDeviceList* list, size_t* numDevices);
+int DKClientEnumDevices(DKDeviceType type, DKDeviceList* list, size_t* numDevices);
 
 
 
@@ -67,6 +80,6 @@ ssize_t DKDeviceRead(DKDeviceHandle handle, size_t index, char* buf, size_t bufS
 ssize_t DKDeviceWrite(DKDeviceHandle handle, size_t index, const char* buf, size_t bufSize);
 long DKDeviceMMap(DKDeviceHandle handle, int code);
 
-DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, int type);
+DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, DKDeviceType type);
 
 

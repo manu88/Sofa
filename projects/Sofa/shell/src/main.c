@@ -203,6 +203,10 @@ static int doDK(const char* cmds)
             return -EINVAL;
         }
         int type = atoi(strType);
+        if(type > DKDevice_AllTypes)
+        {
+            return -1;
+        }
 
         size_t numDev = 0;
         int ret = DKClientEnumDevices(type, NULL, &numDev);
@@ -597,7 +601,7 @@ int processCommand(const char* cmd)
 
         if(fb == NULL)
         {
-            DKDeviceHandle devHandle = DKClientGetDeviceNamed("Framebuffer", 4);
+            DKDeviceHandle devHandle = DKClientGetDeviceNamed("Framebuffer", DKDevice_FrameBuffer);
             if(devHandle == DKDeviceHandle_Invalid)
             {
                 Printf("vga: invalid dev handle");
@@ -628,7 +632,7 @@ int processCommand(const char* cmd)
             return -1;
         }
 
-        DKDeviceHandle devHandle = DKClientGetDeviceNamed(devName, 1/*IODevice_Net*/);
+        DKDeviceHandle devHandle = DKClientGetDeviceNamed(devName, DKDevice_Net);
 
         if(devHandle == DKDeviceHandle_Invalid)
         {

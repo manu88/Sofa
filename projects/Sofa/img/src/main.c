@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     Printf("Open ppm file '%s'\n", argv[1]);
 
 
-    DKDeviceHandle devHandle = DKClientGetDeviceNamed("Framebuffer", 4);
+    DKDeviceHandle devHandle = DKClientGetDeviceNamed("Framebuffer", DKDevice_FrameBuffer);
     if(devHandle == DKDeviceHandle_Invalid)
     {
         Printf("vga: invalid dev handle");

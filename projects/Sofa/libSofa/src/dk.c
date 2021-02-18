@@ -45,7 +45,7 @@ int DKClientInit()
     return -1;
 }
 
-int DKClientEnumDevices(int type, DKDeviceList* list, size_t* numDevices)
+int DKClientEnumDevices(DKDeviceType type, DKDeviceList* list, size_t* numDevices)
 {
     seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
     seL4_SetMR(0, DKRequest_Enum);
@@ -109,7 +109,7 @@ int DKClientEnumTree()
 }
 
 
-DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, int type)
+DKDeviceHandle DKClientGetDeviceNamed(const char* deviceName, DKDeviceType type)
 {
     size_t numDev = 0;
     int ret = DKClientEnumDevices(type, NULL, &numDev);
