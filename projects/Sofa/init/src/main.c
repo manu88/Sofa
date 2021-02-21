@@ -57,11 +57,6 @@ int main(int argc, char *argv[])
     open("/dev/tty0", O_WRONLY);  // 2
 
 
-    const char initServicePath[] = "/cpio/initService";
-    int initServPid = ProcClientSpawn(initServicePath);
-    SFPrintf("[init] init service pid is %i\n", initServPid);
-
-
     const char shellPath[] = "/cpio/shell";
     int shellPid = ProcClientSpawn(shellPath);
     SFPrintf("[init] shell pid is %i\n", shellPid);
