@@ -72,6 +72,7 @@
 #include "VFSService.h"
 #include "NetService.h"
 #include "ProcService.h"
+#include "Version.h"
 
 /* Stub KThread instance for the main kernel_task thread, that CANNOT sleep.
 Calls to KSleep will ensure that they are never called from main*/
@@ -244,6 +245,7 @@ void *main_continued(void *arg UNUSED)
     int error;
 
     KLOG_INFO("\n------Sofa------\n");
+    KLOG_INFO("Ver %i.%i.%i\n", SOFA_OS_VERSION_MAJ, SOFA_OS_VERSION_MIN, SOFA_OS_VERSION_PATCH);
     KLOG_INFO("----------------\n");
 
 

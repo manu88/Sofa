@@ -100,7 +100,7 @@ if(NOT Sel4testAllowSettingsOverride)
     else()
         set(HardwareDebugAPI OFF CACHE BOOL "" FORCE)
     endif()
-
+    set(HardwareDebugAPI ON CACHE BOOL "" FORCE)
     ApplyCommonReleaseVerificationSettings(${RELEASE} ${VERIFICATION})
 
     if(BAMBOO)
