@@ -249,6 +249,12 @@ void *main_continued(void *arg UNUSED)
     KLOG_INFO("----------------\n");
 
 
+    seL4_BootInfo *info = platsupport_get_bootinfo();
+    size_t initial_cnode_object_size = BIT(info->initThreadCNodeSizeBits);
+    float numSlots = info->initThreadCNodeSizeBits / initial_cnode_object_size;
+
+    KLOG_INFO("number of slots in a CNode %f (%zi)\n", numSlots, info->initThreadCNodeSizeBits);
+
     seL4_SetUserData((seL4_Word) &_mainThread);
     KernelTaskContext* env = getKernelTaskContext();
 
@@ -322,12 +328,19 @@ void *main_continued(void *arg UNUSED)
     VFSMount(getCpioFS(), "/cpio", &error);
     VFSMount(getDevFS(), "/dev", &error);    
 
+
     ProcessInit(&initProcess);
     initProcess.argc = 0;
     spawnApp(&initProcess, "/cpio/init", NULL);
 
+    
+/*
+    KLOG_INFO("Try to malloc 30mb\n");
+    void* ptr = malloc(30*1024*1024);
+    KLOG_INFO("Result is %p\n", ptr);
+*/  
     seL4_DebugDumpScheduler();
-    process_messages();    
+    process_messages();
 
     return NULL;
 }
