@@ -20,7 +20,6 @@
 #include "Environ.h"
 #include <pci/pci.h>
 #include "Blk.h"
-#include "Net.h"
 #include "Serial.h"
 
 typedef struct _PCIDriver
@@ -99,11 +98,6 @@ static void _scanPCIDevice(PCIDriver* driver, libpci_device_t *pciDev)
     {
         KLOG_DEBUG("Got VIRTIO NET DEVICE\n");
 
-        IODevice* netDev = NetInit(iobase0);
-        if(netDev)
-        {
-            DeviceTreeAddDevice(netDev);
-        }
     }
     /*
     else if(pciDev->vendor_id==0x1234

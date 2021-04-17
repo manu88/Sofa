@@ -24,7 +24,6 @@ For a list of VID/PID : https://github.com/openbsd/src/blob/master/sys/dev/pci/p
 #include "Log.h"
 
 #include "X86Expert.h"
-#include "Drivers/Net.h"
 #include "Drivers/Blk.h"
 #include "KThread.h"
 #include "devFS.h"

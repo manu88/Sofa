@@ -70,7 +70,6 @@
 #include "DeviceKit.h"
 #include "DKService.h"
 #include "VFSService.h"
-#include "NetService.h"
 #include "ProcService.h"
 #include "Version.h"
 
@@ -290,10 +289,6 @@ void *main_continued(void *arg UNUSED)
     error = VFSInit();
     assert(error == 0);
 
-    KLOG_INFO("Starting NetService\n");
-    error = NetServiceInit();
-    assert(error == 0);
-
 // device related things
     error = DeviceTreeInit();
     assert(error == 0);
@@ -315,9 +310,6 @@ void *main_continued(void *arg UNUSED)
     assert(error == 0);
 
     error = VFSServiceStart();
-    assert(error == 0);
-
-    error = NetServiceStart();
     assert(error == 0);
 
     error = DKServiceStart();
