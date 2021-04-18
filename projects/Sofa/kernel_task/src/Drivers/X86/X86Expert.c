@@ -78,6 +78,16 @@ static void ProcessMultiboot()
             {
                 const seL4_X86_BootInfo_mmap_t* payload = (const seL4_X86_BootInfo_mmap_t*) header;
                 KLOG_DEBUG("got seL4_X86_BootInfo_mmap_t len=%i\n", payload->mmap_length);
+                uint64_t totBytes = 0;
+                for(int i=0;i<SEL4_MULTIBOOT_MAX_MMAP_ENTRIES;i++)
+                {
+                    if(payload->mmap[i].type == 1)// RAM
+                    {
+                        KLOG_DEBUG("%i %zi\n",i,payload->mmap[i].length);
+                        totBytes += payload->mmap[i].length;
+                    }
+                }
+                KLOG_DEBUG("Total mb %03f\n", totBytes/1024.f/1024.f);
             }
             extraLen -= header->len;
             sizeOffset += header->len;
