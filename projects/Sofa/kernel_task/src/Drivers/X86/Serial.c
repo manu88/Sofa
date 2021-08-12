@@ -92,10 +92,16 @@ void ComHandleInput(ComDevice* dev)
                 }
             }
 #endif
-//            printf("Char %X\n", data);
+            //printf("Char %X\n", data);
             if(data == 0X7F)
             {
-                CircularBufferRemove(dev->inputBuffer);
+                if(!CircularBufferIsEmpty(dev->inputBuffer))
+                {
+                    CircularBufferRemove(dev->inputBuffer);
+                    const char cdat[] = "\033[D\x7f\033[K"; "\b"; //\033[K";
+                    ps_cdev_write(charDev,(void*) cdat, strlen(cdat), NULL, NULL);
+                }
+                continue;
             }
             if(data == '\r')
             {
