@@ -88,6 +88,12 @@ static void VesaMapVideoRam(VesaDevice* dev, ps_io_mapper_t *io_mapper)
 
 IODevice* VesaInit(const seL4_X86_BootInfo_VBE* info)
 {
+    const size_t size = info->vbeModeInfoBlock.vbe12_part1.yRes * info->vbeModeInfoBlock.vbe30.linBytesPerScanLine;
+    if(size == 0)
+    {
+        KLOG_DEBUG("No framebuffer, stop vesa driver\n");
+        return NULL;
+    }
     VesaDevice* dev = malloc(sizeof(VesaDevice));
     memset(dev, 0, sizeof(VesaDevice));
     if(dev)
@@ -100,7 +106,6 @@ IODevice* VesaInit(const seL4_X86_BootInfo_VBE* info)
                    info->vbeModeInfoBlock.vbe30.linBytesPerScanLine,
                    info->vbeModeInfoBlock.vbe12_part1.bitsPerPixel
                    );
-
         VesaMapVideoRam(dev, &getKernelTaskContext()->io_mapper);
         DisplayTestPic(dev);
 
