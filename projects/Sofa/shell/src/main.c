@@ -249,7 +249,8 @@ static int doDK(const char* cmds)
     {
         return DKClientEnumTree();
     }
-    return 0;
+    Printf("dk: unknown command '%s'\n", cmds);
+    return 1;
 }
 
 static int doCat(const char* path)

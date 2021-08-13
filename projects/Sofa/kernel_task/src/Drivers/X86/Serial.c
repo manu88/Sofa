@@ -93,7 +93,7 @@ void ComHandleInput(ComDevice* dev)
             }
 #endif
             //printf("Char %X\n", data);
-            if(data == 0X7F)
+            if(data == 0X7F) // backspace
             {
                 if(!CircularBufferIsEmpty(dev->inputBuffer))
                 {
