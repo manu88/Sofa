@@ -15,12 +15,13 @@
  */
 #pragma once
 #include <stdio.h>
+#include <stdarg.h>
 
 
-#define kprintf printf
+int kprintf(const char* level, const char *restrict fmt, ...);
 
-#define KLOG_INFO(args...)  kprintf(args)
-#define KLOG_TRACE(args...) kprintf(args)
-#define KLOG_ERROR(args...) kprintf(args)
-#define KLOG_DEBUG(args...) kprintf(args)
+#define KLOG_INFO(args...)  kprintf("INFO", args)
+#define KLOG_TRACE(args...) kprintf("TRACE", args)
+#define KLOG_ERROR(args...) kprintf("ERROR", args)
+#define KLOG_DEBUG(args...) kprintf("DEBUG", args)
 

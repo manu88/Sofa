@@ -14,3 +14,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Log.h"
+
+int kprintf(const char* level, const char *restrict fmt, ...)
+{
+    printf("[kernel_task %s] ", level);
+	int ret;
+	va_list ap;
+	va_start(ap, fmt);
+	ret = vfprintf(stdout, fmt, ap);
+	va_end(ap);
+	return ret;
+}
