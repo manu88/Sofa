@@ -37,4 +37,4 @@ void* process_new_pages(Process*p, seL4_CapRights_t rights, size_t numPages);
 void* process_reserve_range(Process* p, size_t bytes, seL4_CapRights_t rights);
 void process_unmap_pages(Process*p, void *vaddr, size_t numPages);
 
-int process_handle_vm_fault(Process* p, uintptr_t faultAddr);
+int process_handle_vm_fault(Process* p, uintptr_t faultAddr, uint8_t faultReg);

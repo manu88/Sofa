@@ -501,8 +501,19 @@ static sel4utils_res_t* getReservationWithAddr(Process* p, uintptr_t addr)
     return NULL;
 }
 
-int process_handle_vm_fault(Process* p, uintptr_t faultAddr)
+int process_handle_vm_fault(Process* p, uintptr_t faultAddr, uint8_t faultReg)
 {
+    typedef struct
+    {
+        uint8_t present:1;          // P: When set, the page fault was caused by a page-protection violation. When not set, it was caused by a non-present page. 
+        uint8_t write:1;            // W: When set, the page fault was caused by a write access. When not set, it was caused by a read access. 
+        uint8_t user:1;             // U: When set, the page fault was caused while CPL = 3. This does not necessarily mean that the page fault was a privilege violation. 
+        uint8_t reservedWrite:1;    // R: When set, one or more page directory entries contain reserved bits which are set to 1. This only applies when the PSE or PAE flags in CR4 are set to 1.
+        uint8_t instructionFetch:1; // I: When set, one or more page directory entries contain reserved bits which are set to 1. This only applies when the PSE or PAE flags in CR4 are set to 1.
+    }PageFault; // see https://wiki.osdev.org/Exceptions#Page_Fault
+
+    PageFault* fault = (PageFault*)&faultReg;
+    KLOG_DEBUG("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write, fault->user, fault->reservedWrite, fault->instructionFetch); 
     KLOG_DEBUG("Try to resolve VM fault from %s at addr %p\n", ProcessGetName(p), faultAddr);
 
     sel4utils_res_t* res =  getReservationWithAddr(p, faultAddr);
