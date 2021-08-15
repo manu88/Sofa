@@ -46,16 +46,9 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
 
     if(addr)
     {
-        KLOG_INFO("mmap at addr (%p size=%zi)\n",addr, length);
-
-        reservation_t reservation = sel4utils_reserve_range_at(&process->native.vspace, addr, length, seL4_AllRights, 1);
-        sel4utils_new_pages_at_vaddr(&process->native.vspace,
-                                     addr,
-                                     numPages,
-                                     PAGE_BITS_4K,
-                                     reservation, 0);
-        seL4_SetMR(1, -EINVAL);
-        seL4_Reply(info);
+        KLOG_ERROR("mmap at specific address unsuported right now\n");
+        seL4_SetMR(1, -EPERM);
+        seL4_Reply(info);        
         return;
 
     }
