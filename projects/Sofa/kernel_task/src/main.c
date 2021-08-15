@@ -155,10 +155,10 @@ static void process_messages()
             const seL4_Word isPrefetch          = seL4_GetMR(seL4_VMFault_PrefetchFault);
             const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
             
-            KLOG_INFO("[kernel_task] programCounter      0X%lX\n",programCounter);
-            KLOG_INFO("[kernel_task] faultAddr           0X%lX\n",faultAddr);
-            KLOG_INFO("[kernel_task] isPrefetch          0X%lX\n",isPrefetch);
-            KLOG_INFO("[kernel_task] faultStatusRegister 0X%lX\n",faultStatusRegister);
+            KLOG_INFO("programCounter      0X%lX\n",programCounter);
+            KLOG_INFO("faultAddr           0X%lX\n",faultAddr);
+            KLOG_INFO("isPrefetch          0X%lX\n",isPrefetch);
+            KLOG_INFO("faultStatusRegister 0X%lX\n",faultStatusRegister);
 
             doExit(process, MAKE_EXIT_CODE(0, SIGSEGV));
         }
