@@ -513,6 +513,28 @@ int processCommand(const char* cmd)
         }
         return ret;
     }
+    else if(startsWith("malloc", cmd))
+    {
+        const char *strSize = cmd + strlen("malloc ");
+        long size = atol(strSize);
+        void*p = malloc(size);
+        Printf("malloc'ing %zi bytes -> %p %zi\n", size, p, p);
+        return p != NULL? 0:1;
+    }
+    else if(startsWith("free", cmd))
+    {
+        const char *strPtr = cmd + strlen("free ");
+        void* addr = (void*) atoll(strPtr);
+        Printf("Free'ing addr %p\n", addr);
+        free(addr);
+    }
+    else if(startsWith("touch", cmd))
+    {
+        const char *strPtr = cmd + strlen("touch ");
+        int* addr = (int*) atoll(strPtr);
+        Printf("Touch'ing addr %p\n", addr);
+        *addr = 42;
+    }
     else if(startsWith("sleep", cmd))
     {
         const char *strMS = cmd + strlen("sleep ");
