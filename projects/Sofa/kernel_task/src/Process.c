@@ -27,9 +27,10 @@
 
 /* Include Kconfig variables. */
 #include <autoconf.h>
-
+#include <math.h> // ceil
 #include <sel4debug/register_dump.h>
 #include <sel4utils/vspace_internal.h>
+#include <sel4utils/vspace.h>
 #include <vka/capops.h>
 #include <Sofa.h>
 #include "Environ.h"
@@ -465,8 +466,72 @@ void* process_new_pages(Process*p, seL4_CapRights_t rights, size_t numPages)
     return pages;
 }
 
+void* process_reserve_range(Process* p, size_t bytes, seL4_CapRights_t rights)
+{
+    void* vaddr = NULL;
+    const size_t numPages = (size_t) ceil(bytes / 4096);
+
+    //reservation_t reservation = vspace_reserve_range_aligned(&p->native.vspace, bytes, BYTES_TO_SIZE_BITS(bytes), rights, 0/*cacheable*/, &vaddr);
+    reservation_t reservation = vspace_reserve_range(&p->native.vspace, bytes, rights, 0/*cacheable*/, &vaddr);
+    assert(reservation.res != NULL);
+    sel4utils_res_t * res = reservation_to_res(reservation);
+    KLOG_DEBUG("process_reserve_range start %X end %X, vaddr=%p\n", res->start, res->end, vaddr);
+    return vaddr;
+}
+
 void process_unmap_pages(Process*p, void *vaddr, size_t numPages)
 {
     sel4utils_unmap_pages(&p->native.vspace, vaddr, numPages, PAGE_BITS_4K, VSPACE_FREE);
     p->stats.allocPages -= numPages;
+}
+
+
+static sel4utils_res_t* getReservationWithAddr(Process* p, uintptr_t addr)
+{
+    struct sel4utils_alloc_data* dat = p->native.vspace.data;
+    sel4utils_res_t* head = dat->reservation_head;
+    while (head != NULL)
+    {
+        if(addr >= head->start && addr <= head->end)
+        {
+            return head;
+        }
+        head = head->next;
+    }
+    return NULL;
+}
+
+int process_handle_vm_fault(Process* p, uintptr_t faultAddr)
+{
+    KLOG_DEBUG("Try to resolve VM fault from %s at addr %p\n", ProcessGetName(p), faultAddr);
+
+    sel4utils_res_t* res =  getReservationWithAddr(p, faultAddr);
+    if (res)
+    {
+        const size_t size = res->end - res->start;
+        const size_t numPages = (size_t) ceil(size / 4096);
+        const size_t size_bits = BYTES_TO_SIZE_BITS(size);
+        KLOG_DEBUG("Found reservation, size=%zi num pages = %zi\n", size, numPages);
+
+        seL4_CPtr frames[numPages];
+
+        MainVKALock();
+        for (int i=0;i<numPages;i++)
+        {        
+            frames[i] = vka_alloc_frame_leaky(getMainVKA(), PAGE_BITS_4K);
+            assert(frames[i] != seL4_CapNull);
+        }
+        MainVKAUnlock();
+        KLOG_DEBUG("will vspace_map_pages_at_vaddr numpages=%zi size=%zi size_bits=%zi\n", numPages, size, size_bits);
+        reservation_t rres = {.res = res};
+        int err = vspace_map_pages_at_vaddr(&p->native.vspace, frames, NULL, (void*) res->start, numPages, PAGE_BITS_4K, rres);
+        if(err == 0)
+        {
+            p->stats.allocPages += numPages;
+        }
+        vspace_free_reservation(&p->native.vspace, rres);
+        return err == 0;
+    }
+
+    return 0;
 }

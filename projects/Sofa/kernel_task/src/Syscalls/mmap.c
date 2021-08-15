@@ -42,8 +42,6 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
     int fd = seL4_GetMR(5);
     off_t offset = seL4_GetMR(6);
 
-    const size_t numPages = (size_t) ceil(length / 4096);
-
     if(addr)
     {
         KLOG_ERROR("mmap at specific address unsuported right now\n");
@@ -53,15 +51,14 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
 
     }
     
-    void* p = process_new_pages(caller->_base.process, seL4_AllRights, numPages);
+    void* p = process_reserve_range(caller->_base.process, length, seL4_AllRights);// process_new_pages(caller->_base.process, seL4_AllRights, numPages);
     if(!p)
     {
-        KLOG_DEBUG("unable to create a new page\n");
+        KLOG_DEBUG("unable to reserve vspace for %zi bytes\n", length);
         seL4_SetMR(1, -ENOMEM);
         seL4_Reply(info);
         return;
     }
-
     seL4_SetMR(1,(seL4_Word) p);
     seL4_Reply(info);   
 }

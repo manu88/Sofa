@@ -160,7 +160,15 @@ static void process_messages()
             KLOG_INFO("isPrefetch          0X%lX\n",isPrefetch);
             KLOG_INFO("faultStatusRegister 0X%lX\n",faultStatusRegister);
 
-            doExit(process, MAKE_EXIT_CODE(0, SIGSEGV));
+            if(process_handle_vm_fault(process, faultAddr) == 0)
+            {
+                doExit(process, MAKE_EXIT_CODE(0, SIGSEGV));
+            }
+            else // good to go
+            {
+                seL4_Reply(info);
+            }
+
         }
         else if(label == seL4_UserException)
         {
