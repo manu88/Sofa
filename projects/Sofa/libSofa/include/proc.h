@@ -31,6 +31,7 @@ typedef struct
     uint64_t startTime;
     uint8_t state;
     uint16_t nameLen;
+    uint64_t numPages;
     char name[]; // to keep as last field as the name len is variable!
 }ProcessDesc;
 

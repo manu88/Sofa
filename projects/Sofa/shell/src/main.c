@@ -319,7 +319,12 @@ static int doSh(const char* cmd)
 static int PSOnProcessDescription(const ProcessDesc* desc, void* _)
 {
     uint64_t currentT = SFGetTime();
-    Printf("PID %i '%s' %u start time %li running %f \n",  desc->pid, desc->name, desc->state, desc->startTime, (float)(currentT- desc->startTime) / NS_IN_S);
+    Printf("PID %i '%s' %u pages:%zi start time %li running %f \n",
+           desc->pid, desc->name,
+           desc->state,
+           desc->numPages,
+           desc->startTime,
+           (float)(currentT- desc->startTime) / NS_IN_S);
 
     return 0;
 }
