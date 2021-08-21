@@ -19,6 +19,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
 
 int fOut = -1;
@@ -490,7 +491,7 @@ int processCommand(const char* cmd)
         char path[128] = "";
         char *data = NULL;
         int n = 0;
-        sscanf(args, "%s %n", path, & n);
+        sscanf(args, "%s %n", path, &n);
 
         data = args + n;
 
@@ -532,6 +533,27 @@ int processCommand(const char* cmd)
         void* addr = (void*) atoll(strPtr);
         Printf("Free'ing addr %p\n", addr);
         free(addr);
+    }
+    else if(startsWith("mmap", cmd))
+    {
+        const char *strSize = cmd + strlen("mmap ");
+        long size = atol(strSize);
+        void*p = mmap(NULL, size, PROT_READ | PROT_WRITE, 0, 0, 0);
+        Printf("mmap'ing %zi bytes -> %p %zi\n", size, p, p);
+        return p != NULL? 0:1;
+    }
+    else if(startsWith("munmap", cmd))
+    {
+        const char *strPtr = cmd + strlen("munmap ");
+        size_t addr = 0;
+        size_t len = 0;
+        if(sscanf(strPtr, "%lu %i", &addr, &len) != 2)
+        {
+            Printf("Some error\n");
+            return -1;
+        }
+        Printf("munmap'ing addr %p\n", (void*) addr);
+        return munmap((void*)addr, len);
     }
     else if(startsWith("touch", cmd))
     {
