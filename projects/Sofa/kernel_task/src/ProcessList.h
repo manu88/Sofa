@@ -21,7 +21,7 @@
 #include "Environ.h"
 #include "Allocator.h"
 #include "Thread.h"
-
+#include "VMSpace.h"
 
 
 typedef enum
@@ -61,6 +61,7 @@ typedef struct _ProcStats
 typedef struct _Process
 {
     sel4utils_process_t native;
+    VMSpace vmSpace;
 
     Thread main;
     
@@ -93,6 +94,7 @@ typedef struct _Process
 static inline void ProcessInit(Process* p)
 {
     memset(p, 0, sizeof(Process));
+    VMSpaceInit(&p->vmSpace, &p->native.vspace);
     p->main._base.process = p;
 }
 

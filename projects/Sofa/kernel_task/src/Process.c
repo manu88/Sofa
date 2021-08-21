@@ -468,15 +468,7 @@ void* process_new_pages(Process*p, seL4_CapRights_t rights, size_t numPages)
 
 void* process_reserve_range(Process* p, size_t bytes, seL4_CapRights_t rights)
 {
-    void* vaddr = NULL;
-    const size_t numPages = (size_t) ceil(bytes / 4096);
-
-    //reservation_t reservation = vspace_reserve_range_aligned(&p->native.vspace, bytes, BYTES_TO_SIZE_BITS(bytes), rights, 0/*cacheable*/, &vaddr);
-    reservation_t reservation = vspace_reserve_range(&p->native.vspace, bytes, rights, 0/*cacheable*/, &vaddr);
-    assert(reservation.res != NULL);
-    sel4utils_res_t * res = reservation_to_res(reservation);
-    KLOG_DEBUG("process_reserve_range start %X end %X, vaddr=%p\n", res->start, res->end, vaddr);
-    return vaddr;
+    return VMSpaceReserveRange(&p->vmSpace, bytes, rights);
 }
 
 void process_unmap_pages(Process*p, void *vaddr, size_t numPages)
@@ -513,29 +505,32 @@ int process_handle_vm_fault(Process* p, uintptr_t faultAddr, uint8_t faultReg)
     }PageFault; // see https://wiki.osdev.org/Exceptions#Page_Fault
 
     PageFault* fault = (PageFault*)&faultReg;
-    KLOG_DEBUG("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write, fault->user, fault->reservedWrite, fault->instructionFetch); 
+    KLOG_INFO("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write, fault->user, fault->reservedWrite, fault->instructionFetch); 
     KLOG_DEBUG("Try to resolve VM fault from %s at addr %p\n", ProcessGetName(p), faultAddr);
 
     sel4utils_res_t* res =  getReservationWithAddr(p, faultAddr);
     if (res)
     {
         const size_t size = res->end - res->start;
-        const size_t numPages = (size_t) ceil(size / 4096);
+        const size_t numPages = 1;//(size_t) ceil(size / 4096);
+        const size_t startPageAddr = ROUND_DOWN(faultAddr, 4096);
         const size_t size_bits = BYTES_TO_SIZE_BITS(size);
-        KLOG_DEBUG("Found reservation, size=%zi num pages = %zi\n", size, numPages);
+        KLOG_DEBUG("Found reservation, size=%zi num pages = %zi startpageaddr=%p\n", size, numPages, startPageAddr);
 
         seL4_CPtr frames[numPages];
 
         MainVKALock();
         for (int i=0;i<numPages;i++)
-        {        
-            frames[i] = vka_alloc_frame_leaky(getMainVKA(), PAGE_BITS_4K);
+        {   
+            vka_object_t result = {0};
+            vka_alloc_frame(getMainVKA(), PAGE_BITS_4K, &result);
+            frames[i] = result.cptr;
             assert(frames[i] != seL4_CapNull);
         }
         MainVKAUnlock();
         KLOG_DEBUG("will vspace_map_pages_at_vaddr numpages=%zi size=%zi size_bits=%zi\n", numPages, size, size_bits);
         reservation_t rres = {.res = res};
-        int err = vspace_map_pages_at_vaddr(&p->native.vspace, frames, NULL, (void*) res->start, numPages, PAGE_BITS_4K, rres);
+        int err = vspace_map_pages_at_vaddr(&p->native.vspace, frames, NULL, (void*) startPageAddr, numPages, PAGE_BITS_4K, rres);
         if(err == 0)
         {
             p->stats.allocPages += numPages;
