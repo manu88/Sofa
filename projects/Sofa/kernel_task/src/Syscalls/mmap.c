@@ -24,7 +24,7 @@ void Syscall_munmap(Thread* caller, seL4_MessageInfo_t info)
     void * addr = (void*) seL4_GetMR(1);
     size_t length = seL4_GetMR(2);//, length);
 
-    const size_t numPages = length / 4096;
+    const size_t numPages = length / VM_PAGE_SIZE;
     process_unmap_pages(caller->_base.process, addr, numPages);
     seL4_SetMR(1, 0);
     seL4_Reply(info);
@@ -48,7 +48,6 @@ void Syscall_mmap(Thread* caller, seL4_MessageInfo_t info)
         seL4_SetMR(1, -EPERM);
         seL4_Reply(info);        
         return;
-
     }
     
     void* p = process_reserve_range(caller->_base.process, length, seL4_AllRights);// process_new_pages(caller->_base.process, seL4_AllRights, numPages);

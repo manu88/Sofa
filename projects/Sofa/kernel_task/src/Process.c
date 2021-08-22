@@ -471,26 +471,13 @@ void* process_reserve_range(Process* p, size_t bytes, seL4_CapRights_t rights)
     return VMSpaceReserveRange(&p->vmSpace, bytes, rights);
 }
 
-void process_unmap_pages(Process*p, void *vaddr, size_t numPages)
+int process_unmap_pages(Process*p, void *vaddr, size_t numPages)
 {
-    sel4utils_unmap_pages(&p->native.vspace, vaddr, numPages, PAGE_BITS_4K, VSPACE_FREE);
-    p->stats.allocPages -= numPages;
-}
-
-
-static sel4utils_res_t* getReservationWithAddr(Process* p, uintptr_t addr)
-{
-    struct sel4utils_alloc_data* dat = p->native.vspace.data;
-    sel4utils_res_t* head = dat->reservation_head;
-    while (head != NULL)
+    if(VMSpaceUnMap(&p->vmSpace, vaddr, numPages) == 0)
     {
-        if(addr >= head->start && addr <= head->end)
-        {
-            return head;
-        }
-        head = head->next;
+        p->stats.allocPages -= numPages;
     }
-    return NULL;
+    VMSpacePrint(&p->vmSpace);
 }
 
 int process_handle_vm_fault(Process* p, uintptr_t faultAddr, uint8_t faultReg)
@@ -508,36 +495,44 @@ int process_handle_vm_fault(Process* p, uintptr_t faultAddr, uint8_t faultReg)
     KLOG_INFO("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write, fault->user, fault->reservedWrite, fault->instructionFetch); 
     KLOG_DEBUG("Try to resolve VM fault from %s at addr %p\n", ProcessGetName(p), faultAddr);
 
-    sel4utils_res_t* res =  getReservationWithAddr(p, faultAddr);
-    if (res)
+    VMRegion* reg = VMSpaceGetRegion(&p->vmSpace, faultAddr);
+    if(reg == NULL)
     {
-        const size_t size = res->end - res->start;
-        const size_t numPages = 1;//(size_t) ceil(size / 4096);
-        const size_t startPageAddr = ROUND_DOWN(faultAddr, 4096);
-        const size_t size_bits = BYTES_TO_SIZE_BITS(size);
-        KLOG_DEBUG("Found reservation, size=%zi num pages = %zi startpageaddr=%p\n", size, numPages, startPageAddr);
-
-        seL4_CPtr frames[numPages];
-
-        MainVKALock();
-        for (int i=0;i<numPages;i++)
-        {   
-            vka_object_t result = {0};
-            vka_alloc_frame(getMainVKA(), PAGE_BITS_4K, &result);
-            frames[i] = result.cptr;
-            assert(frames[i] != seL4_CapNull);
-        }
-        MainVKAUnlock();
-        KLOG_DEBUG("will vspace_map_pages_at_vaddr numpages=%zi size=%zi size_bits=%zi\n", numPages, size, size_bits);
-        reservation_t rres = {.res = res};
-        int err = vspace_map_pages_at_vaddr(&p->native.vspace, frames, NULL, (void*) startPageAddr, numPages, PAGE_BITS_4K, rres);
-        if(err == 0)
-        {
-            p->stats.allocPages += numPages;
-        }
-        vspace_free_reservation(&p->native.vspace, rres);
-        return err == 0;
+        KLOG_DEBUG("Unable to find region for add %p\n", faultAddr);
+        return 0;
     }
 
-    return 0;
+    const size_t size = reg->size;
+    const size_t numPages = 1;//(size_t) ceil(size / VM_PAGE_SIZE);
+    const size_t startPageAddr = ROUND_DOWN(faultAddr, VM_PAGE_SIZE);
+    const size_t size_bits = PAGE_BITS_4K;//BYTES_TO_SIZE_BITS(size);
+    KLOG_DEBUG("Found reservation, size=%zi num pages = %zi startpageaddr=%p\n", size, numPages, startPageAddr);
+
+    MainVKALock();
+    vka_alloc_frame(getMainVKA(), PAGE_BITS_4K, &reg->_frame);
+    MainVKAUnlock();
+
+    assert(reg->_frame.cptr != seL4_CapNull);
+
+    KLOG_DEBUG("will vspace_map_pages_at_vaddr numpages=%zi size=%zi size_bits=%zi\n", numPages, size, size_bits);
+
+    int err = vspace_map_pages_at_vaddr(&p->native.vspace, &reg->_frame.cptr, NULL, (void*) startPageAddr, numPages, PAGE_BITS_4K, reg->_reservation);
+    if(err == 0)
+    {
+        p->stats.allocPages += numPages;
+    }
+
+
+    reg->hasReservation = 0;
+    if(reg->size > VM_PAGE_SIZE)  
+    {
+        KLOG_DEBUG("VMRegion needs to be split because size %zi>%zi\n", reg->size, VM_PAGE_SIZE);
+        VMSpaceSplitRegion(&p->vmSpace, reg, startPageAddr, VM_PAGE_SIZE);
+    }
+    else 
+    {
+        vspace_free_reservation(&p->native.vspace, reg->_reservation);
+    }
+    VMSpacePrint(&p->vmSpace);
+    return err == 0;
 }
