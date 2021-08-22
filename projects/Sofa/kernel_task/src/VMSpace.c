@@ -57,21 +57,31 @@ int VMSpaceUnMap(VMSpace* s, vaddr_t vaddr, size_t numPages)
         vspace_free_reservation(s->vspace, reg->_reservation);
         reg->hasReservation = 0;
     }
-    if(reg->_frame.cptr)
+    KLOG_DEBUG("Unmap %zi page(s) at  %X\n", numPages, vaddr);
+    VMRegion *r = NULL;
+    VMRegion *rTmp = NULL;
+    DL_FOREACH_SAFE(s->regions, r, rTmp)
     {
-        KLOG_DEBUG("Unmap %zi page(s) at  %X\n", numPages, vaddr);
-        sel4utils_unmap_pages(s->vspace, vaddr, numPages, PAGE_BITS_4K, VSPACE_FREE);
+        if(r->start >= vaddr)
+        {
+            KLOG_DEBUG("Got 1 region to unmap %X %X\n", r->start, r->size);
+            const size_t regNumPage = (size_t) ceil(r->size/VM_PAGE_SIZE);
+            if(r->_frame.cptr)
+            {
+                KLOG_DEBUG("really unmap %zi page(s)\n", regNumPage);
+                sel4utils_unmap_pages(s->vspace, r->start, regNumPage, PAGE_BITS_4K, VSPACE_FREE);
+            }
+            DL_DELETE(s->regions, r);
+            free(r);
+        }
+    }
 #if 0 // this crashes
         MainVKALock();
         KLOG_DEBUG("free frame object\n");
         vka_free_object(getMainVKA(), &reg->_frame);
         MainVKAUnlock();
 #endif
-        KLOG_DEBUG("Good to go\n");
-    }
     
-    DL_DELETE(s->regions, reg);
-    free(reg);
     return 0;
 }
 
