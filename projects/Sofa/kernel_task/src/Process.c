@@ -522,7 +522,6 @@ int process_handle_vm_fault(Process* p, uintptr_t faultAddr, uint8_t faultReg)
         p->stats.allocPages += numPages;
     }
 
-
     reg->hasReservation = 0;
     if(reg->size > VM_PAGE_SIZE)  
     {

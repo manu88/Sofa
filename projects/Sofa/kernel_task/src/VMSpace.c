@@ -40,7 +40,7 @@ void VMSpacePrint(VMSpace* s)
     VMRegion* reg = NULL;
     DL_FOREACH(s->regions, reg)
     {
-        KLOG_DEBUG("Region %X %X reserved? %i frame=%X\n", reg->start, reg->size, reg->hasReservation, reg->_frame.cptr);
+        KLOG_DEBUG("Region %X (%zi) %X reserved? %i frame=%X\n", reg->start, reg->start, reg->size, reg->hasReservation, reg->_frame.cptr);
     }
     KLOG_DEBUG("<- End region list\n");
 }
@@ -137,7 +137,6 @@ int VMSpaceSplitRegion(VMSpace* s, VMRegion* reg, vaddr_t allocatedStart, size_t
         KLOG_DEBUG("Slit mode 1: allocated is at start, will create a new region at %X size %X\n", newRegionStart, remainingSize);
         reg->size = allocatedSize;
 
-
         VMRegion* newReg = malloc(sizeof(VMRegion));
         assert(newReg);
         VMRegionInit(newReg);
@@ -147,6 +146,28 @@ int VMSpaceSplitRegion(VMSpace* s, VMRegion* reg, vaddr_t allocatedStart, size_t
         newReg->start = newRegionStart;
         newReg->size = remainingSize;
         DL_APPEND(s->regions, newReg);
+    }
+    else if(allocatedStart + allocatedSize == reg->start + reg->size)
+    {
+        KLOG_DEBUG("Split mode 2\n");
+        reg->size -= allocatedSize;
+        reg->hasReservation = 1;
+        sel4utils_move_resize_reservation(s->vspace, reg->_reservation, reg->start, reg->size);
+        VMRegion* newReg = malloc(sizeof(VMRegion));
+        assert(newReg);
+        VMRegionInit(newReg);
+        newReg->start = allocatedStart;
+        newReg->size = allocatedSize;
+        newReg->_frame = reg->_frame;
+
+
+        reg->_frame.cptr = 0;
+        DL_APPEND(s->regions, newReg);
+
+    } 
+    else
+    {
+        assert(false);
     }
     return 0;
 }
