@@ -562,6 +562,10 @@ int processCommand(const char* cmd)
         Printf("Touch'ing addr %p\n", addr);
         *addr = 42;
     }
+    else if(startsWith("doom", cmd))
+    {
+        return malloc(6*1024*1024);
+    }
     else if(startsWith("sleep", cmd))
     {
         const char *strMS = cmd + strlen("sleep ");
