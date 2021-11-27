@@ -57,6 +57,7 @@ typedef enum
     SofaDebugCode_ListServices,
     SofaDebugCode_DumpSched,
     SofaDebugCode_EnableSyscallTraces,
+    SofaDebugCode_MemoryDump,
 }SofaDebugCode;
 
 typedef enum 

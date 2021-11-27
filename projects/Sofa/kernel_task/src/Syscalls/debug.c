@@ -20,6 +20,7 @@
 #include "Panic.h"
 #include "NameServer.h"
 #include "DeviceTree.h"
+#include "VMSpace.h"
 
 
 int _do_traces = 0;
@@ -68,7 +69,10 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
             printf("'%s' owner %i %s\n", s->name, ProcessGetPID(s->owner), ProcessGetName(s->owner));
         }
     }
-        break;    
+        break;
+    case SofaDebugCode_MemoryDump:
+        VMSpacePrint(&proc->vmSpace);
+        break;
     default:
         break;
     }

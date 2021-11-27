@@ -607,7 +607,7 @@ int processCommand(const char* cmd)
         }
         return ret;
     }
-        else if(startsWith("traces", cmd))
+    else if(startsWith("traces", cmd))
     {
         SFDebug(SofaDebugCode_EnableSyscallTraces);
         return 0;
@@ -617,6 +617,11 @@ int processCommand(const char* cmd)
         SFDebug(SofaDebugCode_DumpSched);
         return 0;
     }
+    else if(startsWith("mem", cmd))
+    {
+        SFDebug(SofaDebugCode_MemoryDump);
+        return 0;
+    }    
     else if(startsWith("ip", cmd))
     {
         return NetClientEnumInterfaces();
