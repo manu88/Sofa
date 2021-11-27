@@ -20,16 +20,24 @@
 #include "utils.h"
 
 
-ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize, int *asyncLater)
+ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize)
 {
-    if(asyncLater)
-    {
-        *asyncLater = dev->ops->asyncRead;
-    }
     return dev->ops->read(dev, sector, buf, bufSize);
+}
+
+ssize_t IODeviceReadAsync(IODevice* dev, IODeviceRequest* reply)
+{
+    return dev->ops->readAsync(dev, reply);
 }
 
 ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize)
 {
     return dev->ops->write(dev, sector, buf, bufSize);
+}
+
+void IODeviceRequestReply(IODeviceRequest* req, ssize_t ret)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0 ,0, 2);
+    seL4_SetMR(1, ret);
+    seL4_Send(req->replyCap, info);
 }

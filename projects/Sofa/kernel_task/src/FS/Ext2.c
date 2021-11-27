@@ -55,7 +55,7 @@ static uint8_t doReadBlock(uint8_t *buf, uint32_t block, IODevice *dev, ext2_pri
     size_t acc = 0;
     for(uint32_t i=0;i<numSectors;i++)
     {
-        ssize_t ret = IODeviceRead(dev, priv->lbaStart+startSect+i, bufPos, 512, NULL);
+        ssize_t ret = IODeviceRead(dev, priv->lbaStart+startSect+i, bufPos, 512);
 		if(ret <= 0)
 		{
 			return 0;// error
@@ -153,8 +153,8 @@ uint8_t Ext2Probe(IODevice *dev, size_t lbaStart)
 		return 0;
 	}
 	uint8_t *buf = (uint8_t *)malloc(1024);
-    ssize_t ret = IODeviceRead(dev, lbaStart + 2, buf, 512, NULL);
-    ret = IODeviceRead(dev, lbaStart + 3, buf+512, 512, NULL);
+    ssize_t ret = IODeviceRead(dev, lbaStart + 2, buf, 512);
+    ret = IODeviceRead(dev, lbaStart + 3, buf+512, 512);
 
 	superblock_t *sb = (superblock_t *)buf;
 	if(sb->ext2_sig != EXT2_SIGNATURE)

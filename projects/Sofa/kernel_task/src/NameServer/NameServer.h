@@ -44,7 +44,7 @@ typedef struct _Service
     int flags;
 
     // debug prop that may denote a poor design.  Should be removed at some point
-    KThread* kernTaskThread; // kernel task thread IFF not in aother process
+    KThread* kernTaskThread; // kernel task thread IFF not in another process
 } Service;
 
 

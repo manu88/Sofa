@@ -100,7 +100,7 @@ static ssize_t doDKDeviceWrite(BaseService* service, ThreadBase* caller, seL4_Me
     return IODeviceWrite(dev, index, clt->buff, dataSize);
 }
 
-static ssize_t doDKDeviceRead(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg, int *asyncLater)
+static void doDKDeviceRead(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
 {
     ServiceClient* clt = BaseServiceGetClient(service, caller);
     assert(clt);
@@ -111,9 +111,29 @@ static ssize_t doDKDeviceRead(BaseService* service, ThreadBase* caller, seL4_Mes
     IODevice* dev = DeviceTreeGetDeviceFromHandle(handle);
     if(dev == NULL)
     {
-        return -ENODEV;
+        seL4_SetMR(1, -ENODEV);
+        seL4_Reply(msg);
+        return;
     }
-    return IODeviceRead(dev, index, clt->buff, dataSize, asyncLater);
+    if(dev->ops->asyncRead)
+    {
+        IODeviceRequest* reply = malloc(sizeof(IODeviceRequest));
+        vka_t *mainVKA = getMainVKA();
+        MainVKALock();
+        reply->replyCap = get_free_slot(mainVKA);
+        int error = cnode_savecaller(mainVKA, reply->replyCap);
+        assert(error == 0);
+        MainVKAUnlock();
+
+        reply->buff = clt->buff;
+        reply->expectedSize = dataSize;
+        reply->sector = index;
+        IODeviceReadAsync(dev, reply);
+        return;
+    }
+    ssize_t ret =  IODeviceRead(dev, index, clt->buff, dataSize);
+    seL4_SetMR(1, ret);
+    seL4_Reply(msg);
 }
 
 
@@ -219,16 +239,7 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
         }
             break;
         case DKRequest_Read:
-        {
-            int asyncOp = 0;
-            ssize_t ret = doDKDeviceRead(service, caller, msg, &asyncOp);
-            if(asyncOp)
-            {
-                break;
-            }
-            seL4_SetMR(1, ret);
-            seL4_Reply(msg);
-        }
+            doDKDeviceRead(service, caller, msg);
             break;
         case DKRequest_MMap:
         {

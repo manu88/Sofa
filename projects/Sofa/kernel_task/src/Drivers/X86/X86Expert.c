@@ -37,7 +37,7 @@ static void ACPIParse(IONode* root);
 
 typedef struct {
     IODevice dev;
-    
+    IODeviceRequest* currentRequest;
 }PS2Dev;
 
 int PlatformExpertInit()
@@ -59,29 +59,41 @@ static int DevProducesIRQ(const ps_chardevice_t* d)
     return -1;
 }
 
-static  void HandleComIRQ(IODevice* dev, int irqN)
+static  void HandleComIRQ(IODevice* _dev, int irqN)
 {
-    ps_chardevice_t* charDev = (ps_chardevice_t*) dev->impl;
+    ps_chardevice_t* charDev = (ps_chardevice_t*) _dev->impl;
     assert(charDev); 
     ps_cdev_handle_irq(charDev, 0);
     char data;
     int ret = charDev->read(charDev, &data, 1, NULL, NULL);
     KLOG_DEBUG("PS2 IRQ '%c' %X \n", data, data);
+    PS2Dev* dev = (PS2Dev*) _dev;
+    if(dev->currentRequest != NULL)
+    {
+        dev->currentRequest->buff[0] = 1;
+        dev->currentRequest->buff[1] = 2;
+        dev->currentRequest->buff[2] = 3;
+        dev->currentRequest->buff[3] = 4;
+        dev->currentRequest->buff[4] = 5;
+        dev->currentRequest->buff[5] = 6;
+        dev->currentRequest->buff[6] = 7;
+        dev->currentRequest->buff[7] = 8;
+        IODeviceRequestReply(dev->currentRequest, 8);
+        dev->currentRequest = NULL;
+    }
 }
 
-ssize_t ReadPS2(IODevice* dev, size_t sector, char* buf, size_t bufSize)
+ssize_t ReadPS2Async(struct _IODevice* _dev, IODeviceRequest* reply)
 {
+    PS2Dev* dev = (PS2Dev*) _dev; 
     KLOG_DEBUG("ReadPS2 request\n");
-    for(int i=0;i <bufSize;i++)
-    {
-        buf[i] = (char)i;
-    }
-    return bufSize;
+    dev->currentRequest = reply;
+    return 0;
 }
 
 static IODeviceOperations _comOps ={
     .handleIRQ = HandleComIRQ,
-    .read = ReadPS2,
+    .readAsync = ReadPS2Async,
     .asyncRead = 1,
 };
 
@@ -94,6 +106,8 @@ static void ProcessVBE(const seL4_X86_BootInfo_VBE* payload)
         DeviceTreeAddDevice(vesaDev);
 
         PS2Dev* com = malloc(sizeof(PS2Dev));
+        memset(com, 0, sizeof(PS2Dev));
+        assert(com->currentRequest == NULL);
         IODeviceInit(com, "PS2", IODevice_Keyboard, &_comOps);
 
         DeviceTreeAddDevice(com);

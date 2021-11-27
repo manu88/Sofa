@@ -15,8 +15,19 @@
  */
 #pragma once
 #include "utlist.h"
+#include <sel4/types.h>
 #include <sys/types.h>
 #include <string.h>
+
+typedef struct
+{
+    char* buff;
+    size_t expectedSize;
+    seL4_CPtr replyCap;
+    size_t sector;
+} IODeviceRequest;
+
+void IODeviceRequestReply(IODeviceRequest* req, ssize_t ret);
 
 typedef enum
 {
@@ -38,6 +49,9 @@ struct _Thread;
 
 typedef ssize_t (*ReadDevice)(struct _IODevice* dev, size_t sector, char* buf, size_t bufSize);
 typedef ssize_t (*WriteDevice)(struct _IODevice* dev, size_t sector, const char* buf, size_t bufSize);
+
+typedef ssize_t (*ReadDeviceAsync)(struct _IODevice* dev,IODeviceRequest* reply);
+
 typedef void (*HandleIRQ)(struct _IODevice* dev, int irqN);
 
 
@@ -46,7 +60,9 @@ typedef int (*RegisterIface)(struct _IODevice* dev, void* netInterface, const /*
 typedef long (*MapMemory)(struct _IODevice* dev, struct _Thread* caller, int code);
 typedef struct
 {
-    ReadDevice read;
+    ReadDevice read; // called if asyncRead == 0
+    ReadDeviceAsync readAsync; // called if asyncRead != 0
+
     WriteDevice write;
     HandleIRQ handleIRQ;
     RegisterIface regIface;
@@ -71,9 +87,7 @@ typedef struct _IODevice
 
 }IODevice;
 
-
 #define IODeviceNew(name_, type_, ops_) {.name = name_ ,.type = type_, .ops = ops_ }
-
 
 static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type, IODeviceOperations* ops)
 {
@@ -82,7 +96,8 @@ static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type, IODe
     d->type = type;
     d->ops = ops;
 }
-ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize, int *asyncLater);
+
+ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize);
 ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize);
 
-
+ssize_t IODeviceReadAsync(IODevice* dev, IODeviceRequest* reply);
