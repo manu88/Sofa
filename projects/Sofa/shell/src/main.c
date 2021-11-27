@@ -213,7 +213,7 @@ static int doDK(const char* cmds)
         int ret = DKClientEnumDevices(type, NULL, &numDev);
         if(ret == 0)
         {
-            Printf("Found %zi devices matching type %i\n", numDev, type);
+            Printf("Found %zi device%s matching type %s\n", numDev, (numDev > 1? "s": ""), DKDeviceTypeNames[type]);
             if(numDev)
             {
                 DKDeviceList *list = malloc(sizeof(DKDeviceList) + (sizeof(DKDeviceHandle)*numDev));
@@ -245,6 +245,25 @@ static int doDK(const char* cmds)
 
         const char data[] = "Hello device";
         return DKDeviceWrite(handle, 0, data, strlen(data));
+    }
+    else if(startsWith("read", cmds))
+    {
+        const char* params = cmds + strlen("read ");
+
+        DKDeviceHandle handle = atoll(params);
+        char buf[8] = "";
+
+        ssize_t ret = DKDeviceRead(handle, 0, buf, 8);
+        Printf("retured %i\n", ret);
+        if(ret > 0)
+        {
+            for (size_t i =0; i<ret;i++)
+            {
+                Printf("OX%X ", i);
+            }
+            Printf("\n");
+        }
+        return ret;
     }
     else if(strcmp(cmds, "tree") == 0)
     {
