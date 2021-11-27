@@ -26,17 +26,64 @@
 #include <AMLDecompiler.h>
 #include <EISAID.h>
 #include <sel4/arch/bootinfo_types.h>
+#include <sel4platsupport/arch/io.h>
 #include <ctype.h>
 
 #include "Vesa.h"
 
 static void ACPIParse(IONode* root);
 
+
+
+typedef struct {
+    IODevice dev;
+    
+}PS2Dev;
+
 int PlatformExpertInit()
 {
     KLOG_INFO("PlatformExpertInit for X86_64\n");
     return 0;
 }
+
+// XXX duplicate of Serial.c
+static int DevProducesIRQ(const ps_chardevice_t* d)
+{
+    for (int i=0;i<256;i++)
+    {
+        if(ps_cdev_produces_irq(d, i))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static  void HandleComIRQ(IODevice* dev, int irqN)
+{
+    ps_chardevice_t* charDev = (ps_chardevice_t*) dev->impl;
+    assert(charDev); 
+    ps_cdev_handle_irq(charDev, 0);
+    char data;
+    int ret = charDev->read(charDev, &data, 1, NULL, NULL);
+    KLOG_DEBUG("PS2 IRQ '%c' %X \n", data, data);
+}
+
+ssize_t ReadPS2(IODevice* dev, size_t sector, char* buf, size_t bufSize)
+{
+    KLOG_DEBUG("ReadPS2 request\n");
+    for(int i=0;i <bufSize;i++)
+    {
+        buf[i] = (char)i;
+    }
+    return bufSize;
+}
+
+static IODeviceOperations _comOps ={
+    .handleIRQ = HandleComIRQ,
+    .read = ReadPS2,
+    .asyncRead = 1,
+};
 
 static void ProcessVBE(const seL4_X86_BootInfo_VBE* payload)
 {
@@ -45,6 +92,23 @@ static void ProcessVBE(const seL4_X86_BootInfo_VBE* payload)
     if(vesaDev)
     {
         DeviceTreeAddDevice(vesaDev);
+
+        PS2Dev* com = malloc(sizeof(PS2Dev));
+        IODeviceInit(com, "PS2", IODevice_Keyboard, &_comOps);
+
+        DeviceTreeAddDevice(com);
+        ps_chardevice_t* comDev = malloc(sizeof(ps_chardevice_t));
+        KernelTaskContext* context = getKernelTaskContext();
+        com->dev.impl = ps_cdev_init(PC99_KEYBOARD_PS2 , &context->ops , comDev);
+
+        int irqN = DevProducesIRQ(comDev);
+        KLOG_DEBUG("PS2 Keyboard produces IRQ %i\n", irqN);
+
+        if(irqN > 0)
+        {
+            IRQServerRegisterIRQ(com, irqN);
+        }
+
     }
 }
 

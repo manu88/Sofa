@@ -24,7 +24,7 @@ typedef enum
     IODevice_Net,
     IODevice_BlockDev,
     IODevice_CharDev,
-
+    IODevice_Keyboard,
     IODevice_FrameBuffer,
 
 // Not real Device types, can't be used for setting type, notably in IODeviceNew or IODeviceInit
@@ -51,6 +51,8 @@ typedef struct
     HandleIRQ handleIRQ;
     RegisterIface regIface;
     MapMemory mapMemory;
+
+    uint8_t asyncRead;
 } IODeviceOperations;
 
 
@@ -80,7 +82,7 @@ static inline void IODeviceInit(IODevice* d, char* name, IODeviceType type, IODe
     d->type = type;
     d->ops = ops;
 }
-ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize);
+ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize, int *asyncLater);
 ssize_t IODeviceWrite(IODevice* dev, size_t sector, const char* buf, size_t bufSize);
 
 

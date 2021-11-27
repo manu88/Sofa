@@ -20,8 +20,12 @@
 #include "utils.h"
 
 
-ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize)
+ssize_t IODeviceRead(IODevice* dev, size_t sector, char* buf, size_t bufSize, int *asyncLater)
 {
+    if(asyncLater)
+    {
+        *asyncLater = dev->ops->asyncRead;
+    }
     return dev->ops->read(dev, sector, buf, bufSize);
 }
 

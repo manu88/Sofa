@@ -48,7 +48,6 @@ static void putPixel(VesaDevice* dev, int x, int y, uint32_t color)
     assert(dev->fb != NULL);
 
     unsigned int coord_factor = 4;
-    size_t len = 3;
     char* target = ((char *)dev->fb) + (y * 640 + x) * coord_factor;
 
     target[0] = color & 255;

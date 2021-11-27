@@ -24,10 +24,23 @@ typedef enum
     DKDevice_Net,
     DKDevice_BlockDev,
     DKDevice_CharDev,
+    DKDevice_Keyboard,
     DKDevice_FrameBuffer,
 
     DKDevice_AllTypes,
 } DKDeviceType;
+
+
+static inline const char *DKDeviceTypeNames[] = 
+{
+    "Unknown",
+    "Net",
+    "BlockDev",
+    "CharDev",
+    "Keyboard",
+    "FrameBuffer",
+    NULL
+};
 
 typedef enum
 {

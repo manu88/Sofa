@@ -100,6 +100,23 @@ static ssize_t doDKDeviceWrite(BaseService* service, ThreadBase* caller, seL4_Me
     return IODeviceWrite(dev, index, clt->buff, dataSize);
 }
 
+static ssize_t doDKDeviceRead(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg, int *asyncLater)
+{
+    ServiceClient* clt = BaseServiceGetClient(service, caller);
+    assert(clt);
+    void* handle = seL4_GetMR(1);
+    size_t index = seL4_GetMR(2);
+    size_t dataSize = seL4_GetMR(3);
+
+    IODevice* dev = DeviceTreeGetDeviceFromHandle(handle);
+    if(dev == NULL)
+    {
+        return -ENODEV;
+    }
+    return IODeviceRead(dev, index, clt->buff, dataSize, asyncLater);
+}
+
+
 static long doDKDeviceDetails(BaseService* service, ThreadBase* caller, seL4_MessageInfo_t msg)
 {
     ServiceClient* clt = BaseServiceGetClient(service, caller);
@@ -197,6 +214,18 @@ static void _OnClientMsg(BaseService* service, ThreadBase* caller, seL4_MessageI
         case DKRequest_Write:
         {
             ssize_t ret = doDKDeviceWrite(service, caller, msg);
+            seL4_SetMR(1, ret);
+            seL4_Reply(msg);
+        }
+            break;
+        case DKRequest_Read:
+        {
+            int asyncOp = 0;
+            ssize_t ret = doDKDeviceRead(service, caller, msg, &asyncOp);
+            if(asyncOp)
+            {
+                break;
+            }
             seL4_SetMR(1, ret);
             seL4_Reply(msg);
         }

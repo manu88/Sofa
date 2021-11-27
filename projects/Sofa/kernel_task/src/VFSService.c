@@ -385,7 +385,7 @@ static int _VFSInspectDisk(IODevice* dev, VFSSupported* fsType)
     assert(fsType);
 
     uint8_t data[512] = {0};
-    ssize_t ret = IODeviceRead(dev, 0, data, 512);
+    ssize_t ret = IODeviceRead(dev, 0, data, 512, NULL);
     if(ret == 512)
     {
         const MBR* mbr =(const MBR*) data;
