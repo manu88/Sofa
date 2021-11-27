@@ -60,7 +60,15 @@ void sc_debug(seL4_CPtr endpoint, SofaDebugCode code)
     seL4_Send(endpoint, info);
 }
 
+void sc_debugWith1Arg(seL4_CPtr endpoint, SofaDebugCode code, seL4_Word arg)
+{
+    seL4_MessageInfo_t info = seL4_MessageInfo_new(seL4_Fault_NullFault, 0, 0, 3);
+    seL4_SetMR(0, SyscallID_Debug);
+    seL4_SetMR(1, code);
+    seL4_SetMR(2, arg);
 
+    seL4_Send(endpoint, info);
+}
 
 
 pid_t sc_getppid(seL4_CPtr endpoint)

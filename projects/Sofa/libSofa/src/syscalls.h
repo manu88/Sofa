@@ -29,6 +29,7 @@ uint64_t sc_gettime(seL4_CPtr endpoint);
 
 
 void sc_debug(seL4_CPtr endpoint, SofaDebugCode code);
+void sc_debugWith1Arg(seL4_CPtr endpoint, SofaDebugCode code, seL4_Word arg);
 
 pid_t sc_getppid(seL4_CPtr endpoint);
 

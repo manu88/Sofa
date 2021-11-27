@@ -619,7 +619,9 @@ int processCommand(const char* cmd)
     }
     else if(startsWith("mem", cmd))
     {
-        SFDebug(SofaDebugCode_MemoryDump);
+        const char* params = cmd + strlen("mem ");
+        long pid = atoll(params);
+        SFDebugWith1Arg(SofaDebugCode_MemoryDump, pid);
         return 0;
     }    
     else if(startsWith("ip", cmd))

@@ -136,3 +136,4 @@ long SFMunmap(void* addr, size_t length);
 
 // temp/debug syscall
 void SFDebug(SofaDebugCode code);
+void SFDebugWith1Arg(SofaDebugCode code, seL4_Word arg);

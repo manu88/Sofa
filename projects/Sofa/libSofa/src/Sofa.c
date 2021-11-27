@@ -38,6 +38,11 @@ void SFDebug(SofaDebugCode code)
     sc_debug(TLSGet()->ep, code);
 }
 
+void SFDebugWith1Arg(SofaDebugCode code, seL4_Word arg)
+{
+    sc_debugWith1Arg(TLSGet()->ep, code, arg);
+}
+
 void exit(int code)
 {
     sc_exit(getProcessEndpoint(), code);

@@ -71,7 +71,23 @@ void Syscall_Debug(Thread* caller, seL4_MessageInfo_t info)
     }
         break;
     case SofaDebugCode_MemoryDump:
-        VMSpacePrint(&proc->vmSpace);
+    {
+        long pid = seL4_GetMR(2);
+        if(pid <= 0)
+        {
+            KLOG_DEBUG("Mem dump for pid %li\n", ProcessGetPID(proc));
+            VMSpacePrint(&proc->vmSpace);
+        }
+        else
+        {
+            Process* p =  ProcessListGetByPid(pid);
+            if(p)
+            {
+                KLOG_DEBUG("Mem dump for pid %li\n", pid);
+                VMSpacePrint(&p->vmSpace);
+            }
+        }
+    }
         break;
     default:
         break;
