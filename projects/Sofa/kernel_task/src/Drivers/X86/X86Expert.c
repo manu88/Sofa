@@ -30,14 +30,32 @@
 #include <ctype.h>
 
 #include "Vesa.h"
+#include "keyboard_ps2.h"
+#include "keyboard_vkey.h"
+#include "utlist.h"
 
 static void ACPIParse(IONode* root);
 
 
+#define NUM_EVENTS 32
+
+
+
+typedef struct _Event
+{
+    keyboard_key_event_t evt;
+    struct _Event *prev;
+    struct _Event *next;
+} Event;
 
 typedef struct {
     IODevice dev;
     IODeviceRequest* currentRequest;
+    struct keyboard_state kb_state;
+    keycode_state_t kc_state;
+
+    Event* events;
+
 }PS2Dev;
 
 int PlatformExpertInit()
@@ -59,35 +77,46 @@ static int DevProducesIRQ(const ps_chardevice_t* d)
     return -1;
 }
 
-static  void HandleComIRQ(IODevice* _dev, int irqN)
+static void HandleComIRQ(IODevice* _dev, int irqN)
 {
-    ps_chardevice_t* charDev = (ps_chardevice_t*) _dev->impl;
-    assert(charDev); 
-    ps_cdev_handle_irq(charDev, 0);
-    char data;
-    int ret = charDev->read(charDev, &data, 1, NULL, NULL);
-    KLOG_DEBUG("PS2 IRQ '%c' %X \n", data, data);
     PS2Dev* dev = (PS2Dev*) _dev;
-    if(dev->currentRequest != NULL)
+    keyboard_key_event_t ev = keyboard_poll_ps2_keyevent(&dev->kb_state);
+    if(ev.vkey == -1)
     {
-        dev->currentRequest->buff[0] = 1;
-        dev->currentRequest->buff[1] = 2;
-        dev->currentRequest->buff[2] = 3;
-        dev->currentRequest->buff[3] = 4;
-        dev->currentRequest->buff[4] = 5;
-        dev->currentRequest->buff[5] = 6;
-        dev->currentRequest->buff[6] = 7;
-        dev->currentRequest->buff[7] = 8;
-        IODeviceRequestReply(dev->currentRequest, 8);
+        return;
+    }
+
+    Event *e = malloc(sizeof(Event));
+    assert(e);
+    e->evt = ev;
+    CDL_APPEND(dev->events, e);
+    
+    if(dev->currentRequest)
+    {
+        Event* evt = dev->events;
+        CDL_DELETE(dev->events, dev->events);
+        IODeviceRequestReply(dev->currentRequest, 1);
         dev->currentRequest = NULL;
+        free(evt);
     }
 }
 
-ssize_t ReadPS2Async(struct _IODevice* _dev, IODeviceRequest* reply)
+ssize_t ReadPS2Async(struct _IODevice* _dev, IODeviceRequest* request)
 {
     PS2Dev* dev = (PS2Dev*) _dev; 
-    KLOG_DEBUG("ReadPS2 request\n");
-    dev->currentRequest = reply;
+    Event* e = NULL;
+    size_t count = 0;
+    CDL_COUNT(dev->events, e, count);
+    KLOG_DEBUG("ReadPS2 request got %zi events waiting\n", count);
+    if(count)
+    {
+        Event* evt = dev->events;
+        CDL_DELETE(dev->events, dev->events);
+        IODeviceRequestReply(request, 1);
+        free(evt);
+        return 0;
+    }
+    dev->currentRequest = request;
     return 0;
 }
 
@@ -96,6 +125,36 @@ static IODeviceOperations _comOps ={
     .readAsync = ReadPS2Async,
     .asyncRead = 1,
 };
+
+
+
+static void keyboard_cdev_handle_led_changed(PS2Dev* com)
+{
+    assert(com);
+    /* Update LED states. */
+    keyboard_set_led(&com->kb_state, com->kc_state.scroll_lock, com->kc_state.num_lock, com->kc_state.caps_lock);
+    com->kc_state.led_state_changed = false;
+}
+
+static int createPS2Dev(PS2Dev* com)
+{
+    ps_chardevice_t* comDev = malloc(sizeof(ps_chardevice_t));
+    KernelTaskContext* context = getKernelTaskContext();
+
+
+    if (keyboard_init(&com->kb_state, &context->ops, NULL))
+    {
+        return -1;
+    }
+    /* Initialise keycode. */
+    keycode_init(&com->kc_state, NULL, NULL,
+                 keyboard_cdev_handle_led_changed);
+
+    keyboard_cdev_handle_led_changed(com);
+    IRQServerRegisterIRQ(com, 1);
+
+    return 0;
+}
 
 static void ProcessVBE(const seL4_X86_BootInfo_VBE* payload)
 {
@@ -107,22 +166,12 @@ static void ProcessVBE(const seL4_X86_BootInfo_VBE* payload)
 
         PS2Dev* com = malloc(sizeof(PS2Dev));
         memset(com, 0, sizeof(PS2Dev));
-        assert(com->currentRequest == NULL);
         IODeviceInit(com, "PS2", IODevice_Keyboard, &_comOps);
 
-        DeviceTreeAddDevice(com);
-        ps_chardevice_t* comDev = malloc(sizeof(ps_chardevice_t));
-        KernelTaskContext* context = getKernelTaskContext();
-        com->dev.impl = ps_cdev_init(PC99_KEYBOARD_PS2 , &context->ops , comDev);
-
-        int irqN = DevProducesIRQ(comDev);
-        KLOG_DEBUG("PS2 Keyboard produces IRQ %i\n", irqN);
-
-        if(irqN > 0)
+        if(createPS2Dev(com) == 0)
         {
-            IRQServerRegisterIRQ(com, irqN);
+            DeviceTreeAddDevice(com);
         }
-
     }
 }
 
